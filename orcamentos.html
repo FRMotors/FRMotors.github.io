@@ -1,0 +1,3999 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101820">
+<meta name="description" content="Módulo de orçamentos do sistema FR Motors.">
+<link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./fr-icon.svg" type="image/svg+xml" />
+<title>FR Motors · Orçamentos V4.3</title>
+
+<style>
+* { box-sizing: border-box; }
+
+:root {
+    --section-gap: 16px;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin:0;
+    color:#17352d;
+    background:
+        radial-gradient(circle at top left, rgba(103, 169, 153, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(47, 111, 94, 0.12), transparent 24%),
+        linear-gradient(180deg, #eff5f3 0%, #f8fbfa 100%);
+}
+
+header {
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:64px;
+    background:linear-gradient(135deg, #1f4f43 0%, #2f6f5e 42%, #5aa796 100%);
+    color:white;
+    padding:16px 76px 16px 20px;
+    text-align:center;
+    font-weight:800;
+    font-size:22px;
+    letter-spacing:.45px;
+    box-shadow:0 10px 24px rgba(20, 52, 44, 0.2);
+    border-bottom:1px solid rgba(255,255,255,0.16);
+}
+
+header::after {
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0));
+    pointer-events:none;
+}
+
+.menu-btn {
+    position:absolute;
+    top:50%;
+    right:14px;
+    transform:translateY(-50%);
+    background:rgba(18, 47, 39, 0.82);
+    color:white;
+    padding:9px 13px;
+    border-radius:12px;
+    cursor:pointer;
+    z-index:200;
+    box-shadow:0 8px 18px rgba(0,0,0,0.18);
+    border:1px solid rgba(255,255,255,0.14);
+    backdrop-filter: blur(6px);
+}
+
+.sidebar {
+    position:fixed;
+    top:0;
+    right:0;
+    width:320px;
+    height:100%;
+    background:#fcfefd;
+    transform:translateX(100%);
+    transition:.3s;
+    box-shadow:-14px 0 34px rgba(18, 43, 36, 0.14);
+    border-left:1px solid #dce8e4;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    z-index:150;
+}
+.sidebar.show { transform:translateX(0); }
+
+.sidebar-header {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:64px;
+    background:linear-gradient(135deg, #204d41, #478978);
+    color:white;
+    padding:15px 20px;
+    font-weight:800;
+    text-align:center;
+    text-transform:uppercase;
+    letter-spacing:.95px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.12);
+}
+
+.sidebar-content {
+    padding:12px;
+    flex:1;
+    overflow-y:auto;
+    max-height:calc(100vh - 64px);
+    background:#fafcfb;
+}
+
+.sidebar input {
+    width:100%;
+    height:38px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid #cddbd6;
+    margin-bottom:10px;
+    background:#fff;
+}
+
+.sidebar-item {
+    display:flex;
+    gap:5px;
+    margin-bottom:8px;
+}
+
+.sidebar-vazio {
+    color:#666;
+    font-size:14px;
+    text-align:center;
+    padding:12px 4px;
+}
+
+.btn-nome {
+    flex:1;
+    background:#edf6f3;
+    color:#17352d;
+    border:none;
+    border-radius:10px;
+    padding:8px 10px;
+    font-weight:700;
+    text-align:left;
+}
+
+.btn-nome:hover {
+    background:#d7e9e4;
+    color:#000;
+    transform:none;
+}
+
+.btn-delete {
+    width:36px;
+    background:#255a4c;
+    color:white;
+    border:none;
+    border-radius:10px;
+}
+
+.btn-delete:hover {
+    background:#1f4f43;
+}
+
+
+.dados-orcamento {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin:0;
+    padding:14px;
+    background:linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+    border:1px solid #dbe8e4;
+    border-radius:18px;
+    box-shadow:0 12px 28px rgba(19, 53, 45, 0.07);
+}
+
+.dados-orcamento input {
+    margin-right:0;
+    min-width:180px;
+    height:40px;
+}
+
+.info-impressao,
+.info-imagem {
+    display:none;
+}
+
+#linhaPerc {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 10px;
+    line-height:1.1;
+    margin:0;
+    padding:12px 14px;
+    background:linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+    border:1px solid #dbe8e4;
+    border-radius:18px;
+    box-shadow:0 12px 28px rgba(19, 53, 45, 0.07);
+}
+
+#linhaPerc > strong {
+    display:inline-flex;
+    align-items:center;
+    min-height:42px;
+    margin-right:2px;
+}
+
+.loja-controle {
+    display:inline-grid;
+    grid-template-columns:35px auto 60px auto;
+    align-items:center;
+    column-gap:5px;
+    min-height:40px;
+    margin:2px 0;
+    padding:6px 7px;
+    border-radius:12px;
+    border:1px solid #e2ede9;
+    background:linear-gradient(180deg, #fbfdfc 0%, #f4faf7 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.8);
+    vertical-align:middle;
+}
+
+.loja-nome-label {
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    width:auto;
+    max-width:150px;
+    min-height:36px;
+    padding:0 2px;
+    border-radius:0;
+    background:transparent;
+    color:#17352d;
+    font-weight:800;
+    overflow:visible;
+    text-overflow:clip;
+    white-space:normal;
+    line-height:1.12;
+    text-align:left;
+    word-break:break-word;
+}
+
+.loja-nome-input {
+    width:92px !important;
+    margin-right:0 !important;
+    font-weight:700;
+    text-align:left;
+    background:#fff !important;
+}
+
+.loja-perc-input {
+    width:60px !important;
+    height:34px;
+    margin-right:0 !important;
+    text-align:center;
+    background:#fff !important;
+}
+
+.btn-mini {
+    padding:6px 8px;
+    border-radius:6px;
+    font-size:12px;
+    line-height:1;
+}
+
+.btn-loja-delete {
+    width:35px;
+    height:34px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    background:#255a4c;
+    color:white;
+    border:none;
+    border-radius:6px;
+}
+
+.btn-loja-delete:hover {
+    background:#1f4f43;
+}
+
+.opcoes-container,
+.descontos-container {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.marca-opcao {
+    display:grid;
+    grid-template-columns:28px minmax(94px, 1fr) 104px;
+    align-items:start;
+    gap:5px;
+    min-height:36px;
+    padding:3px 0;
+    border-bottom:1px solid #edf2f0;
+}
+
+.desc-opcao {
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    min-height:36px;
+    padding:3px 0;
+    border-bottom:1px solid #edf2f0;
+}
+
+.marca-opcao:last-child,
+.desc-opcao:last-child {
+    border-bottom:none;
+}
+
+.marca-opcao-placeholder,
+.desc-opcao-placeholder{
+    pointer-events:none;
+    visibility:hidden;
+    border-bottom:1px solid transparent!important;
+}
+.marca-opcao-placeholder{
+    grid-template-columns:28px minmax(94px, 1fr) 104px;
+}
+.marca-opcao-placeholder .placeholder-box,
+.desc-opcao-placeholder .placeholder-box{
+    width:100%;
+    min-height:36px;
+    height:36px;
+    border:0;
+    background:transparent;
+}
+.marca-opcao-placeholder .placeholder-delete{
+    width:28px;
+    min-height:36px;
+    height:36px;
+    background:transparent;
+}
+
+.marca-input {
+    min-width:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-height:36px;
+    height:36px;
+    display:block;
+    resize:none;
+    overflow:hidden;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    line-height:1.2;
+    text-align:left;
+    font-family:inherit;
+    font-size:12px;
+    padding:7px 8px;
+    background:#ffffff;
+    box-sizing:border-box;
+}
+
+.valor-input,
+.desc-input {
+    width:104px !important;
+    min-width:104px;
+    max-width:104px;
+    min-height:36px;
+    height:36px;
+    box-sizing:border-box;
+    display:block;
+    padding:8px;
+}
+
+.desc-opcao .desc-input{
+    flex:0 0 36px;
+    align-self:flex-start;
+    margin-top:0!important;
+    margin-bottom:0!important;
+}
+
+.btn-add-marca,
+.btn-remover-marca {
+    padding:4px 7px;
+    border-radius:6px;
+    font-size:11px;
+    line-height:1.1;
+}
+
+.btn-add-marca {
+    align-self:flex-start;
+    background:linear-gradient(135deg, #4f9a8b 0%, #66b5a3 100%);
+    margin-top:3px;
+    padding:6px 10px;
+    border-radius:10px;
+    font-size:11px;
+    box-shadow:0 8px 16px rgba(79, 154, 139, 0.15);
+}
+
+.btn-remover-marca {
+    width:28px;
+    min-height:36px;
+    height:36px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    align-self:start;
+    padding:0;
+    background:#255a4c;
+    color:#fff;
+    font-size:13px;
+    line-height:1;
+}
+
+.btn-remover-marca:hover {
+    background:#1f4f43;
+}
+
+.main {
+    max-width:1780px;
+    margin:0 auto;
+    padding:18px 20px 28px;
+    display:flex;
+    flex-direction:column;
+    gap:var(--section-gap);
+}
+
+.main > br {
+    display:none;
+}
+
+.main input,
+.main textarea {
+    padding:8px 10px;
+    border-radius:12px;
+    border:1px solid #cfdcd8;
+    margin-right:5px;
+    background:linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+    color:#17352d;
+    transition:border-color .18s ease, box-shadow .18s ease, background-color .18s ease, transform .18s ease;
+}
+
+.main input:focus,
+.main textarea:focus,
+.sidebar input:focus {
+    outline:none;
+    border-color:#67a999;
+    box-shadow:0 0 0 3px rgba(79, 154, 139, 0.12);
+    background:#fff;
+}
+
+.table-container {
+    overflow-x:auto;
+    margin:0;
+    padding:12px;
+    background:linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+    border:1px solid #dbe8e4;
+    border-radius:20px;
+    box-shadow:0 18px 36px rgba(19, 53, 45, 0.08);
+}
+
+table {
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    background:white;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:inset 0 0 0 1px #e4ece9;
+}
+
+th, td {
+    padding:7px 8px;
+    text-align:center;
+    vertical-align:top;
+}
+
+/* PADRONIZA TODAS AS COLUNAS */
+thead tr:nth-child(2) th,
+tbody td:not(:first-child),
+tfoot td:not(:first-child) {
+    width:100px;
+    min-width:100px;
+    max-width:100px;
+}
+
+.subhead-valor,
+.valor-td,
+.total-valor {
+    width:250px !important;
+    min-width:250px !important;
+    max-width:320px !important;
+}
+
+.subhead-desc,
+.desc-td,
+.total-desc {
+    width:126px !important;
+    min-width:126px !important;
+    max-width:126px !important;
+}
+
+.peca-cell {
+    display:grid;
+    grid-template-columns:34px minmax(0, 1fr);
+    align-items:start;
+    gap:6px;
+    width:100%;
+}
+
+.peca-input {
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    min-height:38px;
+    font-family:inherit;
+    font-size:clamp(14px, 0.75vw + 9px, 16px);
+    line-height:1.25;
+    resize:none;
+    overflow:hidden;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    text-transform:uppercase;
+}
+
+.peca-print-text {
+    display:none;
+}
+
+.btn-remover-peca {
+    width:30px;
+    height:30px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border-radius:6px;
+    background:#255a4c;
+    color:#fff;
+    font-size:13px;
+    line-height:1;
+    flex:0 0 auto;
+}
+
+.btn-remover-peca:hover {
+    background:#1f4f43;
+}
+
+th:first-child, td:first-child {
+    width:clamp(280px, 30vw, 520px);
+    min-width:280px;
+}
+
+thead th:first-child {
+    text-align:center;
+}
+
+tbody td:first-child,
+tfoot td:first-child {
+    text-align:left;
+}
+
+thead {
+    background:#d9ece6;
+}
+
+thead tr:first-child th {
+    background:linear-gradient(180deg, #dcefe9 0%, #d2e8e1 100%);
+    font-weight:800;
+    vertical-align:middle;
+    text-align:center;
+    font-size:13px;
+    color:#17352d;
+    border-bottom:1px solid #d0e2dc;
+}
+
+.loja-header-name {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:40px;
+    width:100%;
+    padding:3px 6px;
+    line-height:1.12;
+    white-space:normal;
+    word-break:break-word;
+    text-align:center;
+}
+
+.valor-head-grid {
+    display:grid;
+    grid-template-columns:28px minmax(94px, 1fr) 104px;
+    align-items:center;
+    gap:5px;
+    width:100%;
+}
+
+.valor-head-grid span:nth-child(2) {
+    text-align:left;
+    padding-left:2px;
+}
+
+.valor-head-grid span:last-child {
+    text-align:center;
+}
+
+thead tr:nth-child(2) {
+    background:#cde8e1;
+}
+
+thead tr:nth-child(2) th {
+    background:linear-gradient(180deg, #f4faf7 0%, #edf6f3 100%);
+    background-clip:padding-box;
+    text-align:center;
+    font-size:12px;
+    font-weight:800;
+    color:#21483d;
+}
+
+.subhead-valor,
+.subhead-desc {
+    background:#edf6f3;
+}
+
+.subhead-left-rounded,
+.subhead-right-rounded {
+    border-radius:0;
+}
+
+tbody td { font-weight: normal; }
+
+tbody tr:nth-child(even) { background:#fbfdfc; }
+
+tbody tr:hover { background:#f3faf7; }
+
+td input,
+td textarea {
+    width:100%;
+    border:none;
+    outline:none;
+    text-align:right;
+    background:transparent;
+    margin:0;
+    padding:4px 0;
+}
+
+td:first-child input,
+td:first-child textarea { text-align:left; }
+
+.valor-bloco {
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+}
+
+.valor-input::placeholder {
+    color:#888;
+}
+
+.marca-input {
+    text-align:left;
+    font-size:12px;
+    padding:7px 8px;
+}
+
+.marca-input::placeholder {
+    color:#888;
+}
+
+.peca-divider {
+    border-right:1px solid #e2ece8 !important;
+}
+
+.loja-divider {
+    border-right:1px solid #e2ece8 !important;
+}
+
+ tbody td, thead th, tfoot td {
+    border-bottom:1px solid #eef4f2;
+}
+
+ tbody tr:last-child td,
+ tfoot tr td {
+    border-bottom:none;
+}
+
+.menor {
+    background:linear-gradient(180deg, #d8f1e8 0%, #caebdf 100%) !important;
+    font-weight:800;
+    border-radius:12px;
+    box-shadow:inset 0 0 0 1px rgba(101, 170, 151, 0.20);
+}
+
+.total {
+    background:linear-gradient(180deg, #f5f7f6 0%, #edf1ef 100%);
+    font-weight:800;
+}
+
+.botoes {
+    margin-top:0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:2px 0;
+}
+
+button {
+    padding:9px 14px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:linear-gradient(135deg, #2f6f5e 0%, #4f9a8b 100%);
+    color:white;
+    font-weight:700;
+    letter-spacing:.12px;
+    transition:.18s ease;
+    box-shadow:0 10px 18px rgba(47, 111, 94, 0.16);
+}
+
+button:hover {
+    background:linear-gradient(135deg, #255a4c 0%, #3c8878 100%);
+    transform:translateY(-1px);
+    box-shadow:0 12px 22px rgba(37, 90, 76, 0.2);
+}
+
+
+/* =========================================================
+   v41 - FUNDO CLARO UNIFORME
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+:root {
+    --fundo-claro-uniforme: #fbfdfc;
+}
+
+/* Igualando os fundos externos e dos blocos para a cor mais clara do layout */
+body {
+    background: var(--fundo-claro-uniforme) !important;
+}
+
+.main {
+    background: var(--fundo-claro-uniforme) !important;
+}
+
+.dados-orcamento,
+#linhaPerc,
+.table-container {
+    background: var(--fundo-claro-uniforme) !important;
+}
+
+/* Remove variações de degradê nos blocos principais */
+.dados-orcamento,
+#linhaPerc,
+.table-container,
+.loja-controle,
+table {
+    background-image: none !important;
+}
+
+/* Mantém a tabela limpa, sem alterar a lógica nem os destaques */
+table {
+    background-color: #ffffff !important;
+}
+
+tbody tr:nth-child(even) {
+    background: #ffffff !important;
+}
+
+tbody tr:hover {
+    background: #f4faf7 !important;
+}
+
+
+
+/* =========================================================
+   v42 - BARRA VERDE + SIDEBAR COM GRADIENTE DO CABEÇALHO
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+/* Barra verde lateral nos blocos principais */
+.dados-orcamento,
+#linhaPerc {
+    position: relative;
+    overflow: hidden;
+    padding-left: 26px !important;
+}
+
+.dados-orcamento::before,
+#linhaPerc::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 16px;
+    bottom: 16px;
+    width: 5px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #1f4f43 0%, #2f6f5e 48%, #5aa796 100%);
+    box-shadow: 0 4px 10px rgba(47, 111, 94, 0.20);
+}
+
+/* Descrição DESCONTOS (%) mais forte */
+#linhaPerc > strong {
+    font-weight: 900 !important;
+    color: #143c32;
+    letter-spacing: .2px;
+}
+
+/* Botão da sidebar/menu com o mesmo degradê do cabeçalho */
+.menu-btn {
+    background: linear-gradient(135deg, #1f4f43 0%, #2f6f5e 42%, #5aa796 100%) !important;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 18px rgba(31, 79, 67, 0.22);
+}
+
+/* Botões da própria sidebar seguindo o mesmo acabamento visual */
+.btn-nome,
+.btn-delete {
+    border-radius: 12px;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #1f4f43 0%, #2f6f5e 42%, #5aa796 100%) !important;
+    box-shadow: 0 6px 14px rgba(31, 79, 67, 0.16);
+}
+
+
+
+/* =========================================================
+   v43 - MENU COM TOM MAIS ESCURO + SOMBRA NO TÍTULO
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+/* Deixa o lado claro do degradê do botão um pouco mais escuro, mantendo o gradiente */
+.menu-btn {
+    background: linear-gradient(135deg, #1f4f43 0%, #2f6f5e 42%, #4b9384 100%) !important;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 18px rgba(31, 79, 67, 0.24);
+}
+
+/* Mesmo ajuste visual para o botão de excluir da sidebar */
+.btn-delete {
+    background: linear-gradient(135deg, #1f4f43 0%, #2f6f5e 42%, #4b9384 100%) !important;
+    box-shadow: 0 6px 14px rgba(31, 79, 67, 0.18);
+}
+
+/* Pequeno destaque no texto do cabeçalho para melhorar a leitura */
+header > span {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.20), 0 1px 2px rgba(0, 0, 0, 0.16);
+}
+
+
+
+/* =========================================================
+   v44 - GRADIENTE MEIO TERMO + PEÇAS ALINHADAS
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+/* Meio termo entre o gradiente mais claro da v42 e o mais escuro da v43 */
+.menu-btn {
+    background: linear-gradient(135deg, #1f4f43 0%, #2f6f5e 42%, #529b8b 100%) !important;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 18px rgba(31, 79, 67, 0.24);
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #1f4f43 0%, #2f6f5e 42%, #529b8b 100%) !important;
+    box-shadow: 0 6px 14px rgba(31, 79, 67, 0.18);
+}
+
+/* Cabeçalho com leitura mais forte, sem exagerar */
+header > span {
+    text-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.28),
+        0 1px 3px rgba(0, 0, 0, 0.24);
+}
+
+/* Caixa de PEÇAS alinhada com as demais caixas da linha */
+.peca-cell {
+    grid-template-columns:36px minmax(0, 1fr);
+    align-items:start;
+}
+
+.peca-input {
+    min-height:36px !important;
+    height:36px;
+    padding:7px 8px !important;
+    line-height:1.2;
+    border-radius:10px;
+}
+
+.btn-remover-peca {
+    width:36px;
+    height:36px;
+    min-height:36px;
+    border-radius:10px;
+}
+
+
+
+/* =========================================================
+   v45 - SOMBRA NO MENU + PEÇAS ALINHADAS HORIZONTALMENTE
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+/* Um pouco mais de sombra atrás do botão da sidebar/menu */
+.menu-btn {
+    box-shadow:
+        0 10px 22px rgba(31, 79, 67, 0.22),
+        0 4px 10px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Ajuste fino para o campo de PEÇAS começar na mesma linha visual das outras caixas */
+.peca-cell {
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.peca-input {
+    min-height: 36px !important;
+    height: 36px;
+    padding: 7px 10px !important;
+    line-height: 1.2;
+    display: block;
+    margin: 0;
+}
+
+.btn-remover-peca {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+
+
+/* =========================================================
+   v46 - DESTAQUE MENOR MELHORADO + IMAGEM BRANCA + HEADER AJUSTADO
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+/* Texto do cabeçalho um pouco mais escuro para melhor leitura */
+header > span {
+    color:#f2e9d8;
+}
+
+/* Destaque do menor valor mais elegante na interface */
+.menor {
+    background:linear-gradient(180deg, #e3f6ee 0%, #cfeee1 100%) !important;
+    color:#123f33 !important;
+    font-weight:900;
+    border-radius:14px;
+    box-shadow:
+        inset 0 0 0 1px rgba(70, 144, 124, 0.22),
+        0 4px 10px rgba(79, 154, 139, 0.14);
+}
+
+
+
+/* =========================================================
+   v47 - DESTAQUE UNIFORME + HEADER CINZA CLARO
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+/* Texto do cabeçalho em cinza claro, acompanhando o design */
+header > span {
+    color:#edf1ef !important;
+    text-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.26),
+        0 1px 3px rgba(0, 0, 0, 0.22);
+}
+
+/* Faz o menor valor ficar realmente "pintado" no site */
+.desc-opcao.menor {
+    background:#d8f1e6 !important;
+    border-radius:14px;
+    box-shadow:
+        inset 0 0 0 1px rgba(70, 144, 124, 0.24),
+        0 4px 10px rgba(79, 154, 139, 0.12);
+}
+
+.desc-opcao.menor .desc-input {
+    background:transparent !important;
+    border-color:transparent !important;
+    color:#123f33 !important;
+    font-weight:900 !important;
+    box-shadow:none !important;
+}
+
+/* Mantém o destaque elegante também quando o valor for convertido para elemento de texto */
+.desc-opcao.menor > div,
+.desc-opcao.menor > span {
+    background:transparent !important;
+    color:#123f33 !important;
+    font-weight:900 !important;
+    box-shadow:none !important;
+}
+
+
+
+/* =========================================================
+   v49 - BOTÕES DE EXCLUIR DA LINHA DE DESCONTO
+   Ajuste apenas visual: mantém toda a lógica original.
+   ========================================================= */
+
+/* Botão de excluir da linha DESCONTOS (%) igual ao botão de excluir peça */
+.btn-loja-delete {
+    width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    border-radius: 10px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    margin: 0;
+}
+
+
+
+/* =========================================================
+   v51 - TOTAIS SOB AS CAIXAS CORRETAMENTE
+   Ajuste visual/estrutura: mantém toda a lógica original.
+   ========================================================= */
+
+/* Células do rodapé alinhadas com a mesma estrutura das caixas acima */
+.total-valor,
+.total-desc {
+    vertical-align: middle;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.total-valor-wrap {
+    display: grid;
+    grid-template-columns: 28px minmax(94px, 1fr) 104px;
+    align-items: center;
+    width: 100%;
+    gap: 5px;
+}
+
+.total-box-valor {
+    grid-column: 3;
+    justify-self: end;
+}
+
+.total-desc-wrap {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.total-box {
+    width: 104px;
+    min-width: 104px;
+    max-width: 104px;
+    display: block;
+    margin: 0;
+    text-align: right;
+    line-height: 1.2;
+    font-weight: 900;
+    color: #123f33;
+}
+
+@media print {
+    .total-valor,
+    .total-desc {
+        vertical-align: middle !important;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+    }
+
+    .total-valor-wrap {
+        display: grid !important;
+        grid-template-columns: 28px minmax(94px, 1fr) 104px !important;
+        align-items: center !important;
+        width: 100% !important;
+        gap: 5px !important;
+    }
+
+    .total-box-valor {
+        grid-column: 3 !important;
+        justify-self: end !important;
+    }
+
+    .total-desc-wrap {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .total-box {
+        width: 104px !important;
+        min-width: 104px !important;
+        max-width: 104px !important;
+        display: block !important;
+        margin: 0 !important;
+        text-align: right !important;
+    }
+}
+
+@media (max-width:520px){
+    #linhaPerc {
+        align-items:stretch;
+    }
+
+    .loja-controle {
+        grid-template-columns:minmax(120px, 1fr) 62px auto 35px;
+        width:100%;
+    }
+
+    .loja-nome-label {
+        width:auto;
+        min-width:0;
+    }
+}
+
+@media (max-width:768px){
+    th,td { font-size:13px; }
+    .main { padding:14px 12px 20px; gap:14px; }
+    .dados-orcamento { padding:10px; border-radius:16px; }
+    #linhaPerc { padding:10px; border-radius:16px; }
+    .dados-orcamento input { display:block; margin-bottom:5px; width:100%; min-width:0; }
+    .subhead-valor,
+    .valor-td,
+    .total-valor {
+        width:230px !important;
+        min-width:230px !important;
+    }
+    .subhead-desc,
+    .desc-td,
+    .total-desc {
+        width:122px !important;
+        min-width:122px !important;
+    }
+    .peca-cell {
+        grid-template-columns:32px minmax(0, 1fr);
+    }
+
+    th:first-child, td:first-child {
+        min-width:260px;
+    }
+    .marca-opcao {
+        grid-template-columns:28px minmax(88px, 1fr) 100px;
+    }
+    .valor-input,
+    .desc-input {
+        width:100px !important;
+        min-width:100px;
+        max-width:100px;
+    }
+    header {
+        min-height:60px;
+        padding-right:68px;
+        font-size:20px;
+    }
+    .sidebar-header {
+        min-height:60px;
+    }
+    .menu-btn {
+        right:12px;
+        padding:9px 12px;
+    }
+}
+
+@media print {
+    @page {
+        margin: 8mm;
+    }
+
+    html,
+    body,
+    body * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    html, body {
+        background:#fff !important;
+    }
+
+    body {
+        margin:0;
+    }
+
+    header {
+        box-shadow:none;
+    }
+
+    .menu-btn,
+    .sidebar,
+    .botoes {
+        display:none !important;
+    }
+
+    .main {
+        padding:0 !important;
+    }
+
+    .table-container {
+        overflow:visible !important;
+        width:calc(100% / var(--print-scale, 1));
+        transform:scale(var(--print-scale, 1));
+        transform-origin:top left;
+    }
+
+    table {
+        width:100%;
+        box-shadow:none;
+        border-radius:0;
+        background:white !important;
+    }
+
+    thead tr:first-child th {
+        background:#cde8e1 !important;
+    }
+
+    thead tr:nth-child(2) th {
+        background:#e6f2ef !important;
+    }
+
+    .menor {
+        background:#d8f1e6 !important;
+        color:#123f33 !important;
+        font-weight:900 !important;
+        border-radius:10px;
+        box-shadow: inset 0 0 0 1px rgba(70, 144, 124, 0.20);
+    }
+
+    .desc-opcao.menor .desc-input,
+    .desc-opcao.menor > div,
+    .desc-opcao.menor > span {
+        background:transparent !important;
+        border-color:transparent !important;
+        color:#123f33 !important;
+        font-weight:900 !important;
+        box-shadow:none !important;
+    }
+
+    .total {
+        background:#eeeeee !important;
+    }
+
+    th, td {
+        font-size:13px;
+        padding:6px;
+    }
+
+    thead th {
+        font-size:13px;
+        line-height:1.25;
+    }
+
+    tfoot td {
+        font-size:13px;
+        font-weight:800;
+    }
+
+    thead tr:nth-child(2) th,
+    tbody td:not(:first-child),
+    tfoot td:not(:first-child) {
+        width:auto;
+        min-width:0;
+        max-width:none;
+    }
+
+    input,
+    textarea {
+        color:inherit !important;
+        border:none !important;
+        background:transparent !important;
+        box-shadow:none !important;
+    }
+
+    .marca-input {
+        font-size:12px;
+    }
+
+    .dados-orcamento,
+    .loja-controle,
+    .btn-add-marca,
+    .btn-remover-marca,
+    .btn-remover-peca {
+        display:none !important;
+    }
+
+    .info-impressao {
+        display:flex !important;
+        flex-wrap:nowrap;
+        align-items:center;
+        gap:8px;
+        width:100%;
+        margin:0 0 8px 0;
+        padding:7px 10px;
+        border:1px solid #cde8e1;
+        background:#eef7f4 !important;
+        color:#111 !important;
+        font-size:14px;
+        font-weight:800;
+        white-space:nowrap;
+    }
+
+    .marca-opcao {
+        display:grid;
+        grid-template-columns:minmax(96px, 1fr) 105px;
+        gap:5px;
+        min-height:34px;
+        padding:3px 0;
+    }
+
+    .desc-opcao {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        min-height:34px;
+        padding:3px 0;
+    }
+
+    .marca-opcao .btn-remover-marca {
+        display:none !important;
+    }
+
+    .marca-input {
+        min-width:0 !important;
+        width:100% !important;
+        max-width:100% !important;
+        display:block;
+        min-height:34px;
+        height:auto !important;
+        resize:none;
+        overflow:visible !important;
+        white-space:pre-wrap !important;
+        overflow-wrap:anywhere !important;
+        word-break:break-word !important;
+        text-align:left !important;
+        line-height:1.25 !important;
+    }
+
+    .valor-input,
+    .desc-input {
+        width:105px !important;
+        min-width:105px !important;
+        max-width:105px !important;
+        display:block;
+        font-size:12px;
+    }
+
+    .peca-td,
+    .peca-cell {
+        overflow:visible !important;
+    }
+
+    .peca-cell {
+        display:block !important;
+        grid-template-columns:1fr !important;
+        align-items:flex-start !important;
+        width:100% !important;
+    }
+
+    .peca-input {
+        display:none !important;
+    }
+
+    .peca-print-text {
+        display:block !important;
+        width:100% !important;
+        max-width:100% !important;
+        min-width:0 !important;
+        min-height:0 !important;
+        height:auto !important;
+        color:#111 !important;
+        font-family:'Segoe UI', Arial !important;
+        font-size:13px !important;
+        font-weight:400 !important;
+        line-height:1.35 !important;
+        text-align:left !important;
+        white-space:normal !important;
+        overflow:visible !important;
+        overflow-wrap:anywhere !important;
+        word-break:break-word !important;
+        padding:0 !important;
+        margin:0 !important;
+    }
+
+    tr, td, th {
+        page-break-inside:avoid;
+        break-inside:avoid;
+    }
+}
+
+.printing,
+.printing * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+}
+
+
+
+/* =========================================================
+   v54 - COLUNA DE PEÇAS FIXA
+   A coluna PEÇAS permanece visível; apenas as lojas deslizam.
+   ========================================================= */
+@media screen {
+    .table-container {
+        position: relative;
+        overflow-x: auto;
+        overflow-y: visible;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* O overflow do próprio table não pode capturar o sticky. */
+    .table-container table {
+        overflow: visible;
+    }
+
+    thead th:first-child,
+    tbody td:first-child,
+    tfoot td:first-child {
+        position: sticky;
+        left: 0;
+        background-clip: padding-box;
+        box-shadow: 10px 0 14px -14px rgba(19, 53, 45, .55);
+    }
+
+    thead th:first-child {
+        z-index: 8;
+        background: linear-gradient(180deg, #dcefe9 0%, #d2e8e1 100%) !important;
+    }
+
+    tbody td:first-child {
+        z-index: 5;
+        background: #ffffff !important;
+    }
+
+    tbody tr:hover td:first-child {
+        background: #f4faf7 !important;
+    }
+
+    tfoot td:first-child {
+        z-index: 7;
+        background: linear-gradient(180deg, #f5f7f6 0%, #edf1ef 100%) !important;
+    }
+}
+
+
+
+/* =========================================================
+   FR MOTORS V4.2 · SISTEMA INTEGRADO
+   Mantém a identidade verde de Orçamentos e compartilha a
+   linguagem visual preto/branco da Ficha / O.S.
+   ========================================================= */
+:root{
+    --fr-dark:#101820;
+    --fr-bg:#f4f6f7;
+    --fr-line:#dfe5e8;
+    --fr-muted:#68777f;
+}
+body{padding-top:78px;}
+.system-topbar{
+    position:fixed; top:0; left:0; right:0; z-index:500;
+    min-height:68px; background:rgba(244,246,247,.96);
+    backdrop-filter:blur(12px); border-bottom:1px solid var(--fr-line);
+    box-shadow:0 8px 28px rgba(16,24,32,.07);
+}
+.system-topbar-inner{
+    max-width:1780px; min-height:68px; margin:0 auto; padding:9px 20px;
+    display:flex; align-items:center; gap:18px;
+}
+.system-brand{display:flex;align-items:center;gap:11px;min-width:max-content;}
+.system-brand-mark{
+    width:46px;height:46px;border-radius:14px;background:var(--fr-dark);color:#fff;
+    display:grid;place-items:center;font-weight:900;font-style:italic;font-size:16px;line-height:1;letter-spacing:-2px;
+    box-shadow:0 8px 22px rgba(16,24,32,.16);
+}
+.system-brand-copy strong{display:block;color:#172126;font-size:18px;line-height:1.05;}
+.system-brand-copy span{display:block;color:var(--fr-muted);font-size:11px;margin-top:3px;}
+.system-nav{
+    display:flex;align-items:center;gap:6px;padding:5px;background:#e9edef;
+    border:1px solid var(--fr-line);border-radius:14px;
+}
+.system-nav a{
+    min-height:38px;padding:8px 13px;border-radius:10px;display:inline-flex;align-items:center;
+    justify-content:center;text-decoration:none;color:#415159;font-size:13px;font-weight:850;white-space:nowrap;
+}
+.system-nav a:hover{background:#fff;color:#172126;}
+.system-nav a.active{background:var(--fr-dark);color:#fff;box-shadow:0 6px 16px rgba(16,24,32,.16);}
+.system-spacer{flex:1;}
+.system-status{
+    display:inline-flex;align-items:center;min-height:38px;padding:8px 12px;border-radius:10px;
+    background:#fff;border:1px solid var(--fr-line);color:#415159;font-size:12px;font-weight:750;white-space:nowrap;
+}
+.system-logout{
+    min-height:38px;padding:8px 13px;border-radius:10px;border:1px solid var(--fr-line)!important;
+    background:#fff!important;color:#172126!important;box-shadow:none!important;font-weight:800;
+}
+.system-logout:hover{background:#eef1f2!important;transform:none!important;}
+body > header{margin-top:0;}
+.sidebar{top:78px;height:calc(100% - 78px);z-index:350;}
+.btn-primary-dark{background:var(--fr-dark)!important;color:#fff!important;box-shadow:0 9px 18px rgba(16,24,32,.16)!important;}
+.btn-primary-dark:hover{background:#202a31!important;}
+.btn-dark-outline{background:#fff!important;color:var(--fr-dark)!important;box-shadow:inset 0 0 0 1px #bfc8cc!important;}
+.btn-dark-outline:hover{background:#f0f3f4!important;}
+.login-screen{
+    position:fixed;inset:0;z-index:9999;background:#f4f6f7;display:none;
+    align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+.login-card{width:min(430px,100%);background:#fff;border:1px solid #dfe5e8;border-radius:22px;box-shadow:0 18px 60px rgba(16,24,32,.15);padding:26px;}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.login-brand-mark{width:52px;height:52px;border-radius:15px;background:#101820;color:#fff;display:grid;place-items:center;font-weight:900;font-style:italic;font-size:20px;}
+.login-fields{display:grid;gap:12px;}
+.login-fields label{display:block;font-size:11px;font-weight:800;color:#68777f;margin-bottom:5px;text-transform:uppercase;}
+.login-fields input{width:100%;border:1px solid #ced8dc;border-radius:10px;padding:10px 11px;background:#fff;color:#172126;outline:none;}
+.login-fields input:focus{border-color:#2f6f5e;box-shadow:0 0 0 3px rgba(47,111,94,.12);}
+.login-btn{width:100%;border:0;border-radius:12px;padding:10px 14px;background:#101820;color:#fff;font-weight:800;cursor:pointer;box-shadow:none;}
+.login-btn.secondary{background:#fff;color:#172126;box-shadow:0 0 0 1px #dfe5e8;}
+.login-msg{min-height:20px;color:#68777f;font-size:13px;text-align:center;}
+.cloud-loading{opacity:.72;}
+@media(max-width:900px){
+    body{padding-top:126px;}
+    .system-topbar-inner{flex-wrap:wrap;gap:7px 10px;padding:8px 12px;}
+    .system-brand{flex:1;}.system-brand-copy span{display:none;}
+    .system-brand-mark{width:42px;height:42px;}
+    .system-nav{order:3;width:100%;display:grid;grid-template-columns:1fr 1fr;}
+    .system-nav a{width:100%;}
+    .system-status{display:none;}
+    .sidebar{top:126px;height:calc(100% - 126px);}
+}
+@media(max-width:520px){
+    .system-brand-copy strong{font-size:16px;}
+    .system-logout{padding:7px 10px;}
+}
+@media print{
+    body{padding-top:0!important;}
+    .system-topbar,.login-screen{display:none!important;}
+}
+
+
+
+/* =========================================================
+   FR MOTORS V4.3 · REFINO VISUAL DO MÓDULO ORÇAMENTOS
+   Aproxima Orçamentos da linguagem visual da Ficha / O.S.
+   sem alterar a lógica de cálculo, lojas, descontos ou impressão.
+   ========================================================= */
+:root{
+    --orc-dark:#101820;
+    --orc-ink:#172126;
+    --orc-muted:#68777f;
+    --orc-line:#dfe5e8;
+    --orc-bg:#f4f6f7;
+    --orc-surface:#ffffff;
+    --orc-accent:#167b87;
+    --orc-accent-2:#0f646e;
+    --orc-soft:#e9f5f6;
+    --orc-green:#2f6f5e;
+    --orc-green-soft:#e7f2ee;
+    --orc-shadow:0 8px 28px rgba(16,24,32,.09);
+}
+html{background:var(--orc-bg)!important;}
+body{
+    background:var(--orc-bg)!important;
+    color:var(--orc-ink)!important;
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important;
+}
+.system-topbar{
+    box-shadow:none!important;
+    border-bottom:0!important;
+    background:rgba(244,246,247,.94)!important;
+}
+.system-topbar-inner{max-width:1280px!important;padding-left:18px!important;padding-right:18px!important;}
+.system-brand-mark{box-shadow:var(--orc-shadow)!important;}
+.system-status{border-radius:12px!important;min-height:40px!important;}
+.system-logout{border-radius:12px!important;min-height:40px!important;}
+
+/* Cabeçalho interno no mesmo espírito da Ficha / O.S. */
+body > header.orc-hero{
+    max-width:1244px;
+    width:calc(100% - 36px);
+    min-height:84px;
+    margin:10px auto 18px!important;
+    padding:18px 170px 18px 20px!important;
+    border-radius:18px;
+    background:var(--orc-dark)!important;
+    color:#fff!important;
+    border:1px solid rgba(255,255,255,.04)!important;
+    box-shadow:var(--orc-shadow)!important;
+    display:flex!important;
+    justify-content:flex-start!important;
+    text-align:left!important;
+    overflow:hidden;
+}
+body > header.orc-hero::after{
+    background:linear-gradient(90deg,transparent 55%,rgba(22,123,135,.18))!important;
+}
+.orc-hero-copy{position:relative;z-index:2;display:flex;flex-direction:column;gap:2px;}
+.orc-hero-logo{font-size:27px;font-weight:950;font-style:italic;letter-spacing:-1.8px;line-height:1;}
+.orc-hero-subtitle{font-size:12px;font-weight:500;color:#c2cbd0;margin-top:5px;letter-spacing:0;}
+.orc-hero-badge{
+    position:absolute;right:108px;top:50%;transform:translateY(-50%);z-index:2;
+    padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.10);font-size:11px;font-weight:900;
+    letter-spacing:.08em;color:#d9e4e7;
+}
+.orc-hero .menu-btn{
+    right:16px!important;top:50%!important;z-index:3!important;
+    min-width:80px;height:40px;padding:0 12px!important;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    border-radius:11px!important;border:1px solid rgba(255,255,255,.14)!important;
+    background:#fff!important;color:var(--orc-dark)!important;
+    box-shadow:none!important;font-size:13px;font-weight:850;
+}
+.orc-hero .menu-btn:hover{background:#eef2f3!important;transform:translateY(-50%)!important;}
+
+/* Conteúdo com a mesma largura e respiração da primeira página */
+.main{
+    max-width:1280px!important;
+    padding:0 18px 30px!important;
+    gap:16px!important;
+    background:transparent!important;
+}
+.main > br{display:none!important;}
+.orc-section-card,
+.table-container{
+    background:var(--orc-surface)!important;
+    border:1px solid var(--orc-line)!important;
+    border-radius:18px!important;
+    box-shadow:var(--orc-shadow)!important;
+}
+.orc-section-title{
+    margin:0;
+    color:#415159;
+    font-size:12px;
+    line-height:1.2;
+    font-weight:900;
+    letter-spacing:.045em;
+    text-transform:uppercase;
+}
+
+/* Dados do orçamento */
+.dados-orcamento{
+    display:block!important;
+    padding:16px!important;
+    overflow:visible!important;
+}
+.dados-orcamento::before{display:none!important;}
+.orc-fields-grid{
+    display:grid;
+    grid-template-columns:190px minmax(240px,1fr) 210px;
+    gap:12px;
+    margin-top:12px;
+}
+.orc-field label{
+    display:block;
+    margin:0 0 5px;
+    color:var(--orc-muted);
+    font-size:11px;
+    font-weight:850;
+    text-transform:uppercase;
+    letter-spacing:.035em;
+}
+.dados-orcamento .orc-field input{
+    width:100%!important;min-width:0!important;height:40px!important;margin:0!important;
+    border:1px solid #ced8dc!important;border-radius:10px!important;
+    background:#fff!important;color:var(--orc-ink)!important;padding:9px 11px!important;
+    box-shadow:none!important;
+}
+.dados-orcamento .orc-field input:focus{
+    border-color:var(--orc-accent)!important;
+    box-shadow:0 0 0 3px rgba(22,123,135,.10)!important;
+}
+
+/* Descontos vira um card de seção em vez de um bloco verde isolado */
+#linhaPerc{
+    padding:14px 16px!important;
+    gap:8px!important;
+    background:#fff!important;
+    align-items:center!important;
+}
+#linhaPerc::before{display:none!important;}
+#linhaPerc > strong{
+    color:#415159!important;
+    min-height:38px!important;
+    margin-right:8px!important;
+    font-size:12px!important;
+    font-weight:900!important;
+    letter-spacing:.045em!important;
+    text-transform:uppercase!important;
+}
+.loja-controle{
+    min-height:38px!important;
+    padding:4px 6px!important;
+    border-radius:11px!important;
+    border:1px solid var(--orc-line)!important;
+    background:#f8fafb!important;
+    box-shadow:none!important;
+}
+.loja-nome-label{color:#314047!important;font-size:13px!important;}
+.loja-perc-input{
+    border:1px solid #ced8dc!important;border-radius:9px!important;background:#fff!important;
+    height:32px!important;color:var(--orc-ink)!important;
+}
+.btn-loja-delete{
+    background:var(--orc-dark)!important;color:#fff!important;border-radius:9px!important;
+    width:32px!important;height:32px!important;min-height:32px!important;box-shadow:none!important;
+}
+.btn-loja-delete:hover{background:#28343c!important;}
+
+/* Painel da tabela */
+.table-container{
+    padding:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scrollbar-gutter:stable;
+}
+.orc-table-head{
+    position:sticky;left:0;z-index:10;
+    min-width:100%;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:15px 16px 13px;
+    background:#fff;
+    border-bottom:1px solid var(--orc-line);
+}
+.orc-table-hint{margin-top:4px;color:var(--orc-muted);font-size:12px;}
+table{
+    border-radius:0!important;
+    box-shadow:none!important;
+    border:0!important;
+    background:#fff!important;
+}
+thead tr:first-child th{
+    background:var(--orc-dark)!important;
+    color:#fff!important;
+    border-bottom:1px solid #26333b!important;
+    font-size:12px!important;
+    letter-spacing:.02em;
+}
+thead tr:nth-child(2) th{
+    background:#eef3f4!important;
+    color:#405159!important;
+    border-bottom:1px solid var(--orc-line)!important;
+}
+thead th:first-child{
+    background:var(--orc-dark)!important;
+    color:#fff!important;
+    box-shadow:10px 0 18px -15px rgba(16,24,32,.75)!important;
+}
+tbody td:first-child{
+    box-shadow:10px 0 18px -15px rgba(16,24,32,.55)!important;
+}
+tbody tr:nth-child(even){background:#fafbfb!important;}
+tbody tr:hover{background:#f3f7f7!important;}
+tbody tr:hover td:first-child{background:#f3f7f7!important;}
+tfoot td{background:#f1f4f5!important;color:var(--orc-ink)!important;}
+tfoot td:first-child{
+    background:#f1f4f5!important;
+    box-shadow:10px 0 18px -15px rgba(16,24,32,.55)!important;
+}
+.menor,.desc-opcao.menor{
+    background:#def2e8!important;
+    color:#14583f!important;
+    box-shadow:inset 0 0 0 1px rgba(22,114,70,.15)!important;
+}
+.marca-input,.valor-input,.desc-input,.peca-input{
+    border:1px solid #ced8dc!important;
+    border-radius:9px!important;
+    background:#fff!important;
+    color:var(--orc-ink)!important;
+    box-shadow:none!important;
+}
+.marca-input:focus,.valor-input:focus,.desc-input:focus,.peca-input:focus{
+    border-color:var(--orc-accent)!important;
+    box-shadow:0 0 0 3px rgba(22,123,135,.08)!important;
+}
+.btn-remover-peca,.btn-remover-marca{
+    background:var(--orc-dark)!important;
+    border-radius:9px!important;
+    box-shadow:none!important;
+}
+.btn-add-marca{
+    background:var(--orc-accent)!important;
+    border-radius:9px!important;
+    box-shadow:none!important;
+}
+
+/* Barra de ações igual à Ficha/O.S. */
+.orc-actions{gap:8px!important;padding:2px 0 0!important;}
+.orc-btn{
+    min-height:40px!important;
+    padding:9px 14px!important;
+    border-radius:12px!important;
+    border:0!important;
+    font-weight:750!important;
+    letter-spacing:0!important;
+    box-shadow:0 1px 0 rgba(16,24,32,.06),0 0 0 1px var(--orc-line)!important;
+}
+.orc-btn:hover{transform:translateY(-1px)!important;}
+.orc-btn.primary{background:var(--orc-dark)!important;color:#fff!important;box-shadow:none!important;}
+.orc-btn.accent{background:var(--orc-accent)!important;color:#fff!important;box-shadow:none!important;}
+.orc-btn.neutral{background:#fff!important;color:var(--orc-ink)!important;}
+.orc-btn.primary:hover{background:#202a31!important;}
+.orc-btn.accent:hover{background:var(--orc-accent-2)!important;}
+.orc-btn.neutral:hover{background:#f0f3f4!important;}
+
+/* Lista de orçamentos salvos também conversa com a primeira página */
+.sidebar{
+    background:#fff!important;
+    border-left:1px solid var(--orc-line)!important;
+    box-shadow:-16px 0 40px rgba(16,24,32,.13)!important;
+}
+.sidebar-header{
+    background:var(--orc-dark)!important;
+    color:#fff!important;
+    box-shadow:none!important;
+    letter-spacing:.05em!important;
+    font-size:12px!important;
+}
+.sidebar-content{background:#f7f9fa!important;padding:14px!important;}
+.sidebar input{
+    border:1px solid #ced8dc!important;border-radius:10px!important;height:40px!important;
+    background:#fff!important;color:var(--orc-ink)!important;
+}
+.btn-nome{
+    background:#fff!important;color:#314047!important;border:1px solid var(--orc-line)!important;
+    border-radius:10px!important;box-shadow:none!important;
+}
+.btn-nome:hover{background:#eef3f4!important;}
+.btn-delete{background:#fff!important;color:#a13434!important;border:1px solid #ead9d9!important;box-shadow:none!important;}
+.btn-delete:hover{background:#fff5f5!important;}
+
+@media(max-width:900px){
+    body > header.orc-hero{width:calc(100% - 24px);margin:8px 12px 14px!important;padding-right:110px!important;}
+    .orc-hero-badge{display:none;}
+    .main{padding:0 12px 22px!important;}
+    .orc-fields-grid{grid-template-columns:1fr 1fr;}
+    .orc-field:nth-child(2){grid-column:1 / -1;grid-row:2;}
+}
+@media(max-width:560px){
+    body > header.orc-hero{min-height:76px;padding:15px 92px 15px 16px!important;border-radius:16px;}
+    .orc-hero-logo{font-size:23px;}
+    .orc-hero-subtitle{font-size:11px;}
+    .orc-hero .menu-btn{right:12px!important;min-width:42px;width:42px;padding:0!important;}
+    .orc-hero .menu-btn span{display:none;}
+    .orc-fields-grid{grid-template-columns:1fr;gap:10px;}
+    .orc-field:nth-child(2){grid-column:auto;grid-row:auto;}
+    #linhaPerc{align-items:stretch!important;}
+    #linhaPerc > strong{width:100%;margin-bottom:2px!important;}
+    .orc-table-hint{display:none;}
+    .orc-actions{display:grid!important;grid-template-columns:1fr 1fr;}
+    .orc-btn.primary{grid-column:1 / -1;order:-1;}
+}
+@media print{
+    body > header.orc-hero{
+        width:100%!important;max-width:none!important;min-height:0!important;margin:0 0 8px!important;
+        padding:0 0 7px!important;border-radius:0!important;background:#fff!important;color:#111!important;
+        border:0!important;border-bottom:2px solid #111!important;box-shadow:none!important;
+    }
+    body > header.orc-hero::after,.orc-hero-badge,.orc-hero .menu-btn{display:none!important;}
+    .orc-hero-logo{color:#111!important;font-size:24px!important;}
+    .orc-hero-subtitle{color:#555!important;}
+    .orc-table-head{display:none!important;}
+    thead tr:first-child th,thead th:first-child{background:#cde8e1!important;color:#17352d!important;}
+    thead tr:nth-child(2) th{background:#e6f2ef!important;color:#17352d!important;}
+}
+
+
+/* =========================================================
+   v44 - DESCONTOS RECOLHÍVEIS + HIERARQUIA MAIS PRÓXIMA DA FICHA/O.S.
+   ========================================================= */
+#linhaPerc{
+    display:block!important;
+    padding:0!important;
+    overflow:hidden!important;
+}
+.discounts-head{
+    min-height:54px;
+    padding:10px 12px 10px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    border-bottom:1px solid var(--orc-line);
+    background:#fff;
+}
+.discounts-title-wrap{display:flex;align-items:baseline;gap:9px;min-width:0;}
+.discounts-title-wrap strong{
+    color:#415159;font-size:12px;font-weight:900;letter-spacing:.045em;text-transform:uppercase;
+}
+.discounts-title-wrap span{color:var(--orc-muted);font-size:11px;font-weight:750;white-space:nowrap;}
+.discount-collapse{
+    width:34px!important;height:34px!important;min-height:34px!important;flex:0 0 34px;
+    display:inline-grid!important;place-items:center!important;padding:0!important;margin:0!important;
+    border:0!important;border-radius:10px!important;background:#f2f5f6!important;color:#415159!important;
+    box-shadow:none!important;font-size:17px!important;font-weight:900!important;line-height:1!important;
+}
+.discount-collapse:hover{background:#e7ecee!important;transform:none!important;}
+.discounts-content{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+    padding:12px 16px 14px;background:#fff;
+}
+#linhaPerc.discounts-collapsed .discounts-head{border-bottom:0;}
+#linhaPerc.discounts-collapsed .discounts-content{display:none!important;}
+#linhaPerc.discounts-collapsed{box-shadow:0 8px 24px rgba(16,24,32,.055)!important;}
+
+@media(max-width:560px){
+    .discounts-head{min-height:50px;padding:8px 10px 8px 13px;}
+    .discounts-title-wrap{align-items:flex-start;flex-direction:column;gap:0;}
+    .discounts-content{display:grid;grid-template-columns:1fr;padding:10px 12px 12px;}
+    .discounts-content .loja-controle{width:100%!important;}
+}
+
+
+
+/* =========================================================
+   FR MOTORS V4.4.1 · CORREÇÃO ISOLADA DA COLUNA PEÇAS
+   Mantém toda a V4.4; corrige apenas o sticky que atingia
+   também o primeiro subcabeçalho MARCA da primeira loja.
+   ========================================================= */
+@media screen {
+    /* Somente a célula PEÇAS da primeira linha do cabeçalho fica fixa. */
+    thead tr:first-child > th:first-child,
+    tbody > tr > td:first-child,
+    tfoot > tr > td:first-child {
+        position: sticky !important;
+        left: 0 !important;
+        background-clip: border-box !important;
+    }
+
+    thead tr:first-child > th:first-child {
+        z-index: 20 !important;
+        background: var(--orc-dark) !important;
+        color: #fff !important;
+    }
+
+    tbody > tr > td:first-child {
+        z-index: 12 !important;
+        background: #fff !important;
+    }
+
+    tbody tr:nth-child(even) > td:first-child {
+        background: #fafbfb !important;
+    }
+
+    tbody tr:hover > td:first-child {
+        background: #f3f7f7 !important;
+    }
+
+    tfoot > tr > td:first-child {
+        z-index: 15 !important;
+        background: #f1f4f5 !important;
+    }
+
+    /* Este era o elemento que também ficava sticky e causava a sobreposição. */
+    thead tr:nth-child(2) > th:first-child {
+        position: relative !important;
+        left: auto !important;
+        z-index: 1 !important;
+        box-shadow: none !important;
+    }
+
+    thead tr:first-child > th:not(:first-child) {
+        position: relative;
+        z-index: 1;
+    }
+}
+
+
+
+/* =========================================================
+   FR MOTORS V4.4.3 · AÇÕES + IMPRESSÃO
+   Mantém a interface da V4.4.2 e altera somente:
+   - barra inferior toda branca
+   - impressão compacta e focada na tabela
+   ========================================================= */
+@media screen {
+    .orc-actions .orc-btn,
+    .orc-actions .orc-btn.primary,
+    .orc-actions .orc-btn.accent,
+    .orc-actions .orc-btn.neutral {
+        background:#fff!important;
+        color:var(--orc-ink)!important;
+        border:1px solid var(--orc-line)!important;
+        box-shadow:0 1px 0 rgba(16,24,32,.04)!important;
+    }
+    .orc-actions .orc-btn:hover,
+    .orc-actions .orc-btn.primary:hover,
+    .orc-actions .orc-btn.accent:hover,
+    .orc-actions .orc-btn.neutral:hover {
+        background:#f0f3f4!important;
+        color:var(--orc-ink)!important;
+    }
+}
+@media screen and (max-width:560px){
+    .orc-btn.primary{grid-column:auto!important;order:initial!important;}
+}
+
+/* Também aplica durante o pequeno intervalo antes do diálogo de impressão. */
+body.printing .dados-orcamento,
+body.printing #linhaPerc,
+body.printing .orc-actions,
+body.printing .system-topbar,
+body.printing .sidebar,
+body.printing .orc-hero-badge,
+body.printing .orc-hero .menu-btn {
+    display:none!important;
+}
+body.printing .info-impressao{display:flex!important;}
+body.printing .main{gap:6px!important;}
+
+@media print {
+    @page { size:A4 landscape; margin:7mm; }
+
+    html,body{
+        width:auto!important;
+        min-width:0!important;
+        margin:0!important;
+        padding:0!important;
+        background:#fff!important;
+    }
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important;}
+
+    .system-topbar,
+    .login-screen,
+    .sidebar,
+    .menu-btn,
+    .orc-hero-badge,
+    .dados-orcamento,
+    #linhaPerc,
+    .orc-actions,
+    .botoes{
+        display:none!important;
+    }
+
+    body > header.orc-hero{
+        display:block!important;
+        width:100%!important;
+        max-width:none!important;
+        min-height:0!important;
+        margin:0 0 3mm!important;
+        padding:0 0 2.5mm!important;
+        border:0!important;
+        border-bottom:1.5px solid #172126!important;
+        border-radius:0!important;
+        background:#fff!important;
+        color:#172126!important;
+        box-shadow:none!important;
+        overflow:visible!important;
+    }
+    body > header.orc-hero::after{display:none!important;}
+    .orc-hero-copy{display:block!important;}
+    .orc-hero-logo{font-size:19px!important;line-height:1!important;color:#172126!important;letter-spacing:-1px!important;}
+    .orc-hero-subtitle{font-size:8.5px!important;line-height:1.15!important;color:#4f5e65!important;margin-top:1.5mm!important;}
+
+    .main{
+        display:block!important;
+        width:100%!important;
+        max-width:none!important;
+        margin:0!important;
+        padding:0!important;
+        background:#fff!important;
+    }
+
+    .info-impressao{
+        display:flex!important;
+        flex-wrap:wrap!important;
+        align-items:center!important;
+        gap:2mm 4mm!important;
+        width:100%!important;
+        min-height:0!important;
+        margin:0 0 3mm!important;
+        padding:2mm 2.5mm!important;
+        border:1px solid #cde8e1!important;
+        border-radius:2mm!important;
+        background:#eef7f4!important;
+        color:#111!important;
+        font-size:9px!important;
+        font-weight:800!important;
+        line-height:1.2!important;
+        white-space:normal!important;
+        box-shadow:none!important;
+    }
+
+    .table-container{
+        display:block!important;
+        position:static!important;
+        width:calc(100% / var(--print-scale, 1))!important;
+        max-width:none!important;
+        margin:0!important;
+        padding:0!important;
+        overflow:visible!important;
+        border:1px solid #cfd8dc!important;
+        border-radius:2mm!important;
+        box-shadow:none!important;
+        transform:scale(var(--print-scale, 1))!important;
+        transform-origin:top left!important;
+    }
+    .orc-table-head{
+        display:block!important;
+        position:static!important;
+        padding:2mm 2.5mm 1.8mm!important;
+        background:#fff!important;
+        border-bottom:1px solid #dbe2e5!important;
+    }
+    .orc-table-head .orc-section-title{font-size:8.5px!important;}
+    .orc-table-hint{display:none!important;}
+
+    table{
+        width:100%!important;
+        min-width:0!important;
+        max-width:none!important;
+        table-layout:auto!important;
+        border-collapse:separate!important;
+        border-spacing:0!important;
+        border-radius:0!important;
+        box-shadow:none!important;
+    }
+    thead th,
+    tbody td,
+    tfoot td{
+        font-size:8px!important;
+        line-height:1.15!important;
+        padding:2.2px 3.5px!important;
+    }
+    thead tr:first-child th,
+    thead th:first-child{background:#cde8e1!important;color:#17352d!important;}
+    thead tr:nth-child(2) th{background:#e6f2ef!important;color:#17352d!important;}
+    tfoot td{background:#f0f2f1!important;font-weight:800!important;}
+
+    thead tr:nth-child(2) th,
+    tbody td:not(:first-child),
+    tfoot td:not(:first-child){
+        width:auto!important;min-width:0!important;max-width:none!important;
+    }
+    th:first-child,td:first-child{
+        width:170px!important;
+        min-width:170px!important;
+        max-width:220px!important;
+        position:static!important;
+        left:auto!important;
+        box-shadow:none!important;
+    }
+    .subhead-valor,.valor-td,.total-valor{
+        width:155px!important;min-width:155px!important;max-width:190px!important;
+    }
+    .subhead-desc,.desc-td,.total-desc{
+        width:78px!important;min-width:78px!important;max-width:90px!important;
+    }
+
+    .marca-opcao{
+        display:grid!important;
+        grid-template-columns:minmax(72px,1fr) 66px!important;
+        gap:2px!important;
+        min-height:22px!important;
+        padding:1px 0!important;
+    }
+    .desc-opcao{
+        min-height:22px!important;
+        padding:1px 0!important;
+    }
+    .marca-opcao .btn-remover-marca,
+    .btn-add-marca,
+    .btn-remover-peca{display:none!important;}
+
+    input,textarea{
+        border:0!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        color:inherit!important;
+    }
+    .marca-input{
+        width:100%!important;min-width:0!important;max-width:none!important;
+        min-height:20px!important;height:auto!important;
+        padding:1px 2px!important;
+        font-size:7.5px!important;line-height:1.1!important;
+        overflow:visible!important;white-space:pre-wrap!important;
+    }
+    .valor-input,.desc-input{
+        width:66px!important;min-width:66px!important;max-width:66px!important;
+        min-height:20px!important;height:20px!important;
+        padding:1px 2px!important;font-size:7.5px!important;
+    }
+    .peca-cell{display:block!important;width:100%!important;overflow:visible!important;}
+    .peca-input{display:none!important;}
+    .peca-print-text{
+        display:block!important;width:100%!important;max-width:100%!important;
+        color:#111!important;font-size:8px!important;font-weight:500!important;
+        line-height:1.15!important;white-space:normal!important;
+        overflow:visible!important;overflow-wrap:anywhere!important;word-break:break-word!important;
+        padding:0!important;margin:0!important;
+    }
+    .total-box{font-size:8px!important;width:auto!important;min-width:0!important;max-width:none!important;}
+    .total-valor-wrap{grid-template-columns:1fr!important;display:block!important;}
+    .total-box-valor{grid-column:auto!important;justify-self:auto!important;text-align:right!important;}
+
+    tr,td,th{page-break-inside:avoid!important;break-inside:avoid!important;}
+}
+
+
+/* V4.4.7 · Tabela sem cabeçalho textual */
+.orc-table-head{display:none!important;}
+.table-container{
+    padding:0!important;
+    overflow:hidden auto;
+}
+.table-container table{
+    border-radius:18px 18px 0 0!important;
+    overflow:hidden!important;
+}
+.table-container thead tr:first-child th:first-child{
+    border-top-left-radius:18px!important;
+}
+.table-container thead tr:first-child th:last-child{
+    border-top-right-radius:18px!important;
+}
+@media print{
+    .orc-table-head{display:none!important;}
+}
+
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="login-brand">
+            <div class="login-brand-mark">FR</div>
+            <div><div style="font-size:20px;font-weight:900;color:#172126">FR Motors</div><div style="color:#68777f;font-size:13px">Acesso ao sistema da oficina</div></div>
+        </div>
+        <div class="login-fields">
+            <div><label>E-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="seuemail@frmotors.com"></div>
+            <div><label>Senha</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+            <button class="login-btn" id="loginBtn" type="button">Entrar</button>
+            <button class="login-btn secondary" id="magicLinkBtn" type="button">Receber link de acesso por e-mail</button>
+            <div id="loginMsg" class="login-msg"></div>
+        </div>
+    </div>
+</div>
+
+<div class="system-topbar">
+    <div class="system-topbar-inner">
+        <div class="system-brand">
+            <div class="system-brand-mark">FR</div>
+            <div class="system-brand-copy"><strong>FR Motors</strong><span>Gestão da oficina</span></div>
+        </div>
+        <nav class="system-nav" aria-label="Módulos FR Motors">
+            <a href="./">Ficha / O.S.</a>
+            <a class="active" href="./orcamentos.html" aria-current="page">Orçamentos</a>
+        </nav>
+        <div class="system-spacer"></div>
+        <span id="cloudStatusOrc" class="system-status cloud-loading">Conectando...</span>
+        <button id="logoutBtnOrc" class="system-logout" type="button">Sair</button>
+    </div>
+</div>
+
+<header class="orc-hero">
+    <div class="orc-hero-copy">
+        <div class="orc-hero-logo">FRMOTORS</div>
+        <div class="orc-hero-subtitle">Orçamentos e cotação de peças</div>
+    </div>
+    <div class="orc-hero-badge">ORÇAMENTOS</div>
+    <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Abrir orçamentos salvos">☰ <span>Salvos</span></button>
+</header>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">ORÇAMENTOS</div>
+    <div class="sidebar-content">
+        <input id="busca" placeholder="BUSCAR..." oninput="filtrarLista()">
+        <div id="lista"></div>
+    </div>
+</div>
+
+<div class="main">
+
+<section class="dados-orcamento orc-section-card">
+    <div class="orc-section-title">Dados do orçamento</div>
+    <div class="orc-fields-grid">
+        <div class="orc-field"><label for="data">Data</label><input id="data" type="date"></div>
+        <div class="orc-field"><label for="carro">Carro</label><input id="carro" placeholder="Veículo" autocomplete="on"></div>
+        <div class="orc-field"><label for="placa">Placa</label><input id="placa" placeholder="ABC1D23" autocomplete="on"></div>
+    </div>
+</section>
+<div id="infoImpressao" class="info-impressao"></div>
+
+<br>
+
+<section id="linhaPerc" class="orc-section-card"></section>
+
+<section class="table-container orc-table-card">
+<table>
+<thead></thead>
+<tbody id="corpo"></tbody>
+<tfoot><tr class="total"></tr></tfoot>
+</table>
+</section>
+
+<div class="botoes orc-actions">
+    <button class="orc-btn neutral" onclick="novoOrcamento()">+ Novo orçamento</button>
+    <button class="orc-btn neutral" onclick="addLinha()">+ Peça</button>
+    <button class="orc-btn neutral" onclick="addLoja()">+ Loja</button>
+    <button class="orc-btn neutral" onclick="salvar()">Salvar</button>
+    <button class="orc-btn neutral" onclick="imprimirPDF()">PDF</button>
+    <button class="orc-btn neutral" onclick="gerarImagem()">Imagem</button>
+</div>
+
+</div>
+
+<datalist id="marcasDatalist"></datalist>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+
+let lojas = [
+    { nome:"PARQUE", perc:15 },
+    { nome:"MEGA", perc:14.5 },
+    { nome:"LOPES", perc:10 }
+];
+
+const sidebar = document.getElementById("sidebar");
+const STORAGE_KEY = "orcamentos_fr_motors"; // legado local: usado apenas para migração para a nuvem
+const MARCAS_KEY = "orcamentos_fr_motors_marcas";
+const DISCOUNTS_COLLAPSE_KEY = "frmotors_orc_discounts_collapsed";
+const MIGRATION_PROMPT_KEY = "frmotors_orcamentos_cloud_migration_prompted_v42";
+const SUPABASE_URL = "https://rtdndffvbxhrhftqstwx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let orcamentosCache = [];
+let currentOrcamentoId = null;
+let currentUser = null;
+let cloudOrcamentosReady = true;
+let cloudOrcamentosError = '';
+
+function uuid(){
+    if(window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
+}
+
+function setCloudStatus(texto, ok=true){
+    const el = document.getElementById('cloudStatusOrc');
+    if(!el) return;
+    el.textContent = texto;
+    el.classList.toggle('cloud-loading', !ok);
+}
+
+function showAuth(){
+    const tela = document.getElementById('loginScreen');
+    if(tela) tela.style.display = currentUser ? 'none' : 'flex';
+    setCloudStatus(currentUser ? `Online · ${currentUser.email || 'usuário'}` : 'Desconectado', !!currentUser);
+}
+
+async function signInOrc(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const msg = document.getElementById('loginMsg');
+    msg.textContent = 'Entrando...';
+    const { data, error } = await db.auth.signInWithPassword({email,password});
+    if(error){ msg.textContent = error.message; return; }
+    currentUser = data.user; msg.textContent = ''; showAuth(); await carregarOrcamentosNuvem();
+}
+
+async function magicLinkOrc(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const msg = document.getElementById('loginMsg');
+    if(!email){ msg.textContent = 'Digite seu e-mail.'; return; }
+    msg.textContent = 'Enviando...';
+    const { error } = await db.auth.signInWithOtp({email, options:{emailRedirectTo:window.location.href.split('#')[0]}});
+    msg.textContent = error ? error.message : 'Link enviado. Confira seu e-mail.';
+}
+
+async function logoutOrc(){
+    await db.auth.signOut();
+    currentUser = null; currentOrcamentoId = null; orcamentosCache = [];
+    renderLista(); showAuth();
+}
+
+async function getSessionOrc(){
+    const { data, error } = await db.auth.getSession();
+    if(error) throw error;
+    currentUser = data.session?.user || null;
+    showAuth();
+    if(currentUser) await carregarOrcamentosNuvem();
+}
+
+function mapOrcamento(row){
+    return {
+        id: row.id, titulo: row.titulo || 'ORÇAMENTO', data: row.data || '',
+        carro: row.carro || '', placa: row.placa || '',
+        lojas: Array.isArray(row.lojas) ? row.lojas : [],
+        linhas: Array.isArray(row.linhas) ? row.linhas : [],
+        created_at: row.created_at, updated_at: row.updated_at
+    };
+}
+
+function carregarOrcamentosLocais(){
+    let locais = [];
+    try { locais = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ locais = []; }
+    if(!Array.isArray(locais)) locais = [];
+
+    let alterou = false;
+    locais = locais.map(item => {
+        if(!item || typeof item !== 'object') return null;
+        if(!item.id){ item.id = uuid(); alterou = true; }
+        return {
+            id:item.id,
+            titulo:item.titulo || 'ORÇAMENTO',
+            data:item.data || '',
+            carro:item.carro || '',
+            placa:item.placa || '',
+            lojas:Array.isArray(item.lojas) ? item.lojas : [],
+            linhas:Array.isArray(item.linhas) ? item.linhas : [],
+            created_at:item.created_at || item.updated_at || new Date().toISOString(),
+            updated_at:item.updated_at || item.created_at || new Date().toISOString()
+        };
+    }).filter(Boolean);
+
+    if(alterou){
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(locais)); } catch(e){ console.error(e); }
+    }
+    return locais.sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
+}
+
+function salvarCacheLocal(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orcamentosCache)); }
+    catch(e){ console.error('Falha ao salvar orçamento localmente:', e); }
+}
+
+function ativarModoLocal(erro=''){
+    cloudOrcamentosReady = false;
+    cloudOrcamentosError = String(erro || '');
+    orcamentosCache = carregarOrcamentosLocais();
+    renderLista(document.getElementById('busca')?.value || '');
+    importarMarcasDosOrcamentos();
+    renderDatalistMarcas();
+    setCloudStatus('Modo local · nuvem pendente', false);
+}
+
+async function carregarOrcamentosNuvem(){
+    if(!currentUser) return;
+    setCloudStatus('Sincronizando...', false);
+    const { data, error } = await db.from('orcamentos').select('*').order('updated_at',{ascending:false});
+    if(error){
+        console.error(error);
+        ativarModoLocal(error.message || error);
+        return;
+    }
+    cloudOrcamentosReady = true;
+    cloudOrcamentosError = '';
+    orcamentosCache = (data || []).map(mapOrcamento);
+    renderLista(document.getElementById('busca')?.value || '');
+    importarMarcasDosOrcamentos();
+    renderDatalistMarcas();
+    setCloudStatus(`Online · ${currentUser.email || 'usuário'}`, true);
+    await oferecerMigracaoLocal();
+}
+
+async function oferecerMigracaoLocal(){
+    if(!cloudOrcamentosReady || localStorage.getItem(MIGRATION_PROMPT_KEY) === '1' || !currentUser) return;
+    let locais = [];
+    try { locais = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){}
+    localStorage.setItem(MIGRATION_PROMPT_KEY, '1');
+    if(!Array.isArray(locais) || !locais.length) return;
+    if(!confirm(`Encontramos ${locais.length} orçamento(s) salvos somente neste navegador. Deseja enviá-los para a nuvem agora?`)) return;
+    setCloudStatus('Migrando orçamentos...', false);
+    let ok = 0, falhas = 0;
+    for(const item of locais){
+        const payload = {
+            id: uuid(), titulo:item.titulo || 'ORÇAMENTO', data:item.data || null,
+            carro:normalizarTexto(item.carro || '') || null, placa:normalizarTexto(item.placa || '') || null,
+            lojas:Array.isArray(item.lojas) ? item.lojas : [], linhas:Array.isArray(item.linhas) ? item.linhas : [],
+            updated_at:new Date().toISOString()
+        };
+        const { error } = await db.from('orcamentos').insert(payload);
+        if(error){ falhas++; console.error(error); } else ok++;
+    }
+    if(ok && !falhas) localStorage.removeItem(STORAGE_KEY);
+    await carregarOrcamentosNuvemSemMigracao();
+    alert(falhas ? `Migração concluída: ${ok} enviado(s), ${falhas} falha(s). Os dados locais foram preservados.` : `${ok} orçamento(s) migrado(s) para a nuvem.`);
+}
+
+async function carregarOrcamentosNuvemSemMigracao(){
+    const { data, error } = await db.from('orcamentos').select('*').order('updated_at',{ascending:false});
+    if(error){ console.error(error); return; }
+    orcamentosCache = (data || []).map(mapOrcamento);
+    renderLista(document.getElementById('busca')?.value || '');
+    importarMarcasDosOrcamentos();
+    renderDatalistMarcas();
+    setCloudStatus(`Online · ${currentUser?.email || 'usuário'}`, true);
+}
+
+function moeda(v){
+    return "R$ " + Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+function parseMoeda(valor){
+    if(valor === null || valor === undefined) return 0;
+
+    if(typeof valor === 'number'){
+        return Number.isFinite(valor) ? valor : 0;
+    }
+
+    const textoOriginal = String(valor).trim();
+    if(!textoOriginal) return 0;
+
+    const texto = textoOriginal.replace(/\s/g, '').replace(/^R\$/i, '');
+
+    if(texto.includes(',')){
+        const normalizado = texto.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+        const numero = Number(normalizado);
+        return Number.isFinite(numero) ? numero : 0;
+    }
+
+    const numeroDireto = Number(texto.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(numeroDireto) ? numeroDireto : 0;
+}
+
+function parsePercentual(valor){
+    const texto = String(valor ?? '').replace(',', '.').replace(/[^\d.-]/g, '');
+    const numero = Number(texto);
+    return Number.isFinite(numero) ? numero : 0;
+}
+
+function normalizarTexto(texto){
+    return String(texto ?? '').toLocaleUpperCase('pt-BR');
+}
+
+function normalizarValorSalvo(valor){
+    if(valor === null || valor === undefined || valor === '') return '';
+    const numero = parseMoeda(valor);
+    return numero ? moeda(numero) : '';
+}
+
+function prepararEdicaoMoeda(input){
+    const numero = parseMoeda(input.value);
+    input.value = numero ? numero.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 }) : '';
+}
+
+function formatarValorAoDigitar(input){
+    const digitos = String(input.value || '').replace(/\D/g, '');
+
+    if(!digitos){
+        input.value = '';
+        return;
+    }
+
+    const numero = Number(digitos) / 100;
+    input.value = numero.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+function formatarMoedaInput(input){
+    const numero = parseMoeda(input.value);
+    input.value = numero ? moeda(numero) : '';
+}
+
+function sincronizarTextoPeca(input){
+    if(!input || !input.classList?.contains('peca-input')) return;
+
+    const celula = input.closest('.peca-cell');
+    const textoPrint = celula?.querySelector('.peca-print-text');
+
+    if(textoPrint){
+        const texto = normalizarTexto(input.value || '').trim();
+        textoPrint.textContent = texto || '';
+        textoPrint.title = texto || '';
+    }
+}
+
+function ajustarCampoPeca(input){
+    if(!input || !input.classList?.contains('peca-input')) return;
+
+    input.style.minWidth = '0';
+    input.style.width = '100%';
+    input.style.maxWidth = '100%';
+    input.title = input.value || '';
+
+    if(input.tagName === 'TEXTAREA'){
+        input.style.height = 'auto';
+        const altura = Math.max(36, input.scrollHeight);
+        input.style.height = `${altura}px`;
+    }
+
+    sincronizarTextoPeca(input);
+}
+
+function ajustarCampoMarca(input){
+    if(!input || !input.classList?.contains('marca-input')) return;
+
+    const texto = normalizarTexto(input.value || '').trim();
+    input.title = texto;
+    input.style.minWidth = '0';
+    input.style.width = '100%';
+    input.style.maxWidth = '100%';
+    input.style.whiteSpace = 'pre-wrap';
+    input.style.overflowWrap = 'anywhere';
+    input.style.wordBreak = 'break-word';
+    input.style.overflow = 'hidden';
+
+    if(input.tagName === 'TEXTAREA'){
+        input.style.height = 'auto';
+        const altura = Math.max(36, input.scrollHeight);
+        input.style.height = `${altura}px`;
+    }
+
+    const tr = input.closest('tr');
+    if(tr){
+        requestAnimationFrame(() => sincronizarLinhasVisuais(tr));
+    }
+}
+
+function ajustarCamposPeca(){
+    document.querySelectorAll('.peca-input').forEach(ajustarCampoPeca);
+}
+
+function ajustarCamposMarca(){
+    document.querySelectorAll('.marca-input').forEach(ajustarCampoMarca);
+}
+
+
+
+function aplicarMaiusculas(input){
+    if(!input || input.classList?.contains('valor-input')) return;
+
+    const tipo = (input.getAttribute('type') || 'text').toLowerCase();
+    const podeConverter = input.matches('textarea') || ['text', 'search', 'email', 'tel', 'url', ''].includes(tipo);
+    if(!podeConverter) return;
+
+    const inicio = input.selectionStart;
+    const fim = input.selectionEnd;
+    const valor = input.value;
+    const novoValor = normalizarTexto(valor);
+
+    if(valor !== novoValor){
+        input.value = novoValor;
+        if(typeof inicio === 'number' && typeof fim === 'number'){
+            input.setSelectionRange(inicio, fim);
+        }
+    }
+
+    ajustarCampoPeca(input);
+    ajustarCampoMarca(input);
+}
+
+document.addEventListener('input', (event) => {
+    aplicarMaiusculas(event.target);
+});
+
+document.addEventListener('paste', (event) => {
+    setTimeout(() => aplicarMaiusculas(event.target), 0);
+});
+
+document.addEventListener('blur', (event) => {
+    if(event.target?.classList?.contains('marca-input')){
+        ajustarCampoMarca(event.target);
+        registrarMarcasDigitadas([event.target.value]);
+    }
+}, true);
+
+function toggleMenu(){ sidebar.classList.toggle("show"); }
+
+document.addEventListener('click', (event) => {
+    const clicouNoBotaoMenu = event.target.closest('.menu-btn');
+    const clicouNaSidebar = event.target.closest('#sidebar');
+
+    if(!clicouNaSidebar && !clicouNoBotaoMenu){
+        sidebar.classList.remove('show');
+    }
+});
+
+function renderTabela(linhas = []){
+    const thead = document.querySelector("thead");
+    const tfoot = document.querySelector("tfoot tr");
+
+    let h1 = `<tr><th rowspan="2" class="peca-divider">PEÇAS</th>`;
+    let h2 = `<tr>`;
+
+    lojas.forEach((l,i)=>{
+        const dividerClass = i < lojas.length - 1 ? 'loja-divider' : '';
+        const valorClasses = ['subhead-valor'];
+        const descClasses = ['subhead-desc'];
+
+        if(dividerClass) descClasses.push(dividerClass);
+
+        h1 += `<th colspan="2" class="${dividerClass}"><div class="loja-header-name">${escapeHtml(l.nome)}</div></th>`;
+        h2 += `<th class="${valorClasses.join(' ')}"><div class="valor-head-grid"><span></span><span>MARCA</span><span>VALOR</span></div></th><th class="${descClasses.join(' ')}">DESCONTO</th>`;
+    });
+
+    h1 += `</tr>`;
+    h2 += `</tr>`;
+
+    thead.innerHTML = h1 + h2;
+
+    let footer = `<td class="peca-divider">TOTAL</td>`;
+    lojas.forEach((_,i)=>{
+        const dividerClass = i < lojas.length - 1 ? 'loja-divider' : '';
+        footer += `
+            <td class="total-valor">
+                <div class="total-valor-wrap">
+                    <span id="tv${i}" class="total-box total-box-valor"></span>
+                </div>
+            </td>
+            <td class="total-desc ${dividerClass}">
+                <div class="total-desc-wrap">
+                    <span id="td${i}" class="total-box total-box-desc"></span>
+                </div>
+            </td>`;
+    });
+    tfoot.innerHTML = footer;
+
+    document.getElementById("corpo").innerHTML = "";
+
+    if(linhas.length){
+        linhas.forEach(linha => addLinha(linha));
+    } else {
+        addLinha();
+    }
+
+    calcular();
+}
+
+function getDescontosRecolhidos(){
+    try { return localStorage.getItem(DISCOUNTS_COLLAPSE_KEY) === '1'; }
+    catch(e){ return false; }
+}
+
+function setDescontosRecolhidos(recolhido){
+    const el = document.getElementById('linhaPerc');
+    if(!el) return;
+    el.classList.toggle('discounts-collapsed', !!recolhido);
+    const btn = el.querySelector('.discount-collapse');
+    if(btn){
+        btn.textContent = recolhido ? '⌄' : '⌃';
+        btn.title = recolhido ? 'Expandir descontos' : 'Recolher descontos';
+        btn.setAttribute('aria-label', btn.title);
+        btn.setAttribute('aria-expanded', recolhido ? 'false' : 'true');
+    }
+    try { localStorage.setItem(DISCOUNTS_COLLAPSE_KEY, recolhido ? '1' : '0'); } catch(e){}
+}
+
+function renderPerc(){
+    const div = document.getElementById("linhaPerc");
+    div.innerHTML = `
+        <div class="discounts-head">
+            <div class="discounts-title-wrap">
+                <strong>DESCONTOS (%)</strong>
+                <span>${lojas.length} ${lojas.length === 1 ? 'loja' : 'lojas'}</span>
+            </div>
+            <button type="button" class="discount-collapse" aria-label="Recolher descontos" aria-expanded="true">⌃</button>
+        </div>
+        <div class="discounts-content"></div>
+    `;
+
+    const content = div.querySelector('.discounts-content');
+    const collapseBtn = div.querySelector('.discount-collapse');
+    collapseBtn.onclick = () => setDescontosRecolhidos(!div.classList.contains('discounts-collapsed'));
+
+    lojas.forEach((l,i)=>{
+        const grupo = document.createElement('span');
+        grupo.className = 'loja-controle';
+
+        const nomeLabel = document.createElement('span');
+        nomeLabel.className = 'loja-nome-label';
+        nomeLabel.textContent = normalizarTexto(l.nome || `LOJA ${i + 1}`);
+        nomeLabel.title = normalizarTexto(l.nome || `LOJA ${i + 1}`);
+
+        const input = document.createElement("input");
+        input.className = 'loja-perc-input';
+        input.value = String(l.perc).replace('.', ',');
+        input.inputMode = "decimal";
+        input.title = 'Desconto %';
+
+        input.oninput = ()=>{
+            lojas[i].perc = parsePercentual(input.value);
+            document.querySelectorAll('#corpo tr').forEach(tr => {
+                recalcularLinha(tr);
+            });
+            calcular();
+        };
+
+        const percentual = document.createElement('span');
+        percentual.textContent = '%';
+        percentual.style.fontWeight = '700';
+
+        const excluir = document.createElement('button');
+        excluir.type = 'button';
+        excluir.className = 'btn-loja-delete';
+        excluir.textContent = '🗑';
+        excluir.title = 'Excluir loja';
+        excluir.onclick = () => excluirLoja(i);
+
+        grupo.appendChild(excluir);
+        grupo.appendChild(nomeLabel);
+        grupo.appendChild(input);
+        grupo.appendChild(percentual);
+        content.appendChild(grupo);
+    });
+
+    setDescontosRecolhidos(getDescontosRecolhidos());
+}
+
+function atualizarNomeLoja(indice, valor){
+    if(!lojas[indice]) return;
+
+    const novoNome = normalizarTexto(valor || '').trim() || `LOJA ${indice + 1}`;
+    if(lojas[indice].nome === novoNome) return;
+
+    const linhasAtuais = capturarLinhas(true, lojas.length);
+    lojas[indice].nome = novoNome;
+    renderTabela(linhasAtuais);
+    renderPerc();
+}
+
+function addLoja(){
+    const nomeDigitado = prompt("Nome da loja:");
+    if(!nomeDigitado) return;
+
+    const linhasAtuais = capturarLinhas(true, lojas.length);
+    const perc = parsePercentual(prompt("Desconto %:", "0") || 0);
+    const nome = normalizarTexto(nomeDigitado.trim());
+
+    lojas.push({ nome, perc });
+
+    const linhasAtualizadas = linhasAtuais.map(linha => ({
+        ...linha,
+        valores: [...(linha.valores || []), ""],
+        marcas: [...(linha.marcas || []), []],
+        opcoes: [...normalizarOpcoesPorLoja(linha, lojas.length - 1), [{ marca:'', valor:'' }]]
+    }));
+
+    renderTabela(linhasAtualizadas);
+    renderPerc();
+}
+
+function editarLoja(indice){
+    atualizarNomeLoja(indice, lojas[indice]?.nome || `LOJA ${indice + 1}`);
+}
+
+function excluirLoja(indice){
+    if(!lojas[indice]) return;
+
+    if(lojas.length <= 1){
+        alert('É necessário manter pelo menos uma loja.');
+        return;
+    }
+
+    const nome = lojas[indice].nome;
+    if(!confirm(`Excluir a loja ${nome}? Os valores e marcas dessa coluna também serão removidos.`)) return;
+
+    const linhasAtualizadas = capturarLinhas(true, lojas.length).map(linha => ({
+        ...linha,
+        valores: (linha.valores || []).filter((_, i) => i !== indice),
+        marcas: (linha.marcas || []).filter((_, i) => i !== indice),
+        opcoes: (linha.opcoes || []).filter((_, i) => i !== indice)
+    }));
+
+    lojas.splice(indice, 1);
+    renderTabela(linhasAtualizadas);
+    renderPerc();
+}
+
+function normalizarListaMarcas(valor){
+    if(Array.isArray(valor)){
+        const lista = valor.flatMap(item => normalizarListaMarcas(item)).filter(Boolean);
+        return lista.length ? lista : [''];
+    }
+
+    if(valor && typeof valor === 'object'){
+        return normalizarListaMarcas(valor.marca || '');
+    }
+
+    const texto = normalizarTexto(valor || '').trim();
+    if(!texto) return [''];
+
+    const lista = texto
+        .split(/[,;\n]+/)
+        .map(item => normalizarTexto(item.trim()))
+        .filter(Boolean);
+
+    return lista.length ? lista : [''];
+}
+
+function normalizarOpcoesLoja(valor, valorAntigo = ''){
+    let opcoes = [];
+
+    if(Array.isArray(valor)){
+        valor.forEach((item, idx) => {
+            if(item && typeof item === 'object' && !Array.isArray(item)){
+                opcoes.push({
+                    marca: normalizarTexto(item.marca || '').trim(),
+                    valor: normalizarValorSalvo(item.valor || item.preco || item.valorSemDesconto || '')
+                });
+            } else {
+                const marcas = normalizarListaMarcas(item);
+                marcas.forEach((marca, marcaIdx) => {
+                    opcoes.push({
+                        marca,
+                        valor: idx === 0 && marcaIdx === 0 ? normalizarValorSalvo(valorAntigo) : ''
+                    });
+                });
+            }
+        });
+    } else if(valor && typeof valor === 'object'){
+        opcoes.push({
+            marca: normalizarTexto(valor.marca || '').trim(),
+            valor: normalizarValorSalvo(valor.valor || valor.preco || valor.valorSemDesconto || valorAntigo || '')
+        });
+    } else {
+        const marcas = normalizarListaMarcas(valor || '');
+        marcas.forEach((marca, idx) => {
+            opcoes.push({
+                marca,
+                valor: idx === 0 ? normalizarValorSalvo(valorAntigo) : ''
+            });
+        });
+    }
+
+    opcoes = opcoes
+        .map(opcao => ({
+            marca: normalizarTexto(opcao.marca || '').trim(),
+            valor: normalizarValorSalvo(opcao.valor || '')
+        }))
+        .filter((opcao, idx) => idx === 0 || opcao.marca || opcao.valor);
+
+    return opcoes.length ? opcoes : [{ marca:'', valor:'' }];
+}
+
+function normalizarOpcoesPorLoja(dados = {}, quantidade = lojas.length){
+    return Array.from({ length: quantidade }, (_, i) => {
+        if(dados.opcoes && Array.isArray(dados.opcoes) && dados.opcoes[i] !== undefined){
+            return normalizarOpcoesLoja(dados.opcoes[i]);
+        }
+
+        return normalizarOpcoesLoja(dados.marcas?.[i] || '', dados.valores?.[i] || '');
+    });
+}
+
+function normalizarMarcasPorLoja(marcas = [], quantidade = lojas.length){
+    return Array.from({ length: quantidade }, (_, i) => normalizarListaMarcas(marcas?.[i] || ''));
+}
+
+function criarOpcaoValorHtml(lojaIndex, opcaoIndex, opcao = {}){
+    const marca = normalizarTexto(opcao.marca || '').trim();
+    const valor = normalizarValorSalvo(opcao.valor || '');
+
+    return `
+        <div class="marca-opcao" data-loja="${lojaIndex}" data-opcao="${opcaoIndex}">
+            <button type="button" class="btn-remover-marca" onclick="removerMarcaCampo(this)" title="Remover marca">🗑</button>
+            <textarea class="marca-input" data-loja="${lojaIndex}" data-opcao="${opcaoIndex}" rows="1" spellcheck="false" placeholder="MARCA" oninput="ajustarCampoMarca(this)" onblur="ajustarCampoMarca(this)">${escapeHtml(marca)}</textarea>
+            <input type="text" inputmode="decimal" class="valor-input" data-loja="${lojaIndex}" data-opcao="${opcaoIndex}" value="${escapeHtml(valor)}" placeholder="R$ 0,00" oninput="formatarValorAoDigitar(this); calc(this)" onfocus="prepararEdicaoMoeda(this)" onblur="formatarMoedaInput(this); calc(this)">
+        </div>
+    `;
+}
+
+function criarOpcaoDescontoHtml(lojaIndex, opcaoIndex){
+    return `
+        <div class="desc-opcao" data-loja="${lojaIndex}" data-opcao="${opcaoIndex}">
+            <input class="desc-input" data-loja="${lojaIndex}" data-opcao="${opcaoIndex}" readonly>
+        </div>
+    `;
+}
+
+function criarOpcaoValorPlaceholderHtml(indiceVisual){
+    return `
+        <div class="marca-opcao marca-opcao-placeholder" data-visual-index="${indiceVisual}" aria-hidden="true">
+            <div class="placeholder-delete"></div>
+            <div class="placeholder-box"></div>
+            <div class="placeholder-box"></div>
+        </div>
+    `;
+}
+
+function criarOpcaoDescontoPlaceholderHtml(indiceVisual){
+    return `
+        <div class="desc-opcao desc-opcao-placeholder" data-visual-index="${indiceVisual}" aria-hidden="true">
+            <div class="placeholder-box"></div>
+        </div>
+    `;
+}
+
+function sincronizarLinhasVisuais(tr){
+    if(!tr) return;
+
+    tr.querySelectorAll('.marca-opcao-placeholder, .desc-opcao-placeholder').forEach(el => el.remove());
+    tr.querySelectorAll('.marca-opcao[data-loja], .desc-opcao[data-loja]').forEach(el => {
+        el.style.height = '';
+        el.style.minHeight = '';
+    });
+
+    const quantidades = lojas.map((_, i) => tr.querySelectorAll(`.marca-opcao[data-loja="${i}"]`).length || 0);
+    const maxOpcoes = Math.max(1, ...quantidades);
+
+    lojas.forEach((_, i) => {
+        const opcoesContainer = tr.querySelector(`.opcoes-container[data-loja="${i}"]`);
+        const descontosContainer = tr.querySelector(`.descontos-container[data-loja="${i}"]`);
+        if(!opcoesContainer || !descontosContainer) return;
+
+        for(let idx = quantidades[i]; idx < maxOpcoes; idx++){
+            opcoesContainer.insertAdjacentHTML('beforeend', criarOpcaoValorPlaceholderHtml(idx));
+            descontosContainer.insertAdjacentHTML('beforeend', criarOpcaoDescontoPlaceholderHtml(idx));
+        }
+    });
+
+    for(let idx = 0; idx < maxOpcoes; idx++){
+        const elementos = [];
+
+        lojas.forEach((_, i) => {
+            const marcaReal = tr.querySelector(`.marca-opcao[data-loja="${i}"][data-opcao="${idx}"]`);
+            const descontoReal = tr.querySelector(`.desc-opcao[data-loja="${i}"][data-opcao="${idx}"]`);
+            const marcaPlaceholder = tr.querySelector(`.opcoes-container[data-loja="${i}"] .marca-opcao-placeholder[data-visual-index="${idx}"]`);
+            const descontoPlaceholder = tr.querySelector(`.descontos-container[data-loja="${i}"] .desc-opcao-placeholder[data-visual-index="${idx}"]`);
+
+            if(marcaReal) elementos.push(marcaReal);
+            if(descontoReal) elementos.push(descontoReal);
+            if(marcaPlaceholder) elementos.push(marcaPlaceholder);
+            if(descontoPlaceholder) elementos.push(descontoPlaceholder);
+        });
+
+        const reais = elementos.filter(el => !el.classList.contains('marca-opcao-placeholder') && !el.classList.contains('desc-opcao-placeholder'));
+        const altura = Math.max(42, ...reais.map(el => Math.ceil(el.getBoundingClientRect().height || 0)));
+
+        elementos.forEach(el => {
+            el.style.height = `${altura}px`;
+            el.style.minHeight = `${altura}px`;
+        });
+    }
+}
+
+function atualizarIndicesOpcoes(tr, lojaIndex){
+    const opcoes = [...tr.querySelectorAll(`.marca-opcao[data-loja="${lojaIndex}"]`)];
+    const descontos = [...tr.querySelectorAll(`.desc-opcao[data-loja="${lojaIndex}"]`)];
+
+    opcoes.forEach((opcao, idx) => {
+        opcao.dataset.opcao = String(idx);
+        opcao.querySelectorAll('[data-opcao]').forEach(el => el.dataset.opcao = String(idx));
+    });
+
+    descontos.forEach((desconto, idx) => {
+        desconto.dataset.opcao = String(idx);
+        desconto.querySelectorAll('[data-opcao]').forEach(el => el.dataset.opcao = String(idx));
+    });
+}
+
+function addMarcaCampo(botao, opcao = { marca:'', valor:'' }){
+    const bloco = botao.closest('.valor-bloco');
+    const tr = botao.closest('tr');
+    const container = bloco.querySelector('.opcoes-container');
+    const lojaIndex = Number(container.dataset.loja);
+    const descContainer = tr.querySelector(`.descontos-container[data-loja="${lojaIndex}"]`);
+    const opcaoIndex = container.querySelectorAll('.marca-opcao').length;
+
+    container.insertAdjacentHTML('beforeend', criarOpcaoValorHtml(lojaIndex, opcaoIndex, opcao));
+    descContainer.insertAdjacentHTML('beforeend', criarOpcaoDescontoHtml(lojaIndex, opcaoIndex));
+    atualizarIndicesOpcoes(tr, lojaIndex);
+    recalcularLinha(tr);
+    calcular();
+
+    const input = container.querySelector('.marca-opcao:last-child .marca-input');
+    if(input){
+        ajustarCampoMarca(input);
+        input.focus();
+    }
+}
+
+function removerMarcaCampo(botao){
+    const tr = botao.closest('tr');
+    const opcao = botao.closest('.marca-opcao');
+    const lojaIndex = Number(opcao.dataset.loja);
+    const opcaoIndex = Number(opcao.dataset.opcao);
+    const container = opcao.parentElement;
+    const linhas = [...container.querySelectorAll('.marca-opcao')];
+    const desconto = tr.querySelector(`.desc-opcao[data-loja="${lojaIndex}"][data-opcao="${opcaoIndex}"]`);
+
+    if(linhas.length <= 1){
+        opcao.querySelectorAll('input').forEach(input => input.value = '');
+        if(desconto){
+            desconto.querySelectorAll('input').forEach(input => input.value = '');
+            desconto.classList.remove('menor');
+        }
+        recalcularLinha(tr);
+        calcular();
+        return;
+    }
+
+    opcao.remove();
+    if(desconto) desconto.remove();
+    atualizarIndicesOpcoes(tr, lojaIndex);
+    ajustarCamposPeca();
+    recalcularLinha(tr);
+    calcular();
+}
+
+function addLinha(dados = {}){
+    const tr = document.createElement("tr");
+    const opcoesPorLoja = normalizarOpcoesPorLoja(dados, lojas.length);
+    const pecaTexto = normalizarTexto(dados.peca || "");
+    let html = `<td class="peca-divider peca-td"><div class="peca-cell"><button type="button" class="btn-remover-peca" onclick="removerLinha(this)" title="Excluir peça">🗑</button><textarea class="peca-input" rows="1" oninput="ajustarCampoPeca(this)" onblur="ajustarCampoPeca(this)" title="${escapeHtml(pecaTexto)}">${escapeHtml(pecaTexto)}</textarea><div class="peca-print-text">${escapeHtml(pecaTexto)}</div></div></td>`;
+
+    lojas.forEach((_,i)=>{
+        const dividerClass = i < lojas.length - 1 ? 'loja-divider' : '';
+        const opcoes = opcoesPorLoja[i] && opcoesPorLoja[i].length ? opcoesPorLoja[i] : [{ marca:'', valor:'' }];
+        const opcoesHtml = opcoes.map((opcao, idx) => criarOpcaoValorHtml(i, idx, opcao)).join('');
+        const descontosHtml = opcoes.map((_, idx) => criarOpcaoDescontoHtml(i, idx)).join('');
+
+        html += `
+            <td class="valor-td">
+                <div class="valor-bloco" data-loja="${i}">
+                    <div class="opcoes-container" data-loja="${i}">
+                        ${opcoesHtml}
+                    </div>
+                    <button type="button" class="btn-add-marca" onclick="addMarcaCampo(this)">+ Marca</button>
+                </div>
+            </td>
+            <td class="desc-td ${dividerClass}">
+                <div class="descontos-container" data-loja="${i}">
+                    ${descontosHtml}
+                </div>
+            </td>
+        `;
+    });
+
+    tr.innerHTML = html;
+    document.getElementById("corpo").appendChild(tr);
+
+    ajustarCamposPeca();
+    ajustarCamposMarca();
+    recalcularLinha(tr);
+    calcular();
+}
+
+function removerLinha(btn){
+    btn.closest("tr").remove();
+    calcular();
+}
+
+function calc(el){
+    const tr = el.closest("tr");
+    recalcularLinha(tr);
+    calcular();
+}
+
+function recalcularLinha(tr){
+    lojas.forEach((l,i)=>{
+        const valores = [...tr.querySelectorAll(`.valor-input[data-loja="${i}"]`)];
+
+        valores.forEach((valor, idx) => {
+            const final = tr.querySelector(`.desc-input[data-loja="${i}"][data-opcao="${idx}"]`);
+            const valorNumero = parseMoeda(valor?.value);
+
+            if(valorNumero && final){
+                final.value = moeda(valorNumero * (1 - l.perc/100));
+            } else if(final) {
+                final.value = "";
+            }
+        });
+    });
+
+    sincronizarLinhasVisuais(tr);
+    destacarMenor(tr);
+}
+
+function destacarMenor(tr){
+    const valores = [];
+
+    tr.querySelectorAll('.desc-opcao').forEach(el => el.classList.remove('menor'));
+
+    lojas.forEach((_,i)=>{
+        tr.querySelectorAll(`.desc-input[data-loja="${i}"]`).forEach(desc => {
+            if(desc.value){
+                valores.push({
+                    valor: parseMoeda(desc.value),
+                    el: desc.closest('.desc-opcao') || desc.parentElement
+                });
+            }
+        });
+    });
+
+    if(!valores.length) return;
+
+    const min = Math.min(...valores.map(v=>v.valor));
+    valores.forEach(v=>{
+        if(v.valor === min){
+            v.el.classList.add("menor");
+        }
+    });
+}
+
+function calcular(){
+    let totalValor = lojas.map(()=>0);
+    let totalFinal = lojas.map(()=>0);
+
+    document.querySelectorAll("#corpo tr").forEach(tr=>{
+        lojas.forEach((_,i)=>{
+            tr.querySelectorAll(`.valor-input[data-loja="${i}"]`).forEach(valorInput => {
+                totalValor[i] += parseMoeda(valorInput?.value);
+            });
+
+            tr.querySelectorAll(`.desc-input[data-loja="${i}"]`).forEach(descInput => {
+                totalFinal[i] += parseMoeda(descInput?.value);
+            });
+        });
+    });
+
+    totalValor.forEach((t,i)=>{
+        const tv = document.getElementById("tv"+i);
+        const td = document.getElementById("td"+i);
+        if(tv) tv.innerText = moeda(t);
+        if(td) td.innerText = moeda(totalFinal[i]);
+    });
+}
+
+function toggleDescontos(){
+    const el = document.getElementById("linhaPerc");
+    if(!el) return;
+    setDescontosRecolhidos(!el.classList.contains('discounts-collapsed'));
+}
+
+function capturarLinhas(preservarVazias = false, quantidadeLojas = lojas.length){
+    const linhas = [...document.querySelectorAll('#corpo tr')].map(tr => {
+        const opcoes = Array.from({ length: quantidadeLojas }, (_, i) => {
+            const lista = [...tr.querySelectorAll(`.marca-opcao[data-loja="${i}"]`)].map(opcao => {
+                const marca = normalizarTexto(opcao.querySelector('.marca-input')?.value || '').trim();
+                const valor = normalizarValorSalvo(opcao.querySelector('.valor-input')?.value || '');
+                return { marca, valor };
+            });
+
+            const filtrada = lista.filter(item => item.marca || item.valor);
+            return preservarVazias ? (lista.length ? lista : [{ marca:'', valor:'' }]) : filtrada;
+        });
+
+        return {
+            peca: normalizarTexto(tr.querySelector('.peca-input')?.value || "").trim(),
+            valores: opcoes.map(lista => normalizarValorSalvo(lista.find(item => item.valor)?.valor || '')),
+            marcas: opcoes.map(lista => lista.map(item => item.marca).filter(Boolean)),
+            opcoes
+        };
+    });
+
+    return preservarVazias
+        ? linhas
+        : linhas.filter(item =>
+            item.peca ||
+            item.opcoes.some(lista => lista.some(opcao => opcao.marca || opcao.valor))
+        );
+}
+
+function dataHojeISO(){
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+}
+
+function preencherDataPadrao(){
+    const campoData = document.getElementById('data');
+    if(campoData && !campoData.value){
+        campoData.value = dataHojeISO();
+    }
+}
+
+function formatarDataBR(dataISO){
+    if(!dataISO) return '';
+    const partes = String(dataISO).split('-');
+    if(partes.length !== 3) return dataISO;
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function gerarLinhaInformacoes(separador = ' | '){
+    const data = formatarDataBR(document.getElementById('data').value);
+    const carro = normalizarTexto(document.getElementById('carro').value.trim());
+    const placa = normalizarTexto(document.getElementById('placa').value.trim());
+
+    const partes = [];
+    if(data) partes.push(`DATA: ${data}`);
+    if(carro) partes.push(`CARRO: ${carro}`);
+    if(placa) partes.push(`PLACA: ${placa}`);
+
+    return partes.join(separador);
+}
+
+function atualizarInfoImpressao(){
+    const info = document.getElementById('infoImpressao');
+    if(info){
+        const dados = gerarLinhaInformacoes(' | ');
+        const descontos = lojas
+            .map(loja => `${normalizarTexto(loja.nome || '')}: ${String(loja.perc ?? 0).replace('.', ',')}%`)
+            .join(' · ');
+        const partes = [];
+        if(dados) partes.push(dados);
+        if(descontos) partes.push(`DESCONTOS: ${descontos}`);
+        info.textContent = partes.join(' | ') || 'ORÇAMENTOS FR MOTORS';
+    }
+}
+
+function gerarTituloOrcamento(){
+    const data = formatarDataBR(document.getElementById('data').value);
+    const carro = normalizarTexto(document.getElementById('carro').value.trim());
+    const placa = normalizarTexto(document.getElementById('placa').value.trim());
+    const partes = [carro, placa, data].filter(Boolean);
+    return partes.length ? partes.join(' - ') : `ORÇAMENTO ${new Date().toLocaleString('pt-BR')}`;
+}
+
+async function salvar(){
+    if(!currentUser){ showAuth(); return; }
+    preencherDataPadrao();
+    const linhas = capturarLinhas();
+
+    if(!linhas.length){
+        alert('Preencha pelo menos uma peça antes de salvar.');
+        return;
+    }
+
+    registrarMarcasDigitadas(coletarMarcasDoFormulario());
+    setCloudStatus('Salvando...', false);
+
+    const id = currentOrcamentoId || uuid();
+    const payload = {
+        id,
+        titulo: gerarTituloOrcamento(),
+        data: document.getElementById('data').value || null,
+        carro: normalizarTexto(document.getElementById('carro').value) || null,
+        placa: normalizarTexto(document.getElementById('placa').value) || null,
+        lojas: lojas.map(loja => ({ nome: normalizarTexto(loja.nome), perc: loja.perc })),
+        linhas,
+        updated_at: new Date().toISOString()
+    };
+
+    if(!cloudOrcamentosReady){
+        currentOrcamentoId = id;
+        const localItem = {
+            ...payload,
+            data:payload.data || '',
+            carro:payload.carro || '',
+            placa:payload.placa || '',
+            created_at:orcamentosCache.find(item => String(item.id) === String(id))?.created_at || new Date().toISOString()
+        };
+        const idx = orcamentosCache.findIndex(item => String(item.id) === String(id));
+        if(idx >= 0) orcamentosCache[idx] = localItem; else orcamentosCache.unshift(localItem);
+        orcamentosCache.sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
+        salvarCacheLocal();
+        renderLista(document.getElementById('busca').value);
+        sidebar.classList.add('show');
+        setCloudStatus('Salvo localmente · nuvem pendente', false);
+        return;
+    }
+
+    const { data, error } = await db.from('orcamentos').upsert(payload,{onConflict:'id'}).select().single();
+    if(error){
+        console.error(error);
+        ativarModoLocal(error.message || error);
+        const localItem = {
+            ...payload,
+            data:payload.data || '',
+            carro:payload.carro || '',
+            placa:payload.placa || '',
+            created_at:new Date().toISOString()
+        };
+        currentOrcamentoId = id;
+        const idxLocal = orcamentosCache.findIndex(item => String(item.id) === String(id));
+        if(idxLocal >= 0) orcamentosCache[idxLocal] = localItem; else orcamentosCache.unshift(localItem);
+        salvarCacheLocal();
+        renderLista(document.getElementById('busca').value);
+        setCloudStatus('Salvo localmente · nuvem pendente', false);
+        return;
+    }
+
+    currentOrcamentoId = data.id;
+    const mapped = mapOrcamento(data);
+    const idx = orcamentosCache.findIndex(item => item.id === mapped.id);
+    if(idx >= 0) orcamentosCache[idx] = mapped; else orcamentosCache.unshift(mapped);
+    orcamentosCache.sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
+    renderLista(document.getElementById('busca').value);
+    sidebar.classList.add('show');
+    setCloudStatus(`Online · ${currentUser.email || 'usuário'}`, true);
+    alert('Orçamento salvo na nuvem.');
+}
+
+function obterOrcamentos(){
+    return orcamentosCache;
+}
+
+function renderLista(filtro = ''){
+    const listaEl = document.getElementById('lista');
+    if(!listaEl) return;
+    if(!currentUser){
+        listaEl.innerHTML = `<div class="sidebar-vazio">Entre no sistema para ver os orçamentos.</div>`;
+        return;
+    }
+    const termo = filtro.trim().toLowerCase();
+    const orcamentos = obterOrcamentos().filter(item =>
+        String(item.titulo || '').toLowerCase().includes(termo) ||
+        String(item.carro || '').toLowerCase().includes(termo) ||
+        String(item.placa || '').toLowerCase().includes(termo)
+    );
+
+    if(!orcamentos.length){
+        listaEl.innerHTML = `<div class="sidebar-vazio">Nenhum orçamento salvo.</div>`;
+        return;
+    }
+
+    listaEl.innerHTML = orcamentos.map(item => {
+        const idSeguro = escapeHtml(String(item.id || ''));
+        return `
+        <div class="sidebar-item">
+            <button class="btn-nome" onclick="carregarOrcamento('${idSeguro}')">${escapeHtml(item.titulo || 'ORÇAMENTO')}</button>
+            <button class="btn-delete" onclick="event.stopPropagation(); excluirOrcamento('${idSeguro}')">🗑</button>
+        </div>`;
+    }).join('');
+}
+
+function filtrarLista(){
+    renderLista(document.getElementById('busca').value);
+}
+
+function carregarOrcamento(id){
+    const item = obterOrcamentos().find(o => String(o.id) === String(id));
+    if(!item) return;
+
+    currentOrcamentoId = item.id;
+    lojas = (item.lojas && item.lojas.length) ? item.lojas.map(loja => ({
+        nome: normalizarTexto(loja.nome),
+        perc: parsePercentual(loja.perc)
+    })) : lojas;
+
+    document.getElementById('data').value = item.data || dataHojeISO();
+    document.getElementById('carro').value = normalizarTexto(item.carro || '');
+    document.getElementById('placa').value = normalizarTexto(item.placa || '');
+
+    renderTabela((item.linhas || []).map(linha => ({
+        ...linha,
+        peca: normalizarTexto(linha.peca || ''),
+        opcoes: normalizarOpcoesPorLoja(linha, lojas.length),
+        marcas: normalizarMarcasPorLoja(linha.marcas || [], lojas.length)
+    })));
+    renderPerc();
+    atualizarInfoImpressao();
+    sidebar.classList.remove('show');
+}
+
+async function excluirOrcamento(id){
+    const item = obterOrcamentos().find(o => String(o.id) === String(id));
+    if(!item) return;
+    if(!confirm(`Excluir ${item.titulo || 'este orçamento'}?`)) return;
+    if(!cloudOrcamentosReady){
+        orcamentosCache = orcamentosCache.filter(item => String(item.id) !== String(id));
+        salvarCacheLocal();
+    } else {
+        const { error } = await db.from('orcamentos').delete().eq('id',id);
+        if(error){
+            console.error(error);
+            ativarModoLocal(error.message || error);
+            orcamentosCache = orcamentosCache.filter(item => String(item.id) !== String(id));
+            salvarCacheLocal();
+        } else {
+            orcamentosCache = orcamentosCache.filter(item => String(item.id) !== String(id));
+        }
+    }
+    if(String(currentOrcamentoId) === String(id)) novoOrcamento(false);
+    renderLista(document.getElementById('busca').value);
+}
+
+function novoOrcamento(confirmar=true){
+    if(confirmar){
+        const temDados = document.getElementById('carro').value.trim() || document.getElementById('placa').value.trim() || capturarLinhas().length;
+        if(temDados && !confirm('Criar um novo orçamento? As alterações ainda não salvas desta tela serão descartadas.')) return;
+    }
+    currentOrcamentoId = null;
+    lojas = [
+        { nome:'PARQUE', perc:15 },
+        { nome:'MEGA', perc:14.5 },
+        { nome:'LOPES', perc:10 }
+    ];
+    document.getElementById('data').value = dataHojeISO();
+    document.getElementById('carro').value = '';
+    document.getElementById('placa').value = '';
+    renderTabela();
+    renderPerc();
+    atualizarInfoImpressao();
+    sidebar.classList.remove('show');
+}
+
+function coletarMarcasDoFormulario(){
+    return [...document.querySelectorAll('.marca-input')].map(input => input.value);
+}
+
+function extrairMarcas(valor){
+    if(Array.isArray(valor)){
+        return valor.flatMap(item => extrairMarcas(item));
+    }
+
+    return String(valor || '')
+        .split(/[,;\n]+/)
+        .map(item => normalizarTexto(item.trim()))
+        .filter(Boolean);
+}
+
+function obterMarcasAutocomplete(){
+    try {
+        return JSON.parse(localStorage.getItem(MARCAS_KEY)) || [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function registrarMarcasDigitadas(valores){
+    const atuais = new Set(obterMarcasAutocomplete().map(item => normalizarTexto(item).trim()).filter(Boolean));
+    extrairMarcas(valores).forEach(marca => atuais.add(marca));
+
+    const marcas = [...atuais].sort((a,b) => a.localeCompare(b, 'pt-BR'));
+    localStorage.setItem(MARCAS_KEY, JSON.stringify(marcas));
+    renderDatalistMarcas();
+}
+
+function importarMarcasDosOrcamentos(){
+    const marcas = [];
+    obterOrcamentos().forEach(orcamento => {
+        (orcamento.linhas || []).forEach(linha => {
+            marcas.push(linha.marcas || []);
+            marcas.push((linha.opcoes || []).map(lista => (lista || []).map(item => item.marca || '')));
+        });
+    });
+    registrarMarcasDigitadas(marcas);
+}
+
+function renderDatalistMarcas(){
+    const datalist = document.getElementById('marcasDatalist');
+    if(!datalist) return;
+
+    datalist.innerHTML = obterMarcasAutocomplete()
+        .map(marca => `<option value="${escapeHtml(marca)}"></option>`)
+        .join('');
+}
+
+function limparImpressao(){
+    document.body.classList.remove('printing');
+    document.documentElement.style.setProperty('--print-scale', '1');
+
+    const estiloAntigo = document.getElementById('print-orientation-style');
+    if(estiloAntigo){
+        estiloAntigo.remove();
+    }
+}
+
+function imprimirPDF(){
+    sidebar.classList.remove('show');
+    preencherDataPadrao();
+    atualizarInfoImpressao();
+    ajustarCamposPeca();
+    ajustarCamposMarca();
+
+    // A tabela de comparação é larga por natureza: usamos A4 paisagem e calculamos
+    // a escala pela largura útil da folha, priorizando legibilidade.
+    const larguraPaginaPaisagem = 1040;
+    const tabela = document.querySelector('table');
+    const larguraTabela = tabela ? Math.max(tabela.scrollWidth, tabela.offsetWidth) : 0;
+    const escala = larguraTabela > larguraPaginaPaisagem ? Math.max(0.55, larguraPaginaPaisagem / larguraTabela) : 1;
+
+    document.documentElement.style.setProperty('--print-scale', escala.toFixed(3));
+    document.body.classList.add('printing');
+
+    setTimeout(() => {
+        window.print();
+    }, 120);
+}
+
+window.addEventListener('beforeprint', () => {
+    atualizarInfoImpressao();
+    ajustarCamposPeca();
+    ajustarCamposMarca();
+});
+window.addEventListener('afterprint', limparImpressao);
+
+function criarAreaImagem(area){
+    atualizarInfoImpressao();
+    ajustarCamposPeca();
+    ajustarCamposMarca();
+
+    const tabela = area.querySelector('table');
+    const larguraConteudo = Math.max(
+        area.scrollWidth,
+        tabela ? tabela.scrollWidth : 0,
+        area.clientWidth
+    );
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-100000px';
+    wrapper.style.top = '0';
+    wrapper.style.padding = '16px';
+    wrapper.style.background = '#ffffff';
+    wrapper.style.zIndex = '-1';
+    wrapper.style.width = `${larguraConteudo + 32}px`;
+    wrapper.style.boxSizing = 'border-box';
+
+    const info = document.createElement('div');
+    info.className = 'info-imagem';
+    info.textContent = gerarLinhaInformacoes(' | ') || 'ORÇAMENTOS FR MOTORS';
+    info.style.display = 'block';
+    info.style.margin = '0 0 10px 0';
+    info.style.padding = '8px 10px';
+    info.style.border = '1px solid #cde8e1';
+    info.style.background = '#eef7f4';
+    info.style.color = '#111';
+    info.style.fontFamily = "'Segoe UI', Arial";
+    info.style.fontSize = '14px';
+    info.style.fontWeight = '700';
+    info.style.whiteSpace = 'nowrap';
+
+    const cloneArea = area.cloneNode(true);
+    cloneArea.style.overflow = 'visible';
+
+    // Na captura completa, a coluna não deve ficar sticky para não sobrepor as lojas.
+    cloneArea.querySelectorAll('thead th:first-child, tbody td:first-child, tfoot td:first-child').forEach(el => {
+        el.style.position = 'static';
+        el.style.left = 'auto';
+        el.style.boxShadow = 'none';
+    });
+    cloneArea.style.width = `${larguraConteudo}px`;
+    cloneArea.style.maxWidth = 'none';
+    cloneArea.style.margin = '0';
+
+    const cloneTable = cloneArea.querySelector('table');
+    if(cloneTable){
+        cloneTable.style.width = `${larguraConteudo}px`;
+        cloneTable.style.maxWidth = 'none';
+        cloneTable.style.background = '#ffffff';
+        cloneTable.style.boxShadow = 'none';
+    }
+
+    cloneArea.style.background = '#ffffff';
+    cloneArea.querySelectorAll('button, .btn-add-marca, .btn-remover-marca, .btn-remover-peca, .btn-loja-delete').forEach(el => el.remove());
+    cloneArea.querySelectorAll('tbody tr, tbody td').forEach(el => {
+        el.style.background = '#ffffff';
+    });
+    cloneArea.querySelectorAll('tfoot tr, tfoot td, .total').forEach(el => {
+        el.style.background = '#eeeeee';
+    });
+
+    const totalRow = cloneArea.querySelector('tfoot tr');
+    if(totalRow){
+        totalRow.style.background = '#eeeeee';
+    }
+
+    const totalCells = cloneArea.querySelectorAll('tfoot td');
+    if(totalCells.length){
+        const primeiroTotal = totalCells[0];
+        const ultimoTotal = totalCells[totalCells.length - 1];
+
+        primeiroTotal.style.borderBottomLeftRadius = '16px';
+        primeiroTotal.style.overflow = 'hidden';
+
+        ultimoTotal.style.borderBottomRightRadius = '16px';
+        ultimoTotal.style.overflow = 'hidden';
+
+        const primeiroWrap = primeiroTotal.querySelector('.total-valor-wrap, .total-desc-wrap');
+        const ultimoWrap = ultimoTotal.querySelector('.total-valor-wrap, .total-desc-wrap');
+
+        if(primeiroWrap){
+            primeiroWrap.style.borderBottomLeftRadius = '16px';
+            primeiroWrap.style.overflow = 'hidden';
+        }
+
+        if(ultimoWrap){
+            ultimoWrap.style.borderBottomRightRadius = '16px';
+            ultimoWrap.style.overflow = 'hidden';
+        }
+    }
+
+    cloneArea.querySelectorAll('.menor').forEach(el => {
+        el.style.background = 'transparent';
+        el.style.color = '#123f33';
+        el.style.fontWeight = '900';
+        el.style.borderRadius = '0';
+        el.style.boxShadow = 'none';
+    });
+    cloneArea.querySelectorAll('.desc-opcao.menor').forEach(opcao => {
+        opcao.style.background = 'transparent';
+        opcao.style.boxShadow = 'none';
+        opcao.style.borderRadius = '0';
+        const destaque = opcao.firstElementChild;
+        if(destaque){
+            destaque.style.background = '#d8f1e6';
+            destaque.style.color = '#123f33';
+            destaque.style.fontWeight = '900';
+            destaque.style.border = '1px solid rgba(70, 144, 124, 0.22)';
+            destaque.style.borderRadius = '14px';
+            destaque.style.boxShadow = 'none';
+            destaque.style.padding = '0 12px';
+            destaque.style.display = 'flex';
+            destaque.style.alignItems = 'center';
+            destaque.style.justifyContent = 'flex-end';
+            destaque.style.width = '104px';
+            destaque.style.minWidth = '104px';
+            destaque.style.maxWidth = '104px';
+            destaque.style.height = '38px';
+            destaque.style.minHeight = '38px';
+        }
+    });
+
+    cloneArea.querySelectorAll('.peca-cell').forEach(cell => {
+        cell.style.display = 'block';
+        cell.style.gridTemplateColumns = '1fr';
+        cell.style.width = '100%';
+        cell.style.overflow = 'visible';
+    });
+
+    cloneArea.querySelectorAll('.peca-td').forEach(td => {
+        td.style.whiteSpace = 'normal';
+        td.style.wordBreak = 'break-word';
+        td.style.overflowWrap = 'anywhere';
+        td.style.verticalAlign = 'top';
+        td.style.overflow = 'visible';
+    });
+
+    cloneArea.querySelectorAll('.peca-input').forEach(input => {
+        const celula = input.closest('.peca-cell');
+        const textoPrint = celula?.querySelector('.peca-print-text');
+
+        if(textoPrint){
+            textoPrint.textContent = normalizarTexto(input.value || '').trim();
+            textoPrint.style.display = 'block';
+            textoPrint.style.width = '100%';
+            textoPrint.style.maxWidth = '100%';
+            textoPrint.style.minWidth = '0';
+            textoPrint.style.color = '#111';
+            textoPrint.style.fontFamily = "'Segoe UI', Arial";
+            textoPrint.style.fontSize = '14px';
+            textoPrint.style.fontWeight = '400';
+            textoPrint.style.lineHeight = '1.35';
+            textoPrint.style.whiteSpace = 'normal';
+            textoPrint.style.overflowWrap = 'anywhere';
+            textoPrint.style.wordBreak = 'break-word';
+            textoPrint.style.textAlign = 'left';
+            textoPrint.style.padding = '0';
+            textoPrint.style.margin = '0';
+        }
+
+        input.remove();
+    });
+
+    cloneArea.querySelectorAll('.valor-head-grid').forEach(head => {
+        head.style.display = 'grid';
+        head.style.gridTemplateColumns = 'minmax(120px, 1fr) 104px';
+        head.style.alignItems = 'center';
+        head.style.gap = '8px';
+        const spans = head.querySelectorAll('span');
+        if(spans[0]) spans[0].style.display = 'none';
+        if(spans[1]) {
+            spans[1].style.display = 'block';
+            spans[1].style.gridColumn = '1';
+            spans[1].style.textAlign = 'left';
+            spans[1].style.paddingLeft = '2px';
+        }
+        if(spans[2]) {
+            spans[2].style.gridColumn = '2';
+            spans[2].style.textAlign = 'center';
+        }
+    });
+
+    cloneArea.querySelectorAll('.marca-opcao').forEach(opcao => {
+        opcao.style.display = 'grid';
+        opcao.style.gridTemplateColumns = 'minmax(0, 1fr) 104px';
+        opcao.style.alignItems = 'start';
+        opcao.style.gap = '8px';
+        opcao.style.minHeight = '40px';
+    });
+
+    cloneArea.querySelectorAll('.desc-opcao').forEach(opcao => {
+        opcao.style.display = 'flex';
+        opcao.style.alignItems = 'center';
+        opcao.style.justifyContent = 'center';
+        opcao.style.minHeight = '40px';
+    });
+
+    cloneArea.querySelectorAll('.opcoes-container, .descontos-container').forEach(container => {
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '0';
+    });
+
+    cloneArea.querySelectorAll('input, textarea').forEach(input => {
+        const span = document.createElement('div');
+        const estilos = window.getComputedStyle(input);
+        let texto = input.value || '';
+
+        if(input.type === 'date' && texto){
+            texto = formatarDataBR(texto);
+        }
+
+        span.textContent = texto;
+        span.style.width = '100%';
+        span.style.minHeight = `${Math.max(input.offsetHeight || 0, 18)}px`;
+        span.style.padding = estilos.padding;
+        span.style.font = estilos.font;
+        span.style.fontFamily = estilos.fontFamily;
+        span.style.fontSize = estilos.fontSize;
+        span.style.fontWeight = estilos.fontWeight;
+        span.style.lineHeight = estilos.lineHeight === 'normal' ? '1.2' : estilos.lineHeight;
+        span.style.letterSpacing = estilos.letterSpacing;
+        span.style.color = estilos.color;
+        span.style.textAlign = estilos.textAlign;
+        span.style.background = 'transparent';
+        span.style.border = 'none';
+        span.style.boxSizing = 'border-box';
+        span.style.whiteSpace = 'pre-wrap';
+        span.style.wordBreak = 'break-word';
+        span.style.overflowWrap = 'break-word';
+        span.style.overflow = 'visible';
+        span.style.display = 'block';
+
+        if(input.classList.contains('peca-input')){
+            span.style.textAlign = 'left';
+            span.style.width = '100%';
+            span.style.maxWidth = '100%';
+            span.style.minWidth = '0';
+            span.style.lineHeight = '1.25';
+        }
+
+        if(input.classList.contains('marca-input')){
+            span.style.textAlign = 'left';
+            span.style.whiteSpace = 'normal';
+            span.style.wordBreak = 'break-word';
+            span.style.overflowWrap = 'anywhere';
+            span.style.lineHeight = '1.25';
+        }
+
+        if(input.classList.contains('valor-input') || input.classList.contains('desc-input')){
+            span.style.width = '104px';
+            span.style.minWidth = '104px';
+            span.style.maxWidth = '104px';
+            span.style.textAlign = 'right';
+            span.style.whiteSpace = 'nowrap';
+        }
+
+        if(!texto){
+            span.innerHTML = '&nbsp;';
+        }
+
+        input.replaceWith(span);
+    });
+
+    cloneArea.querySelectorAll('.marca-opcao').forEach(opcao => {
+        const filhos = [...opcao.children];
+        const marcaEl = filhos[0];
+        const valorEl = filhos[1];
+
+        if(marcaEl){
+            marcaEl.style.display = 'flex';
+            marcaEl.style.alignItems = 'center';
+            marcaEl.style.justifyContent = 'flex-start';
+            marcaEl.style.width = '100%';
+            marcaEl.style.minWidth = '0';
+            marcaEl.style.maxWidth = '100%';
+            marcaEl.style.height = '100%';
+            marcaEl.style.paddingTop = '0';
+            marcaEl.style.paddingBottom = '0';
+            marcaEl.style.textAlign = 'left';
+        }
+
+        if(valorEl){
+            valorEl.style.display = 'flex';
+            valorEl.style.alignItems = 'center';
+            valorEl.style.justifyContent = 'flex-end';
+            valorEl.style.minHeight = '38px';
+            valorEl.style.height = '38px';
+        }
+    });
+
+    cloneArea.querySelectorAll('.desc-opcao').forEach(opcao => {
+        const descEl = opcao.firstElementChild;
+        if(descEl){
+            descEl.style.display = 'flex';
+            descEl.style.alignItems = 'center';
+            descEl.style.justifyContent = 'flex-end';
+            descEl.style.width = '104px';
+            descEl.style.minWidth = '104px';
+            descEl.style.maxWidth = '104px';
+            descEl.style.minHeight = '38px';
+            descEl.style.height = '38px';
+        }
+    });
+
+    wrapper.appendChild(info);
+    wrapper.appendChild(cloneArea);
+    document.body.appendChild(wrapper);
+
+    return {
+        wrapper,
+        width: Math.ceil(wrapper.scrollWidth),
+        height: Math.ceil(wrapper.scrollHeight)
+    };
+}
+
+function normalizarNomeArquivo(nome){
+    return String(nome || '')
+        .replace(/[\\/:*?"<>|]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+async function gerarImagem(){
+    sidebar.classList.remove('show');
+
+    const area = document.querySelector('.table-container');
+    if(!area){
+        alert('Tabela não encontrada para gerar a imagem.');
+        return;
+    }
+
+    if(typeof html2canvas !== 'function'){
+        alert('Não foi possível carregar o gerador de imagem neste navegador.');
+        return;
+    }
+
+    const nomeBase = normalizarNomeArquivo(gerarTituloOrcamento()) || 'orcamento';
+
+    let captura = null;
+
+    try {
+        captura = criarAreaImagem(area);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        const canvas = await html2canvas(captura.wrapper, {
+            backgroundColor: '#ffffff',
+            scale: Math.max(2, window.devicePixelRatio || 1),
+            useCORS: true,
+            logging: false,
+            width: captura.width,
+            height: captura.height,
+            windowWidth: captura.width,
+            windowHeight: captura.height,
+            scrollX: 0,
+            scrollY: 0
+        });
+
+        const link = document.createElement('a');
+        link.download = `${nomeBase}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (erro) {
+        console.error(erro);
+        alert('Não foi possível gerar a imagem da tabela.');
+    } finally {
+        if(captura && captura.wrapper && captura.wrapper.parentNode){
+            captura.wrapper.parentNode.removeChild(captura.wrapper);
+        }
+    }
+}
+
+function escapeHtml(texto){
+    return String(texto)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+preencherDataPadrao();
+renderDatalistMarcas();
+renderTabela();
+renderPerc();
+renderLista();
+ajustarCamposMarca();
+atualizarInfoImpressao();
+
+document.getElementById('loginBtn').onclick = signInOrc;
+document.getElementById('magicLinkBtn').onclick = magicLinkOrc;
+document.getElementById('logoutBtnOrc').onclick = logoutOrc;
+document.getElementById('loginPassword').addEventListener('keydown', event => { if(event.key === 'Enter') signInOrc(); });
+
+db.auth.onAuthStateChange(async(event,session) => {
+    currentUser = session?.user || null;
+    showAuth();
+    if(currentUser && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) await carregarOrcamentosNuvem();
+});
+
+getSessionOrc().catch(error => {
+    console.error(error);
+    setCloudStatus('Erro de conexão', false);
+    document.getElementById('loginScreen').style.display = 'flex';
+});
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101820" />
+  <meta name="description" content="FR Motors · Gestão da oficina: Ficha / O.S. e Orçamentos." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./fr-icon.svg" type="image/svg+xml" />
+  <title>FR Motors · Ficha / O.S.</title>
+  <style>
+    :root{
+      --bg:#f4f6f7; --surface:#fff; --ink:#172126; --muted:#68777f;
+      --line:#dfe5e8; --dark:#101820; --accent:#167b87; --accent-2:#0f646e;
+      --soft:#e9f5f6; --warn:#fff4cf; --danger:#a13434; --good:#167246;
+      --radius:18px; --shadow:0 8px 28px rgba(16,24,32,.09);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:1280px;margin:0 auto;padding:18px}
+    .topbar{position:sticky;top:0;z-index:20;background:rgba(244,246,247,.94);backdrop-filter:blur(12px);padding:0;min-height:68px}
+    .brand-row{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:18px;min-height:68px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-mark{width:46px;height:46px;border-radius:14px;background:var(--dark);color:#fff;display:grid;place-items:center;font-weight:900;font-style:italic;font-size:16px;line-height:1;letter-spacing:-2px;box-shadow:var(--shadow)}
+    .brand h1{font-size:18px;margin:0;line-height:1.05}.brand p{margin:3px 0 0;color:var(--muted);font-size:11px}
+    .top-actions{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px;min-width:0}.top-status,.top-commands{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap}.top-commands{order:1}.top-status{order:2}.top-commands .btn,.top-commands label{min-height:38px;padding:8px 13px;display:inline-flex;align-items:center;justify-content:center}.top-status .btn{min-height:22px;padding:3px 9px;border-radius:9px;font-size:11px;line-height:1.2}.top-status #cloudStatus{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .module-nav{display:flex;align-items:center;gap:6px;padding:5px;background:#e9edef;border:1px solid var(--line);border-radius:14px}
+    .module-nav a{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 13px;border-radius:10px;color:#415159;text-decoration:none;font-weight:850;font-size:13px;white-space:nowrap}
+    .module-nav a:hover{background:#fff;color:var(--ink)}
+    .module-nav a.active{background:var(--dark);color:#fff;box-shadow:0 6px 16px rgba(16,24,32,.16)}
+    .btn{border:0;border-radius:12px;padding:10px 14px;background:#fff;color:var(--ink);box-shadow:0 1px 0 rgba(16,24,32,.06),0 0 0 1px var(--line);font-weight:700}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:var(--dark);color:#fff;box-shadow:none}
+    .btn.accent{background:var(--accent);color:#fff;box-shadow:none}
+    .btn.danger{color:var(--danger);background:#fff}
+    .btn.small{padding:7px 10px;border-radius:10px;font-size:13px}
+    .grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}
+    .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .sidebar{padding:14px;position:sticky;top:88px;max-height:calc(100vh - 108px);overflow:hidden;transition:.22s ease}
+    .sidebar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+    .sidebar-head strong{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#415159}
+    .sidebar-content{min-width:0}
+    .sidebar-collapse{border:0;background:#f2f5f6;width:34px;height:34px;border-radius:10px;font-weight:900;color:#415159;flex:0 0 auto}
+    .search{display:flex;gap:8px;margin-bottom:12px}.search input{flex:1}
+    .os-list{max-height:calc(100vh - 210px);overflow-y:auto;padding-right:2px;scrollbar-gutter:stable}
+    .sidebar-collapsed .grid{grid-template-columns:54px minmax(0,1fr)}
+    .sidebar-collapsed .sidebar{padding:9px}
+    .sidebar-collapsed .sidebar-head{margin:0;justify-content:center}
+    .sidebar-collapsed .sidebar-head strong,.sidebar-collapsed .sidebar-content{display:none}
+    .sidebar-collapsed .sidebar-collapse{transform:rotate(180deg)}
+    input,select,textarea{width:100%;border:1px solid #ced8dc;border-radius:10px;padding:10px 11px;background:#fff;color:var(--ink);outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22,123,135,.12)}
+    textarea{min-height:84px;resize:vertical}
+    .os-list{display:grid;gap:8px}
+    .os-item{border:1px solid var(--line);border-radius:13px;padding:11px;background:#fff;cursor:pointer}
+    .os-item:hover,.os-item.active{border-color:var(--accent);background:var(--soft)}
+    .os-item strong{display:block}.os-item span{font-size:12px;color:var(--muted)}
+    .empty{padding:28px 14px;text-align:center;color:var(--muted)}
+    .editor{overflow:hidden}
+    .sheet-head{padding:18px 20px;background:var(--dark);color:#fff;display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .sheet-head .logo{font-size:28px;font-weight:950;font-style:italic;letter-spacing:-1.5px}
+    .sheet-head .os-number{display:flex;align-items:center;gap:8px;white-space:nowrap}
+    .sheet-head input{max-width:150px;background:#fff;color:#111}
+    .section{padding:18px 20px;border-bottom:1px solid var(--line)}
+    .section:last-child{border-bottom:0}
+    .section-title{font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 12px;color:#415159}
+    .fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .field label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+    .span2{grid-column:span 2}.span4{grid-column:span 4}
+
+    .print-os-meta{display:none}
+    .print-os-meta span{font-size:8px;font-weight:900;color:#333;letter-spacing:.03em}
+    .print-os-meta strong{font-size:10px;font-weight:700;min-height:14px}
+    .parts-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
+    .parts-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .suggestion-tools{display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid var(--line);border-radius:11px;background:#fafcfc}
+    .suggestion-tools .suggestion-label{font-size:11px;font-weight:850;color:#526168;text-transform:uppercase;letter-spacing:.035em;white-space:nowrap}
+    .suggestion-tools input{width:58px!important;min-width:58px!important;height:32px;padding:5px 7px!important;text-align:center;font-weight:800;border-radius:8px}
+    .suggestion-tools .pct-sign{font-size:12px;font-weight:900;color:#415159}
+    .suggestion-tools .apply-all{min-height:32px!important;height:32px!important;padding:5px 9px!important;border-radius:8px!important;background:#fff!important;color:var(--ink)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+    .suggestion-tools .apply-all:hover{background:#f0f3f4!important}
+    .parts-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+    table{width:100%;border-collapse:collapse;min-width:960px}
+    .parts-table{min-width:1140px}
+    .parts-table th:nth-child(1),.parts-table td:nth-child(1){min-width:300px;width:300px}
+    .parts-table th:nth-child(2),.parts-table td:nth-child(2){width:82px;min-width:82px}
+    .parts-table th:nth-child(3),.parts-table td:nth-child(3){min-width:115px;width:115px}
+    .qty-input{width:58px!important;min-width:58px!important;max-width:58px!important;text-align:center!important;padding-left:4px!important;padding-right:4px!important;font-weight:750;color:var(--ink)!important}
+    .qty-input::-webkit-outer-spin-button,.qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    .qty-input{-moz-appearance:textfield}
+    .suggested-cell{min-width:118px;width:118px}
+    .suggested-price{width:100%;min-height:34px;border:1px solid #cfdadd;border-radius:8px;background:#f7faf9;color:#24413a;font-weight:850;cursor:pointer;padding:7px 8px;white-space:nowrap}
+    .suggested-price:hover{background:#edf6f3;border-color:#a9c9bf}
+    .suggested-price:disabled{cursor:default;color:#7a878c;background:#f7f8f8}
+    th{background:#edf3f4;color:#405057;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+    td{padding:7px;border-bottom:1px solid #edf0f1;vertical-align:middle}
+    td input,td select{padding:8px;border-radius:8px}
+    td.money{min-width:120px}.remove-cell{width:44px;text-align:center}
+    .icon-btn{border:0;background:#fff;color:var(--danger);width:32px;height:32px;border-radius:9px;font-weight:900}
+    .totals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+    .kpi{border:1px solid var(--line);border-radius:13px;padding:12px;background:#fafcfc}
+    .kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:800}
+    .kpi strong{display:block;margin-top:3px;font-size:20px}
+    .kpi.good strong{color:var(--good)}
+    .footer-actions{display:flex;flex-wrap:wrap;gap:8px;padding:16px 20px;background:#fbfcfc}
+    .customer-mode .internal,.customer-mode .edit-only{display:none!important}
+    .customer-mode input,.customer-mode textarea,.customer-mode select{background:#f8fafb;color:#172126}
+    .customer-badge{display:none;background:#dff4e8;color:#165d3d;font-weight:800;padding:6px 10px;border-radius:999px;font-size:12px}
+    .customer-mode .customer-badge{display:inline-flex}
+    .save-state{cursor:default!important;white-space:nowrap}
+    .save-state.dirty{background:#fff4cf;color:#755a00}
+    .save-state.saved{background:#e2f4e9;color:#17613d}
+    .save-state.saving{background:#e8f0f7;color:#315a78}
+    .modal-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(16,24,32,.48);display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-backdrop.show{display:flex}
+    .modal-card{width:min(460px,100%);background:#fff;border-radius:20px;box-shadow:0 22px 70px rgba(16,24,32,.24);padding:22px;border:1px solid var(--line)}
+    .modal-card h3{margin:0 0 8px;font-size:18px}.modal-card p{margin:0 0 18px;color:var(--muted)}
+    .modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .toast{position:fixed;right:18px;bottom:18px;background:var(--dark);color:#fff;padding:12px 15px;border-radius:12px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}
+    .toast.show{opacity:1;transform:none}
+    .mobile-only{display:none}
+    .top-commands .mobile-only{display:none}
+    @media(max-width:900px){
+      .app{padding:10px}.grid,.sidebar-collapsed .grid{grid-template-columns:1fr}.sidebar{display:none;position:static;max-height:none;overflow:hidden}.sidebar.mobile-open{display:block}
+      .sidebar.mobile-open .os-list{max-height:min(38vh,360px);overflow-y:auto}.sidebar-collapsed .sidebar-head strong,.sidebar-collapsed .sidebar-content{display:block}.sidebar-collapsed .sidebar-head{justify-content:space-between}.sidebar-collapsed .sidebar-collapse{transform:none}
+      .fields{grid-template-columns:repeat(2,minmax(0,1fr))}.span4{grid-column:span 2}.totals{grid-template-columns:repeat(2,1fr)}
+      .top-actions .optional{display:none}.mobile-only{display:inline-flex}.top-commands .mobile-only{display:inline-flex}.top-actions{justify-items:stretch;width:100%;grid-column:1 / -1}.top-status,.top-commands{justify-content:flex-start}.top-status #cloudStatus{max-width:min(70vw,340px)}
+      .brand-row{grid-template-columns:auto minmax(0,1fr);gap:10px 12px}.module-nav{width:100%;display:grid;grid-template-columns:1fr 1fr}.module-nav a{width:100%}
+    }
+    @media(max-width:560px){
+      .brand-row{grid-template-columns:1fr}.module-nav{grid-row:auto}.top-actions{grid-column:auto}.top-status,.top-commands{display:grid;grid-template-columns:1fr 1fr;width:100%}.top-status #cloudStatus{max-width:none}.top-status .btn,.top-commands .btn,.top-commands label{width:100%;text-align:center;justify-content:center}.top-commands #newBtn{grid-column:1 / -1}
+      .brand p{display:none}.brand h1{font-size:17px}.brand-mark{width:42px;height:42px}
+      .sheet-head{align-items:flex-start;flex-direction:column}.fields{grid-template-columns:1fr}.span2,.span4{grid-column:span 1}
+      .totals{grid-template-columns:1fr 1fr}.section{padding:14px}.footer-actions{padding:14px}
+      .parts-head{align-items:flex-start;flex-direction:column}.parts-head-actions{width:100%;justify-content:space-between}.suggestion-tools{flex:1;min-width:0}.suggestion-tools .suggestion-label{font-size:10px}
+    }
+
+    /* V4.4.9 · mesma altura/alinhamento do cabeçalho de Orçamentos */
+    @media(min-width:901px){
+      .app{padding-top:0}
+      .topbar{height:68px;min-height:68px}
+      .brand-row{height:68px;min-height:68px}
+      .top-actions{height:64px}
+      .grid{margin-top:18px}
+      .top-status .btn{box-shadow:0 0 0 1px rgba(22,114,70,.12)}
+    }
+
+    /* V4.4.10 · bloco de ações com a mesma altura visual da marca FR Motors */
+    @media(min-width:901px){
+      .top-actions{
+        height:50px;
+        gap:2px;
+        align-self:center;
+        justify-content:center;
+        position:relative;
+        top:4px;
+      }
+      .top-commands{gap:7px}
+      .top-commands .btn,
+      .top-commands label{
+        min-height:30px;
+        height:30px;
+        padding:5px 12px;
+        border-radius:11px;
+        line-height:1;
+      }
+      .top-status{gap:7px;height:18px}
+      .top-status .btn{
+        min-height:16px;
+        height:16px;
+        padding:1px 8px;
+        border-radius:8px;
+        font-size:10px;
+        line-height:1;
+      }
+      .top-status #cloudStatus{max-width:330px}
+    }
+    @media(max-width:900px){
+      .topbar{padding:8px 0;min-height:auto}
+      .brand-row{min-height:auto}
+      .top-actions{align-items:stretch;gap:7px}
+      .top-commands{order:1;flex-wrap:wrap;justify-content:flex-start}
+      .top-status{order:2;justify-content:flex-start;flex-wrap:wrap}
+      .top-status .btn{min-height:30px;padding:6px 9px;font-size:11px}
+    }
+    @media print{
+      @page{size:A4 portrait;margin:8mm}
+      body{background:#fff;font-size:10px}
+      .app{padding:0;max-width:none}.topbar,.sidebar,.footer-actions,.parts-head .btn,.remove-cell,.toast,.screen-os-fields{display:none!important}
+      .grid{display:block}.editor{box-shadow:none;border:0;overflow:visible}.sheet-head{background:#fff!important;color:#111!important;padding:0 0 8px;border-bottom:2px solid #111}
+      .sheet-head .logo{font-size:25px}.sheet-head input{border:0!important;padding:0!important;width:90px;font-weight:800;background:transparent!important}
+      .section{padding:8px 0;border-bottom:1px solid #aaa}.parts-table thead,.services-table thead{display:table-header-group}
+      input,select,textarea{border:0!important;box-shadow:none!important;padding:0!important;background:transparent!important;color:#111!important;appearance:none}
+      .print-os-meta{display:block!important;margin-top:2px}.print-client{display:grid;grid-template-columns:54px 1fr;gap:5px;padding:4px 0;border-bottom:1px solid #aaa;align-items:end}
+      .print-meta-row{display:grid;gap:12px;padding:4px 0;border-bottom:1px solid #aaa;align-items:end}.print-meta-row>div{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:end}
+      .print-meta-2{grid-template-columns:1fr 1.5fr}.print-meta-3{grid-template-columns:1.25fr 1fr .65fr}
+      .print-os-meta span{font-size:7.5px;font-weight:900}.print-os-meta strong{font-size:9.5px;min-height:12px}
+      .parts-wrap{border:1px solid #555;border-radius:0;overflow:visible}.parts-table,.services-table{min-width:0!important;width:100%;table-layout:fixed}
+      table{min-width:0!important;font-size:7.4px}th,td{padding:3px;border:1px solid #888;white-space:normal;overflow-wrap:anywhere;vertical-align:middle}
+      td input,td select{font-size:7.4px!important;line-height:1.15}.parts-table td.money{min-width:0!important}
+      .parts-table th:nth-child(1),.parts-table td:nth-child(1){width:34%}.parts-table th:nth-child(2),.parts-table td:nth-child(2){width:6%}
+      .parts-table th:nth-child(3),.parts-table td:nth-child(3){width:11%}.parts-table th:nth-child(4),.parts-table td:nth-child(4){width:10%}
+      .parts-table th:nth-child(5),.parts-table td:nth-child(5){display:none!important}
+      .parts-table th:nth-child(6),.parts-table td:nth-child(6){width:11%}.parts-table th:nth-child(7),.parts-table td:nth-child(7){width:10%}
+      .parts-table th:nth-child(8),.parts-table td:nth-child(8){width:10%}.parts-table th:nth-child(9),.parts-table td:nth-child(9){width:8%}
+      .suggestion-tools{display:none!important}
+      .totals{grid-template-columns:repeat(4,1fr)!important;gap:4px}.kpi{border:1px solid #777;padding:5px;border-radius:0}.kpi span{font-size:7px}.kpi strong{font-size:11px}
+      .internal.print-hide{display:none!important}.customer-badge{display:none!important}
+      .section-title{font-size:9px;margin-bottom:6px}.parts-head{margin-bottom:5px}
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#f4f6f7;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="width:min(430px,100%);background:#fff;border:1px solid #dfe5e8;border-radius:22px;box-shadow:0 18px 60px rgba(16,24,32,.15);padding:26px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="width:52px;height:52px;border-radius:15px;background:#101820;color:#fff;display:grid;place-items:center;font-weight:900;font-style:italic;font-size:20px">FR</div>
+      <div><div style="font-size:20px;font-weight:900">FR Motors</div><div style="color:#68777f;font-size:13px">Acesso ao sistema da oficina</div></div>
+    </div>
+    <div style="display:grid;gap:12px">
+      <div><label style="display:block;font-size:11px;font-weight:800;color:#68777f;margin-bottom:5px;text-transform:uppercase">E-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="seuemail@frmotors.com"></div>
+      <div><label style="display:block;font-size:11px;font-weight:800;color:#68777f;margin-bottom:5px;text-transform:uppercase">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+      <button class="btn primary" id="loginBtn" style="width:100%">Entrar</button>
+      <button class="btn" id="magicLinkBtn" style="width:100%">Receber link de acesso por e-mail</button>
+      <div id="loginMsg" style="min-height:20px;color:#68777f;font-size:13px;text-align:center"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="brand-row">
+      <div class="brand">
+        <div class="brand-mark">FR</div>
+        <div><h1>FR Motors</h1><p>Gestão da oficina</p></div>
+      </div>
+      <nav class="module-nav" aria-label="Módulos FR Motors">
+        <a class="active" href="./" aria-current="page">Ficha / O.S.</a>
+        <a href="./orcamentos.html">Orçamentos</a>
+      </nav>
+      <div class="top-actions">
+        <div class="top-commands">
+          <button class="btn mobile-only" id="toggleSidebarBtn">☰ O.S.</button>
+          <button class="btn primary" id="newBtn">+ Nova ficha</button>
+          <button class="btn optional" id="refreshBtn">Atualizar</button>
+          <button class="btn optional" id="backupBtn">Backup</button>
+          <label class="btn optional" for="restoreInput">Importar</label>
+          <input id="restoreInput" type="file" accept=".json,application/json" hidden />
+          <button class="btn optional" id="logoutBtn">Sair</button>
+        </div>
+        <div class="top-status">
+          <span id="cloudStatus" class="btn" style="cursor:default" title="Status da conexão">Conectando...</span>
+          <span id="saveState" class="btn save-state saved">Tudo salvo</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <aside class="panel sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <strong id="osListTitle">Ordens de serviço</strong>
+        <button class="sidebar-collapse" id="collapseSidebarBtn" type="button" title="Recolher lista de O.S." aria-label="Recolher lista de O.S.">‹</button>
+      </div>
+      <div class="sidebar-content">
+        <div class="search">
+          <input id="searchInput" placeholder="Buscar O.S., placa, cliente..." />
+        </div>
+        <div id="osList" class="os-list"></div>
+      </div>
+    </aside>
+
+    <main class="panel editor" id="editor">
+      <div class="sheet-head">
+        <div>
+          <div class="logo">FRMOTORS</div>
+          <div style="font-size:12px;opacity:.72">Ficha de peças e gastos</div>
+        </div>
+        <div class="os-number"><strong>O.S.:</strong><input id="os" placeholder="0001" /></div>
+      </div>
+
+      <section class="section">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px">
+          <h2 class="section-title" style="margin:0">Dados da ordem de serviço</h2>
+          <span class="customer-badge">Visão do cliente</span>
+        </div>
+        <div class="print-os-meta" aria-hidden="true">
+          <div class="print-client"><span>CLIENTE:</span><strong id="printClient"></strong></div>
+          <div class="print-meta-row print-meta-2"><div><span>DATA ENTRADA:</span><strong id="printEntryDate"></strong></div><div><span>TÉCNICO:</span><strong id="printTechnician"></strong></div></div>
+          <div class="print-meta-row print-meta-3"><div><span>CARRO:</span><strong id="printCar"></strong></div><div><span>MARCA:</span><strong id="printBrand"></strong></div><div><span>KM:</span><strong id="printKm"></strong></div></div>
+          <div class="print-meta-row print-meta-3"><div><span>PLACA:</span><strong id="printPlate"></strong></div><div><span>MOTOR:</span><strong id="printEngine"></strong></div><div><span>ANO:</span><strong id="printYear"></strong></div></div>
+        </div>
+        <div class="fields screen-os-fields">
+          <div class="field span2"><label>Cliente</label><input id="client" /></div>
+          <div class="field"><label>Data entrada</label><input id="entryDate" type="date" /></div>
+          <div class="field"><label>Carro</label><input id="car" /></div>
+          <div class="field"><label>Marca</label><input id="brand" /></div>
+          <div class="field"><label>KM</label><input id="km" inputmode="numeric" /></div>
+          <div class="field"><label>Placa</label><input id="plate" style="text-transform:uppercase" /></div>
+          <div class="field"><label>Motor</label><input id="engine" /></div>
+          <div class="field"><label>Ano</label><input id="year" inputmode="numeric" /></div>
+          <div class="field span2"><label>Técnico</label><input id="technician" /></div>
+          
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="parts-head">
+          <h2 class="section-title" style="margin:0">Peças / gastos</h2>
+          <div class="parts-head-actions edit-only">
+            <div class="suggestion-tools internal" title="Calcula um preço sugerido com acréscimo sobre o custo unitário">
+              <span class="suggestion-label">Preço sugerido +</span>
+              <input id="suggestedMarkupPct" type="number" min="0" max="500" step="1" value="25" inputmode="decimal" aria-label="Percentual para preço sugerido">
+              <span class="pct-sign">%</span>
+              <button class="btn small apply-all" id="applySuggestedAllBtn" type="button">Aplicar todos</button>
+            </div>
+            <button class="btn accent small edit-only" id="addPartBtn">+ Adicionar peça</button>
+          </div>
+        </div>
+        <div class="parts-wrap">
+          <table class="parts-table">
+            <thead>
+              <tr>
+                <th>Peça / material</th>
+                <th>Qtd.</th>
+                <th class="internal">Fornecedor</th>
+                <th class="internal">Custo un.</th>
+                <th class="internal suggested-cell print-hide">Sugerido un.</th>
+                <th>Preço cliente un.</th>
+                <th class="internal">Custo total</th>
+                <th>Total cliente</th>
+                <th class="internal">Margem (R$)</th>
+                <th class="remove-cell"></th>
+              </tr>
+            </thead>
+            <tbody id="partsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="totals">
+          <div class="kpi internal"><span>Custo total</span><strong id="costTotal">R$ 0,00</strong></div>
+          <div class="kpi"><span>Peças ao cliente</span><strong id="saleTotal">R$ 0,00</strong></div>
+          <div class="kpi internal good"><span>Margem bruta</span><strong id="marginTotal">R$ 0,00</strong></div>
+          <div class="kpi internal"><span>Margem %</span><strong id="marginPct">0%</strong></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="parts-head">
+          <h2 class="section-title" style="margin:0">Serviços executados / mão de obra</h2>
+          <button class="btn accent small edit-only" id="addServiceBtn">+ Adicionar serviço</button>
+        </div>
+        <div class="parts-wrap">
+          <table class="services-table" style="min-width:620px">
+            <thead>
+              <tr>
+                <th>Serviço executado</th>
+                <th style="width:90px">Qtd.</th>
+                <th style="width:160px">Valor unitário</th>
+                <th style="width:160px">Total</th>
+                <th class="remove-cell"></th>
+              </tr>
+            </thead>
+            <tbody id="servicesBody"></tbody>
+          </table>
+        </div>
+
+        <div class="totals" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi"><span>Total mão de obra</span><strong id="laborTotal">R$ 0,00</strong></div>
+          <div class="kpi"><span>Total peças</span><strong id="partsClientTotal">R$ 0,00</strong></div>
+          <div class="kpi good"><span>Total orçamento</span><strong id="grandTotal">R$ 0,00</strong></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="fields">
+          <div class="field span4 internal"><label>Observações internas</label><textarea id="internalNotes" placeholder="Anotações da oficina. Não aparecem no modo cliente."></textarea></div>
+          <div class="field span4"><label>Observações para o cliente</label><textarea id="customerNotes" placeholder="Informações que podem aparecer no orçamento do cliente."></textarea></div>
+        </div>
+      </section>
+
+      <div class="footer-actions">
+        <button class="btn primary edit-only" id="saveBtn">Salvar ficha</button>
+        <button class="btn" id="customerModeBtn">Modo cliente</button>
+        <button class="btn" id="printBtn">Imprimir / PDF</button>
+        <button class="btn accent" id="whatsappBtn">Compartilhar WhatsApp</button>
+        <button class="btn edit-only" id="csvBtn">Exportar gastos CSV</button>
+        <button class="btn danger edit-only" id="deleteBtn">Excluir ficha</button>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="modal-backdrop" id="unsavedModal" role="dialog" aria-modal="true" aria-labelledby="unsavedTitle">
+  <div class="modal-card">
+    <h3 id="unsavedTitle">Alterações não salvas</h3>
+    <p>Esta O.S. foi alterada. O que deseja fazer antes de continuar?</p>
+    <div class="modal-actions">
+      <button class="btn" id="unsavedCancelBtn">Cancelar</button>
+      <button class="btn danger" id="unsavedDiscardBtn">Descartar</button>
+      <button class="btn primary" id="unsavedSaveBtn">Salvar e continuar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+const SUPABASE_URL = "https://rtdndffvbxhrhftqstwx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const app = $('#app');
+let state = {
+  fichas: [], currentId: null, customerMode: false, user: null,
+  dirty:false, rendering:false, changeVersion:0, autosaveTimer:null, savingPromise:null, cleanSnapshot:null
+};
+const fields = ['os','client','entryDate','car','brand','km','plate','engine','year','technician','internalNotes','customerNotes'];
+
+function uuid(){
+  if (crypto?.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+    const r=Math.random()*16|0, v=c==='x'?r:(r&0x3|0x8); return v.toString(16);
+  });
+}
+function money(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0); }
+function num(v){ const n=parseFloat(String(v ?? '').replace(',','.')); return Number.isFinite(n)?n:0; }
+function today(){ return new Date().toISOString().slice(0,10); }
+const SUGGESTED_MARKUP_KEY='frmotors_suggested_markup_pct';
+function suggestedMarkupPct(){ return Math.max(0,num($('#suggestedMarkupPct')?.value)||0); }
+function suggestedPrice(cost){
+  const c=num(cost); if(c<=0)return 0;
+  const raw=c*(1+suggestedMarkupPct()/100);
+  return Math.ceil(raw-1e-9);
+}
+function syncSuggestedMarkup(){
+  const el=$('#suggestedMarkupPct'); if(!el)return;
+  const saved=localStorage.getItem(SUGGESTED_MARKUP_KEY);
+  if(saved!==null && saved!=='')el.value=String(num(saved));
+}
+function esc(v=''){ return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+function blankFicha(){
+  return { id:uuid(), os:'', client:'', entryDate:today(), car:'', brand:'', km:'', plate:'', engine:'', year:'', technician:'', internalNotes:'', customerNotes:'',
+    createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), parts:[], services:[], isNew:true };
+}
+function blankPart(){ return {id:uuid(), name:'', qty:1, supplier:'', cost:0, price:0}; }
+function blankService(){ return {id:uuid(), description:'', qty:1, value:0}; }
+
+function current(){ return state.fichas.find(f=>f.id===state.currentId); }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1900); }
+function setCloud(text, ok=true){
+  const el=$('#cloudStatus'); if(!el)return; el.textContent=text;
+  el.style.background=ok?'#e2f4e9':'#fff0f0'; el.style.color=ok?'#17613d':'#9a3030';
+}
+
+function setDirty(value){
+  state.dirty=!!value;
+  const el=$('#saveState'); if(!el)return;
+  el.classList.remove('dirty','saved','saving');
+  if(state.savingPromise){ el.textContent='Salvando...'; el.classList.add('saving'); return; }
+  if(state.dirty){ el.textContent='Alterações não salvas'; el.classList.add('dirty'); }
+  else{ el.textContent='Tudo salvo'; el.classList.add('saved'); }
+}
+function markDirty(){
+  if(state.rendering || state.customerMode)return;
+  state.changeVersion++;
+  setDirty(true);
+  clearTimeout(state.autosaveTimer);
+  const f=current();
+  if(f && !f.isNew && state.user){
+    state.autosaveTimer=setTimeout(()=>save(true,{auto:true}),2200);
+  }
+}
+function cloneData(value){ return value ? JSON.parse(JSON.stringify(value)) : null; }
+function captureCleanSnapshot(){ state.cleanSnapshot=cloneData(current()); }
+function discardCurrentChanges(){
+  const f=current();
+  if(!f){ setDirty(false); return; }
+  if(f.isNew){
+    state.fichas=state.fichas.filter(x=>x.id!==f.id);
+    state.currentId=state.fichas[0]?.id||null;
+  }else if(state.cleanSnapshot){
+    const i=state.fichas.findIndex(x=>x.id===f.id);
+    if(i>=0)state.fichas[i]=cloneData(state.cleanSnapshot);
+  }
+  state.changeVersion=0; setDirty(false);
+}
+
+function askUnsaved(){
+  return new Promise(resolve=>{
+    const modal=$('#unsavedModal'); modal.classList.add('show');
+    const finish=value=>{ modal.classList.remove('show'); cleanup(); resolve(value); };
+    const save=()=>finish('save'), discard=()=>finish('discard'), cancel=()=>finish('cancel');
+    const cleanup=()=>{
+      $('#unsavedSaveBtn').removeEventListener('click',save);
+      $('#unsavedDiscardBtn').removeEventListener('click',discard);
+      $('#unsavedCancelBtn').removeEventListener('click',cancel);
+    };
+    $('#unsavedSaveBtn').addEventListener('click',save);
+    $('#unsavedDiscardBtn').addEventListener('click',discard);
+    $('#unsavedCancelBtn').addEventListener('click',cancel);
+  });
+}
+async function guardUnsaved(){
+  if(!state.dirty)return true;
+  const choice=await askUnsaved();
+  if(choice==='cancel')return false;
+  if(choice==='discard'){ clearTimeout(state.autosaveTimer); discardCurrentChanges(); return true; }
+  return await save(false);
+}
+function setSidebarCollapsed(collapsed){
+  if(window.matchMedia('(max-width: 900px)').matches){
+    $('#sidebar')?.classList.toggle('mobile-open',!collapsed);
+    return;
+  }
+  app.classList.toggle('sidebar-collapsed',collapsed);
+  localStorage.setItem('frmotors-sidebar-collapsed',collapsed?'1':'0');
+  const b=$('#collapseSidebarBtn');
+  if(b){ b.title=collapsed?'Expandir lista de O.S.':'Recolher lista de O.S.'; b.setAttribute('aria-label',b.title); }
+}
+
+function decodeServices(raw){
+  if(!raw) return [];
+  let value=raw;
+  if(typeof value==='string'){
+    try{ value=JSON.parse(value); }
+    catch{ return [{id:uuid(),description:value,qty:1,value:0}]; }
+  }
+  if(!Array.isArray(value)) return [];
+  return value.map(s=>({
+    id:s.id||uuid(), description:s.description||s.descricao||'',
+    qty:Number(s.qty??s.quantidade)||1, value:Number(s.value??s.valor)||0
+  }));
+}
+function encodeServices(services){
+  return JSON.stringify((services||[]).filter(s=>s.description||s.value).map(s=>({
+    id:s.id||uuid(), description:s.description||'', qty:s.qty||1, value:s.value||0
+  })));
+}
+function formatDateBR(v){
+  if(!v) return '';
+  const [y,m,d]=String(v).split('-'); return (y&&m&&d)?`${d}/${m}/${y}`:v;
+}
+function syncPrintMeta(){
+  const pairs={printClient:'client',printTechnician:'technician',printCar:'car',printBrand:'brand',printKm:'km',printPlate:'plate',printEngine:'engine',printYear:'year'};
+  Object.entries(pairs).forEach(([target,source])=>{ const t=$('#'+target), s=$('#'+source); if(t&&s)t.textContent=s.value||''; });
+  const d=$('#printEntryDate'); if(d)d.textContent=formatDateBR($('#entryDate')?.value||'');
+}
+
+function mapFicha(row){
+  return {
+    id:row.id, os:row.os||'', client:row.cliente||'',
+    entryDate:row.data_entrada||'',
+    car:row.carro||'', brand:row.marca||'', km:row.km||'',
+    plate:row.placa||'', engine:row.motor||'', year:row.ano||'',
+    technician:row.tecnico||'', internalNotes:row.observacoes||'', customerNotes:row.observacoes_cliente||'',
+    createdAt:row.created_at, updatedAt:row.updated_at,
+    parts:(row.pecas||[]).map(p=>({
+      id:p.id, name:p.nome||'', qty:Number(p.quantidade)||1, supplier:p.fornecedor||'',
+      cost:Number(p.custo)||0, price:Number(p.preco_cliente)||0
+    })),
+    services:decodeServices(row.servicos),
+    isNew:false
+  };
+}
+
+async function getSession(){
+  const { data, error } = await db.auth.getSession();
+  if(error) throw error;
+  state.user = data.session?.user || null;
+  showAuth();
+  if(state.user) await loadDB();
+}
+
+function showAuth(){
+  $('#loginScreen').style.display = state.user ? 'none' : 'flex';
+  if(state.user){
+    setCloud('Online · ' + (state.user.email||'usuário'), true);
+  }else{
+    setCloud('Desconectado', false);
+  }
+}
+
+async function signIn(){
+  const email=$('#loginEmail').value.trim();
+  const password=$('#loginPassword').value;
+  $('#loginMsg').textContent='Entrando...';
+  const { data, error } = await db.auth.signInWithPassword({email,password});
+  if(error){ $('#loginMsg').textContent=error.message; return; }
+  state.user=data.user; $('#loginMsg').textContent=''; showAuth(); await loadDB();
+}
+
+async function magicLink(){
+  const email=$('#loginEmail').value.trim();
+  if(!email){ $('#loginMsg').textContent='Digite seu e-mail.'; return; }
+  $('#loginMsg').textContent='Enviando...';
+  const { error }=await db.auth.signInWithOtp({
+    email,
+    options:{ emailRedirectTo: window.location.href.split('#')[0] }
+  });
+  $('#loginMsg').textContent=error?error.message:'Link enviado. Confira seu e-mail.';
+}
+
+async function logout(){
+  if(!(await guardUnsaved()))return;
+  clearTimeout(state.autosaveTimer);
+  await db.auth.signOut();
+  state={fichas:[],currentId:null,customerMode:false,user:null,dirty:false,rendering:false,changeVersion:0,autosaveTimer:null,savingPromise:null,cleanSnapshot:null};
+  $('#osList').innerHTML='';
+  setDirty(false); showAuth();
+}
+
+async function loadDB(preserveId=true){
+  if(!state.user)return;
+  setCloud('Sincronizando...', true);
+  const wanted = preserveId ? state.currentId : null;
+  const { data, error } = await db
+    .from('fichas')
+    .select('*, pecas(*)')
+    .order('updated_at',{ascending:false});
+  if(error){ console.error(error); setCloud('Erro de conexão', false); toast('Erro ao carregar fichas'); return; }
+  state.fichas=(data||[]).map(mapFicha);
+  if(!state.fichas.length){
+    const f=blankFicha(); f.parts=[blankPart()]; f.services=[blankService()]; state.fichas=[f]; state.currentId=f.id;
+  }else{
+    state.currentId = state.fichas.some(f=>f.id===wanted) ? wanted : state.fichas[0].id;
+  }
+  captureCleanSnapshot(); render();
+  state.changeVersion=0; setDirty(false);
+  setCloud('Online · ' + (state.user.email||'usuário'), true);
+}
+
+function collect(){
+  const f=current(); if(!f)return;
+  fields.forEach(k=>f[k]=$('#'+k).value.trim());
+  f.parts=[...document.querySelectorAll('#partsBody tr')].map(tr=>({
+    id:tr.dataset.id || uuid(),
+    name:tr.querySelector('[data-k=name]').value.trim(),
+    qty:num(tr.querySelector('[data-k=qty]').value)||1,
+    supplier:tr.querySelector('[data-k=supplier]').value.trim(),
+    cost:num(tr.querySelector('[data-k=cost]').value),
+    price:num(tr.querySelector('[data-k=price]').value)
+  }));
+  f.services=[...document.querySelectorAll('#servicesBody tr')].map(tr=>({
+    id:tr.dataset.id || uuid(),
+    description:tr.querySelector('[data-s=description]').value.trim(),
+    qty:num(tr.querySelector('[data-s=qty]').value)||1,
+    value:num(tr.querySelector('[data-s=value]').value)
+  }));
+  f.updatedAt=new Date().toISOString();
+}
+
+async function persistFicha(f){
+  const fichaPayload={
+    id:f.id, os:f.os||null, cliente:f.client||null,
+    data_entrada:f.entryDate||null,
+    carro:f.car||null, marca:f.brand||null, km:f.km||null, placa:(f.plate||'').toUpperCase()||null,
+    motor:f.engine||null, ano:f.year||null, tecnico:f.technician||null,
+    servicos:encodeServices(f.services), observacoes:f.internalNotes||null,
+    observacoes_cliente:f.customerNotes||null, updated_at:new Date().toISOString()
+  };
+  const validParts=(f.parts||[]).filter(p=>p.name || p.supplier || p.cost || p.price);
+  const partsPayload=validParts.map(p=>({
+    id:p.id||uuid(), ficha_id:f.id, nome:p.name||'Peça sem descrição',
+    quantidade:p.qty||1, fornecedor:p.supplier||null,
+    custo:p.cost||0, preco_cliente:p.price||0
+  }));
+  const { error }=await db.rpc('save_ficha_v4',{p_ficha:fichaPayload,p_pecas:partsPayload});
+  if(error)throw error;
+  f.updatedAt=fichaPayload.updated_at;
+  f.isNew=false;
+  return true;
+}
+
+async function save(silent=false, options={}){
+  if(!state.user)return false;
+  if(state.savingPromise){
+    await state.savingPromise;
+    if(state.dirty)return save(silent,options);
+    return true;
+  }
+  collect();
+  const f=current(); if(!f)return false;
+  const saveId=f.id, version=state.changeVersion;
+  clearTimeout(state.autosaveTimer);
+  setCloud(options.auto?'Salvando automaticamente...':'Salvando...',true);
+  state.savingPromise=(async()=>{
+    try{
+      await persistFicha(f);
+      if(current()?.id===saveId)captureCleanSnapshot();
+      if(current()?.id===saveId && state.changeVersion===version)setDirty(false);
+      renderList();
+      setCloud('Salvo na nuvem ✓',true);
+      if(!silent)toast('Ficha salva na nuvem');
+      return true;
+    }catch(error){
+      console.error(error);
+      setCloud('Erro ao salvar',false);
+      const missingRpc=String(error?.message||'').toLowerCase().includes('save_ficha_v4') || error?.code==='PGRST202';
+      toast(missingRpc?'Execute o SQL da V4 no Supabase':'Não foi possível salvar');
+      return false;
+    }finally{
+      state.savingPromise=null;
+      setDirty(state.dirty);
+    }
+  })();
+  return await state.savingPromise;
+}
+
+function render(){
+  const f=current(); if(!f)return;
+  state.rendering=true;
+  fields.forEach(k=>$('#'+k).value=f[k]||'');
+  $('#partsBody').innerHTML='';
+  (f.parts?.length?f.parts:[blankPart()]).forEach(p=>addPartRow(p,false));
+  $('#servicesBody').innerHTML='';
+  (f.services?.length?f.services:[blankService()]).forEach(s=>addServiceRow(s,false));
+  app.classList.toggle('customer-mode',state.customerMode);
+  $('#customerModeBtn').textContent=state.customerMode?'Voltar ao modo interno':'Modo cliente';
+  applyCustomerMode(); recalc(); renderList(); syncPrintMeta();
+  state.rendering=false;
+}
+
+function applyCustomerMode(){
+  document.querySelectorAll('#editor input,#editor textarea,#editor select').forEach(el=>{
+    if(state.customerMode){
+      if(el.dataset.customerLocked!=='1'){
+        el.dataset.wasReadonly=el.readOnly?'1':'0'; el.dataset.wasDisabled=el.disabled?'1':'0'; el.dataset.customerLocked='1';
+      }
+      if(el.tagName==='SELECT')el.disabled=true; else el.readOnly=true;
+    }else if(el.dataset.customerLocked==='1'){
+      el.readOnly=el.dataset.wasReadonly==='1'; el.disabled=el.dataset.wasDisabled==='1';
+      delete el.dataset.wasReadonly; delete el.dataset.wasDisabled; delete el.dataset.customerLocked;
+    }
+  });
+}
+
+function addPartRow(p=blankPart(),dirty=true){
+  const tr=document.createElement('tr'); tr.dataset.id=p.id||uuid();
+  tr.innerHTML=`
+    <td><input data-k="name" value="${esc(p.name)}" placeholder="Ex.: Kit correia"></td>
+    <td class="qty-cell"><input class="qty-input" data-k="qty" type="number" min="1" step="1" value="${p.qty||1}"></td>
+    <td class="internal"><input data-k="supplier" value="${esc(p.supplier)}" placeholder="Fornecedor"></td>
+    <td class="money internal"><input data-k="cost" type="number" min="0" step="0.01" value="${p.cost||0}"></td>
+    <td class="money internal suggested-cell print-hide"><button type="button" class="suggested-price calc-suggested" title="Clique para usar este preço" disabled>R$ 0,00</button></td>
+    <td class="money"><input data-k="price" type="number" min="0" step="0.01" value="${p.price||0}"></td>
+    <td class="money internal calc-cost"></td>
+    <td class="money calc-sale"></td>
+    <td class="money internal calc-margin"></td>
+    <td class="remove-cell edit-only"><button class="icon-btn" title="Remover">×</button></td>`;
+  tr.querySelectorAll('input,select').forEach(el=>{ el.addEventListener('input',()=>{recalc();markDirty();}); el.addEventListener('change',markDirty); });
+  const suggestedBtn=tr.querySelector('.suggested-price');
+  if(suggestedBtn) suggestedBtn.onclick=()=>{
+    const value=num(suggestedBtn.dataset.value);
+    if(value<=0)return;
+    tr.querySelector('[data-k=price]').value=value.toFixed(2);
+    recalc(); markDirty(); toast('Preço sugerido aplicado');
+  };
+  tr.querySelector('.icon-btn').onclick=()=>{tr.remove();recalc();markDirty();};
+  $('#partsBody').appendChild(tr); recalc(); if(dirty)markDirty();
+}
+
+function addServiceRow(s=blankService(),dirty=true){
+  const tr=document.createElement('tr'); tr.dataset.id=s.id||uuid();
+  tr.innerHTML=`
+    <td><input data-s="description" value="${esc(s.description)}" placeholder="Ex.: Troca de correia dentada"></td>
+    <td><input data-s="qty" type="number" min="1" step="1" value="${s.qty||1}"></td>
+    <td class="money"><input data-s="value" type="number" min="0" step="0.01" value="${s.value||0}"></td>
+    <td class="money calc-service"></td>
+    <td class="remove-cell edit-only"><button class="icon-btn" title="Remover">×</button></td>`;
+  tr.querySelectorAll('input').forEach(el=>{ el.addEventListener('input',()=>{recalc();markDirty();}); el.addEventListener('change',markDirty); });
+  tr.querySelector('.icon-btn').onclick=()=>{tr.remove();recalc();markDirty();};
+  $('#servicesBody').appendChild(tr); recalc(); if(dirty)markDirty();
+}
+
+function recalc(){
+  let cost=0,sale=0;
+  document.querySelectorAll('#partsBody tr').forEach(tr=>{
+    const q=num(tr.querySelector('[data-k=qty]').value)||1;
+    const c=num(tr.querySelector('[data-k=cost]').value), p=num(tr.querySelector('[data-k=price]').value);
+    const suggested=suggestedPrice(c);
+    const suggestedBtn=tr.querySelector('.calc-suggested');
+    if(suggestedBtn){
+      suggestedBtn.dataset.value=String(suggested||0);
+      suggestedBtn.textContent=money(suggested);
+      suggestedBtn.disabled=suggested<=0;
+    }
+    const ct=q*c, st=q*p, mg=st-ct; cost+=ct;sale+=st;
+    tr.querySelector('.calc-cost').textContent=money(ct);
+    tr.querySelector('.calc-sale').textContent=money(st);
+    tr.querySelector('.calc-margin').textContent=money(mg);
+  });
+  let labor=0;
+  document.querySelectorAll('#servicesBody tr').forEach(tr=>{
+    const q=num(tr.querySelector('[data-s=qty]').value)||1;
+    const v=num(tr.querySelector('[data-s=value]').value);
+    const total=q*v; labor+=total;
+    tr.querySelector('.calc-service').textContent=money(total);
+  });
+  const revenue=sale+labor;
+  $('#costTotal').textContent=money(cost);
+  $('#saleTotal').textContent=money(sale);
+  $('#marginTotal').textContent=money(revenue-cost);
+  $('#marginPct').textContent=(cost?((revenue-cost)/cost*100):0).toFixed(1).replace('.',',')+'%';
+  $('#laborTotal').textContent=money(labor);
+  $('#partsClientTotal').textContent=money(sale);
+  $('#grandTotal').textContent=money(revenue);
+  syncPrintMeta();
+}
+
+function renderList(){
+  const q=$('#searchInput').value.trim().toLowerCase();
+  const list=state.fichas.filter(f=>[f.os,f.client,f.plate,f.car].join(' ').toLowerCase().includes(q))
+    .sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0));
+  $('#osList').innerHTML = list.length ? list.map(f=>`
+    <div class="os-item ${f.id===state.currentId?'active':''}" data-id="${f.id}">
+      <strong>O.S. ${esc(f.os||'sem número')} · ${esc(f.plate||'sem placa')}</strong>
+      <span>${esc(f.client||'Cliente não informado')} · ${esc(f.car||'Veículo não informado')}</span>
+    </div>`).join('') : `<div class="empty">Nenhuma ficha encontrada.</div>`;
+  const toggle=$('#toggleSidebarBtn');
+  if(toggle) toggle.textContent=`☰ O.S. (${list.length})`;
+  const title=$('#osListTitle'); if(title) title.textContent=`Ordens de serviço · ${list.length}`;
+  document.querySelectorAll('.os-item').forEach(el=>el.onclick=async()=>{
+    if(el.dataset.id===state.currentId)return;
+    if(!(await guardUnsaved()))return;
+    state.currentId=el.dataset.id; state.changeVersion=0; setDirty(false); captureCleanSnapshot(); render();
+    if(window.matchMedia('(max-width: 900px)').matches){ $('#sidebar')?.classList.remove('mobile-open'); $('#editor')?.scrollIntoView({behavior:'smooth',block:'start'}); }
+  });
+}
+
+async function newFicha(){
+  if(!(await guardUnsaved()))return;
+  const f=blankFicha(); f.parts=[blankPart()]; f.services=[blankService()];
+  state.fichas.unshift(f); state.currentId=f.id; state.changeVersion=0; setDirty(false); captureCleanSnapshot(); render();
+  if(window.matchMedia('(max-width: 900px)').matches){ $('.sidebar')?.classList.remove('mobile-open'); $('#editor')?.scrollIntoView({behavior:'smooth',block:'start'}); }
+  $('#os').focus();
+}
+async function deleteFicha(){
+  const f=current(); if(!f)return;
+  if(!confirm(`Excluir a ficha O.S. ${f.os||'sem número'}?`))return;
+  if(!f.isNew){
+    const {error}=await db.from('fichas').delete().eq('id',f.id);
+    if(error){toast('Erro ao excluir');return;}
+  }
+  await loadDB(false); toast('Ficha excluída');
+}
+function toggleCustomer(){ collect(); state.customerMode=!state.customerMode; render(); }
+async function doPrint(){ await save(true); syncPrintMeta(); window.print(); }
+
+async function whatsapp(){
+  await save(true); const f=current(); const parts=f.parts.filter(p=>p.name);
+  const services=(f.services||[]).filter(s=>s.description);
+  const partsTotal=parts.reduce((sum,p)=>sum+(num(p.qty)||1)*num(p.price),0);
+  const laborTotal=services.reduce((sum,s)=>sum+(num(s.qty)||1)*num(s.value),0);
+  const total=partsTotal+laborTotal;
+  const lines=[
+    `*FR MOTORS · O.S. ${f.os||'-'}*`,
+    `${f.car||'Veículo'} ${f.year||''} · ${f.plate||'sem placa'}`,
+    f.client?`Cliente: ${f.client}`:'',
+    '',
+    parts.length?'*Peças / materiais:*':'',
+    ...parts.map(p=>`• ${p.name} (${p.qty}x) — ${money((num(p.qty)||1)*num(p.price))}`),
+    parts.length?`*Total peças: ${money(partsTotal)}*`:'',
+    '',
+    services.length?'*Serviços / mão de obra:*':'',
+    ...services.map(s=>`• ${s.description} (${s.qty}x) — ${money((num(s.qty)||1)*num(s.value))}`),
+    services.length?`*Total mão de obra: ${money(laborTotal)}*`:'',
+    '',
+    `*TOTAL DO ORÇAMENTO: ${money(total)}*`
+  ].filter(Boolean);
+  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener');
+}
+
+async function backup(){
+  await save(true);
+  const blob=new Blob([JSON.stringify({version:2,source:'Supabase',exportedAt:new Date().toISOString(),fichas:state.fichas},null,2)],{type:'application/json'});
+  downloadBlob(blob,'frmotors-backup-nuvem.json');
+}
+async function restore(file){
+  const r=new FileReader();
+  r.onload=async()=>{try{
+    const d=JSON.parse(r.result); const fichas=Array.isArray(d)?d:d.fichas;
+    if(!Array.isArray(fichas) || !fichas.length) throw new Error('Backup sem fichas válidas.');
+    if(!confirm(`Importar ${fichas.length} ficha(s) para o banco online? Registros com o mesmo ID serão atualizados.`))return;
+    let ok=0, failed=0; const errors=[];
+    setCloud('Importando backup...',true);
+    for(const raw of fichas){
+      try{
+        const f={
+          id:raw.id||uuid(), os:raw.os||'', client:raw.client||raw.cliente||'', entryDate:raw.entryDate||raw.data_entrada||'',
+          car:raw.car||raw.carro||'', brand:raw.brand||raw.marca||'', km:raw.km||'', plate:raw.plate||raw.placa||'',
+          engine:raw.engine||raw.motor||'', year:raw.year||raw.ano||'', technician:raw.technician||raw.tecnico||'',
+          internalNotes:raw.internalNotes||raw.notes||raw.observacoes||'', customerNotes:raw.customerNotes||raw.observacoes_cliente||'',
+          services:decodeServices(raw.services??raw.servicos), parts:(raw.parts||raw.pecas||[]).map(p=>({
+            id:p.id||uuid(),name:p.name||p.nome||'',qty:Number(p.qty??p.quantidade)||1,supplier:p.supplier||p.fornecedor||'',
+            cost:Number(p.cost??p.custo)||0,price:Number(p.price??p.preco_cliente)||0
+          })), isNew:false
+        };
+        await persistFicha(f); ok++;
+      }catch(err){ failed++; errors.push(String(err?.message||err)); console.error(err); }
+    }
+    await loadDB(false);
+    if(failed){
+      alert(`Importação concluída com ressalvas.\n\nSucesso: ${ok}\nFalhas: ${failed}\n\nPrimeiro erro: ${errors[0]||'não informado'}`);
+      toast(`Importação: ${ok} ok, ${failed} falha(s)`);
+    }else toast(`${ok} ficha(s) importada(s) com sucesso`);
+  }catch(e){console.error(e);alert('Arquivo de backup inválido: '+(e?.message||'formato não reconhecido'));}};
+  r.readAsText(file);
+}
+
+async function csv(){
+  await save(true); const f=current();
+  const rows=[['Data','Tipo','Categoria','Descrição','Conta','Valor','Desconto','Competência','Vencimento','Status','Observações']];
+  (f.parts||[]).filter(p=>p.name&&num(p.cost)>0).forEach(p=>{
+    rows.push([f.entryDate||'', 'Saída','Peças',`${p.name} · O.S. ${f.os||'-'} · ${p.supplier||'Fornecedor não informado'}`,'',
+      ((num(p.qty)||1)*num(p.cost)).toFixed(2).replace('.',','),'','','','Em aberto',`Veículo: ${f.car||''} | Placa: ${f.plate||''}`]);
+  });
+  const text='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  downloadBlob(new Blob([text],{type:'text/csv;charset=utf-8'}),`OS-${f.os||'sem-numero'}-gastos.csv`);
+}
+function downloadBlob(blob,name){ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+
+$('#toggleSidebarBtn').onclick=()=>$('#sidebar')?.classList.toggle('mobile-open');
+$('#collapseSidebarBtn').onclick=()=>{
+  if(window.matchMedia('(max-width: 900px)').matches) $('#sidebar')?.classList.remove('mobile-open');
+  else setSidebarCollapsed(!app.classList.contains('sidebar-collapsed'));
+};
+$('#newBtn').onclick=newFicha;
+syncSuggestedMarkup();
+$('#suggestedMarkupPct')?.addEventListener('input',()=>{
+  localStorage.setItem(SUGGESTED_MARKUP_KEY,String(suggestedMarkupPct()));
+  recalc();
+});
+$('#applySuggestedAllBtn')?.addEventListener('click',()=>{
+  let applied=0;
+  document.querySelectorAll('#partsBody tr').forEach(tr=>{
+    const cost=num(tr.querySelector('[data-k=cost]')?.value);
+    const value=suggestedPrice(cost);
+    const priceInput=tr.querySelector('[data-k=price]');
+    if(value>0 && priceInput){ priceInput.value=value.toFixed(2); applied++; }
+  });
+  recalc();
+  if(applied){ markDirty(); toast(`Preço sugerido aplicado em ${applied} peça${applied===1?'':'s'}`); }
+  else toast('Nenhuma peça com custo informado');
+});
+
+$('#addPartBtn').onclick=()=>addPartRow();
+$('#addServiceBtn').onclick=()=>addServiceRow();
+$('#saveBtn').onclick=()=>save(false);
+$('#deleteBtn').onclick=deleteFicha;
+$('#customerModeBtn').onclick=toggleCustomer;
+$('#printBtn').onclick=doPrint;
+$('#whatsappBtn').onclick=whatsapp;
+$('#backupBtn').onclick=backup;
+$('#refreshBtn').onclick=async()=>{if(await guardUnsaved())await loadDB(true);};
+$('#logoutBtn').onclick=logout;
+$('#restoreInput').onchange=e=>e.target.files[0]&&restore(e.target.files[0]);
+$('#csvBtn').onclick=csv;
+$('#searchInput').oninput=renderList;
+$('#loginBtn').onclick=signIn;
+$('#magicLinkBtn').onclick=magicLink;
+$('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn();});
+fields.forEach(k=>$('#'+k).addEventListener('input',()=>{ if(k==='plate') $('#plate').value=$('#plate').value.toUpperCase(); syncPrintMeta(); markDirty(); }));
+fields.forEach(k=>$('#'+k).addEventListener('change',markDirty));
+window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
+if(localStorage.getItem('frmotors-sidebar-collapsed')==='1' && !window.matchMedia('(max-width: 900px)').matches)setSidebarCollapsed(true);
+
+db.auth.onAuthStateChange(async(event,session)=>{
+  state.user=session?.user||null; showAuth();
+  if(state.user && (event==='SIGNED_IN' || event==='INITIAL_SESSION')) await loadDB(true);
+});
+
+getSession().catch(err=>{console.error(err);setCloud('Erro de conexão',false);$('#loginScreen').style.display='flex';});
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
