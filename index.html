@@ -246,6 +246,14 @@
 .fr-suggest-option:hover,
 .fr-suggest-option.active{background:#eef5f6;}
 
+
+
+/* V4.4.17 · LOGIN SEM CAPITALIZAÇÃO */
+#loginEmail{
+  text-transform:none !important;
+  font-variant:normal !important;
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -258,7 +266,7 @@
       <div><div style="font-size:20px;font-weight:900">FR Motors</div><div style="color:#68777f;font-size:13px">Acesso ao sistema da oficina</div></div>
     </div>
     <div style="display:grid;gap:12px">
-      <div><label style="display:block;font-size:11px;font-weight:800;color:#68777f;margin-bottom:5px;text-transform:uppercase">E-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="seuemail@frmotors.com"></div>
+      <div><label style="display:block;font-size:11px;font-weight:800;color:#68777f;margin-bottom:5px;text-transform:uppercase">E-mail</label><input id="loginEmail" type="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" placeholder="seuemail@frmotors.com"></div>
       <div><label style="display:block;font-size:11px;font-weight:800;color:#68777f;margin-bottom:5px;text-transform:uppercase">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn primary" id="loginBtn" style="width:100%">Entrar</button>
       <button class="btn" id="magicLinkBtn" style="width:100%">Receber link de acesso por e-mail</button>
