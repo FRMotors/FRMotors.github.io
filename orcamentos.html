@@ -2917,7 +2917,7 @@ function renderPerc(){
 function atualizarNomeLoja(indice, valor){
     if(!lojas[indice]) return;
 
-    const novoNome = normalizarTexto(valor || '').trim() || `LOJA ${indice + 1}`;
+    const novoNome = normalizarTexto(valor || '').trim().toLocaleUpperCase('pt-BR') || `LOJA ${indice + 1}`;
     if(lojas[indice].nome === novoNome) return;
 
     const linhasAtuais = capturarLinhas(true, lojas.length);
@@ -2932,7 +2932,7 @@ function addLoja(){
 
     const linhasAtuais = capturarLinhas(true, lojas.length);
     const perc = parsePercentual(prompt("Desconto %:", "0") || 0);
-    const nome = normalizarTexto(nomeDigitado.trim());
+    const nome = normalizarTexto(nomeDigitado.trim()).toLocaleUpperCase('pt-BR');
 
     lojas.push({ nome, perc });
 
