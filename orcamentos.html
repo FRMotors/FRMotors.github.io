@@ -2222,6 +2222,67 @@ body.printing .main{gap:6px!important;}
     .orc-table-head{display:none!important;}
 }
 
+
+/* V4.4.15 · COLUNA PEÇAS REALMENTE FIXA NO SCROLL HORIZONTAL */
+@media screen {
+    .table-container{
+        position:relative !important;
+        overflow-x:auto !important;
+        overflow-y:hidden !important;
+        -webkit-overflow-scrolling:touch;
+        overscroll-behavior-x:contain;
+    }
+
+    .table-container table{
+        overflow:visible !important;
+        border-collapse:separate !important;
+        border-spacing:0 !important;
+    }
+
+    thead tr:first-child > th.peca-divider,
+    tbody > tr > td.peca-divider,
+    tfoot > tr > td.peca-divider{
+        position:-webkit-sticky !important;
+        position:sticky !important;
+        left:0 !important;
+        background-clip:border-box !important;
+        box-shadow:10px 0 18px -14px rgba(16,24,32,.58) !important;
+    }
+
+    thead tr:first-child > th.peca-divider{
+        z-index:60 !important;
+        background:var(--orc-dark) !important;
+        color:#fff !important;
+    }
+
+    tbody > tr > td.peca-divider{
+        z-index:40 !important;
+        background:#fff !important;
+    }
+
+    tbody tr:nth-child(even) > td.peca-divider{
+        background:#fafbfb !important;
+    }
+
+    tbody tr:hover > td.peca-divider{
+        background:#f3f7f7 !important;
+    }
+
+    tfoot > tr > td.peca-divider{
+        z-index:50 !important;
+        background:#f1f4f5 !important;
+    }
+
+    /* As colunas das lojas continuam normais e deslizam sob PEÇAS. */
+    thead tr:nth-child(2) > th,
+    thead tr:first-child > th:not(.peca-divider),
+    tbody > tr > td:not(.peca-divider),
+    tfoot > tr > td:not(.peca-divider){
+        position:relative !important;
+        left:auto !important;
+    }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
