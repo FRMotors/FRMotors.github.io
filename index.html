@@ -570,6 +570,166 @@
   }
 }
 
+
+
+/* V4.4.21 · CABEÇALHO MOBILE IDÊNTICO AO DE ORÇAMENTOS */
+.mobile-system-topbar{display:none}
+
+@media screen and (max-width:900px){
+  body{
+    padding-top:126px !important;
+  }
+
+  .mobile-system-topbar{
+    display:block;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:500;
+    min-height:126px;
+    background:rgba(244,246,247,.96);
+    backdrop-filter:blur(12px);
+    border-bottom:0;
+    box-shadow:none;
+  }
+  .mobile-system-topbar-inner{
+    max-width:1280px;
+    min-height:126px;
+    margin:0 auto;
+    padding:8px 12px;
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px 10px;
+  }
+  .mobile-system-brand{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    min-width:max-content;
+    flex:1;
+  }
+  .mobile-system-brand-mark{
+    width:42px;
+    height:42px;
+    border-radius:14px;
+    background:var(--dark);
+    color:#fff;
+    display:grid;
+    place-items:center;
+    font-weight:900;
+    font-style:italic;
+    font-size:16px;
+    line-height:1;
+    letter-spacing:-2px;
+    box-shadow:var(--shadow);
+  }
+  .mobile-system-brand-copy strong{
+    display:block;
+    color:var(--ink);
+    font-size:18px;
+    line-height:1.05;
+  }
+  .mobile-system-brand-copy span{
+    display:none;
+  }
+  .mobile-system-spacer{
+    display:none;
+  }
+  .mobile-system-logout{
+    min-height:40px;
+    padding:8px 13px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    box-shadow:none;
+    font-weight:800;
+  }
+  .mobile-system-nav{
+    order:3;
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    padding:5px;
+    background:#e9edef;
+    border:1px solid var(--line);
+    border-radius:14px;
+  }
+  .mobile-system-nav a{
+    width:100%;
+    min-height:38px;
+    padding:8px 13px;
+    border-radius:10px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    color:#415159;
+    font-size:13px;
+    font-weight:850;
+    white-space:nowrap;
+  }
+  .mobile-system-nav a:hover{
+    background:#fff;
+    color:var(--ink);
+  }
+  .mobile-system-nav a.active{
+    background:var(--dark);
+    color:#fff;
+    box-shadow:0 6px 16px rgba(16,24,32,.16);
+  }
+
+  /* O cabeçalho desktop deixa de participar do topo neste modo.
+     Mantemos apenas a faixa de ações logo abaixo. */
+  .topbar{
+    position:static !important;
+    top:auto !important;
+    height:auto !important;
+    min-height:0 !important;
+    padding:8px 0 10px !important;
+    background:transparent !important;
+    backdrop-filter:none !important;
+  }
+  .topbar .brand,
+  .topbar .module-nav,
+  .topbar .mobile-top-logout{
+    display:none !important;
+  }
+  .brand-row{
+    display:block !important;
+    min-height:0 !important;
+    height:auto !important;
+  }
+  .top-actions{
+    width:100% !important;
+    margin:0 !important;
+  }
+  .grid{
+    margin-top:0 !important;
+  }
+}
+
+@media screen and (max-width:520px){
+  .mobile-system-brand-copy strong{
+    font-size:16px;
+  }
+  .mobile-system-logout{
+    padding:7px 10px;
+  }
+}
+
+@media print{
+  .mobile-system-topbar{
+    display:none !important;
+  }
+  body{
+    padding-top:0 !important;
+  }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -588,6 +748,25 @@
       <button class="btn" id="magicLinkBtn" style="width:100%">Receber link de acesso por e-mail</button>
       <div id="loginMsg" style="min-height:20px;color:#68777f;font-size:13px;text-align:center"></div>
     </div>
+  </div>
+</div>
+
+
+<div class="mobile-system-topbar" aria-label="Cabeçalho FR Motors">
+  <div class="mobile-system-topbar-inner">
+    <div class="mobile-system-brand">
+      <div class="mobile-system-brand-mark">FR</div>
+      <div class="mobile-system-brand-copy">
+        <strong>FR Motors</strong>
+        <span>Gestão da oficina</span>
+      </div>
+    </div>
+    <div class="mobile-system-spacer"></div>
+    <button id="mobileSystemLogoutBtn" class="mobile-system-logout" type="button">Sair</button>
+    <nav class="mobile-system-nav" aria-label="Módulos FR Motors">
+      <a class="active" href="./" aria-current="page">Ficha / O.S.</a>
+      <a href="./orcamentos.html">Orçamentos</a>
+    </nav>
   </div>
 </div>
 
@@ -1530,6 +1709,7 @@ $('#backupBtn').onclick=backup;
 $('#refreshBtn').onclick=async()=>{if(await guardUnsaved())await loadDB(true);};
 $('#logoutBtn').onclick=logout;
 $('#mobileLogoutTopBtn').onclick=logout;
+$('#mobileSystemLogoutBtn').onclick=logout;
 $('#restoreInput').onchange=e=>e.target.files[0]&&restore(e.target.files[0]);
 $('#csvBtn').onclick=csv;
 $('#searchInput').oninput=renderList;
