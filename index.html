@@ -1016,6 +1016,171 @@ getSession().catch(err=>{console.error(err);setCloud('Erro de conexão',false);$
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
+
+
+/* V4.4.16 JS · MAIÚSCULAS + MEMÓRIA DE SUGESTÕES */
+const FR_SUGGEST_PREFIX = 'frmotors_suggest_v1_';
+let frSuggestTarget = null;
+let frSuggestValues = [];
+let frSuggestIndex = -1;
+
+function frUppercaseAllowed(el){
+  if(!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return false;
+  if(el.id === 'loginEmail' || el.id === 'loginPassword') return false;
+  if(el.matches('[type="email"],[type="password"],[type="date"],[type="number"],[type="file"],[readonly]')) return false;
+  if(el.matches('.valor-input,.desc-input')) return false;
+  if(el.inputMode === 'decimal' || el.inputMode === 'numeric') return false;
+  return true;
+}
+function frUppercaseField(el){
+  if(!frUppercaseAllowed(el) || !el.value) return;
+  const start = typeof el.selectionStart === 'number' ? el.selectionStart : null;
+  const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : null;
+  const upper = el.value.toLocaleUpperCase('pt-BR');
+  if(upper === el.value) return;
+  el.value = upper;
+  if(start !== null && end !== null){ try{ el.setSelectionRange(start,end); }catch(_){} }
+}
+function frSuggestionKey(el){
+  if(!el) return null;
+  if(el.id === 'client') return 'cliente';
+  if(el.id === 'car' || el.id === 'carro') return 'veiculo';
+  if(el.id === 'brand' || el.classList.contains('marca-input')) return 'marca';
+  if(el.id === 'plate' || el.id === 'placa') return 'placa';
+  if(el.id === 'engine') return 'motor';
+  if(el.id === 'technician') return 'tecnico';
+  if(el.matches('[data-k="name"],.peca-input')) return 'peca';
+  if(el.matches('[data-k="supplier"]')) return 'fornecedor';
+  if(el.matches('[data-s="description"]')) return 'servico';
+  return null;
+}
+function frReadSuggestions(key){
+  try{
+    const value = JSON.parse(localStorage.getItem(FR_SUGGEST_PREFIX + key) || '[]');
+    return Array.isArray(value) ? value.filter(Boolean) : [];
+  }catch(_){ return []; }
+}
+function frStoreSuggestion(el, rawValue){
+  const key = frSuggestionKey(el);
+  if(!key) return;
+  const value = String(rawValue ?? el.value ?? '').trim().toLocaleUpperCase('pt-BR');
+  if(!value || value.length > 120) return;
+  const old = frReadSuggestions(key).filter(v => v !== value);
+  const next = [value, ...old].slice(0,40);
+  try{ localStorage.setItem(FR_SUGGEST_PREFIX + key, JSON.stringify(next)); }catch(_){}
+}
+function frGetSuggestBox(){
+  let box = document.getElementById('frSuggestBox');
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'frSuggestBox';
+    box.className = 'fr-suggest-box';
+    document.body.appendChild(box);
+  }
+  return box;
+}
+function frHideSuggestions(){
+  const box = document.getElementById('frSuggestBox');
+  if(box) box.style.display = 'none';
+  frSuggestTarget = null;
+  frSuggestValues = [];
+  frSuggestIndex = -1;
+}
+function frPositionSuggestions(el){
+  const box = frGetSuggestBox();
+  const r = el.getBoundingClientRect();
+  const w = Math.max(220, Math.min(r.width, 460));
+  box.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+  box.style.top = Math.min(window.innerHeight - 16, r.bottom + 5) + 'px';
+  box.style.width = w + 'px';
+}
+function frApplySuggestion(value){
+  const el = frSuggestTarget;
+  if(!el) return;
+  el.value = value;
+  frUppercaseField(el);
+  frStoreSuggestion(el,value);
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true}));
+  el.focus();
+  frHideSuggestions();
+}
+function frEscapeSuggestion(v){
+  return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function frShowSuggestions(el){
+  const key = frSuggestionKey(el);
+  if(!key){ frHideSuggestions(); return; }
+  const current = String(el.value || '').trim().toLocaleUpperCase('pt-BR');
+  const values = frReadSuggestions(key)
+    .filter(v => !current || v.includes(current))
+    .filter(v => v !== current)
+    .slice(0,8);
+  if(!values.length){ frHideSuggestions(); return; }
+  frSuggestTarget = el;
+  frSuggestValues = values;
+  frSuggestIndex = -1;
+  const box = frGetSuggestBox();
+  box.innerHTML = values.map((v,i) =>
+    '<button type="button" class="fr-suggest-option" data-i="'+i+'" title="'+frEscapeSuggestion(v)+'">'+frEscapeSuggestion(v)+'</button>'
+  ).join('');
+  box.querySelectorAll('.fr-suggest-option').forEach(btn => {
+    btn.addEventListener('mousedown', e => {
+      e.preventDefault();
+      frApplySuggestion(values[Number(btn.dataset.i)]);
+    });
+  });
+  frPositionSuggestions(el);
+  box.style.display = 'block';
+}
+document.addEventListener('input', e => {
+  const el = e.target;
+  if(!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+  frUppercaseField(el);
+  if(frSuggestionKey(el)) frShowSuggestions(el);
+}, true);
+document.addEventListener('focusin', e => {
+  const el = e.target;
+  if(!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+  frUppercaseField(el);
+  if(frSuggestionKey(el)){
+    frStoreSuggestion(el,el.value);
+    frShowSuggestions(el);
+  }
+});
+document.addEventListener('focusout', e => {
+  const el = e.target;
+  if(!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+  frUppercaseField(el);
+  if(frSuggestionKey(el)) frStoreSuggestion(el,el.value);
+  setTimeout(() => {
+    if(!document.activeElement?.closest?.('#frSuggestBox')) frHideSuggestions();
+  },120);
+});
+document.addEventListener('keydown', e => {
+  if(!frSuggestTarget || !frSuggestValues.length) return;
+  const box = document.getElementById('frSuggestBox');
+  const buttons = box ? [...box.querySelectorAll('.fr-suggest-option')] : [];
+  if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    e.preventDefault();
+    frSuggestIndex += e.key === 'ArrowDown' ? 1 : -1;
+    if(frSuggestIndex < 0) frSuggestIndex = frSuggestValues.length - 1;
+    if(frSuggestIndex >= frSuggestValues.length) frSuggestIndex = 0;
+    buttons.forEach((b,i)=>b.classList.toggle('active',i===frSuggestIndex));
+    buttons[frSuggestIndex]?.scrollIntoView({block:'nearest'});
+  }else if(e.key === 'Enter' && frSuggestIndex >= 0){
+    e.preventDefault();
+    frApplySuggestion(frSuggestValues[frSuggestIndex]);
+  }else if(e.key === 'Escape'){
+    frHideSuggestions();
+  }
+});
+window.addEventListener('resize', () => { if(frSuggestTarget) frPositionSuggestions(frSuggestTarget); });
+window.addEventListener('scroll', () => { if(frSuggestTarget) frPositionSuggestions(frSuggestTarget); }, true);
+document.addEventListener('mousedown', e => {
+  if(!e.target.closest('#frSuggestBox') && e.target !== frSuggestTarget) frHideSuggestions();
+});
+
 </script>
 </body>
 </html>
