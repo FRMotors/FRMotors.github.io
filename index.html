@@ -540,6 +540,36 @@
   }
 }
 
+
+
+/* V4.4.20 · O.S. + NOVA FICHA NA MESMA LINHA NO MOBILE */
+@media screen and (max-width:560px){
+  .top-commands{
+    grid-template-columns:minmax(112px,.85fr) minmax(0,1.65fr) !important;
+    gap:8px !important;
+  }
+  .top-commands #toggleSidebarBtn{
+    grid-column:auto !important;
+    width:100% !important;
+    min-width:0 !important;
+    padding-left:10px !important;
+    padding-right:10px !important;
+    white-space:nowrap;
+  }
+  .top-commands #newBtn{
+    grid-column:auto !important;
+    width:100% !important;
+    min-width:0 !important;
+    white-space:nowrap;
+  }
+}
+
+@media screen and (max-width:340px){
+  .top-commands{
+    grid-template-columns:1fr !important;
+  }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
