@@ -254,6 +254,88 @@
   font-variant:normal !important;
 }
 
+
+
+/* V4.4.18 · HISTÓRICO E AUDITORIA */
+.sheet-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.history-btn{
+  border:1px solid rgba(255,255,255,.24)!important;
+  background:rgba(255,255,255,.10)!important;
+  color:#fff!important;
+  min-height:38px!important;
+  padding:8px 12px!important;
+  box-shadow:none!important;
+}
+.history-btn:hover{background:rgba(255,255,255,.17)!important}
+.audit-modal-card{
+  width:min(780px,100%);
+  max-height:min(84vh,760px);
+  padding:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.audit-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  padding:20px 22px 15px;border-bottom:1px solid var(--line);
+}
+.audit-head h3{margin:0 0 4px}
+.audit-head p{margin:0;color:var(--muted);font-size:13px}
+.audit-body{padding:16px 22px 22px;overflow:auto}
+.audit-meta{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px;
+}
+.audit-meta-card{
+  border:1px solid var(--line);border-radius:13px;background:#fafcfc;padding:11px 12px;
+}
+.audit-meta-card span{
+  display:block;color:var(--muted);font-size:10px;font-weight:850;
+  text-transform:uppercase;letter-spacing:.045em;margin-bottom:3px;
+}
+.audit-meta-card strong{font-size:13px;color:var(--ink)}
+.audit-status{
+  margin:0 0 14px;padding:10px 12px;border-radius:11px;
+  background:#f4f7f8;color:#526168;font-size:12px;border:1px solid var(--line);
+}
+.audit-status.warn{background:#fff7df;color:#725c18;border-color:#ecdca5}
+.audit-timeline{display:grid;gap:10px}
+.audit-event{
+  position:relative;border:1px solid var(--line);border-radius:14px;
+  padding:13px 14px;background:#fff;
+}
+.audit-event-top{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;
+}
+.audit-event-title{font-weight:900;font-size:13px;color:var(--ink)}
+.audit-event-user{font-size:12px;color:var(--muted);margin-top:2px;word-break:break-all}
+.audit-event-time{font-size:11px;color:var(--muted);white-space:nowrap}
+.audit-changes{display:grid;gap:6px;margin-top:8px}
+.audit-change{
+  border-left:3px solid #cfdadd;padding:6px 8px;background:#f8fafb;border-radius:0 8px 8px 0;
+  font-size:12px;line-height:1.35;
+}
+.audit-change.add{border-left-color:#73ad8d;background:#f1f8f4}
+.audit-change.remove{border-left-color:#c98b8b;background:#fff5f5}
+.audit-change strong{display:block;font-size:10px;letter-spacing:.035em;color:#526168;margin-bottom:2px}
+.audit-old{color:#8b4c4c;text-decoration:line-through;text-decoration-thickness:1px}
+.audit-arrow{padding:0 5px;color:#87949a}
+.audit-new{color:#17613d;font-weight:800}
+.audit-empty{
+  padding:24px 12px;text-align:center;color:var(--muted);font-size:13px;
+  border:1px dashed var(--line);border-radius:13px;
+}
+@media(max-width:640px){
+  .audit-head{padding:16px}
+  .audit-body{padding:13px 16px 18px}
+  .audit-meta{grid-template-columns:1fr}
+  .audit-event-top{display:block}
+  .audit-event-time{display:block;margin-top:4px}
+  .sheet-head-actions{width:100%;justify-content:space-between}
+}
+@media print{
+  .history-btn,#auditModal{display:none!important}
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -324,7 +406,10 @@
           <div class="logo">FRMOTORS</div>
           <div style="font-size:12px;opacity:.72">Ficha de peças e gastos</div>
         </div>
-        <div class="os-number"><strong>O.S.:</strong><input id="os" placeholder="0001" /></div>
+        <div class="sheet-head-actions">
+          <button class="btn history-btn internal" id="historyBtn" type="button">Histórico</button>
+          <div class="os-number"><strong>O.S.:</strong><input id="os" placeholder="0001" /></div>
+        </div>
       </div>
 
       <section class="section">
@@ -449,6 +534,27 @@
     </div>
   </div>
 </div>
+
+<div class="modal-backdrop" id="auditModal" role="dialog" aria-modal="true" aria-labelledby="auditTitle">
+  <div class="modal-card audit-modal-card">
+    <div class="audit-head">
+      <div>
+        <h3 id="auditTitle">Histórico da O.S.</h3>
+        <p id="auditSubtitle">Alterações registradas desta ordem de serviço.</p>
+      </div>
+      <button class="btn" id="auditCloseBtn" type="button">Fechar</button>
+    </div>
+    <div class="audit-body">
+      <div class="audit-meta">
+        <div class="audit-meta-card"><span>Criada em</span><strong id="auditCreatedAt">—</strong></div>
+        <div class="audit-meta-card"><span>Última edição</span><strong id="auditUpdatedAt">—</strong></div>
+      </div>
+      <div id="auditStatus" class="audit-status">Carregando histórico...</div>
+      <div id="auditTimeline" class="audit-timeline"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -730,12 +836,15 @@ async function save(silent=false, options={}){
   }
   collect();
   const f=current(); if(!f)return false;
+  const auditBefore=cloneData(state.cleanSnapshot);
+  const auditWasNew=!!f.isNew;
   const saveId=f.id, version=state.changeVersion;
   clearTimeout(state.autosaveTimer);
   setCloud(options.auto?'Salvando automaticamente...':'Salvando...',true);
   state.savingPromise=(async()=>{
     try{
       await persistFicha(f);
+      await logFichaAudit(f,auditBefore,auditWasNew);
       if(current()?.id===saveId)captureCleanSnapshot();
       if(current()?.id===saveId && state.changeVersion===version)setDirty(false);
       renderList();
@@ -754,6 +863,185 @@ async function save(silent=false, options={}){
     }
   })();
   return await state.savingPromise;
+}
+
+
+/* V4.4.18 JS · HISTÓRICO E AUDITORIA */
+let auditAvailable = null;
+
+function auditDate(value){
+  if(!value) return '—';
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('pt-BR',{
+    day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'
+  }).format(d);
+}
+function auditPlain(value){
+  if(value===null || value===undefined || value==='') return '—';
+  return String(value);
+}
+function auditPartSummary(p){
+  if(!p) return '—';
+  const name=p.name||'PEÇA SEM DESCRIÇÃO';
+  const qty=num(p.qty)||1;
+  const supplier=p.supplier?(' · '+p.supplier):'';
+  return qty+'x '+name+supplier;
+}
+function auditServiceSummary(s){
+  if(!s) return '—';
+  const desc=s.description||'SERVIÇO SEM DESCRIÇÃO';
+  const qty=num(s.qty)||1;
+  return qty+'x '+desc;
+}
+function auditDiff(before,after){
+  if(!before) return [];
+  const changes=[];
+  const simple=[
+    ['os','O.S.'],['client','CLIENTE'],['entryDate','DATA DE ENTRADA'],
+    ['car','CARRO'],['brand','MARCA'],['km','KM'],['plate','PLACA'],
+    ['engine','MOTOR'],['year','ANO'],['technician','TÉCNICO'],
+    ['internalNotes','OBSERVAÇÕES INTERNAS'],['customerNotes','OBSERVAÇÕES DO CLIENTE']
+  ];
+  simple.forEach(([key,label])=>{
+    const a=String(before?.[key]??'').trim();
+    const b=String(after?.[key]??'').trim();
+    if(a!==b) changes.push({tipo:'campo',rotulo:label,antes:a,depois:b});
+  });
+
+  const beforeParts=new Map((before.parts||[]).filter(p=>p&&(p.name||p.supplier||num(p.cost)||num(p.price))).map(p=>[p.id,p]));
+  const afterParts=new Map((after.parts||[]).filter(p=>p&&(p.name||p.supplier||num(p.cost)||num(p.price))).map(p=>[p.id,p]));
+  afterParts.forEach((p,id)=>{
+    const old=beforeParts.get(id);
+    if(!old){
+      changes.push({tipo:'add',rotulo:'PEÇA ADICIONADA',depois:auditPartSummary(p)});
+      return;
+    }
+    const defs=[['name','DESCRIÇÃO'],['qty','QTD.'],['supplier','FORNECEDOR'],['cost','CUSTO'],['price','PREÇO CLIENTE']];
+    defs.forEach(([key,label])=>{
+      const a=key==='cost'||key==='price'?num(old[key]):String(old[key]??'');
+      const b=key==='cost'||key==='price'?num(p[key]):String(p[key]??'');
+      if(a!==b){
+        changes.push({
+          tipo:'campo',
+          rotulo:'PEÇA · '+(p.name||old.name||'SEM DESCRIÇÃO')+' · '+label,
+          antes:(key==='cost'||key==='price')?money(a):auditPlain(a),
+          depois:(key==='cost'||key==='price')?money(b):auditPlain(b)
+        });
+      }
+    });
+  });
+  beforeParts.forEach((p,id)=>{
+    if(!afterParts.has(id)) changes.push({tipo:'remove',rotulo:'PEÇA REMOVIDA',antes:auditPartSummary(p)});
+  });
+
+  const beforeServices=new Map((before.services||[]).filter(s=>s&&(s.description||num(s.value))).map(s=>[s.id,s]));
+  const afterServices=new Map((after.services||[]).filter(s=>s&&(s.description||num(s.value))).map(s=>[s.id,s]));
+  afterServices.forEach((s,id)=>{
+    const old=beforeServices.get(id);
+    if(!old){
+      changes.push({tipo:'add',rotulo:'SERVIÇO ADICIONADO',depois:auditServiceSummary(s)});
+      return;
+    }
+    const defs=[['description','DESCRIÇÃO'],['qty','QTD.'],['value','VALOR']];
+    defs.forEach(([key,label])=>{
+      const a=key==='value'?num(old[key]):String(old[key]??'');
+      const b=key==='value'?num(s[key]):String(s[key]??'');
+      if(a!==b){
+        changes.push({
+          tipo:'campo',
+          rotulo:'SERVIÇO · '+(s.description||old.description||'SEM DESCRIÇÃO')+' · '+label,
+          antes:key==='value'?money(a):auditPlain(a),
+          depois:key==='value'?money(b):auditPlain(b)
+        });
+      }
+    });
+  });
+  beforeServices.forEach((s,id)=>{
+    if(!afterServices.has(id)) changes.push({tipo:'remove',rotulo:'SERVIÇO REMOVIDO',antes:auditServiceSummary(s)});
+  });
+  return changes.slice(0,80);
+}
+async function logFichaAudit(f,before,wasNew){
+  if(!state.user || !f?.id) return;
+  const changes=wasNew?[]:auditDiff(before,f);
+  if(!wasNew && !changes.length) return;
+  try{
+    const {error}=await db.rpc('log_ficha_audit',{
+      p_ficha_id:f.id,
+      p_acao:wasNew?'CRIACAO':'ALTERACAO',
+      p_alteracoes:changes
+    });
+    if(error){
+      auditAvailable=false;
+      console.warn('Auditoria ainda não ativada no Supabase:',error);
+      return;
+    }
+    auditAvailable=true;
+  }catch(error){
+    auditAvailable=false;
+    console.warn('Falha ao registrar auditoria:',error);
+  }
+}
+function auditChangeHtml(ch){
+  const type=ch?.tipo||'campo';
+  const label=esc(ch?.rotulo||'ALTERAÇÃO');
+  if(type==='add'){
+    return '<div class="audit-change add"><strong>'+label+'</strong><span class="audit-new">'+esc(auditPlain(ch?.depois))+'</span></div>';
+  }
+  if(type==='remove'){
+    return '<div class="audit-change remove"><strong>'+label+'</strong><span class="audit-old">'+esc(auditPlain(ch?.antes))+'</span></div>';
+  }
+  return '<div class="audit-change"><strong>'+label+'</strong><span class="audit-old">'+esc(auditPlain(ch?.antes))+'</span><span class="audit-arrow">→</span><span class="audit-new">'+esc(auditPlain(ch?.depois))+'</span></div>';
+}
+async function openHistory(){
+  const f=current();
+  if(!f) return;
+  if(f.isNew){
+    toast('Salve a O.S. antes de abrir o histórico');
+    return;
+  }
+  $('#auditTitle').textContent='Histórico da O.S. '+(f.os||'sem número');
+  $('#auditSubtitle').textContent=[f.client,f.car,f.plate].filter(Boolean).join(' · ')||'Alterações registradas desta ordem de serviço.';
+  $('#auditCreatedAt').textContent=auditDate(f.createdAt);
+  $('#auditUpdatedAt').textContent=auditDate(f.updatedAt);
+  $('#auditStatus').className='audit-status';
+  $('#auditStatus').textContent='Carregando histórico...';
+  $('#auditTimeline').innerHTML='';
+  $('#auditModal').classList.add('show');
+  try{
+    const {data,error}=await db
+      .from('ficha_auditoria')
+      .select('id,acao,alteracoes,user_email,created_at')
+      .eq('ficha_id',f.id)
+      .order('created_at',{ascending:false})
+      .limit(100);
+    if(error) throw error;
+    auditAvailable=true;
+    const rows=data||[];
+    $('#auditStatus').textContent=rows.length
+      ? rows.length+' evento'+(rows.length===1?'':'s')+' registrado'+(rows.length===1?'':'s')+'.'
+      : 'Nenhuma alteração detalhada registrada ainda. Novas alterações passarão a aparecer aqui.';
+    $('#auditTimeline').innerHTML=rows.length?rows.map(row=>{
+      const creation=row.acao==='CRIACAO';
+      const changes=Array.isArray(row.alteracoes)?row.alteracoes:[];
+      return '<article class="audit-event">'+
+        '<div class="audit-event-top"><div><div class="audit-event-title">'+(creation?'O.S. criada':'O.S. alterada')+'</div>'+
+        '<div class="audit-event-user">'+esc(row.user_email||'USUÁRIO')+'</div></div>'+
+        '<time class="audit-event-time">'+esc(auditDate(row.created_at))+'</time></div>'+
+        (changes.length?'<div class="audit-changes">'+changes.map(auditChangeHtml).join('')+'</div>':'')+
+        '</article>';
+    }).join(''):'';
+  }catch(error){
+    auditAvailable=false;
+    console.warn(error);
+    $('#auditStatus').className='audit-status warn';
+    $('#auditStatus').textContent='O histórico detalhado ainda não foi ativado no Supabase. As datas da O.S. continuam disponíveis acima.';
+    $('#auditTimeline').innerHTML='<div class="audit-empty">Execute o arquivo SQL de auditoria uma única vez no Supabase para começar a registrar usuário e alterações.</div>';
+  }
+}
+function closeHistory(){
+  $('#auditModal')?.classList.remove('show');
 }
 
 function render(){
@@ -996,6 +1284,9 @@ $('#applySuggestedAllBtn')?.addEventListener('click',()=>{
 $('#addPartBtn').onclick=()=>addPartRow();
 $('#addServiceBtn').onclick=()=>addServiceRow();
 $('#saveBtn').onclick=()=>save(false);
+$('#historyBtn').onclick=openHistory;
+$('#auditCloseBtn').onclick=closeHistory;
+$('#auditModal').addEventListener('click',e=>{if(e.target===$('#auditModal'))closeHistory();});
 $('#deleteBtn').onclick=deleteFicha;
 $('#customerModeBtn').onclick=toggleCustomer;
 $('#printBtn').onclick=doPrint;
