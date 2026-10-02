@@ -2330,6 +2330,177 @@ body.printing .main{gap:6px!important;}
   border-radius:0 0 0 22px !important;
 }
 
+
+
+/* V4.4.17 · LOGIN NORMAL + ORÇAMENTOS MOBILE MAIS AMPLO */
+#loginEmail{
+  text-transform:none !important;
+  font-variant:normal !important;
+}
+
+@media screen and (max-width:768px){
+  /* Mais área útil na página */
+  .main{
+    padding:10px 8px 18px !important;
+    gap:10px !important;
+  }
+
+  /* Descontos deixam de ocupar uma coluna vertical enorme */
+  #linhaPerc{
+    padding:0 !important;
+  }
+  .discounts-head{
+    min-height:48px !important;
+    padding:9px 10px !important;
+  }
+  .discounts-content{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    gap:7px !important;
+    padding:9px 10px 11px !important;
+    scrollbar-width:thin;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .discounts-content .loja-controle{
+    flex:0 0 176px !important;
+    width:176px !important;
+    min-width:176px !important;
+    min-height:44px !important;
+    grid-template-columns:28px minmax(48px,1fr) 50px 13px !important;
+    gap:5px !important;
+    padding:5px !important;
+  }
+  .loja-nome-label{
+    font-size:11px !important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .loja-perc-input{
+    width:50px !important;
+    min-width:50px !important;
+    height:32px !important;
+    padding:5px 6px !important;
+    text-align:center;
+  }
+  .btn-loja-delete{
+    width:28px !important;
+    min-width:28px !important;
+    height:32px !important;
+    min-height:32px !important;
+  }
+
+  /* A coluna PEÇAS continua fixa, mas deixa de consumir metade da tela */
+  .table-container{
+    border-radius:16px !important;
+    scrollbar-width:thin;
+  }
+  thead tr:first-child > th.peca-divider,
+  tbody > tr > td.peca-divider,
+  tfoot > tr > td.peca-divider,
+  th:first-child,
+  td:first-child{
+    width:158px !important;
+    min-width:158px !important;
+    max-width:158px !important;
+  }
+  .peca-cell{
+    grid-template-columns:26px minmax(0,1fr) !important;
+    gap:5px !important;
+    padding:4px 5px !important;
+  }
+  .btn-remover-peca{
+    width:26px !important;
+    min-width:26px !important;
+    height:30px !important;
+    min-height:30px !important;
+    font-size:11px !important;
+  }
+  .peca-input{
+    min-height:34px !important;
+    height:34px !important;
+    padding:7px 6px !important;
+    font-size:12px !important;
+  }
+
+  /* Cada loja também fica mais compacta */
+  .subhead-valor,
+  .valor-td,
+  .total-valor{
+    width:184px !important;
+    min-width:184px !important;
+    max-width:184px !important;
+  }
+  .subhead-desc,
+  .desc-td,
+  .total-desc{
+    width:94px !important;
+    min-width:94px !important;
+    max-width:94px !important;
+  }
+  .marca-opcao{
+    grid-template-columns:22px minmax(62px,1fr) 78px !important;
+    gap:4px !important;
+  }
+  .btn-remover-marca{
+    width:22px !important;
+    min-width:22px !important;
+  }
+  .valor-input,
+  .desc-input{
+    width:78px !important;
+    min-width:78px !important;
+    max-width:78px !important;
+    font-size:12px !important;
+  }
+  .marca-input{
+    font-size:11px !important;
+    padding-left:5px !important;
+    padding-right:5px !important;
+  }
+  thead th,
+  tbody td,
+  tfoot td{
+    font-size:12px !important;
+  }
+  .loja-header-name{
+    min-height:36px !important;
+    font-size:12px !important;
+  }
+
+  /* Ações ocupam menos altura, mantendo alvos confortáveis */
+  .orc-actions{
+    gap:7px !important;
+  }
+  .orc-actions .orc-btn{
+    min-height:46px !important;
+    padding:9px 8px !important;
+    font-size:13px !important;
+  }
+}
+
+@media screen and (max-width:420px){
+  thead tr:first-child > th.peca-divider,
+  tbody > tr > td.peca-divider,
+  tfoot > tr > td.peca-divider,
+  th:first-child,
+  td:first-child{
+    width:144px !important;
+    min-width:144px !important;
+    max-width:144px !important;
+  }
+  .subhead-valor,
+  .valor-td,
+  .total-valor{
+    width:174px !important;
+    min-width:174px !important;
+    max-width:174px !important;
+  }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2343,7 +2514,7 @@ body.printing .main{gap:6px!important;}
             <div><div style="font-size:20px;font-weight:900;color:#172126">FR Motors</div><div style="color:#68777f;font-size:13px">Acesso ao sistema da oficina</div></div>
         </div>
         <div class="login-fields">
-            <div><label>E-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="seuemail@frmotors.com"></div>
+            <div><label>E-mail</label><input id="loginEmail" type="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" placeholder="seuemail@frmotors.com"></div>
             <div><label>Senha</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••••"></div>
             <button class="login-btn" id="loginBtn" type="button">Entrar</button>
             <button class="login-btn secondary" id="magicLinkBtn" type="button">Receber link de acesso por e-mail</button>
