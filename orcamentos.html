@@ -2501,6 +2501,48 @@ body.printing .main{gap:6px!important;}
   }
 }
 
+
+
+/* V4.4.22 · TIPOGRAFIA DO CABEÇALHO PADRONIZADA */
+@media screen and (max-width:900px){
+  .system-topbar{
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important;
+  }
+  .system-brand-copy strong{
+    font-family:inherit !important;
+    font-size:18px !important;
+    font-weight:800 !important;
+    line-height:1.05 !important;
+    letter-spacing:0 !important;
+  }
+  .system-nav a{
+    font-family:inherit !important;
+    font-size:13px !important;
+    font-weight:800 !important;
+    line-height:1 !important;
+    letter-spacing:0 !important;
+  }
+  .system-logout{
+    font-family:inherit !important;
+    font-size:15px !important;
+    font-weight:800 !important;
+    line-height:1 !important;
+    letter-spacing:0 !important;
+  }
+  .system-brand-mark{
+    font-family:Arial,Helvetica,sans-serif !important;
+    font-size:16px !important;
+    font-weight:900 !important;
+    line-height:1 !important;
+    letter-spacing:-2px !important;
+  }
+}
+@media screen and (max-width:520px){
+  .system-brand-copy strong{
+    font-size:16px !important;
+  }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
