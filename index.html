@@ -1044,6 +1044,20 @@
   }
 }
 
+
+/* V4.4.34 · LISTA O.S. COM SCROLL APÓS 5 ITENS */
+.os-list{
+  scrollbar-width:thin;
+  scrollbar-color:#b8c5ca transparent;
+}
+.os-list::-webkit-scrollbar{width:7px;}
+.os-list::-webkit-scrollbar-track{background:transparent;}
+.os-list::-webkit-scrollbar-thumb{
+  background:#b8c5ca;
+  border-radius:999px;
+}
+.os-list::-webkit-scrollbar-thumb:hover{background:#93a5ad;}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -1883,6 +1897,22 @@ function renderList(){
   const toggle=$('#toggleSidebarBtn');
   if(toggle) toggle.textContent=`☰ O.S. (${list.length})`;
   const title=$('#osListTitle'); if(title) title.textContent=`Ordens de serviço · ${list.length}`;
+
+  // Mantém no máximo 5 O.S. visíveis; da 6ª em diante, usa scroll interno.
+  const osListEl = $('#osList');
+  if(osListEl){
+    osListEl.style.maxHeight = '';
+    osListEl.style.overflowY = list.length > 5 ? 'auto' : 'visible';
+    if(list.length > 5){
+      const cards = [...osListEl.querySelectorAll('.os-item')].slice(0,5);
+      requestAnimationFrame(()=>{
+        const gap = parseFloat(getComputedStyle(osListEl).rowGap || getComputedStyle(osListEl).gap || '8') || 8;
+        const height = cards.reduce((sum,card)=>sum + card.getBoundingClientRect().height, 0) + gap * Math.max(0,cards.length - 1);
+        osListEl.style.maxHeight = Math.ceil(height) + 'px';
+      });
+    }
+  }
+
   document.querySelectorAll('.os-item').forEach(el=>el.onclick=async()=>{
     if(el.dataset.id===state.currentId)return;
     if(!(await guardUnsaved()))return;
