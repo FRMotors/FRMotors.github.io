@@ -1,0 +1,168 @@
+/* FR Motors · cabeçalho compartilhado
+   Fonte única para Ficha/O.S. e Orçamentos.
+   Este arquivo é carregado depois dos estilos internos das páginas. */
+
+@media screen and (max-width:900px){
+  .system-topbar,
+  .ficha-responsive-topbar{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important;
+    font-size:15px !important;
+    font-style:normal !important;
+    font-variant:normal !important;
+    font-stretch:100% !important;
+    font-synthesis:none !important;
+    text-rendering:auto !important;
+  }
+
+  .system-topbar-inner,
+  .ficha-responsive-topbar .system-topbar-inner{
+    max-width:1280px !important;
+    min-height:126px !important;
+    margin:0 auto !important;
+    padding:8px 18px !important;
+    display:flex !important;
+    align-items:center !important;
+    flex-wrap:wrap !important;
+    gap:7px 10px !important;
+  }
+
+  .system-brand,
+  .ficha-responsive-topbar .system-brand{
+    display:flex !important;
+    align-items:center !important;
+    gap:11px !important;
+    min-width:max-content !important;
+    flex:1 1 auto !important;
+  }
+
+  .system-brand-mark,
+  .ficha-responsive-topbar .system-brand-mark{
+    width:42px !important;
+    height:42px !important;
+    flex:0 0 42px !important;
+    border-radius:14px !important;
+    background:#101820 !important;
+    color:#fff !important;
+    display:grid !important;
+    place-items:center !important;
+    font-family:Arial,Helvetica,sans-serif !important;
+    font-size:16px !important;
+    font-style:italic !important;
+    font-weight:900 !important;
+    line-height:16px !important;
+    letter-spacing:-2px !important;
+    font-synthesis:none !important;
+    text-rendering:auto !important;
+    box-shadow:0 8px 22px rgba(16,24,32,.16) !important;
+  }
+
+  .system-brand-copy,
+  .ficha-responsive-topbar .system-brand-copy{
+    font:inherit !important;
+  }
+
+  .system-brand-copy strong,
+  .ficha-responsive-topbar .system-brand-copy strong{
+    display:block !important;
+    margin:0 !important;
+    padding:0 !important;
+    color:#172126 !important;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important;
+    font-size:18px !important;
+    font-style:normal !important;
+    font-weight:700 !important;
+    line-height:18.9px !important;
+    letter-spacing:0 !important;
+    font-synthesis:none !important;
+  }
+
+  .system-brand-copy span,
+  .ficha-responsive-topbar .system-brand-copy span{
+    display:none !important;
+  }
+
+  .system-nav,
+  .ficha-responsive-topbar .system-nav{
+    order:3 !important;
+    width:100% !important;
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:6px !important;
+    padding:5px !important;
+    margin:0 !important;
+    background:#e9edef !important;
+    border:1px solid #dfe5e8 !important;
+    border-radius:14px !important;
+    font:inherit !important;
+  }
+
+  .system-nav a,
+  .ficha-responsive-topbar .system-nav a{
+    width:100% !important;
+    min-height:38px !important;
+    margin:0 !important;
+    padding:8px 13px !important;
+    border-radius:10px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    text-decoration:none !important;
+    color:#415159 !important;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important;
+    font-size:13px !important;
+    font-style:normal !important;
+    font-weight:700 !important;
+    line-height:13px !important;
+    letter-spacing:0 !important;
+    font-synthesis:none !important;
+    white-space:nowrap !important;
+  }
+
+  .system-nav a.active,
+  .ficha-responsive-topbar .system-nav a.active{
+    background:#101820 !important;
+    color:#fff !important;
+    box-shadow:0 6px 16px rgba(16,24,32,.16) !important;
+  }
+
+  .system-spacer,
+  .ficha-responsive-topbar .system-spacer{
+    flex:1 1 auto !important;
+  }
+
+  .system-logout,
+  .ficha-responsive-topbar .system-logout{
+    appearance:none !important;
+    -webkit-appearance:none !important;
+    min-height:40px !important;
+    height:40px !important;
+    margin:0 !important;
+    padding:8px 13px !important;
+    border-radius:12px !important;
+    border:1px solid #dfe5e8 !important;
+    background:#fff !important;
+    color:#172126 !important;
+    box-shadow:none !important;
+    transform:none !important;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important;
+    font-size:15px !important;
+    font-style:normal !important;
+    font-weight:700 !important;
+    line-height:15px !important;
+    letter-spacing:0 !important;
+    font-synthesis:none !important;
+  }
+}
+
+@media screen and (max-width:520px){
+  .system-brand-copy strong,
+  .ficha-responsive-topbar .system-brand-copy strong{
+    font-size:16px !important;
+    line-height:16.8px !important;
+  }
+
+  .system-logout,
+  .ficha-responsive-topbar .system-logout{
+    padding:7px 10px !important;
+  }
+}
