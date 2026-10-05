@@ -1938,7 +1938,24 @@ async function deleteFicha(){
   await loadDB(false); toast('Ficha excluída');
 }
 function toggleCustomer(){ collect(); state.customerMode=!state.customerMode; render(); }
-async function doPrint(){ await save(true); syncPrintMeta(); window.print(); }
+async function doPrint(){
+  await save(true);
+  syncPrintMeta();
+
+  const tituloOriginal = document.title;
+  const f = current();
+  const os = String(f?.os || '').trim();
+  const cliente = String(f?.client || '').trim();
+  const partesTitulo = ['FR Motors', os ? `O.S. ${os}` : 'O.S.', cliente].filter(Boolean);
+  document.title = partesTitulo.join(' - ');
+
+  const restaurarTitulo = () => {
+    document.title = tituloOriginal;
+  };
+  window.addEventListener('afterprint', restaurarTitulo, { once:true });
+
+  window.print();
+}
 
 async function whatsapp(){
   await save(true); const f=current(); const parts=f.parts.filter(p=>p.name);
