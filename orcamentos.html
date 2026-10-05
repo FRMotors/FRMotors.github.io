@@ -2738,6 +2738,16 @@ body.printing .main{gap:6px!important;}
 }
 </style>
 
+
+<style>
+/* V4.4.37 · DIVISÃO DE PEÇAS MAIS ESCURA EM PDF/IMAGEM */
+@media print{
+  .peca-divider{
+    border-right:1px solid #b8c5ca !important;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -4136,6 +4146,11 @@ function criarAreaImagem(area){
         el.style.position = 'static';
         el.style.left = 'auto';
         el.style.boxShadow = 'none';
+    });
+
+    // Na imagem/PDF, deixa a separação entre PEÇAS e lojas um pouco mais visível.
+    cloneArea.querySelectorAll('.peca-divider').forEach(el => {
+        el.style.borderRight = '1px solid #b8c5ca';
     });
     cloneArea.style.width = `${larguraConteudo}px`;
     cloneArea.style.maxWidth = 'none';
