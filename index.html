@@ -1061,6 +1061,11 @@
 }
 .os-list::-webkit-scrollbar-thumb:hover{background:#93a5ad;}
 
+
+/* V4.4.38 · DESFAZER ALTERAÇÃO NO HISTÓRICO */
+.audit-event-actions{display:flex;justify-content:flex-end;margin-top:10px;padding-top:9px;border-top:1px solid #edf0f1}
+.audit-revert-btn{min-height:32px!important;padding:6px 10px!important;font-size:12px!important;color:#415159!important;background:#fff!important;border:1px solid var(--line)!important;box-shadow:none!important}
+.audit-revert-btn:hover{background:#f2f6f7!important;color:#172126!important}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -1638,6 +1643,16 @@ function auditServiceSummary(s){
   const qty=num(s.qty)||1;
   return qty+'x '+desc;
 }
+function auditSnapshot(f){
+  if(!f) return null;
+  const snapshot={id:f.id};
+  fields.forEach(key=>snapshot[key]=f[key]??'');
+  snapshot.parts=cloneData(f.parts||[]);
+  snapshot.services=cloneData(f.services||[]);
+  snapshot.createdAt=f.createdAt||null;
+  snapshot.updatedAt=f.updatedAt||null;
+  return snapshot;
+}
 function auditDiff(before,after){
   if(!before) return [];
   const changes=[];
@@ -1710,11 +1725,12 @@ async function logFichaAudit(f,before,wasNew){
   if(!state.user || !f?.id) return;
   const changes=wasNew?[]:auditDiff(before,f);
   if(!wasNew && !changes.length) return;
+  const auditPayload=wasNew?changes:[...changes,{tipo:'snapshot',estado:auditSnapshot(before)}];
   try{
     const {error}=await db.rpc('log_ficha_audit',{
       p_ficha_id:f.id,
       p_acao:wasNew?'CRIACAO':'ALTERACAO',
-      p_alteracoes:changes
+      p_alteracoes:auditPayload
     });
     if(error){
       auditAvailable=false;
@@ -1729,6 +1745,7 @@ async function logFichaAudit(f,before,wasNew){
 }
 function auditChangeHtml(ch){
   const type=ch?.tipo||'campo';
+  if(type==='snapshot') return '';
   const label=esc(ch?.rotulo||'ALTERAÇÃO');
   if(type==='add'){
     return '<div class="audit-change add"><strong>'+label+'</strong><span class="audit-new">'+esc(auditPlain(ch?.depois))+'</span></div>';
@@ -1738,6 +1755,54 @@ function auditChangeHtml(ch){
   }
   return '<div class="audit-change"><strong>'+label+'</strong><span class="audit-old">'+esc(auditPlain(ch?.antes))+'</span><span class="audit-arrow">→</span><span class="audit-new">'+esc(auditPlain(ch?.depois))+'</span></div>';
 }
+let auditRowsById=new Map();
+
+async function revertAuditEvent(id){
+  const row=auditRowsById.get(String(id));
+  const f=current();
+  if(!row||!f) return;
+  if(state.dirty){
+    toast('Salve ou descarte as alterações atuais antes de desfazer pelo histórico');
+    return;
+  }
+  const changes=Array.isArray(row.alteracoes)?row.alteracoes:[];
+  const snap=changes.find(ch=>ch?.tipo==='snapshot'&&ch?.estado)?.estado;
+  if(!snap){
+    toast('Esta alteração antiga não possui ponto de restauração');
+    return;
+  }
+  if(!confirm('Desfazer esta alteração e restaurar a O.S. para o estado anterior?\n\nA restauração será salva e também ficará registrada no histórico.')) return;
+
+  const beforeCurrent=cloneData(f);
+  const restored={
+    ...f,
+    ...cloneData(snap),
+    id:f.id,
+    createdAt:f.createdAt||snap.createdAt,
+    updatedAt:f.updatedAt,
+    isNew:false,
+    parts:Array.isArray(snap.parts)?cloneData(snap.parts):[],
+    services:Array.isArray(snap.services)?cloneData(snap.services):[]
+  };
+  const pos=state.fichas.findIndex(item=>item.id===f.id);
+  if(pos<0) return;
+
+  state.cleanSnapshot=beforeCurrent;
+  state.fichas[pos]=restored;
+  state.currentId=restored.id;
+  state.changeVersion++;
+  render();
+  setDirty(true);
+
+  const saved=await save(true,{auditRevert:true});
+  if(saved){
+    closeHistory();
+    toast('Alteração desfeita e registrada no histórico');
+  }else{
+    toast('Não foi possível desfazer a alteração');
+  }
+}
+
 async function openHistory(){
   const f=current();
   if(!f) return;
@@ -1763,19 +1828,26 @@ async function openHistory(){
     if(error) throw error;
     auditAvailable=true;
     const rows=data||[];
+    auditRowsById=new Map(rows.map(row=>[String(row.id),row]));
     $('#auditStatus').textContent=rows.length
       ? rows.length+' evento'+(rows.length===1?'':'s')+' registrado'+(rows.length===1?'':'s')+'.'
       : 'Nenhuma alteração detalhada registrada ainda. Novas alterações passarão a aparecer aqui.';
     $('#auditTimeline').innerHTML=rows.length?rows.map(row=>{
       const creation=row.acao==='CRIACAO';
       const changes=Array.isArray(row.alteracoes)?row.alteracoes:[];
+      const visibleChanges=changes.filter(ch=>ch?.tipo!=='snapshot');
+      const canRevert=!creation&&changes.some(ch=>ch?.tipo==='snapshot'&&ch?.estado);
       return '<article class="audit-event">'+
         '<div class="audit-event-top"><div><div class="audit-event-title">'+(creation?'O.S. criada':'O.S. alterada')+'</div>'+
         '<div class="audit-event-user">'+esc(row.user_email||'USUÁRIO')+'</div></div>'+
         '<time class="audit-event-time">'+esc(auditDate(row.created_at))+'</time></div>'+
-        (changes.length?'<div class="audit-changes">'+changes.map(auditChangeHtml).join('')+'</div>':'')+
+        (visibleChanges.length?'<div class="audit-changes">'+visibleChanges.map(auditChangeHtml).join('')+'</div>':'')+
+        (canRevert?'<div class="audit-event-actions"><button type="button" class="btn small audit-revert-btn" data-audit-revert="'+esc(row.id)+'">Desfazer alteração</button></div>':'')+
         '</article>';
     }).join(''):'';
+    $('#auditTimeline').querySelectorAll('[data-audit-revert]').forEach(btn=>{
+      btn.addEventListener('click',()=>revertAuditEvent(btn.dataset.auditRevert));
+    });
   }catch(error){
     auditAvailable=false;
     console.warn(error);
