@@ -1091,6 +1091,9 @@
 
 /* V4.4.40 · DESFAZER SOMENTE EXCLUSÕES */
 /* Snapshots de restauração passam a ser criados apenas para exclusões de peça/serviço. */
+
+/* V4.4.41 · RESTAURA SOMENTE ITEM EXCLUÍDO */
+/* O histórico armazena dados completos somente de peças/serviços excluídos. */
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -1717,7 +1720,13 @@ function auditDiff(before,after){
     });
   });
   beforeParts.forEach((p,id)=>{
-    if(!afterParts.has(id)) changes.push({tipo:'remove',rotulo:'PEÇA REMOVIDA',antes:auditPartSummary(p)});
+    if(!afterParts.has(id)) changes.push({
+      tipo:'remove',
+      rotulo:'PEÇA REMOVIDA',
+      antes:auditPartSummary(p),
+      restoreKind:'part',
+      restoreItem:cloneData(p)
+    });
   });
 
   const beforeServices=new Map((before.services||[]).filter(s=>s&&(s.description||num(s.value))).map(s=>[s.id,s]));
@@ -1743,7 +1752,13 @@ function auditDiff(before,after){
     });
   });
   beforeServices.forEach((s,id)=>{
-    if(!afterServices.has(id)) changes.push({tipo:'remove',rotulo:'SERVIÇO REMOVIDO',antes:auditServiceSummary(s)});
+    if(!afterServices.has(id)) changes.push({
+      tipo:'remove',
+      rotulo:'SERVIÇO REMOVIDO',
+      antes:auditServiceSummary(s),
+      restoreKind:'service',
+      restoreItem:cloneData(s)
+    });
   });
   return changes.slice(0,80);
 }
@@ -1751,18 +1766,11 @@ async function logFichaAudit(f,before,wasNew){
   if(!state.user || !f?.id) return;
   const changes=wasNew?[]:auditDiff(before,f);
   if(!wasNew && !changes.length) return;
-  const hasRecoverableDeletion=changes.some(ch=>
-    ch?.tipo==='remove' &&
-    (ch?.rotulo==='PEÇA REMOVIDA' || ch?.rotulo==='SERVIÇO REMOVIDO')
-  );
-  const auditPayload=wasNew
-    ? changes
-    : (hasRecoverableDeletion ? [...changes,{tipo:'snapshot',estado:auditSnapshot(before)}] : changes);
   try{
     const {error}=await db.rpc('log_ficha_audit',{
       p_ficha_id:f.id,
       p_acao:wasNew?'CRIACAO':'ALTERACAO',
-      p_alteracoes:auditPayload
+      p_alteracoes:changes
     });
     if(error){
       auditAvailable=false;
@@ -1793,29 +1801,46 @@ async function revertAuditEvent(id){
   const row=auditRowsById.get(String(id));
   const f=current();
   if(!row||!f) return;
+
   if(state.dirty){
     toast('Salve ou descarte as alterações atuais antes de desfazer pelo histórico');
     return;
   }
+
   const changes=Array.isArray(row.alteracoes)?row.alteracoes:[];
-  const snap=changes.find(ch=>ch?.tipo==='snapshot'&&ch?.estado)?.estado;
-  if(!snap){
-    toast('Esta alteração antiga não possui ponto de restauração');
+  const recoverable=changes.filter(ch=>
+    ch?.tipo==='remove' &&
+    (ch?.restoreKind==='part' || ch?.restoreKind==='service') &&
+    ch?.restoreItem
+  );
+
+  if(!recoverable.length){
+    toast('Esta exclusão antiga não possui dados suficientes para restauração');
     return;
   }
-  if(!confirm('Desfazer esta alteração e restaurar a O.S. para o estado anterior?\n\nA restauração será salva e também ficará registrada no histórico.')) return;
+
+  const labels=recoverable.map(ch=>ch.rotulo==='PEÇA REMOVIDA'?'peça':'mão de obra');
+  const unique=[...new Set(labels)];
+  const what=unique.length===1
+    ? (unique[0]==='peça'?'a peça excluída':'a mão de obra excluída')
+    : 'os itens excluídos';
+
+  if(!confirm('Deseja restaurar '+what+'?\n\nSomente os itens excluídos serão recuperados. Outras alterações da O.S. serão mantidas.')) return;
 
   const beforeCurrent=cloneData(f);
-  const restored={
-    ...f,
-    ...cloneData(snap),
-    id:f.id,
-    createdAt:f.createdAt||snap.createdAt,
-    updatedAt:f.updatedAt,
-    isNew:false,
-    parts:Array.isArray(snap.parts)?cloneData(snap.parts):[],
-    services:Array.isArray(snap.services)?cloneData(snap.services):[]
-  };
+  const restored=cloneData(f);
+  restored.parts=Array.isArray(restored.parts)?restored.parts:[];
+  restored.services=Array.isArray(restored.services)?restored.services:[];
+
+  recoverable.forEach(ch=>{
+    const item=cloneData(ch.restoreItem);
+    if(ch.restoreKind==='part'){
+      if(!restored.parts.some(p=>p?.id===item?.id)) restored.parts.push(item);
+    }else if(ch.restoreKind==='service'){
+      if(!restored.services.some(s=>s?.id===item?.id)) restored.services.push(item);
+    }
+  });
+
   const pos=state.fichas.findIndex(item=>item.id===f.id);
   if(pos<0) return;
 
@@ -1829,9 +1854,9 @@ async function revertAuditEvent(id){
   const saved=await save(true,{auditRevert:true});
   if(saved){
     closeHistory();
-    toast('Alteração desfeita e registrada no histórico');
+    toast('Item excluído restaurado e registrado no histórico');
   }else{
-    toast('Não foi possível desfazer a alteração');
+    toast('Não foi possível restaurar o item excluído');
   }
 }
 
@@ -1868,11 +1893,11 @@ async function openHistory(){
       const creation=row.acao==='CRIACAO';
       const changes=Array.isArray(row.alteracoes)?row.alteracoes:[];
       const visibleChanges=changes.filter(ch=>ch?.tipo!=='snapshot');
-      const hasDeletedItem=visibleChanges.some(ch=>
+      const canRevert=!creation&&visibleChanges.some(ch=>
         ch?.tipo==='remove' &&
-        (ch?.rotulo==='PEÇA REMOVIDA' || ch?.rotulo==='SERVIÇO REMOVIDO')
+        (ch?.restoreKind==='part' || ch?.restoreKind==='service') &&
+        ch?.restoreItem
       );
-      const canRevert=!creation&&hasDeletedItem&&changes.some(ch=>ch?.tipo==='snapshot'&&ch?.estado);
       return '<article class="audit-event">'+
         '<div class="audit-event-top"><div><div class="audit-event-title">'+(creation?'O.S. criada':'O.S. alterada')+'</div>'+
         '<div class="audit-event-user">'+esc(row.user_email||'USUÁRIO')+'</div></div>'+
