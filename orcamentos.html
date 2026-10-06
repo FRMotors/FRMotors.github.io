@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#101820">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FR Motors" />
 <meta name="description" content="Módulo de orçamentos do sistema FR Motors.">
 <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./fr-icon.svg" type="image/svg+xml" />
@@ -2832,6 +2835,7 @@ body.printing .main{gap:6px!important;}
     <button class="orc-btn neutral" onclick="salvar()">Salvar</button>
     <button class="orc-btn neutral" onclick="imprimirPDF()">PDF</button>
     <button class="orc-btn neutral" onclick="gerarImagem()">Imagem</button>
+    <button class="orc-btn neutral" type="button" data-install-app>Adicionar à tela inicial</button>
 </div>
 
 </div>
@@ -4689,5 +4693,6 @@ document.addEventListener('mousedown', e => {
 
 </script>
 
+<script src="./pwa-install.js"></script>
 </body>
 </html>
