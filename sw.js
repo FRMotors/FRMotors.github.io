@@ -1,10 +1,11 @@
-const CACHE_NAME = "frmotors-github-v4-4-37";
+const CACHE_NAME = "frmotors-github-v4-4-38";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./orcamentos.html",
   "./manifest.webmanifest",
-  "./fr-icon.svg"
+  "./fr-icon.svg",
+  "./pwa-install.js"
 ];
 
 self.addEventListener("install", event => {
