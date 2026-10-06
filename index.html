@@ -1066,6 +1066,28 @@
 .audit-event-actions{display:flex;justify-content:flex-end;margin-top:10px;padding-top:9px;border-top:1px solid #edf0f1}
 .audit-revert-btn{min-height:32px!important;padding:6px 10px!important;font-size:12px!important;color:#415159!important;background:#fff!important;border:1px solid var(--line)!important;box-shadow:none!important}
 .audit-revert-btn:hover{background:#f2f6f7!important;color:#172126!important}
+
+/* V4.4.39 · SHOFICINA PLACEHOLDER */
+.shoficina-btn[disabled]{
+  opacity:.58;
+  cursor:not-allowed;
+  transform:none!important;
+  background:#f3f6f7!important;
+  color:#66767e!important;
+  border:1px solid #d8e0e3!important;
+  box-shadow:none!important;
+}
+.shoficina-btn[disabled]::after{
+  content:'Em breve';
+  margin-left:7px;
+  padding:2px 6px;
+  border-radius:999px;
+  background:#e5ecee;
+  color:#5f6d74;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.02em;
+}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -1120,6 +1142,7 @@
         <div class="top-commands">
           <button class="btn mobile-only" id="toggleSidebarBtn">☰ O.S.</button>
           <button class="btn primary" id="newBtn">+ Nova ficha</button>
+          <button class="btn optional shoficina-btn" id="shoficinaImportBtn" type="button" disabled title="Integração com o SHOficina em preparação">Importar SHOficina</button>
           <button class="btn optional" id="refreshBtn">Atualizar</button>
           <button class="btn optional" id="backupBtn">Backup</button>
           <label class="btn optional" for="restoreInput">Importar</label>
