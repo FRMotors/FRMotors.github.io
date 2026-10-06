@@ -1088,6 +1088,9 @@
   font-weight:800;
   letter-spacing:.02em;
 }
+
+/* V4.4.40 · DESFAZER SOMENTE EXCLUSÕES */
+/* Snapshots de restauração passam a ser criados apenas para exclusões de peça/serviço. */
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -1748,7 +1751,13 @@ async function logFichaAudit(f,before,wasNew){
   if(!state.user || !f?.id) return;
   const changes=wasNew?[]:auditDiff(before,f);
   if(!wasNew && !changes.length) return;
-  const auditPayload=wasNew?changes:[...changes,{tipo:'snapshot',estado:auditSnapshot(before)}];
+  const hasRecoverableDeletion=changes.some(ch=>
+    ch?.tipo==='remove' &&
+    (ch?.rotulo==='PEÇA REMOVIDA' || ch?.rotulo==='SERVIÇO REMOVIDO')
+  );
+  const auditPayload=wasNew
+    ? changes
+    : (hasRecoverableDeletion ? [...changes,{tipo:'snapshot',estado:auditSnapshot(before)}] : changes);
   try{
     const {error}=await db.rpc('log_ficha_audit',{
       p_ficha_id:f.id,
@@ -1859,13 +1868,17 @@ async function openHistory(){
       const creation=row.acao==='CRIACAO';
       const changes=Array.isArray(row.alteracoes)?row.alteracoes:[];
       const visibleChanges=changes.filter(ch=>ch?.tipo!=='snapshot');
-      const canRevert=!creation&&changes.some(ch=>ch?.tipo==='snapshot'&&ch?.estado);
+      const hasDeletedItem=visibleChanges.some(ch=>
+        ch?.tipo==='remove' &&
+        (ch?.rotulo==='PEÇA REMOVIDA' || ch?.rotulo==='SERVIÇO REMOVIDO')
+      );
+      const canRevert=!creation&&hasDeletedItem&&changes.some(ch=>ch?.tipo==='snapshot'&&ch?.estado);
       return '<article class="audit-event">'+
         '<div class="audit-event-top"><div><div class="audit-event-title">'+(creation?'O.S. criada':'O.S. alterada')+'</div>'+
         '<div class="audit-event-user">'+esc(row.user_email||'USUÁRIO')+'</div></div>'+
         '<time class="audit-event-time">'+esc(auditDate(row.created_at))+'</time></div>'+
         (visibleChanges.length?'<div class="audit-changes">'+visibleChanges.map(auditChangeHtml).join('')+'</div>':'')+
-        (canRevert?'<div class="audit-event-actions"><button type="button" class="btn small audit-revert-btn" data-audit-revert="'+esc(row.id)+'">Desfazer alteração</button></div>':'')+
+        (canRevert?'<div class="audit-event-actions"><button type="button" class="btn small audit-revert-btn" data-audit-revert="'+esc(row.id)+'">Desfazer exclusão</button></div>':'')+
         '</article>';
     }).join(''):'';
     $('#auditTimeline').querySelectorAll('[data-audit-revert]').forEach(btn=>{
