@@ -2,6 +2,8 @@
 const dashMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const dashMonths=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
 let dashRows=[];
+const DASH_BACKUP_KEY='frmotors-dashboard-last-import-backup-v1';
+const DASH_RECON_KEY='frmotors-dashboard-financial-check-v1';
 
 /* V4.4.54 · GRAFICO BRUTO X LIQUIDO */
 function dEnsureRevenueChart(){
@@ -714,6 +716,186 @@ function dSame(a,b){
     numFields.every(k=>Math.abs(dNum(a?.[k])-dNum(b?.[k]))<0.005);
 }
 
+
+/* V4.4.65 · CONFERENCIA FINANCEIRA + DESFAZER IMPORTACAO */
+function dMonthlyWorkbookSummary(workbook){
+  let bruto=0;
+  let count=0;
+  const byMonth={};
+
+  for(const month of dashMonths){
+    const sheetName=workbook.SheetNames.find(n=>dNorm(n)===dNorm(month));
+    if(!sheetName) continue;
+
+    const matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,defval:null,raw:true});
+    if(!matrix.length) continue;
+
+    const h=(matrix[0]||[]).map(dNorm);
+    const find=(...names)=>h.findIndex(x=>names.map(dNorm).includes(x));
+    const ixOs=find('O.S.','O.S','OS');
+    const ixCliente=find('CLIENTE');
+    const ixBruto=find('BRUTO');
+    if(ixOs<0||ixCliente<0||ixBruto<0) continue;
+
+    let monthBruto=0;
+    let monthCount=0;
+    for(const r of matrix.slice(1)){
+      const os=Math.trunc(dNum(r[ixOs]));
+      const cliente=dText(r[ixCliente]);
+      if(!os||!cliente) continue;
+      monthBruto+=dNum(r[ixBruto]);
+      monthCount++;
+    }
+    bruto+=monthBruto;
+    count+=monthCount;
+    byMonth[month]={bruto:monthBruto,count:monthCount};
+  }
+
+  return {bruto,count,byMonth};
+}
+
+function dGetBackup(){
+  try{
+    const raw=localStorage.getItem(DASH_BACKUP_KEY);
+    return raw?JSON.parse(raw):null;
+  }catch(_){return null}
+}
+
+function dUpdateBackupUi(){
+  const backup=dGetBackup();
+  const btn=document.getElementById('undoImportBtn');
+  const info=document.getElementById('backupInfo');
+  if(btn) btn.disabled=!backup?.rows?.length;
+  if(!info) return;
+
+  if(!backup?.rows?.length){
+    info.textContent='Nenhuma importação disponível para desfazer.';
+    return;
+  }
+
+  const when=backup.createdAt
+    ? new Date(backup.createdAt).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})
+    : 'data não informada';
+  info.textContent='Backup anterior disponível · '+backup.rows.length+' O.S. · '+when+
+    (backup.sourceName?' · antes de '+backup.sourceName:'');
+}
+
+function dSaveBackup(rows,sourceName){
+  const payload={
+    createdAt:new Date().toISOString(),
+    sourceName:sourceName||'importação',
+    rows:(rows||[]).map(r=>({...r}))
+  };
+  localStorage.setItem(DASH_BACKUP_KEY,JSON.stringify(payload));
+  dUpdateBackupUi();
+}
+
+function dSaveReconciliation(sourceSummary,sourceName){
+  const payload={
+    createdAt:new Date().toISOString(),
+    sourceName:sourceName||'Excel',
+    sourceBruto:dNum(sourceSummary?.bruto),
+    sourceCount:Number(sourceSummary?.count)||0
+  };
+  localStorage.setItem(DASH_RECON_KEY,JSON.stringify(payload));
+  dRenderFinancialCheck();
+}
+
+function dGetReconciliation(){
+  try{
+    const raw=localStorage.getItem(DASH_RECON_KEY);
+    return raw?JSON.parse(raw):null;
+  }catch(_){return null}
+}
+
+function dRenderFinancialCheck(){
+  const source=dGetReconciliation();
+  const dashBruto=dashRows.reduce((a,r)=>a+dNum(r.bruto),0);
+  const sourceEl=document.getElementById('financialSourceTotal');
+  const dashEl=document.getElementById('financialDashboardTotal');
+  const diffEl=document.getElementById('financialDifference');
+  const statusEl=document.getElementById('financialCheckStatus');
+
+  if(dashEl) dashEl.textContent=dashMoney.format(dashBruto);
+
+  if(!source){
+    if(sourceEl) sourceEl.textContent='—';
+    if(diffEl) diffEl.textContent='—';
+    if(statusEl){statusEl.textContent='Aguardando Excel';statusEl.className='financial-check-status neutral';}
+    return;
+  }
+
+  const sourceBruto=dNum(source.sourceBruto);
+  const diff=sourceBruto-dashBruto;
+  if(sourceEl) sourceEl.textContent=dashMoney.format(sourceBruto);
+  if(diffEl) diffEl.textContent=dashMoney.format(diff);
+
+  if(statusEl){
+    const ok=Math.abs(diff)<0.005;
+    statusEl.textContent=ok?'Conferido':'Divergência';
+    statusEl.className='financial-check-status '+(ok?'ok':'error');
+  }
+}
+
+async function dUndoLastImport(){
+  const backup=dGetBackup();
+  if(!backup?.rows?.length){
+    alert('Não existe uma importação anterior disponível para desfazer.');
+    dUpdateBackupUi();
+    return;
+  }
+
+  const when=backup.createdAt?new Date(backup.createdAt).toLocaleString('pt-BR'):'';
+  const ok=confirm(
+    'Desfazer a última importação?\n\n'+
+    'O Dashboard será restaurado para '+backup.rows.length+' O.S.'+
+    (when?' do backup criado em '+when:'')+'.\n\n'+
+    'O estado atual será substituído pelo estado anterior.'
+  );
+  if(!ok) return;
+
+  const status=document.getElementById('importStatus');
+  try{
+    if(status) status.textContent='Restaurando backup anterior...';
+
+    const {data:current,error:loadErr}=await db
+      .from('indicadores_oficina')
+      .select('id')
+      .eq('ano',2026)
+      .range(0,4999);
+    if(loadErr) throw loadErr;
+
+    const ids=(current||[]).map(r=>r.id).filter(Boolean);
+    for(let i=0;i<ids.length;i+=200){
+      const {error:delErr}=await db.from('indicadores_oficina').delete().in('id',ids.slice(i,i+200));
+      if(delErr) throw delErr;
+    }
+
+    const rows=backup.rows.map(r=>{
+      const x={...r};
+      delete x.id;
+      x.updated_at=new Date().toISOString();
+      return x;
+    });
+
+    for(let i=0;i<rows.length;i+=200){
+      const {error:upErr}=await db
+        .from('indicadores_oficina')
+        .upsert(rows.slice(i,i+200),{onConflict:'ano,os'});
+      if(upErr) throw upErr;
+    }
+
+    localStorage.removeItem(DASH_BACKUP_KEY);
+    if(status) status.textContent='Última importação desfeita com sucesso.';
+    dUpdateBackupUi();
+    await dLoad();
+  }catch(err){
+    console.error(err);
+    alert('Não foi possível restaurar o backup.\n\n'+(err?.message||err));
+    if(status) status.textContent='Erro ao desfazer importação.';
+  }
+}
+
 function dParseWorkbook(workbook){
   const sheetName=workbook.SheetNames.find(n=>dNorm(n)==='BASE 2026');
   if(!sheetName) throw new Error('A planilha não possui a aba "BASE 2026".');
@@ -804,6 +986,8 @@ async function dLoad(){
   const empty=document.getElementById('dashboardEmpty');
   if(empty) empty.style.display=dashRows.length?'none':'block';
   dRender();
+  dRenderFinancialCheck();
+  dUpdateBackupUi();
 }
 
 function dRender(){
@@ -867,7 +1051,9 @@ async function dImport(file){
   try{
     status.textContent='Lendo BASE 2026...';
     const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+    const monthlySummary=dMonthlyWorkbookSummary(wb);
     const rows=dParseWorkbook(wb);
+    dSaveReconciliation(monthlySummary,file.name);
 
     status.textContent='Comparando com a nuvem...';
     const {data:existing,error}=await db.from('indicadores_oficina').select('*').eq('ano',2026).range(0,4999);
@@ -889,6 +1075,10 @@ async function dImport(file){
 
     const ok=confirm(
       'Sincronização da BASE 2026\n\n'+
+      'Conferência financeira:\n'+
+      'Abas mensais: '+dashMoney.format(monthlySummary.bruto)+'\n'+
+      'BASE 2026 a importar: '+dashMoney.format(rows.reduce((a,r)=>a+dNum(r.bruto),0))+'\n'+
+      'Diferença: '+dashMoney.format(monthlySummary.bruto-rows.reduce((a,r)=>a+dNum(r.bruto),0))+'\n\n'+
       rows.length+' O.S. válidas na planilha\n'+
       novos+' novas\n'+
       alterados+' alteradas\n'+
@@ -899,6 +1089,8 @@ async function dImport(file){
       'Somente a aba BASE 2026 será considerada.\n\nContinuar?'
     );
     if(!ok){status.textContent='Sincronização cancelada.';return;}
+
+    dSaveBackup(currentRows,file.name);
 
     const changed=rows.filter(r=>!oldMap.has(r.os)||!dSame(oldMap.get(r.os),r));
     for(let i=0;i<changed.length;i+=200){
@@ -936,6 +1128,9 @@ document.getElementById('excelInput')?.addEventListener('change',async e=>{
   e.target.value='';
 });
 document.getElementById('empresaFilter')?.addEventListener('change',dRender);
+document.getElementById('undoImportBtn')?.addEventListener('click',dUndoLastImport);
+dUpdateBackupUi();
+dRenderFinancialCheck();
 
 db.auth.onAuthStateChange((_event,session)=>{
   if(session?.user) setTimeout(dLoad,0);
