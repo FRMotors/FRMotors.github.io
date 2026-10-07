@@ -12,17 +12,44 @@
 *{box-sizing:border-box}
 :root{--ink:#172126;--muted:#68777f;--line:#dfe5e8;--teal:#167b87;--soft:#f5f8f9}
 body{margin:0;background:#f4f7f8;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-.system-topbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
-.system-topbar-inner{max-width:1280px;margin:0 auto;min-height:72px;padding:12px 20px;display:flex;align-items:center;gap:14px}
-.system-brand{display:flex;align-items:center;gap:11px}
-.system-brand-mark{width:42px;height:42px;flex:0 0 42px;border-radius:14px;background:#101820;color:#fff;display:grid;place-items:center;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-style:italic;font-weight:900;line-height:1;letter-spacing:-2px;box-shadow:0 8px 22px rgba(16,24,32,.16)}
-.system-brand-copy strong{display:block;font-size:18px}.system-brand-copy span{font-size:12px;color:var(--muted)}
-.system-nav{display:flex;gap:6px;padding:5px;background:#e9edef;border:1px solid var(--line);border-radius:14px}
-.system-nav a{min-height:38px;padding:8px 13px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#415159;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
-.system-nav a.active{background:#101820;color:#fff;box-shadow:0 6px 16px rgba(16,24,32,.16)}
-.system-spacer{flex:1}
-.system-status{font-size:12px;color:var(--muted);font-weight:700}
-.system-logout{height:40px;padding:8px 13px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font:700 15px/15px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.system-topbar{
+    position:fixed; top:0; left:0; right:0; z-index:500;
+    min-height:68px; background:rgba(244,246,247,.96);
+    backdrop-filter:blur(12px); border-bottom:1px solid var(--fr-line);
+    box-shadow:0 8px 28px rgba(16,24,32,.07);
+}
+.system-topbar-inner{
+    max-width:1780px; min-height:68px; margin:0 auto; padding:9px 20px;
+    display:flex; align-items:center; gap:18px;
+}
+.system-brand{display:flex;align-items:center;gap:11px;min-width:max-content;}
+.system-brand-mark{
+    width:46px;height:46px;border-radius:14px;background:var(--fr-dark);color:#fff;
+    display:grid;place-items:center;font-weight:900;font-style:italic;font-size:16px;line-height:1;letter-spacing:-2px;
+    box-shadow:0 8px 22px rgba(16,24,32,.16);
+}
+.system-brand-copy strong{display:block;color:#172126;font-size:18px;line-height:1.05;}
+.system-brand-copy span{display:block;color:var(--fr-muted);font-size:11px;margin-top:3px;}
+.system-nav{
+    display:flex;align-items:center;gap:6px;padding:5px;background:#e9edef;
+    border:1px solid var(--fr-line);border-radius:14px;
+}
+.system-nav a{
+    min-height:38px;padding:8px 13px;border-radius:10px;display:inline-flex;align-items:center;
+    justify-content:center;text-decoration:none;color:#415159;font-size:13px;font-weight:850;white-space:nowrap;
+}
+.system-nav a:hover{background:#fff;color:#172126;}
+.system-nav a.active{background:var(--fr-dark);color:#fff;box-shadow:0 6px 16px rgba(16,24,32,.16);}
+.system-spacer{flex:1;}
+.system-status{
+    display:inline-flex;align-items:center;min-height:38px;padding:8px 12px;border-radius:10px;
+    background:#fff;border:1px solid var(--fr-line);color:#415159;font-size:12px;font-weight:750;white-space:nowrap;
+}
+.system-logout{
+    min-height:38px;padding:8px 13px;border-radius:10px;border:1px solid var(--fr-line)!important;
+    background:#fff!important;color:#172126!important;box-shadow:none!important;font-weight:800;
+}
+.system-logout:hover{background:#eef1f2!important;transform:none!important;}
 .page{max-width:1280px;margin:0 auto;padding:20px}
 .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
 .hero h1{margin:0;font-size:26px}.hero p{margin:5px 0 0;color:var(--muted)}
@@ -262,5 +289,6 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
 </script>
 <script src="./dashboard-data.js?v=4.4.66"></script>
 <!-- V4.4.67 · Símbolo FR padronizado com Ficha/O.S. -->
+<!-- V4.4.68 · Cabeçalho desktop idêntico a Orçamentos -->
 </body>
 </html>
