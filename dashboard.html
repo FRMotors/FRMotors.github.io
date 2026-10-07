@@ -34,6 +34,15 @@ body{margin:0;background:#f4f7f8;color:var(--ink);font-family:system-ui,-apple-s
 .card span{display:block;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase}
 .card strong{display:block;margin-top:8px;font-size:24px}
 .empty{margin-top:16px;padding:26px;text-align:center;color:var(--muted);background:#fff;border:1px dashed #cbd5d9;border-radius:16px}
+.dashboard-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
+.dashboard-controls label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.dashboard-controls select{height:40px;border:1px solid var(--line);border-radius:11px;background:#fff;padding:0 12px;font:inherit;font-weight:700;color:var(--ink)}
+.import-note{font-size:12px;color:var(--muted)}
+.table-wrap{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:auto}
+.summary-table{width:100%;border-collapse:collapse;min-width:700px}
+.summary-table th,.summary-table td{padding:10px 12px;border-bottom:1px solid #edf1f2;text-align:left;font-size:13px}
+.summary-table th{background:#101820;color:#fff;font-size:11px;text-transform:uppercase}
+.summary-table td.num{text-align:right;font-variant-numeric:tabular-nums}
 .login-screen{position:fixed;inset:0;z-index:1000;background:#f4f7f8;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{width:min(390px,100%);background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 24px 60px rgba(23,33,38,.15)}
 .login-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
@@ -51,6 +60,7 @@ body{margin:0;background:#f4f7f8;color:var(--ink);font-family:system-ui,-apple-s
 </style>
 <link rel="stylesheet" href="./fr-header.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <div id="loginScreen" class="login-screen">
@@ -92,19 +102,45 @@ body{margin:0;background:#f4f7f8;color:var(--ink);font-family:system-ui,-apple-s
       <h1>Dashboard</h1>
       <p>Indicadores financeiros e operacionais da FR Motors.</p>
     </div>
-    <button class="btn primary" disabled title="A importação da BASE 2026 será ligada na próxima etapa">Importar Base Excel</button>
+    <button class="btn primary" id="importExcelBtn" type="button">Importar Base Excel</button>
+    <input id="excelInput" type="file" accept=".xlsx,.xlsm,.xls" hidden>
+  </div>
+
+  <div class="dashboard-controls">
+    <label for="empresaFilter">Empresa</label>
+    <select id="empresaFilter">
+      <option value="TODAS">TODAS</option>
+      <option value="ISOCAR">ISOCAR</option>
+      <option value="EASYCAR">EASYCAR</option>
+      <option value="TOPLINE">TOPLINE</option>
+    </select>
+    <span id="importStatus" class="import-note">Nenhuma base importada ainda.</span>
   </div>
 
   <section class="kpis">
-    <div class="card"><span>Receita bruta</span><strong>R$ 0,00</strong></div>
-    <div class="card"><span>Receita líquida</span><strong>R$ 0,00</strong></div>
-    <div class="card"><span>Gastos</span><strong>R$ 0,00</strong></div>
-    <div class="card"><span>Carros / O.S.</span><strong>0</strong></div>
-    <div class="card"><span>Dentro da média</span><strong>0</strong></div>
-    <div class="card"><span>Abaixo da média</span><strong>0</strong></div>
+    <div class="card"><span>Receita bruta</span><strong id="kpiBruto">R$ 0,00</strong></div>
+    <div class="card"><span>Receita líquida</span><strong id="kpiLiquido">R$ 0,00</strong></div>
+    <div class="card"><span>Gastos</span><strong id="kpiGasto">R$ 0,00</strong></div>
+    <div class="card"><span>Carros / O.S.</span><strong id="kpiOs">0</strong></div>
+    <div class="card"><span>Dentro da média</span><strong id="kpiOk">0</strong></div>
+    <div class="card"><span>Abaixo da média</span><strong id="kpiAbaixo">0</strong></div>
   </section>
 
-  <div class="empty">A página já está criada. Na próxima etapa, a importação da aba <b>BASE 2026</b> vai alimentar estes indicadores e os filtros por empresa e técnico.</div>
+  <div class="table-wrap">
+    <table class="summary-table">
+      <thead><tr><th>Mês</th><th>Bruto</th><th>Gastos</th><th>M.O.</th><th>Líquido</th><th>O.S.</th><th>OK</th><th>Abaixo</th></tr></thead>
+      <tbody id="monthlyBody"></tbody>
+    </table>
+  </div>
+
+  <div class="table-wrap">
+    <table class="summary-table">
+      <thead><tr><th>Técnico / Equipe</th><th>Carros</th><th>Bruto</th><th>Líquido</th><th>Abaixo</th></tr></thead>
+      <tbody id="technicianBody"></tbody>
+    </table>
+  </div>
+
+  <div id="dashboardEmpty" class="empty">Importe a planilha com a aba <b>BASE 2026</b> para alimentar o Dashboard.</div>
 </main>
 
 <script>
@@ -143,5 +179,6 @@ db.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;sho
 db.auth.getSession().then(({data})=>{currentUser=data.session?.user||null;showAuth()});
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
+<script src="./dashboard-data.js"></script>
 </body>
 </html>
