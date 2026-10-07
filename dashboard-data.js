@@ -574,6 +574,7 @@ async function dLoad(){
     .from('indicadores_oficina')
     .select('*')
     .eq('ano',2026)
+    .neq('cliente','')
     .order('os',{ascending:true})
     .range(0,4999);
 
