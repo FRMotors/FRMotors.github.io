@@ -649,7 +649,10 @@ async function dImport(file){
     const {data:existing,error}=await db.from('indicadores_oficina').select('*').eq('ano',2026).range(0,4999);
     if(error) throw error;
 
-    const oldMap=new Map((existing||[]).map(r=>[Number(r.os),r]));
+    const currentRows=existing||[];
+    const oldMap=new Map(currentRows.map(r=>[Number(r.os),r]));
+    const newMap=new Map(rows.map(r=>[Number(r.os),r]));
+
     let novos=0,alterados=0,iguais=0;
     rows.forEach(r=>{
       const old=oldMap.get(r.os);
@@ -658,15 +661,19 @@ async function dImport(file){
       else alterados++;
     });
 
+    const removidos=currentRows.filter(r=>!newMap.has(Number(r.os)));
+
     const ok=confirm(
-      'Importação da BASE 2026\n\n'+
-      rows.length+' O.S. encontradas\n'+
+      'Sincronização da BASE 2026\n\n'+
+      rows.length+' O.S. válidas na planilha\n'+
       novos+' novas\n'+
       alterados+' alteradas\n'+
-      iguais+' sem mudanças\n\n'+
-      'Somente a aba BASE 2026 será lida. Detalhes1, Detalhes2 e as abas mensais serão ignoradas.\n\nContinuar?'
+      iguais+' sem mudanças\n'+
+      removidos.length+' removidas do Dashboard\n\n'+
+      'O.S. que não existem mais na BASE 2026 serão removidas do Dashboard.\n'+
+      'Somente a aba BASE 2026 será considerada.\n\nContinuar?'
     );
-    if(!ok){status.textContent='Importação cancelada.';return;}
+    if(!ok){status.textContent='Sincronização cancelada.';return;}
 
     const changed=rows.filter(r=>!oldMap.has(r.os)||!dSame(oldMap.get(r.os),r));
     for(let i=0;i<changed.length;i+=200){
@@ -677,12 +684,23 @@ async function dImport(file){
       if(upErr) throw upErr;
     }
 
-    status.textContent='Concluído: '+novos+' novas e '+alterados+' atualizadas.';
+    for(let i=0;i<removidos.length;i+=200){
+      const ids=removidos.slice(i,i+200).map(r=>r.id).filter(Boolean);
+      if(!ids.length) continue;
+      status.textContent='Removendo '+Math.min(i+200,removidos.length)+' de '+removidos.length+' registros antigos...';
+      const {error:delErr}=await db
+        .from('indicadores_oficina')
+        .delete()
+        .in('id',ids);
+      if(delErr) throw delErr;
+    }
+
+    status.textContent='Concluído: '+novos+' novas, '+alterados+' atualizadas e '+removidos.length+' removidas.';
     await dLoad();
   }catch(err){
     console.error(err);
-    alert('Não foi possível importar a planilha.\n\n'+(err?.message||err));
-    status.textContent='Erro na importação.';
+    alert('Não foi possível sincronizar a planilha.\n\n'+(err?.message||err));
+    status.textContent='Erro na sincronização.';
   }
 }
 
