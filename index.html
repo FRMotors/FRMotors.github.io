@@ -1146,7 +1146,7 @@
       </nav>
       <div class="top-actions">
         <div class="top-commands">
-          <button class="btn mobile-only" id="toggleSidebarBtn">☰ O.S.</button>
+          <button class="btn" id="toggleSidebarBtn" type="button" aria-expanded="true" title="Recolher ordens de serviço">☰ O.S.</button>
           <button class="btn primary" id="newBtn">+ Nova ficha</button>
           <button class="btn optional shoficina-btn" id="shoficinaImportBtn" type="button" disabled title="Integração com o SHOficina em preparação">Importar SHOficina</button>
           <button class="btn optional" id="refreshBtn">Atualizar</button>
@@ -1167,7 +1167,6 @@
     <aside class="panel sidebar" id="sidebar">
       <div class="sidebar-head">
         <strong id="osListTitle">Ordens de serviço</strong>
-        <button class="sidebar-collapse" id="collapseSidebarBtn" type="button" title="Recolher lista de O.S." aria-label="Recolher lista de O.S.">‹</button>
       </div>
       <div class="sidebar-content">
         <div class="search">
@@ -1442,14 +1441,26 @@ async function guardUnsaved(){
   return await save(false);
 }
 function setSidebarCollapsed(collapsed){
-  if(window.matchMedia('(max-width: 900px)').matches){
-    $('#sidebar')?.classList.toggle('mobile-open',!collapsed);
+  const mobile=window.matchMedia('(max-width: 900px)').matches;
+  const sidebar=$('#sidebar');
+  const b=$('#toggleSidebarBtn');
+
+  if(mobile){
+    sidebar?.classList.toggle('mobile-open',!collapsed);
+    if(b){
+      b.setAttribute('aria-expanded',collapsed?'false':'true');
+      b.title=collapsed?'Mostrar ordens de serviço':'Recolher ordens de serviço';
+    }
     return;
   }
+
   app.classList.toggle('sidebar-collapsed',collapsed);
   localStorage.setItem('frmotors-sidebar-collapsed',collapsed?'1':'0');
-  const b=$('#collapseSidebarBtn');
-  if(b){ b.title=collapsed?'Expandir lista de O.S.':'Recolher lista de O.S.'; b.setAttribute('aria-label',b.title); }
+
+  if(b){
+    b.setAttribute('aria-expanded',collapsed?'false':'true');
+    b.title=collapsed?'Mostrar ordens de serviço':'Recolher ordens de serviço';
+  }
 }
 
 function decodeServices(raw){
@@ -2167,10 +2178,20 @@ async function csv(){
 }
 function downloadBlob(blob,name){ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
 
-$('#toggleSidebarBtn').onclick=()=>$('#sidebar')?.classList.toggle('mobile-open');
-$('#collapseSidebarBtn').onclick=()=>{
-  if(window.matchMedia('(max-width: 900px)').matches) $('#sidebar')?.classList.remove('mobile-open');
-  else setSidebarCollapsed(!app.classList.contains('sidebar-collapsed'));
+$('#toggleSidebarBtn').onclick=()=>{
+  if(window.matchMedia('(max-width: 900px)').matches){
+    const sidebar=$('#sidebar');
+    const open=!sidebar?.classList.contains('mobile-open');
+    sidebar?.classList.toggle('mobile-open',open);
+    const b=$('#toggleSidebarBtn');
+    if(b){
+      b.setAttribute('aria-expanded',open?'true':'false');
+      b.title=open?'Recolher ordens de serviço':'Mostrar ordens de serviço';
+    }
+    return;
+  }
+
+  setSidebarCollapsed(!app.classList.contains('sidebar-collapsed'));
 };
 $('#newBtn').onclick=newFicha;
 syncSuggestedMarkup();
