@@ -1124,6 +1124,105 @@
 }
 </style>
 
+
+<style>
+/* V4.4.45 · MODAL SHOFICINA */
+.shoficina-modal-card{
+  width:min(760px,100%);
+  max-height:min(82vh,760px);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.shoficina-modal-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.shoficina-modal-head h3{margin:0 0 4px}
+.shoficina-modal-head p{margin:0;color:var(--muted)}
+.shoficina-search{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+}
+.shoficina-search input{flex:1}
+.shoficina-sync-info{
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+.shoficina-results{
+  overflow:auto;
+  display:grid;
+  gap:8px;
+  padding-right:2px;
+}
+.shoficina-result{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+  background:#fff;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+}
+.shoficina-result-main strong{
+  display:block;
+  font-size:14px;
+  color:var(--ink);
+}
+.shoficina-result-main span{
+  display:block;
+  margin-top:3px;
+  font-size:12px;
+  color:var(--muted);
+}
+.shoficina-result-meta{
+  margin-top:7px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.shoficina-chip{
+  font-size:10px;
+  font-weight:800;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#eef5f6;
+  color:#41636a;
+}
+.shoficina-empty{
+  padding:22px;
+  text-align:center;
+  color:var(--muted);
+  border:1px dashed var(--line);
+  border-radius:14px;
+}
+.shoficina-import-options{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+.shoficina-import-options label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  font-weight:700;
+}
+@media(max-width:620px){
+  .shoficina-result{grid-template-columns:1fr}
+  .shoficina-result .btn{width:100%}
+}
+</style>
+
 </head>
 <body>
 
@@ -1355,6 +1454,35 @@
       </div>
       <div id="auditStatus" class="audit-status">Carregando histórico...</div>
       <div id="auditTimeline" class="audit-timeline"></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-backdrop" id="shoficinaModal" role="dialog" aria-modal="true" aria-labelledby="shoficinaTitle">
+  <div class="modal-card shoficina-modal-card">
+    <div class="shoficina-modal-head">
+      <div>
+        <h3 id="shoficinaTitle">Importar do SHOficina</h3>
+        <p>Busque por O.S., cliente ou placa.</p>
+      </div>
+      <button class="btn" id="shoficinaCloseBtn" type="button">Fechar</button>
+    </div>
+
+    <div class="shoficina-search">
+      <input id="shoficinaSearchInput" placeholder="Ex.: 9950, EDSON ou EPA3G27" autocomplete="off">
+      <button class="btn primary" id="shoficinaSearchBtn" type="button">Buscar</button>
+    </div>
+
+    <div id="shoficinaSyncInfo" class="shoficina-sync-info">Aguardando sincronização do conector.</div>
+    <div id="shoficinaResults" class="shoficina-results">
+      <div class="shoficina-empty">Nenhuma O.S. sincronizada ainda.</div>
+    </div>
+
+    <div class="shoficina-import-options">
+      <label><input id="shoficinaOptDados" type="checkbox" checked> Dados da O.S.</label>
+      <label><input id="shoficinaOptPecas" type="checkbox" checked> Peças</label>
+      <label><input id="shoficinaOptServicos" type="checkbox" checked> Mão de obra</label>
     </div>
   </div>
 </div>
