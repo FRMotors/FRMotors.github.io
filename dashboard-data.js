@@ -538,7 +538,10 @@ function dParseWorkbook(workbook){
   for(const r of matrix.slice(1)){
     const os=Math.trunc(dNum(r[ix.os]));
     if(!os) continue;
+
     const cliente=dText(r[ix.cliente]);
+    if(!cliente) continue;
+
     const row={
       ano:2026,
       mes:dText(r[ix.mes]).toLocaleUpperCase('pt-BR'),
