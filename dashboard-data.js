@@ -542,18 +542,30 @@ function dParseWorkbook(workbook){
     const cliente=dText(r[ix.cliente]);
     if(!cliente) continue;
 
+    const mes=dText(r[ix.mes]).toLocaleUpperCase('pt-BR');
+    const bruto=dNum(r[ix.bruto]);
+    const gasto=dNum(r[ix.gasto]);
+    const maoObra=dNum(r[ix.mo]);
+    const liquido=dNum(r[ix.liquido]);
+    const tecnico=dText(r[ix.tecnico]).toLocaleUpperCase('pt-BR');
+
+    const mesIndex=dashMonths.findIndex(m=>dNorm(m)===dNorm(mes));
+    const mesAtualIndex=new Date().getMonth();
+    const semMovimento=Math.abs(bruto)<0.005 && Math.abs(gasto)<0.005 && Math.abs(maoObra)<0.005 && Math.abs(liquido)<0.005;
+    if(mesIndex>=0 && mesIndex<mesAtualIndex && semMovimento && !tecnico) continue;
+
     const row={
       ano:2026,
-      mes:dText(r[ix.mes]).toLocaleUpperCase('pt-BR'),
+      mes,
       os,
       cliente,
       empresa:dEmpresa(cliente),
-      bruto:dNum(r[ix.bruto]),
-      gasto:dNum(r[ix.gasto]),
-      mao_obra:dNum(r[ix.mo]),
-      liquido:dNum(r[ix.liquido]),
+      bruto,
+      gasto,
+      mao_obra:maoObra,
+      liquido,
       percentual_desconto:dNum(r[ix.desc]),
-      tecnico:dText(r[ix.tecnico]).toLocaleUpperCase('pt-BR'),
+      tecnico,
       pagamento:dText(r[ix.pagamento]).toLocaleUpperCase('pt-BR'),
       status:dText(r[ix.status]).toLocaleUpperCase('pt-BR'),
       updated_at:new Date().toISOString()
@@ -669,8 +681,9 @@ async function dImport(file){
       novos+' novas\n'+
       alterados+' alteradas\n'+
       iguais+' sem mudanças\n'+
-      removidos.length+' removidas do Dashboard\n\n'+
-      'O.S. que não existem mais na BASE 2026 serão removidas do Dashboard.\n'+
+      removidos.length+' removidas do Dashboard\n'+
+      (removidos.length?'O.S. removidas: '+removidos.slice(0,30).map(r=>r.os).join(', ')+(removidos.length>30?' ...':'')+'\n':'')+
+      '\nO.S. antigas totalmente zeradas e sem técnico também são ignoradas.\n'+
       'Somente a aba BASE 2026 será considerada.\n\nContinuar?'
     );
     if(!ok){status.textContent='Sincronização cancelada.';return;}
