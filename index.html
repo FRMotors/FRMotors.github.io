@@ -1727,6 +1727,7 @@ async function loadDB(preserveId=true){
   captureCleanSnapshot(); render();
   state.changeVersion=0; setDirty(false);
   setCloud('Online · ' + (state.user.email||'usuário'), true);
+  refreshShoficinaStatus();
 }
 
 function collect(){
@@ -2403,6 +2404,226 @@ getSession().catch(err=>{console.error(err);setCloud('Erro de conexão',false);$
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
+
+
+
+/* V4.4.46 · LOGICA DE IMPORTACAO SHOFICINA */
+let shoficinaReady=false;
+let shoficinaRows=new Map();
+
+function shoficinaDateOnly(value){
+  if(!value)return today();
+  const s=String(value);
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? m[1]+'-'+m[2]+'-'+m[3] : today();
+}
+
+async function refreshShoficinaStatus(){
+  if(!state.user)return;
+  const btn=$('#shoficinaImportBtn');
+  try{
+    const {data,error}=await db
+      .from('shoficina_sync_status')
+      .select('*')
+      .eq('id',1)
+      .maybeSingle();
+    if(error)throw error;
+
+    shoficinaReady=!!data && data.status==='online' && Number(data.os_count||0)>0;
+    if(btn){
+      btn.disabled=!shoficinaReady;
+      btn.title=shoficinaReady
+        ? 'Importar uma O.S. sincronizada do SHOficina'
+        : 'Aguardando o conector SHOficina sincronizar dados';
+    }
+
+    const info=$('#shoficinaSyncInfo');
+    if(info){
+      if(shoficinaReady){
+        const when=data.last_sync_at
+          ? new Date(data.last_sync_at).toLocaleString('pt-BR')
+          : 'agora';
+        info.textContent='Última sincronização: '+when+
+          ' · '+Number(data.os_count||0)+' O.S. · '+
+          Number(data.pecas_count||0)+' peças · '+
+          Number(data.servicos_count||0)+' serviços';
+      }else{
+        info.textContent='Aguardando sincronização do conector.';
+      }
+    }
+  }catch(error){
+    console.warn('SHOficina status:',error);
+    shoficinaReady=false;
+    if(btn){
+      btn.disabled=true;
+      btn.title='Integração SHOficina indisponível';
+    }
+  }
+}
+
+async function shoficinaSearch(){
+  if(!state.user)return;
+  const results=$('#shoficinaResults');
+  const q=$('#shoficinaSearchInput')?.value.trim()||'';
+  if(results)results.innerHTML='<div class="shoficina-empty">Buscando...</div>';
+
+  try{
+    let query=db
+      .from('shoficina_os')
+      .select('*')
+      .order('source_os_id',{ascending:false})
+      .limit(q?50:20);
+
+    if(q){
+      if(/^\d+$/.test(q)){
+        query=query.eq('source_os_id',Number(q));
+      }else{
+        const safe=q.replace(/[,()]/g,' ');
+        query=query.or(
+          'cliente.ilike.%'+safe+'%,'+
+          'placa.ilike.%'+safe+'%,'+
+          'marca.ilike.%'+safe+'%,'+
+          'aparelho.ilike.%'+safe+'%'
+        );
+      }
+    }
+
+    const {data,error}=await query;
+    if(error)throw error;
+    const rows=data||[];
+    shoficinaRows=new Map(rows.map(row=>[String(row.source_os_id),row]));
+
+    if(!rows.length){
+      results.innerHTML='<div class="shoficina-empty">Nenhuma O.S. encontrada.</div>';
+      return;
+    }
+
+    const ids=rows.map(row=>row.source_os_id);
+    const [{data:pecas},{data:servicos}]=await Promise.all([
+      db.from('shoficina_pecas').select('source_os_id').in('source_os_id',ids),
+      db.from('shoficina_servicos').select('source_os_id').in('source_os_id',ids)
+    ]);
+
+    const pc=new Map(), sc=new Map();
+    (pecas||[]).forEach(x=>pc.set(String(x.source_os_id),(pc.get(String(x.source_os_id))||0)+1));
+    (servicos||[]).forEach(x=>sc.set(String(x.source_os_id),(sc.get(String(x.source_os_id))||0)+1));
+
+    results.innerHTML=rows.map(row=>{
+      const id=String(row.source_os_id);
+      const carro=[row.marca,row.aparelho].filter(Boolean).join(' ');
+      return '<article class="shoficina-result">'+
+        '<div class="shoficina-result-main">'+
+          '<strong>O.S. '+esc(id)+' · '+esc(row.placa||'sem placa')+'</strong>'+
+          '<span>'+esc(row.cliente||'Cliente não informado')+
+          (carro?' · '+esc(carro):'')+'</span>'+
+          '<div class="shoficina-result-meta">'+
+            '<span class="shoficina-chip">'+(pc.get(id)||0)+' peças</span>'+
+            '<span class="shoficina-chip">'+(sc.get(id)||0)+' serviços</span>'+
+          '</div>'+
+        '</div>'+
+        '<button class="btn primary" type="button" data-shoficina-import="'+esc(id)+'">Importar</button>'+
+      '</article>';
+    }).join('');
+
+    results.querySelectorAll('[data-shoficina-import]').forEach(btn=>{
+      btn.addEventListener('click',()=>importShoficinaOS(btn.dataset.shoficinaImport));
+    });
+  }catch(error){
+    console.error(error);
+    results.innerHTML='<div class="shoficina-empty">Não foi possível consultar o SHOficina.</div>';
+  }
+}
+
+async function importShoficinaOS(sourceId){
+  if(!(await guardUnsaved()))return;
+  const row=shoficinaRows.get(String(sourceId));
+  if(!row)return;
+
+  const [{data:parts,error:partsError},{data:services,error:servicesError}]=await Promise.all([
+    db.from('shoficina_pecas').select('*').eq('source_os_id',sourceId).order('source_line_id'),
+    db.from('shoficina_servicos').select('*').eq('source_os_id',sourceId).order('source_line_id')
+  ]);
+  if(partsError||servicesError){
+    console.error(partsError||servicesError);
+    toast('Erro ao carregar itens do SHOficina');
+    return;
+  }
+
+  const existing=state.fichas.find(f=>String(f.os||'').trim()===String(sourceId));
+  if(existing){
+    const ok=confirm('A O.S. '+sourceId+' já existe no FR Motors. Atualizar os dados importados do SHOficina?');
+    if(!ok)return;
+    state.currentId=existing.id;
+  }else{
+    const f=blankFicha();
+    state.fichas.unshift(f);
+    state.currentId=f.id;
+  }
+
+  const f=current();
+  const importDados=$('#shoficinaOptDados')?.checked!==false;
+  const importPecas=$('#shoficinaOptPecas')?.checked!==false;
+  const importServicos=$('#shoficinaOptServicos')?.checked!==false;
+
+  if(importDados){
+    f.os=String(row.source_os_id||'');
+    f.client=row.cliente||'';
+    f.entryDate=shoficinaDateOnly(row.entrada);
+    f.car=row.aparelho||'';
+    f.brand=row.marca||'';
+    f.km=row.kilomet==null?'':String(row.kilomet);
+    f.plate=(row.placa||row.modelo||'').toUpperCase();
+    f.engine=row.patrimonio||'';
+  }
+
+  if(importPecas){
+    f.parts=(parts||[]).map(p=>({
+      id:uuid(),
+      name:p.descricao||'',
+      qty:Number(p.qtd)||1,
+      supplier:'',
+      cost:Number(p.custo)||0,
+      price:Number(p.valor)||0
+    }));
+  }
+
+  if(importServicos){
+    f.services=(services||[]).map(s=>({
+      id:uuid(),
+      description:s.descricao||'',
+      qty:1,
+      value:Number(s.total)||0
+    }));
+  }
+
+  f.updatedAt=new Date().toISOString();
+  render();
+  state.changeVersion++;
+  setDirty(true);
+  $('#shoficinaModal')?.classList.remove('show');
+  toast('O.S. '+sourceId+' importada do SHOficina');
+}
+
+function openShoficinaModal(){
+  if(!shoficinaReady){
+    toast('Aguardando sincronização do conector SHOficina');
+    return;
+  }
+  $('#shoficinaModal')?.classList.add('show');
+  refreshShoficinaStatus();
+  shoficinaSearch();
+  setTimeout(()=>$('#shoficinaSearchInput')?.focus(),60);
+}
+
+function closeShoficinaModal(){
+  $('#shoficinaModal')?.classList.remove('show');
+}
+
+$('#shoficinaImportBtn')?.addEventListener('click',openShoficinaModal);
+$('#shoficinaCloseBtn')?.addEventListener('click',closeShoficinaModal);
+$('#shoficinaSearchBtn')?.addEventListener('click',shoficinaSearch);
+$('#shoficinaSearchInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')shoficinaSearch();});
+$('#shoficinaModal')?.addEventListener('click',e=>{if(e.target===$('#shoficinaModal'))closeShoficinaModal();});
 
 
 /* V4.4.16 JS · MAIÚSCULAS + MEMÓRIA DE SUGESTÕES */
