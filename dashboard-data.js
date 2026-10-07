@@ -244,6 +244,28 @@ function dEnsurePerformanceBlocks(){
       color:#68777f;
       font-size:12px;
     }
+    .dash-compare-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .dash-compare-select{
+      height:38px;
+      min-width:130px;
+      border:1px solid #dfe5e8;
+      border-radius:10px;
+      background:#fff;
+      color:#172126;
+      padding:0 10px;
+      font:700 12px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      outline:none;
+    }
+    .dash-compare-select:focus{
+      border-color:#167b87;
+      box-shadow:0 0 0 3px rgba(22,123,135,.10);
+    }
     .dash-compare-list{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -313,8 +335,13 @@ function dEnsurePerformanceBlocks(){
     </div>
 
     <div class="dash-performance-card">
-      <div class="dash-compare-title">Mês atual x mês anterior</div>
-      <div id="comparePeriod" class="dash-compare-period">Aguardando dados...</div>
+      <div class="dash-compare-head">
+        <div>
+          <div class="dash-compare-title">Mês selecionado x anterior</div>
+          <div id="comparePeriod" class="dash-compare-period">Aguardando dados...</div>
+        </div>
+        <select id="compareMonthSelect" class="dash-compare-select" aria-label="Mês de referência"></select>
+      </div>
       <div id="monthlyCompare" class="dash-compare-list"></div>
     </div>
   `;
@@ -382,33 +409,52 @@ function dPctChange(current,previous){
   return {text:Math.abs(pct).toFixed(1).replace('.',',')+'%',cls,arrow};
 }
 
+let dashCompareRows=[];
+
 function dRenderMonthlyCompare(rows){
   dEnsurePerformanceBlocks();
-  const monthly=dMonthlyTotals(rows);
-  const nowIndex=new Date().getMonth();
-  let current=monthly[nowIndex];
+  dashCompareRows=rows||[];
 
-  if(!current || current.rows.length===0){
-    const active=monthly.filter(x=>x.rows.length>0);
-    current=active[active.length-1]||null;
-  }
-
-  if(!current){
-    document.getElementById('comparePeriod').textContent='Sem dados para comparar.';
-    document.getElementById('monthlyCompare').innerHTML='';
-    return;
-  }
-
-  let previous=null;
-  for(let i=current.index-1;i>=0;i--){
-    if(monthly[i].rows.length>0){previous=monthly[i];break;}
-  }
-
+  const monthly=dMonthlyTotals(dashCompareRows);
+  const select=document.getElementById('compareMonthSelect');
   const period=document.getElementById('comparePeriod');
   const box=document.getElementById('monthlyCompare');
 
+  if(!select||!period||!box) return;
+
+  if(!select.options.length){
+    select.innerHTML=dashMonths.map((m,i)=>
+      '<option value="'+i+'">'+dEsc(dMonthLabel(m))+'</option>'
+    ).join('');
+
+    select.addEventListener('change',()=>dRenderMonthlyCompare(dashCompareRows));
+  }
+
+  if(!select.dataset.initialized){
+    const nowIndex=new Date().getMonth();
+    let defaultIndex=nowIndex;
+
+    if(!monthly[defaultIndex] || monthly[defaultIndex].rows.length===0){
+      const active=monthly.filter(x=>x.rows.length>0);
+      defaultIndex=active.length?active[active.length-1].index:nowIndex;
+    }
+
+    select.value=String(defaultIndex);
+    select.dataset.initialized='1';
+  }
+
+  const selectedIndex=Math.max(0,Math.min(11,Number(select.value)||0));
+  const current=monthly[selectedIndex];
+  const previous=selectedIndex>0?monthly[selectedIndex-1]:null;
+
+  if(!current){
+    period.textContent='Sem dados para comparar.';
+    box.innerHTML='';
+    return;
+  }
+
   if(!previous){
-    period.textContent=dMonthLabel(current.month)+' · sem mês anterior com dados';
+    period.textContent=dMonthLabel(current.month)+' · não há mês anterior em 2026';
     box.innerHTML='';
     return;
   }
