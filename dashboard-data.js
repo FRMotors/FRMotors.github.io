@@ -481,6 +481,210 @@ function dRenderMonthlyCompare(rows){
   }).join('');
 }
 
+
+/* V4.4.61 · DETALHES DE TECNICO NAO INFORMADO */
+let dashRenderedRows=[];
+
+function dEnsureNoTechModal(){
+  if(document.getElementById('noTechModal')) return;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    .dash-no-tech-btn{
+      border:0;
+      background:transparent;
+      color:#167b87;
+      font:800 12px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      text-decoration:underline;
+      text-underline-offset:3px;
+      cursor:pointer;
+      padding:4px 6px;
+      border-radius:7px;
+    }
+    .dash-no-tech-btn:hover{background:#eef7f8}
+    .dash-modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      background:rgba(17,25,29,.48);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+    .dash-modal-backdrop.open{display:flex}
+    .dash-modal{
+      width:min(1040px,100%);
+      max-height:min(82vh,760px);
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 24px 70px rgba(14,24,29,.28);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .dash-modal-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 20px;
+      border-bottom:1px solid #e4eaec;
+    }
+    .dash-modal-head h2{
+      margin:0;
+      font-size:18px;
+      color:#172126;
+    }
+    .dash-modal-head p{
+      margin:5px 0 0;
+      font-size:12px;
+      color:#68777f;
+    }
+    .dash-modal-close{
+      border:1px solid #dfe5e8;
+      background:#fff;
+      border-radius:10px;
+      width:36px;
+      height:36px;
+      font-size:20px;
+      line-height:1;
+      cursor:pointer;
+      color:#415159;
+    }
+    .dash-modal-body{
+      overflow:auto;
+      padding:0 20px 20px;
+    }
+    .dash-no-tech-table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:820px;
+    }
+    .dash-no-tech-table th,
+    .dash-no-tech-table td{
+      padding:11px 9px;
+      border-bottom:1px solid #edf1f2;
+      text-align:center;
+      white-space:nowrap;
+      font-size:12px;
+    }
+    .dash-no-tech-table th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:#f8fafb;
+      color:#53636a;
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .dash-no-tech-table td:nth-child(3),
+    .dash-no-tech-table td:nth-child(4){
+      text-align:left;
+    }
+    .dash-no-tech-empty{
+      padding:24px 0 4px;
+      text-align:center;
+      color:#68777f;
+      font-size:13px;
+    }
+    @media(max-width:700px){
+      .dash-modal-backdrop{padding:8px}
+      .dash-modal{max-height:88vh;border-radius:14px}
+      .dash-modal-head{padding:15px}
+      .dash-modal-body{padding:0 12px 14px}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const modal=document.createElement('div');
+  modal.id='noTechModal';
+  modal.className='dash-modal-backdrop';
+  modal.innerHTML=`
+    <div class="dash-modal" role="dialog" aria-modal="true" aria-labelledby="noTechModalTitle">
+      <div class="dash-modal-head">
+        <div>
+          <h2 id="noTechModalTitle">O.S. sem técnico informado</h2>
+          <p id="noTechModalSubtitle">Carregando...</p>
+        </div>
+        <button id="noTechModalClose" class="dash-modal-close" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div id="noTechModalBody" class="dash-modal-body"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const close=()=>modal.classList.remove('open');
+  document.getElementById('noTechModalClose').addEventListener('click',close);
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+}
+
+async function dOpenNoTechModal(){
+  dEnsureNoTechModal();
+
+  const modal=document.getElementById('noTechModal');
+  const subtitle=document.getElementById('noTechModalSubtitle');
+  const body=document.getElementById('noTechModalBody');
+  const rows=dashRenderedRows
+    .filter(r=>!dText(r.tecnico))
+    .sort((a,b)=>Number(b.os)-Number(a.os));
+
+  modal.classList.add('open');
+  subtitle.textContent=rows.length+' O.S. no filtro atual';
+  body.innerHTML=rows.length?'<div class="dash-no-tech-empty">Carregando veículos...</div>':'<div class="dash-no-tech-empty">Nenhuma O.S. sem técnico no filtro atual.</div>';
+
+  if(!rows.length) return;
+
+  const vehicleMap=new Map();
+  try{
+    const ids=rows.map(r=>Number(r.os)).filter(Boolean);
+    const {data:vehicles,error}=await db
+      .from('shoficina_os')
+      .select('source_os_id,marca,aparelho,placa')
+      .in('source_os_id',ids);
+    if(!error){
+      (vehicles||[]).forEach(v=>vehicleMap.set(Number(v.source_os_id),v));
+    }
+  }catch(err){
+    console.warn('Veículos SHOficina indisponíveis no modal:',err);
+  }
+
+  body.innerHTML=`
+    <table class="dash-no-tech-table">
+      <thead>
+        <tr>
+          <th>O.S.</th>
+          <th>Mês</th>
+          <th>Cliente</th>
+          <th>Veículo</th>
+          <th>Placa</th>
+          <th>Bruto</th>
+          <th>Líquido</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r=>{
+          const v=vehicleMap.get(Number(r.os))||{};
+          const veiculo=[dText(v.marca),dText(v.aparelho)].filter(Boolean).join(' ')||'—';
+          return `
+            <tr>
+              <td>${dEsc(r.os)}</td>
+              <td>${dEsc(dMonthLabel(dNorm(r.mes)))}</td>
+              <td>${dEsc(r.cliente||'—')}</td>
+              <td>${dEsc(veiculo)}</td>
+              <td>${dEsc(v.placa||'—')}</td>
+              <td>${dEsc(dashMoney.format(dNum(r.bruto)))}</td>
+              <td>${dEsc(dashMoney.format(dNum(r.liquido)))}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
 function dText(v){return String(v??'').trim()}
 function dNum(v){
   if(typeof v==='number') return Number.isFinite(v)?v:0;
@@ -605,6 +809,7 @@ async function dLoad(){
 function dRender(){
   const empresa=document.getElementById('empresaFilter')?.value||'TODAS';
   const rows=empresa==='TODAS'?dashRows:dashRows.filter(r=>r.empresa===empresa);
+  dashRenderedRows=rows;
   const sum=k=>rows.reduce((a,r)=>a+dNum(r[k]),0);
 
   document.getElementById('kpiBruto').textContent=dashMoney.format(sum('bruto'));
@@ -646,7 +851,12 @@ function dRender(){
   const tech=document.getElementById('technicianBody');
   tech.innerHTML=[...techMap.entries()]
     .sort((a,b)=>b[1].cars-a[1].cars)
-    .map(([name,x])=>'<tr><td>'+dEsc(name)+'</td><td class="num">'+x.cars+'</td><td class="num">'+dashMoney.format(x.bruto)+'</td><td class="num">'+dashMoney.format(x.liquido)+'</td><td class="num">'+x.abaixo+'</td></tr>')
+    .map(([name,x])=>{
+      const label=name==='NÃO INFORMADO'
+        ? '<button type="button" class="dash-no-tech-btn" onclick="dOpenNoTechModal()">NÃO INFORMADO</button>'
+        : dEsc(name);
+      return '<tr><td>'+label+'</td><td class="num">'+x.cars+'</td><td class="num">'+dashMoney.format(x.bruto)+'</td><td class="num">'+dashMoney.format(x.liquido)+'</td><td class="num">'+x.abaixo+'</td></tr>';
+    })
     .join('');
 }
 
