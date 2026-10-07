@@ -1094,6 +1094,7 @@
 
 /* V4.4.41 · RESTAURA SOMENTE ITEM EXCLUÍDO */
 /* O histórico armazena dados completos somente de peças/serviços excluídos. */
+/* V4.4.47 · ORIGEM SHOFICINA PRESERVADA */
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -1530,8 +1531,8 @@ function blankFicha(){
   return { id:uuid(), os:'', client:'', entryDate:today(), car:'', brand:'', km:'', plate:'', engine:'', year:'', technician:'', internalNotes:'', customerNotes:'',
     createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), parts:[], services:[], isNew:true };
 }
-function blankPart(){ return {id:uuid(), name:'', qty:1, supplier:'', cost:0, price:0}; }
-function blankService(){ return {id:uuid(), description:'', qty:1, value:0}; }
+function blankPart(){ return {id:uuid(), name:'', qty:1, supplier:'', cost:0, price:0, origin:'MANUAL', sourceLineId:null}; }
+function blankService(){ return {id:uuid(), description:'', qty:1, value:0, origin:'MANUAL', sourceLineId:null}; }
 
 function current(){ return state.fichas.find(f=>f.id===state.currentId); }
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1900); }
@@ -1628,12 +1629,19 @@ function decodeServices(raw){
   if(!Array.isArray(value)) return [];
   return value.map(s=>({
     id:s.id||uuid(), description:s.description||s.descricao||'',
-    qty:Number(s.qty??s.quantidade)||1, value:Number(s.value??s.valor)||0
+    qty:Number(s.qty??s.quantidade)||1, value:Number(s.value??s.valor)||0,
+    origin:s.origin||'MANUAL',
+    sourceLineId:s.sourceLineId??s.shoficina_item_id??null
   }));
 }
 function encodeServices(services){
   return JSON.stringify((services||[]).filter(s=>s.description||s.value).map(s=>({
-    id:s.id||uuid(), description:s.description||'', qty:s.qty||1, value:s.value||0
+    id:s.id||uuid(),
+    description:s.description||'',
+    qty:s.qty||1,
+    value:s.value||0,
+    origin:s.origin||'MANUAL',
+    sourceLineId:s.sourceLineId??null
   })));
 }
 function formatDateBR(v){
@@ -1654,10 +1662,20 @@ function mapFicha(row){
     plate:row.placa||'', engine:row.motor||'', year:row.ano||'',
     technician:row.tecnico||'', internalNotes:row.observacoes||'', customerNotes:row.observacoes_cliente||'',
     createdAt:row.created_at, updatedAt:row.updated_at,
-    parts:(row.pecas||[]).map(p=>({
-      id:p.id, name:p.nome||'', qty:Number(p.quantidade)||1, supplier:p.fornecedor||'',
-      cost:Number(p.custo)||0, price:Number(p.preco_cliente)||0
-    })),
+    parts:(row.pecas||[]).map(p=>{
+      const meta=String(p.forma_pagamento||'');
+      const shMatch=meta.match(/^__SHOFICINA__:(\d+)$/);
+      return {
+        id:p.id,
+        name:p.nome||'',
+        qty:Number(p.quantidade)||1,
+        supplier:p.fornecedor||'',
+        cost:Number(p.custo)||0,
+        price:Number(p.preco_cliente)||0,
+        origin:shMatch?'SHOFICINA':'MANUAL',
+        sourceLineId:shMatch?Number(shMatch[1]):null
+      };
+    }),
     services:decodeServices(row.servicos),
     isNew:false
   };
@@ -1739,13 +1757,17 @@ function collect(){
     qty:num(tr.querySelector('[data-k=qty]').value)||1,
     supplier:tr.querySelector('[data-k=supplier]').value.trim(),
     cost:num(tr.querySelector('[data-k=cost]').value),
-    price:num(tr.querySelector('[data-k=price]').value)
+    price:num(tr.querySelector('[data-k=price]').value),
+    origin:tr.dataset.origin||'MANUAL',
+    sourceLineId:tr.dataset.sourceLineId?Number(tr.dataset.sourceLineId):null
   }));
   f.services=[...document.querySelectorAll('#servicesBody tr')].map(tr=>({
     id:tr.dataset.id || uuid(),
     description:tr.querySelector('[data-s=description]').value.trim(),
     qty:num(tr.querySelector('[data-s=qty]').value)||1,
-    value:num(tr.querySelector('[data-s=value]').value)
+    value:num(tr.querySelector('[data-s=value]').value),
+    origin:tr.dataset.origin||'MANUAL',
+    sourceLineId:tr.dataset.sourceLineId?Number(tr.dataset.sourceLineId):null
   }));
   f.updatedAt=new Date().toISOString();
 }
@@ -1763,6 +1785,9 @@ async function persistFicha(f){
   const partsPayload=validParts.map(p=>({
     id:p.id||uuid(), ficha_id:f.id, nome:p.name||'Peça sem descrição',
     quantidade:p.qty||1, fornecedor:p.supplier||null,
+    forma_pagamento:(p.origin==='SHOFICINA' && p.sourceLineId!=null)
+      ? '__SHOFICINA__:'+String(p.sourceLineId)
+      : null,
     custo:p.cost||0, preco_cliente:p.price||0
   }));
   const { error }=await db.rpc('save_ficha_v4',{p_ficha:fichaPayload,p_pecas:partsPayload});
@@ -2117,7 +2142,10 @@ function applyCustomerMode(){
 }
 
 function addPartRow(p=blankPart(),dirty=true){
-  const tr=document.createElement('tr'); tr.dataset.id=p.id||uuid();
+  const tr=document.createElement('tr');
+  tr.dataset.id=p.id||uuid();
+  tr.dataset.origin=p.origin||'MANUAL';
+  tr.dataset.sourceLineId=p.sourceLineId??'';
   tr.innerHTML=`
     <td><input data-k="name" value="${esc(p.name)}" placeholder="Ex.: Kit correia"></td>
     <td class="qty-cell"><input class="qty-input" data-k="qty" type="number" min="1" step="1" value="${p.qty||1}"></td>
@@ -2142,7 +2170,10 @@ function addPartRow(p=blankPart(),dirty=true){
 }
 
 function addServiceRow(s=blankService(),dirty=true){
-  const tr=document.createElement('tr'); tr.dataset.id=s.id||uuid();
+  const tr=document.createElement('tr');
+  tr.dataset.id=s.id||uuid();
+  tr.dataset.origin=s.origin||'MANUAL';
+  tr.dataset.sourceLineId=s.sourceLineId??'';
   tr.innerHTML=`
     <td><input data-s="description" value="${esc(s.description)}" placeholder="Ex.: Troca de correia dentada"></td>
     <td><input data-s="qty" type="number" min="1" step="1" value="${s.qty||1}"></td>
