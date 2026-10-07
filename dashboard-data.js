@@ -3,6 +3,169 @@ const dashMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'})
 const dashMonths=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
 let dashRows=[];
 
+/* V4.4.54 · GRAFICO BRUTO X LIQUIDO */
+function dEnsureRevenueChart(){
+  if(document.getElementById('revenueChart')) return;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    .dash-chart-card{
+      margin-top:16px;
+      background:#fff;
+      border:1px solid #dfe5e8;
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 8px 22px rgba(23,33,38,.05);
+    }
+    .dash-chart-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .dash-chart-title{
+      font-size:15px;
+      font-weight:900;
+      color:#172126;
+    }
+    .dash-chart-subtitle{
+      margin-top:3px;
+      color:#68777f;
+      font-size:12px;
+    }
+    .dash-chart-legend{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      font-size:12px;
+      font-weight:800;
+      color:#415159;
+    }
+    .dash-chart-key{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .dash-chart-dot{
+      width:10px;
+      height:10px;
+      border-radius:3px;
+      display:inline-block;
+    }
+    .dash-chart-dot.bruto{background:#172126;}
+    .dash-chart-dot.liquido{background:#167b87;}
+    .dash-chart-scroll{
+      overflow-x:auto;
+      padding-bottom:4px;
+    }
+    .dash-chart{
+      min-width:760px;
+      height:280px;
+      display:grid;
+      grid-template-columns:repeat(12,minmax(48px,1fr));
+      gap:10px;
+      align-items:end;
+      padding:12px 4px 0;
+      border-bottom:1px solid #dfe5e8;
+      background:
+        linear-gradient(to top, rgba(223,229,232,.55) 1px, transparent 1px);
+      background-size:100% 25%;
+    }
+    .dash-chart-month{
+      height:250px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:center;
+      gap:6px;
+    }
+    .dash-chart-bars{
+      width:100%;
+      height:218px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap:4px;
+    }
+    .dash-chart-bar{
+      width:min(19px,42%);
+      min-height:0;
+      border-radius:5px 5px 2px 2px;
+      transition:height .25s ease;
+      cursor:default;
+    }
+    .dash-chart-bar.bruto{background:#172126;}
+    .dash-chart-bar.liquido{background:#167b87;}
+    .dash-chart-label{
+      font-size:10px;
+      font-weight:800;
+      color:#68777f;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    @media(max-width:700px){
+      .dash-chart-card{padding:13px;}
+      .dash-chart{min-width:720px;}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const card=document.createElement('section');
+  card.className='dash-chart-card';
+  card.innerHTML=`
+    <div class="dash-chart-head">
+      <div>
+        <div class="dash-chart-title">Bruto x Líquido por mês</div>
+        <div class="dash-chart-subtitle">Comparação mensal conforme o filtro selecionado</div>
+      </div>
+      <div class="dash-chart-legend">
+        <span class="dash-chart-key"><i class="dash-chart-dot bruto"></i>Bruto</span>
+        <span class="dash-chart-key"><i class="dash-chart-dot liquido"></i>Líquido</span>
+      </div>
+    </div>
+    <div class="dash-chart-scroll">
+      <div id="revenueChart" class="dash-chart"></div>
+    </div>
+  `;
+
+  const kpis=document.querySelector('.kpis');
+  if(kpis) kpis.insertAdjacentElement('afterend',card);
+}
+
+function dRenderRevenueChart(rows){
+  dEnsureRevenueChart();
+  const chart=document.getElementById('revenueChart');
+  if(!chart) return;
+
+  const monthly=dashMonths.map(m=>{
+    const rs=rows.filter(r=>dNorm(r.mes)===dNorm(m));
+    return {
+      month:m,
+      bruto:rs.reduce((a,r)=>a+dNum(r.bruto),0),
+      liquido:rs.reduce((a,r)=>a+dNum(r.liquido),0)
+    };
+  });
+
+  const max=Math.max(1,...monthly.flatMap(x=>[x.bruto,x.liquido]));
+  chart.innerHTML=monthly.map(x=>{
+    const hb=Math.max(0,(x.bruto/max)*100);
+    const hl=Math.max(0,(x.liquido/max)*100);
+    const label=x.month.slice(0,3);
+    return `
+      <div class="dash-chart-month">
+        <div class="dash-chart-bars">
+          <div class="dash-chart-bar bruto" style="height:${hb}%" title="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}"></div>
+          <div class="dash-chart-bar liquido" style="height:${hl}%" title="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}"></div>
+        </div>
+        <div class="dash-chart-label">${dEsc(label)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+
 function dText(v){return String(v??'').trim()}
 function dNum(v){
   if(typeof v==='number') return Number.isFinite(v)?v:0;
@@ -119,6 +282,8 @@ function dRender(){
   document.getElementById('kpiOs').textContent=String(rows.length);
   document.getElementById('kpiOk').textContent=String(rows.filter(r=>dNorm(r.status)==='OK').length);
   document.getElementById('kpiAbaixo').textContent=String(rows.filter(r=>dNorm(r.status)==='ABAIXO').length);
+
+  dRenderRevenueChart(rows);
 
   const monthly=document.getElementById('monthlyBody');
   monthly.innerHTML=dashMonths.map(m=>{
