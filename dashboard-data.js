@@ -582,8 +582,8 @@ async function dLoad(){
     if(status) status.textContent='Erro ao carregar indicadores.';
     return;
   }
-  dashRows=data||[];
-  if(status) status.textContent=dashRows.length?dashRows.length+' registros na base.':'Nenhuma base importada ainda.';
+  dashRows=(data||[]).filter(r=>dText(r.cliente));
+  if(status) status.textContent=dashRows.length?dashRows.length+' registros válidos na base.':'Nenhuma base importada ainda.';
   const empty=document.getElementById('dashboardEmpty');
   if(empty) empty.style.display=dashRows.length?'none':'block';
   dRender();
