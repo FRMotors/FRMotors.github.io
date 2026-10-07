@@ -1422,7 +1422,6 @@
         <button class="btn" id="customerModeBtn">Modo cliente</button>
         <button class="btn" id="printBtn">Imprimir / PDF</button>
         <button class="btn accent" id="whatsappBtn">Compartilhar WhatsApp</button>
-        <button class="btn edit-only" id="csvBtn">Exportar gastos CSV</button>
         <button class="btn" type="button" data-install-app>Adicionar à tela inicial</button>
         <button class="btn danger edit-only" id="deleteBtn">Excluir ficha</button>
       </div>
@@ -2295,27 +2294,48 @@ async function doPrint(){
 }
 
 async function whatsapp(){
-  await save(true); const f=current(); const parts=f.parts.filter(p=>p.name);
+  await save(true);
+  const f=current();
+  const parts=(f.parts||[]).filter(p=>p.name);
   const services=(f.services||[]).filter(s=>s.description);
+
   const partsTotal=parts.reduce((sum,p)=>sum+(num(p.qty)||1)*num(p.price),0);
   const laborTotal=services.reduce((sum,s)=>sum+(num(s.qty)||1)*num(s.value),0);
   const total=partsTotal+laborTotal;
-  const lines=[
+
+  const header=[
     `*FR MOTORS · O.S. ${f.os||'-'}*`,
     `${f.car||'Veículo'} ${f.year||''} · ${f.plate||'sem placa'}`,
-    f.client?`Cliente: ${f.client}`:'',
-    '',
-    parts.length?'*Peças / materiais:*':'',
-    ...parts.map(p=>`• ${p.name} (${p.qty}x) — ${money((num(p.qty)||1)*num(p.price))}`),
-    parts.length?`*Total peças: ${money(partsTotal)}*`:'',
-    '',
-    services.length?'*Serviços / mão de obra:*':'',
-    ...services.map(s=>`• ${s.description} (${s.qty}x) — ${money((num(s.qty)||1)*num(s.value))}`),
-    services.length?`*Total mão de obra: ${money(laborTotal)}*`:'',
-    '',
-    `*TOTAL DO ORÇAMENTO: ${money(total)}*`
-  ].filter(Boolean);
-  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener');
+    f.client?`Cliente: ${f.client}`:''
+  ].filter(Boolean).join('\n');
+
+  const partsBlock=parts.length
+    ? [
+        '*Peças / materiais:*',
+        ...parts.map(p=>`• ${p.name} (${num(p.qty)||1}x) — ${money((num(p.qty)||1)*num(p.price))}`),
+        `*Total peças: ${money(partsTotal)}*`
+      ].join('\n')
+    : '';
+
+  const servicesBlock=services.length
+    ? [
+        '*Serviços / mão de obra:*',
+        ...services.map(s=>`• ${s.description} (${num(s.qty)||1}x) — ${money((num(s.qty)||1)*num(s.value))}`),
+        `*Total mão de obra: ${money(laborTotal)}*`
+      ].join('\n')
+    : '';
+
+  const totalBlock=`*TOTAL DO ORÇAMENTO: ${money(total)}*`;
+
+  const message=[header,partsBlock,servicesBlock,totalBlock]
+    .filter(Boolean)
+    .join('\n\n');
+
+  window.open(
+    'https://wa.me/?text='+encodeURIComponent(message),
+    '_blank',
+    'noopener'
+  );
 }
 
 async function backup(){
@@ -2355,16 +2375,6 @@ async function restore(file){
   r.readAsText(file);
 }
 
-async function csv(){
-  await save(true); const f=current();
-  const rows=[['Data','Tipo','Categoria','Descrição','Conta','Valor','Desconto','Competência','Vencimento','Status','Observações']];
-  (f.parts||[]).filter(p=>p.name&&num(p.cost)>0).forEach(p=>{
-    rows.push([f.entryDate||'', 'Saída','Peças',`${p.name} · O.S. ${f.os||'-'} · ${p.supplier||'Fornecedor não informado'}`,'',
-      ((num(p.qty)||1)*num(p.cost)).toFixed(2).replace('.',','),'','','','Em aberto',`Veículo: ${f.car||''} | Placa: ${f.plate||''}`]);
-  });
-  const text='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
-  downloadBlob(new Blob([text],{type:'text/csv;charset=utf-8'}),`OS-${f.os||'sem-numero'}-gastos.csv`);
-}
 function downloadBlob(blob,name){ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
 
 $('#toggleSidebarBtn').onclick=()=>{
@@ -2417,7 +2427,6 @@ $('#logoutBtn').onclick=logout;
 $('#mobileLogoutTopBtn').onclick=logout;
 $('#mobileSystemLogoutBtn').onclick=logout;
 $('#restoreInput').onchange=e=>e.target.files[0]&&restore(e.target.files[0]);
-$('#csvBtn').onclick=csv;
 $('#searchInput').oninput=renderList;
 $('#loginBtn').onclick=signIn;
 $('#magicLinkBtn').onclick=magicLink;
@@ -2824,5 +2833,6 @@ document.addEventListener('mousedown', e => {
 
 </script>
 <script src="./pwa-install.js"></script>
+<!-- V4.4.63 · Remove CSV e melhora formatação do WhatsApp -->
 </body>
 </html>
