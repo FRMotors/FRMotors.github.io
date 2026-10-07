@@ -166,3 +166,29 @@
     padding:7px 10px !important;
   }
 }
+
+
+/* V4.4.53 · Dashboard tabelas alinhadas */
+@media screen and (min-width:701px){
+  .table-wrap{overflow-x:hidden !important;}
+  .summary-table{width:100% !important;min-width:0 !important;table-layout:fixed !important;}
+  .summary-table:has(#monthlyBody) th:nth-child(-n+5),
+  .summary-table:has(#monthlyBody) td:nth-child(-n+5){width:14% !important;}
+  .summary-table:has(#monthlyBody) th:nth-child(n+6),
+  .summary-table:has(#monthlyBody) td:nth-child(n+6){width:10% !important;}
+  .summary-table:has(#technicianBody) th:first-child,
+  .summary-table:has(#technicianBody) td:first-child{width:28% !important;}
+  .summary-table:has(#technicianBody) th:not(:first-child),
+  .summary-table:has(#technicianBody) td:not(:first-child){width:18% !important;}
+}
+.summary-table th,.summary-table td,.summary-table td.num{
+  text-align:center !important;
+  vertical-align:middle !important;
+  white-space:nowrap !important;
+  box-sizing:border-box !important;
+}
+@media screen and (max-width:700px){
+  .table-wrap{overflow-x:auto !important;}
+  .summary-table:has(#monthlyBody){width:820px !important;min-width:820px !important;table-layout:fixed !important;}
+  .summary-table:has(#technicianBody){width:720px !important;min-width:720px !important;table-layout:fixed !important;}
+}
