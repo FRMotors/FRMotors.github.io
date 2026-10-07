@@ -1,9 +1,10 @@
-const CACHE_NAME = "frmotors-github-v4-4-49";
+const CACHE_NAME = "frmotors-github-v4-4-51";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./orcamentos.html",
   "./dashboard.html",
+  "./dashboard-data.js",
   "./manifest.webmanifest",
   "./fr-icon.svg",
   "./pwa-install.js"
