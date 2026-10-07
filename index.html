@@ -1097,6 +1097,33 @@
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
+
+<style>
+/* V4.4.43 · SIDEBAR O.S. RECOLHIVEL PELO TOPO NO DESKTOP */
+@media screen and (min-width:901px){
+  .top-commands #toggleSidebarBtn{
+    display:inline-flex !important;
+    align-items:center;
+    justify-content:center;
+    min-width:86px;
+    white-space:nowrap;
+  }
+
+  .sidebar-collapsed .grid{
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+
+  .sidebar-collapsed .sidebar{
+    display:none !important;
+  }
+
+  .sidebar-collapsed .editor{
+    width:100%;
+    min-width:0;
+  }
+}
+</style>
+
 </head>
 <body>
 
