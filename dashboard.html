@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101820">
+<meta name="description" content="Dashboard gerencial FR Motors">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./fr-icon.svg" type="image/svg+xml">
+<title>FR Motors · Dashboard</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#172126;--muted:#68777f;--line:#dfe5e8;--teal:#167b87;--soft:#f5f8f9}
+body{margin:0;background:#f4f7f8;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.system-topbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+.system-topbar-inner{max-width:1280px;margin:0 auto;min-height:72px;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.system-brand{display:flex;align-items:center;gap:11px}
+.system-brand-mark{width:42px;height:42px;border-radius:14px;background:#101820;color:#fff;display:grid;place-items:center;font-family:Arial,sans-serif;font-size:16px;font-style:italic;font-weight:900;letter-spacing:-2px}
+.system-brand-copy strong{display:block;font-size:18px}.system-brand-copy span{font-size:12px;color:var(--muted)}
+.system-nav{display:flex;gap:6px;padding:5px;background:#e9edef;border:1px solid var(--line);border-radius:14px}
+.system-nav a{min-height:38px;padding:8px 13px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#415159;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+.system-nav a.active{background:#101820;color:#fff;box-shadow:0 6px 16px rgba(16,24,32,.16)}
+.system-spacer{flex:1}
+.system-status{font-size:12px;color:var(--muted);font-weight:700}
+.system-logout{height:40px;padding:8px 13px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font:700 15px/15px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.page{max-width:1280px;margin:0 auto;padding:20px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+.hero h1{margin:0;font-size:26px}.hero p{margin:5px 0 0;color:var(--muted)}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 14px;border-radius:12px;font-weight:800}
+.btn.primary{background:#101820;color:#fff;border-color:#101820}
+.btn[disabled]{opacity:.48;cursor:not-allowed}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 8px 22px rgba(23,33,38,.05)}
+.card span{display:block;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase}
+.card strong{display:block;margin-top:8px;font-size:24px}
+.empty{margin-top:16px;padding:26px;text-align:center;color:var(--muted);background:#fff;border:1px dashed #cbd5d9;border-radius:16px}
+.login-screen{position:fixed;inset:0;z-index:1000;background:#f4f7f8;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{width:min(390px,100%);background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 24px 60px rgba(23,33,38,.15)}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.login-fields{display:grid;gap:11px}.login-fields label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+.login-fields input{width:100%;height:42px;padding:9px 11px;border:1px solid #ccd6da;border-radius:11px;font:inherit}
+.login-btn{height:42px;border:0;border-radius:11px;background:#101820;color:#fff;font-weight:800}.login-btn.secondary{background:#eef2f3;color:var(--ink)}
+.login-msg{min-height:20px;color:var(--muted);font-size:12px;text-align:center}
+@media(max-width:900px){
+  .system-topbar-inner{flex-wrap:wrap}
+  .system-nav{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .system-brand-copy span{display:none}
+  .kpis{grid-template-columns:1fr 1fr}
+}
+@media(max-width:540px){.page{padding:14px}.kpis{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}}
+</style>
+<link rel="stylesheet" href="./fr-header.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="system-brand-mark">FR</div>
+      <div><div style="font-size:20px;font-weight:900">FR Motors</div><div style="color:#68777f;font-size:13px">Acesso ao Dashboard</div></div>
+    </div>
+    <div class="login-fields">
+      <div><label>E-mail</label><input id="loginEmail" type="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"></div>
+      <div><label>Senha</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
+      <button class="login-btn" id="loginBtn">Entrar</button>
+      <button class="login-btn secondary" id="magicLinkBtn">Receber link por e-mail</button>
+      <div id="loginMsg" class="login-msg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="system-topbar">
+  <div class="system-topbar-inner">
+    <div class="system-brand">
+      <div class="system-brand-mark">FR</div>
+      <div class="system-brand-copy"><strong>FR Motors</strong><span>Gestão da oficina</span></div>
+    </div>
+    <nav class="system-nav" aria-label="Módulos FR Motors">
+      <a href="./">Ficha / O.S.</a>
+      <a href="./orcamentos.html">Orçamentos</a>
+      <a class="active" href="./dashboard.html" aria-current="page">Dashboard</a>
+    </nav>
+    <div class="system-spacer"></div>
+    <span id="cloudStatusDash" class="system-status">Conectando...</span>
+    <button id="logoutBtnDash" class="system-logout" type="button">Sair</button>
+  </div>
+</div>
+
+<main class="page">
+  <div class="hero">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Indicadores financeiros e operacionais da FR Motors.</p>
+    </div>
+    <button class="btn primary" disabled title="A importação da BASE 2026 será ligada na próxima etapa">Importar Base Excel</button>
+  </div>
+
+  <section class="kpis">
+    <div class="card"><span>Receita bruta</span><strong>R$ 0,00</strong></div>
+    <div class="card"><span>Receita líquida</span><strong>R$ 0,00</strong></div>
+    <div class="card"><span>Gastos</span><strong>R$ 0,00</strong></div>
+    <div class="card"><span>Carros / O.S.</span><strong>0</strong></div>
+    <div class="card"><span>Dentro da média</span><strong>0</strong></div>
+    <div class="card"><span>Abaixo da média</span><strong>0</strong></div>
+  </section>
+
+  <div class="empty">A página já está criada. Na próxima etapa, a importação da aba <b>BASE 2026</b> vai alimentar estes indicadores e os filtros por empresa e técnico.</div>
+</main>
+
+<script>
+const SUPABASE_URL="https://rtdndffvbxhrhftqstwx.supabase.co";
+const SUPABASE_KEY="sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
+
+function showAuth(){
+  document.getElementById('loginScreen').style.display=currentUser?'none':'flex';
+  document.getElementById('cloudStatusDash').textContent=currentUser?'Online · '+(currentUser.email||'usuário'):'Desconectado';
+}
+async function signIn(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  const msg=document.getElementById('loginMsg');
+  msg.textContent='Entrando...';
+  const {data,error}=await db.auth.signInWithPassword({email,password});
+  if(error){msg.textContent=error.message;return}
+  currentUser=data.user;msg.textContent='';showAuth();
+}
+async function magic(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const msg=document.getElementById('loginMsg');
+  if(!email){msg.textContent='Digite seu e-mail.';return}
+  msg.textContent='Enviando...';
+  const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.href.split('#')[0]}});
+  msg.textContent=error?error.message:'Link enviado. Confira seu e-mail.';
+}
+async function logout(){await db.auth.signOut();currentUser=null;showAuth()}
+document.getElementById('loginBtn').onclick=signIn;
+document.getElementById('magicLinkBtn').onclick=magic;
+document.getElementById('logoutBtnDash').onclick=logout;
+document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});
+db.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;showAuth()});
+db.auth.getSession().then(({data})=>{currentUser=data.session?.user||null;showAuth()});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
