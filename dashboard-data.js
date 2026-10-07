@@ -843,10 +843,12 @@ function dRender(){
   const techMap=new Map();
   rows.forEach(r=>{
     const tech=dText(r.tecnico)||'NÃO INFORMADO';
-    if(!techMap.has(tech)) techMap.set(tech,{cars:0,bruto:0,liquido:0,abaixo:0});
+    if(!techMap.has(tech)) techMap.set(tech,{cars:0,bruto:0,liquido:0,maoObra:0});
     const x=techMap.get(tech);
-    x.cars++;x.bruto+=dNum(r.bruto);x.liquido+=dNum(r.liquido);
-    if(dNorm(r.status)==='ABAIXO')x.abaixo++;
+    x.cars++;
+    x.bruto+=dNum(r.bruto);
+    x.liquido+=dNum(r.liquido);
+    x.maoObra+=dNum(r.mao_obra);
   });
   const tech=document.getElementById('technicianBody');
   tech.innerHTML=[...techMap.entries()]
@@ -855,7 +857,7 @@ function dRender(){
       const label=name==='NÃO INFORMADO'
         ? '<button type="button" class="dash-no-tech-btn" onclick="dOpenNoTechModal()">NÃO INFORMADO</button>'
         : dEsc(name);
-      return '<tr><td>'+label+'</td><td class="num">'+x.cars+'</td><td class="num">'+dashMoney.format(x.bruto)+'</td><td class="num">'+dashMoney.format(x.liquido)+'</td><td class="num">'+x.abaixo+'</td></tr>';
+      return '<tr><td>'+label+'</td><td class="num">'+x.cars+'</td><td class="num">'+dashMoney.format(x.bruto)+'</td><td class="num">'+dashMoney.format(x.liquido)+'</td><td class="num">'+dashMoney.format(x.maoObra)+'</td></tr>';
     })
     .join('');
 }
