@@ -166,6 +166,275 @@ function dRenderRevenueChart(rows){
 }
 
 
+
+/* V4.4.55 · MARGEM E COMPARATIVO MENSAL */
+function dEnsurePerformanceBlocks(){
+  if(document.getElementById('marginChart')) return;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    .dash-performance-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+      gap:16px;
+      margin-top:16px;
+    }
+    .dash-performance-card{
+      background:#fff;
+      border:1px solid #dfe5e8;
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 8px 22px rgba(23,33,38,.05);
+      min-width:0;
+    }
+    .dash-margin-chart{
+      height:245px;
+      min-width:680px;
+      display:grid;
+      grid-template-columns:repeat(12,minmax(44px,1fr));
+      gap:9px;
+      align-items:end;
+      padding:10px 4px 0;
+      border-bottom:1px solid #dfe5e8;
+      background:
+        linear-gradient(to top,rgba(223,229,232,.55) 1px,transparent 1px);
+      background-size:100% 25%;
+    }
+    .dash-margin-month{
+      height:220px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:center;
+      gap:6px;
+    }
+    .dash-margin-value{
+      font-size:10px;
+      font-weight:900;
+      color:#0f646e;
+      white-space:nowrap;
+    }
+    .dash-margin-bar-wrap{
+      height:175px;
+      width:100%;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+    }
+    .dash-margin-bar{
+      width:min(24px,55%);
+      border-radius:6px 6px 2px 2px;
+      background:#167b87;
+      min-height:0;
+      transition:height .25s ease;
+    }
+    .dash-margin-label{
+      font-size:10px;
+      font-weight:800;
+      color:#68777f;
+      text-transform:uppercase;
+    }
+    .dash-compare-title{
+      font-size:15px;
+      font-weight:900;
+      color:#172126;
+    }
+    .dash-compare-period{
+      margin-top:3px;
+      color:#68777f;
+      font-size:12px;
+    }
+    .dash-compare-list{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+    .dash-compare-item{
+      border:1px solid #e4eaec;
+      border-radius:13px;
+      padding:12px;
+      background:#f8fafb;
+      text-align:center;
+    }
+    .dash-compare-item span{
+      display:block;
+      color:#68777f;
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .dash-compare-item strong{
+      display:block;
+      margin-top:5px;
+      font-size:16px;
+      color:#172126;
+    }
+    .dash-compare-old{
+      margin-top:4px;
+      font-size:11px;
+      color:#7b898f;
+    }
+    .dash-change{
+      display:inline-flex;
+      margin-top:7px;
+      padding:4px 7px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+    }
+    .dash-change.up{background:#e8f4ed;color:#17613d}
+    .dash-change.down{background:#fdecec;color:#9b2626}
+    .dash-change.flat{background:#eef2f3;color:#68777f}
+    @media(max-width:900px){
+      .dash-performance-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:700px){
+      .dash-performance-card{padding:13px}
+      .dash-compare-list{grid-template-columns:1fr 1fr}
+      .dash-margin-chart{min-width:700px}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const wrap=document.createElement('section');
+  wrap.className='dash-performance-grid';
+  wrap.innerHTML=`
+    <div class="dash-performance-card">
+      <div class="dash-chart-head">
+        <div>
+          <div class="dash-chart-title">Margem líquida por mês</div>
+          <div class="dash-chart-subtitle">Percentual do líquido em relação ao bruto</div>
+        </div>
+      </div>
+      <div class="dash-chart-scroll">
+        <div id="marginChart" class="dash-margin-chart"></div>
+      </div>
+    </div>
+
+    <div class="dash-performance-card">
+      <div class="dash-compare-title">Mês atual x mês anterior</div>
+      <div id="comparePeriod" class="dash-compare-period">Aguardando dados...</div>
+      <div id="monthlyCompare" class="dash-compare-list"></div>
+    </div>
+  `;
+
+  const revenue=document.querySelector('.dash-chart-card');
+  if(revenue) revenue.insertAdjacentElement('afterend',wrap);
+}
+
+function dMonthlyTotals(rows){
+  return dashMonths.map((month,index)=>{
+    const rs=rows.filter(r=>dNorm(r.mes)===dNorm(month));
+    const sum=k=>rs.reduce((a,r)=>a+dNum(r[k]),0);
+    const bruto=sum('bruto');
+    const liquido=sum('liquido');
+    return {
+      month,
+      index,
+      rows:rs,
+      bruto,
+      liquido,
+      gasto:sum('gasto'),
+      os:rs.length,
+      margem:bruto!==0?(liquido/bruto)*100:0
+    };
+  });
+}
+
+function dRenderMarginChart(rows){
+  dEnsurePerformanceBlocks();
+  const chart=document.getElementById('marginChart');
+  if(!chart) return;
+
+  const monthly=dMonthlyTotals(rows);
+  const positive=monthly.map(x=>Math.max(0,x.margem));
+  const max=Math.max(100,...positive,1);
+
+  chart.innerHTML=monthly.map(x=>{
+    const h=Math.max(0,Math.min(100,(Math.max(0,x.margem)/max)*100));
+    const label=x.month.slice(0,3);
+    const pct=Number.isFinite(x.margem)?x.margem:0;
+    return `
+      <div class="dash-margin-month">
+        <div class="dash-margin-value">${pct.toFixed(1).replace('.',',')}%</div>
+        <div class="dash-margin-bar-wrap">
+          <div class="dash-margin-bar" style="height:${h}%" title="${dEsc(x.month)} · Margem líquida: ${pct.toFixed(1).replace('.',',')}%"></div>
+        </div>
+        <div class="dash-margin-label">${dEsc(label)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function dMonthLabel(month){
+  return month.charAt(0)+month.slice(1).toLocaleLowerCase('pt-BR');
+}
+
+function dPctChange(current,previous){
+  if(previous===0){
+    if(current===0) return {text:'0,0%',cls:'flat',arrow:'•'};
+    return {text:'novo',cls:'up',arrow:'↑'};
+  }
+  const pct=((current-previous)/Math.abs(previous))*100;
+  const cls=pct>0.05?'up':pct<-0.05?'down':'flat';
+  const arrow=cls==='up'?'↑':cls==='down'?'↓':'•';
+  return {text:Math.abs(pct).toFixed(1).replace('.',',')+'%',cls,arrow};
+}
+
+function dRenderMonthlyCompare(rows){
+  dEnsurePerformanceBlocks();
+  const monthly=dMonthlyTotals(rows);
+  const nowIndex=new Date().getMonth();
+  let current=monthly[nowIndex];
+
+  if(!current || current.rows.length===0){
+    const active=monthly.filter(x=>x.rows.length>0);
+    current=active[active.length-1]||null;
+  }
+
+  if(!current){
+    document.getElementById('comparePeriod').textContent='Sem dados para comparar.';
+    document.getElementById('monthlyCompare').innerHTML='';
+    return;
+  }
+
+  let previous=null;
+  for(let i=current.index-1;i>=0;i--){
+    if(monthly[i].rows.length>0){previous=monthly[i];break;}
+  }
+
+  const period=document.getElementById('comparePeriod');
+  const box=document.getElementById('monthlyCompare');
+
+  if(!previous){
+    period.textContent=dMonthLabel(current.month)+' · sem mês anterior com dados';
+    box.innerHTML='';
+    return;
+  }
+
+  period.textContent=dMonthLabel(current.month)+' x '+dMonthLabel(previous.month);
+
+  const metrics=[
+    {label:'Bruto',cur:current.bruto,prev:previous.bruto,fmt:v=>dashMoney.format(v)},
+    {label:'Líquido',cur:current.liquido,prev:previous.liquido,fmt:v=>dashMoney.format(v)},
+    {label:'Gastos',cur:current.gasto,prev:previous.gasto,fmt:v=>dashMoney.format(v)},
+    {label:'O.S.',cur:current.os,prev:previous.os,fmt:v=>String(v)}
+  ];
+
+  box.innerHTML=metrics.map(m=>{
+    const ch=dPctChange(m.cur,m.prev);
+    return `
+      <div class="dash-compare-item">
+        <span>${dEsc(m.label)}</span>
+        <strong>${dEsc(m.fmt(m.cur))}</strong>
+        <div class="dash-compare-old">Anterior: ${dEsc(m.fmt(m.prev))}</div>
+        <div class="dash-change ${ch.cls}">${ch.arrow} ${ch.text}</div>
+      </div>
+    `;
+  }).join('');
+}
+
 function dText(v){return String(v??'').trim()}
 function dNum(v){
   if(typeof v==='number') return Number.isFinite(v)?v:0;
@@ -284,6 +553,8 @@ function dRender(){
   document.getElementById('kpiAbaixo').textContent=String(rows.filter(r=>dNorm(r.status)==='ABAIXO').length);
 
   dRenderRevenueChart(rows);
+  dRenderMarginChart(rows);
+  dRenderMonthlyCompare(rows);
 
   const monthly=document.getElementById('monthlyBody');
   monthly.innerHTML=dashMonths.map(m=>{
