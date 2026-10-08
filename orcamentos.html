@@ -2875,6 +2875,7 @@ body.printing .main{gap:6px!important;}
 <datalist id="marcasDatalist"></datalist>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script>
 
 let lojas = [
@@ -4109,26 +4110,162 @@ function limparImpressao(){
     }
 }
 
-function imprimirPDF(){
+async function imprimirPDF(){
     sidebar.classList.remove('show');
     preencherDataPadrao();
     atualizarInfoImpressao();
     ajustarCamposPeca();
     ajustarCamposMarca();
 
-    // A tabela de comparação é larga por natureza: usamos A4 paisagem e calculamos
-    // a escala pela largura útil da folha, priorizando legibilidade.
-    const larguraPaginaPaisagem = 1040;
-    const tabela = document.querySelector('table');
-    const larguraTabela = tabela ? Math.max(tabela.scrollWidth, tabela.offsetWidth) : 0;
-    const escala = larguraTabela > larguraPaginaPaisagem ? Math.max(0.55, larguraPaginaPaisagem / larguraTabela) : 1;
+    const area = document.querySelector('.table-container');
+    if(!area){
+        alert('Tabela não encontrada para gerar o PDF.');
+        return;
+    }
 
-    document.documentElement.style.setProperty('--print-scale', escala.toFixed(3));
-    document.body.classList.add('printing');
+    if(typeof html2canvas !== 'function' || !window.jspdf?.jsPDF){
+        alert('Não foi possível carregar o gerador de PDF neste navegador.');
+        return;
+    }
 
-    setTimeout(() => {
-        window.print();
-    }, 120);
+    // Pedimos a permissão enquanto o toque no botão ainda conta como ação do usuário.
+    // O download continua funcionando mesmo se a pessoa não permitir notificações.
+    let permissaoNotificacao = null;
+    if('Notification' in window && Notification.permission === 'default'){
+        try{
+            permissaoNotificacao = Notification.requestPermission();
+        }catch(_){}
+    }
+
+    const nomeBase = normalizarNomeArquivo(gerarTituloOrcamento()) || 'orcamento';
+    const nomeArquivo = `${nomeBase}.pdf`;
+    let captura = null;
+
+    try{
+        captura = criarAreaImagem(area);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        const canvas = await html2canvas(captura.wrapper, {
+            backgroundColor: '#ffffff',
+            scale: Math.max(2, window.devicePixelRatio || 1),
+            useCORS: true,
+            logging: false,
+            width: captura.width,
+            height: captura.height,
+            windowWidth: captura.width,
+            windowHeight: captura.height,
+            scrollX: 0,
+            scrollY: 0
+        });
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4',
+            compress: true
+        });
+
+        const margem = 8;
+        const larguraPagina = pdf.internal.pageSize.getWidth();
+        const alturaPagina = pdf.internal.pageSize.getHeight();
+        const larguraUtil = larguraPagina - (margem * 2);
+        const alturaUtil = alturaPagina - (margem * 2);
+        const alturaPixelsPorPagina = Math.max(
+            1,
+            Math.floor(canvas.width * (alturaUtil / larguraUtil))
+        );
+
+        let y = 0;
+        let pagina = 0;
+
+        while(y < canvas.height){
+            const alturaTrecho = Math.min(alturaPixelsPorPagina, canvas.height - y);
+            const paginaCanvas = document.createElement('canvas');
+            paginaCanvas.width = canvas.width;
+            paginaCanvas.height = alturaTrecho;
+
+            const ctx = paginaCanvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, paginaCanvas.width, paginaCanvas.height);
+            ctx.drawImage(
+                canvas,
+                0, y, canvas.width, alturaTrecho,
+                0, 0, canvas.width, alturaTrecho
+            );
+
+            if(pagina > 0) pdf.addPage('a4', 'landscape');
+
+            const alturaImagem = alturaTrecho * (larguraUtil / canvas.width);
+            pdf.addImage(
+                paginaCanvas.toDataURL('image/jpeg', 0.94),
+                'JPEG',
+                margem,
+                margem,
+                larguraUtil,
+                alturaImagem,
+                undefined,
+                'FAST'
+            );
+
+            y += alturaTrecho;
+            pagina++;
+        }
+
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nomeArquivo;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+
+        setTimeout(() => {
+            link.remove();
+            URL.revokeObjectURL(url);
+        }, 60000);
+
+        await notificarDownloadPDF(nomeArquivo, permissaoNotificacao);
+    }catch(erro){
+        console.error(erro);
+        alert('Não foi possível gerar o PDF.');
+    }finally{
+        if(captura && captura.wrapper && captura.wrapper.parentNode){
+            captura.wrapper.parentNode.removeChild(captura.wrapper);
+        }
+    }
+}
+
+async function notificarDownloadPDF(nomeArquivo, permissaoPendente){
+    try{
+        if(!('Notification' in window)) return;
+
+        const permissao = permissaoPendente
+            ? await permissaoPendente
+            : Notification.permission;
+
+        if(permissao !== 'granted') return;
+
+        if('serviceWorker' in navigator){
+            const registro = await navigator.serviceWorker.ready;
+            await registro.showNotification('FR Motors', {
+                body: `Download do PDF iniciado: ${nomeArquivo}`,
+                icon: './fr-icon.svg',
+                badge: './fr-icon.svg',
+                tag: 'frmotors-pdf-download',
+                renotify: true
+            });
+            return;
+        }
+
+        new Notification('FR Motors', {
+            body: `Download do PDF iniciado: ${nomeArquivo}`,
+            icon: './fr-icon.svg'
+        });
+    }catch(erro){
+        console.warn('Não foi possível exibir a notificação do PDF.', erro);
+    }
 }
 
 window.addEventListener('beforeprint', () => {
@@ -4727,5 +4864,6 @@ document.addEventListener('mousedown', e => {
 
 <script src="./pwa-install.js"></script>
 <!-- V4.4.64 · Remove instalar app de Orçamentos -->
+<!-- V4.4.72 · PDF vira download real e pode notificar o Android -->
 </body>
 </html>
