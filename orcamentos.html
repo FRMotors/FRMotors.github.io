@@ -4128,15 +4128,6 @@ async function imprimirPDF(){
         return;
     }
 
-    // Pedimos a permissão enquanto o toque no botão ainda conta como ação do usuário.
-    // O download continua funcionando mesmo se a pessoa não permitir notificações.
-    let permissaoNotificacao = null;
-    if('Notification' in window && Notification.permission === 'default'){
-        try{
-            permissaoNotificacao = Notification.requestPermission();
-        }catch(_){}
-    }
-
     const nomeBase = normalizarNomeArquivo(gerarTituloOrcamento()) || 'orcamento';
     const nomeArquivo = `${nomeBase}.pdf`;
     let captura = null;
@@ -4212,21 +4203,10 @@ async function imprimirPDF(){
             pagina++;
         }
 
-        const blob = pdf.output('blob');
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = nomeArquivo;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-
-        setTimeout(() => {
-            link.remove();
-            URL.revokeObjectURL(url);
-        }, 60000);
-
-        await notificarDownloadPDF(nomeArquivo, permissaoNotificacao);
+        // Download direto: não abre visualização/impressão nem página intermediária.
+        // O navegador ainda pode exibir a confirmação própria dele se "Perguntar onde salvar"
+        // estiver ativado nas configurações do aparelho.
+        pdf.save(nomeArquivo);
     }catch(erro){
         console.error(erro);
         alert('Não foi possível gerar o PDF.');
@@ -4234,37 +4214,6 @@ async function imprimirPDF(){
         if(captura && captura.wrapper && captura.wrapper.parentNode){
             captura.wrapper.parentNode.removeChild(captura.wrapper);
         }
-    }
-}
-
-async function notificarDownloadPDF(nomeArquivo, permissaoPendente){
-    try{
-        if(!('Notification' in window)) return;
-
-        const permissao = permissaoPendente
-            ? await permissaoPendente
-            : Notification.permission;
-
-        if(permissao !== 'granted') return;
-
-        if('serviceWorker' in navigator){
-            const registro = await navigator.serviceWorker.ready;
-            await registro.showNotification('FR Motors', {
-                body: `Download do PDF iniciado: ${nomeArquivo}`,
-                icon: './fr-icon.svg',
-                badge: './fr-icon.svg',
-                tag: 'frmotors-pdf-download',
-                renotify: true
-            });
-            return;
-        }
-
-        new Notification('FR Motors', {
-            body: `Download do PDF iniciado: ${nomeArquivo}`,
-            icon: './fr-icon.svg'
-        });
-    }catch(erro){
-        console.warn('Não foi possível exibir a notificação do PDF.', erro);
     }
 }
 
@@ -4865,5 +4814,6 @@ document.addEventListener('mousedown', e => {
 <script src="./pwa-install.js"></script>
 <!-- V4.4.64 · Remove instalar app de Orçamentos -->
 <!-- V4.4.72 · PDF vira download real e pode notificar o Android -->
+<!-- V4.4.74 · PDF com download direto, sem confirmação interna/notificação -->
 </body>
 </html>
