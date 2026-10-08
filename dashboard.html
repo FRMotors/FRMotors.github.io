@@ -96,9 +96,11 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
 .login-btn{height:42px;border:0;border-radius:11px;background:#101820;color:#fff;font-weight:800}.login-btn.secondary{background:#eef2f3;color:var(--ink)}
 .login-msg{min-height:20px;color:var(--muted);font-size:12px;text-align:center}
 @media(max-width:900px){
+  body{padding-top:126px}
   .system-topbar-inner{flex-wrap:wrap}
   .system-nav{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
   .system-brand-copy span{display:none}
+  .system-status{display:none!important}
   .kpis{grid-template-columns:1fr 1fr}
 }
 @media(max-width:540px){.page{padding:14px}.kpis{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.financial-check-grid{grid-template-columns:1fr}}
@@ -292,5 +294,6 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
 <!-- V4.4.68 · Cabeçalho desktop idêntico a Orçamentos -->
 <!-- V4.4.69 · Completa padronização estrutural do cabeçalho -->
 <!-- V4.4.70 · Recuo do cabeçalho alinhado ao Dashboard -->
+<!-- V4.4.71 · Cabeçalho mobile alinhado a Orçamentos: status oculto e altura corrigida -->
 </body>
 </html>
