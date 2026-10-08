@@ -1,4 +1,4 @@
-/* FR Motors · Histórico de manutenção por placa/cliente · V4.4.75 */
+/* FR Motors · Histórico de manutenção por O.S./placa/cliente · V4.4.76 */
 (function(){
   'use strict';
 
@@ -96,15 +96,15 @@
         <div class="maintenance-modal-head">
           <div>
             <h3 id="maintenanceHistoryTitle">Histórico de manutenção</h3>
-            <p>Pesquise pela placa ou pelo nome do cliente para ver O.S., peças e serviços já registrados.</p>
+            <p>Pesquise pela placa, pelo nome do cliente ou pelo número da O.S. para ver peças e serviços já registrados.</p>
           </div>
           <button class="btn" id="maintenanceHistoryCloseBtn" type="button">Fechar</button>
         </div>
         <div class="maintenance-search">
-          <input id="maintenanceHistorySearch" placeholder="Ex.: EUU4F32 ou EASYCAR VEÍCULOS" autocomplete="off">
+          <input id="maintenanceHistorySearch" placeholder="Ex.: 9953, EUU4F32 ou EASYCAR VEÍCULOS" autocomplete="off">
           <button class="btn primary" id="maintenanceHistorySearchBtn" type="button">Buscar</button>
         </div>
-        <div id="maintenanceHistorySummary" class="maintenance-summary">Digite uma placa ou cliente.</div>
+        <div id="maintenanceHistorySummary" class="maintenance-summary">Digite uma O.S., placa ou cliente.</div>
         <div id="maintenanceHistoryBody" class="maintenance-body">
           <div class="maintenance-empty">Nenhuma consulta realizada ainda.</div>
         </div>
@@ -160,7 +160,7 @@
 
     if(q.length<2){
       summary.textContent='Digite pelo menos 2 caracteres.';
-      body.innerHTML='<div class="maintenance-empty">Informe uma placa ou nome de cliente para pesquisar.</div>';
+      body.innerHTML='<div class="maintenance-empty">Informe o número da O.S., uma placa ou o nome do cliente para pesquisar.</div>';
       return;
     }
 
@@ -173,8 +173,10 @@
         .order('source_os_id',{ascending:false}).limit(MAX_OS);
 
       const compact=q.replace(/[-\s]/g,'').toUpperCase();
+      const isOs=/^\d+$/.test(q);
       const plateLike=/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(compact)||/^[A-Z]{3}[0-9]{4}$/.test(compact);
-      if(plateLike) query=query.ilike('placa','%'+compact+'%');
+      if(isOs) query=query.eq('source_os_id',Number(q));
+      else if(plateLike) query=query.ilike('placa','%'+compact+'%');
       else query=query.or('cliente.ilike.%'+q+'%,placa.ilike.%'+q+'%');
 
       const {data:osRows,error:osError}=await query;
