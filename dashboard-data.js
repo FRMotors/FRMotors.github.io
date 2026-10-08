@@ -5,6 +5,133 @@ let dashRows=[];
 const DASH_BACKUP_KEY='frmotors-dashboard-last-import-backup-v1';
 const DASH_RECON_KEY='frmotors-dashboard-financial-check-v1';
 
+/* V4.4.73 · VALORES DOS GRAFICOS POR CLIQUE/TOQUE */
+let dashChartTooltipTimer=null;
+
+function dEnsureChartTooltip(){
+  let tooltip=document.getElementById('dashChartValueTooltip');
+  if(tooltip) return tooltip;
+
+  tooltip=document.createElement('div');
+  tooltip.id='dashChartValueTooltip';
+  tooltip.className='dash-chart-value-tooltip';
+  tooltip.setAttribute('role','status');
+  tooltip.setAttribute('aria-live','polite');
+  document.body.appendChild(tooltip);
+
+  if(!document.getElementById('dashChartTooltipStyle')){
+    const style=document.createElement('style');
+    style.id='dashChartTooltipStyle';
+    style.textContent=`
+      .dash-chart-value-tooltip{
+        position:fixed;
+        z-index:10000;
+        max-width:min(280px,calc(100vw - 24px));
+        padding:8px 10px;
+        border-radius:9px;
+        background:#101820;
+        color:#fff;
+        box-shadow:0 8px 24px rgba(16,24,32,.24);
+        font:800 12px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+        text-align:center;
+        pointer-events:none;
+        opacity:0;
+        transform:translate(-50%,-100%) scale(.96);
+        transition:opacity .12s ease,transform .12s ease;
+      }
+      .dash-chart-value-tooltip.visible{
+        opacity:1;
+        transform:translate(-50%,-100%) scale(1);
+      }
+      .dash-chart-bar,
+      .dash-margin-bar{
+        cursor:pointer !important;
+        touch-action:manipulation;
+      }
+      .dash-chart-bar:focus-visible,
+      .dash-margin-bar:focus-visible{
+        outline:3px solid rgba(22,123,135,.28);
+        outline-offset:3px;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  if(!document.documentElement.dataset.dashChartOutsideBound){
+    document.addEventListener('pointerdown',event=>{
+      if(!event.target.closest?.('[data-chart-value]')) dHideChartTooltip();
+    },true);
+    document.documentElement.dataset.dashChartOutsideBound='1';
+  }
+
+  return tooltip;
+}
+
+function dHideChartTooltip(){
+  const tooltip=document.getElementById('dashChartValueTooltip');
+  if(tooltip) tooltip.classList.remove('visible');
+  if(dashChartTooltipTimer){
+    clearTimeout(dashChartTooltipTimer);
+    dashChartTooltipTimer=null;
+  }
+}
+
+function dShowChartTooltip(target,text){
+  if(!target||!text) return;
+  const tooltip=dEnsureChartTooltip();
+  tooltip.textContent=text;
+  tooltip.classList.add('visible');
+
+  requestAnimationFrame(()=>{
+    const r=target.getBoundingClientRect();
+    const tw=tooltip.offsetWidth||160;
+    const th=tooltip.offsetHeight||36;
+    const half=tw/2+8;
+    let left=r.left+(r.width/2);
+    left=Math.max(half,Math.min(window.innerWidth-half,left));
+
+    let top=r.top-8;
+    if(top-th<8){
+      top=Math.min(window.innerHeight-th-8,r.bottom+th+8);
+      tooltip.style.transform='translate(-50%,0) scale(1)';
+    }else{
+      tooltip.style.transform='';
+    }
+
+    tooltip.style.left=left+'px';
+    tooltip.style.top=top+'px';
+  });
+
+  if(dashChartTooltipTimer) clearTimeout(dashChartTooltipTimer);
+  dashChartTooltipTimer=setTimeout(dHideChartTooltip,3200);
+}
+
+function dEnableChartValueClicks(container){
+  if(!container||container.dataset.valueClicksBound==='1') return;
+
+  const activate=target=>{
+    if(!target) return;
+    dShowChartTooltip(target,target.dataset.chartValue||target.getAttribute('title')||'');
+  };
+
+  container.addEventListener('click',event=>{
+    const target=event.target.closest?.('[data-chart-value]');
+    if(target&&container.contains(target)) activate(target);
+  });
+
+  container.addEventListener('keydown',event=>{
+    const target=event.target.closest?.('[data-chart-value]');
+    if(!target||!container.contains(target)) return;
+    if(event.key==='Enter'||event.key===' '){
+      event.preventDefault();
+      activate(target);
+    }
+  });
+
+  container.dataset.valueClicksBound='1';
+}
+
+
 /* V4.4.54 · GRAFICO BRUTO X LIQUIDO */
 function dEnsureRevenueChart(){
   if(document.getElementById('revenueChart')) return;
@@ -158,13 +285,14 @@ function dRenderRevenueChart(rows){
     return `
       <div class="dash-chart-month">
         <div class="dash-chart-bars">
-          <div class="dash-chart-bar bruto" style="height:${hb}%" title="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}"></div>
-          <div class="dash-chart-bar liquido" style="height:${hl}%" title="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}"></div>
+          <div class="dash-chart-bar bruto" tabindex="0" role="button" style="height:${hb}%" title="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}" data-chart-value="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}"></div>
+          <div class="dash-chart-bar liquido" tabindex="0" role="button" style="height:${hl}%" title="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}" data-chart-value="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}"></div>
         </div>
         <div class="dash-chart-label">${dEsc(label)}</div>
       </div>
     `;
   }).join('');
+  dEnableChartValueClicks(chart);
 }
 
 
@@ -268,6 +396,31 @@ function dEnsurePerformanceBlocks(){
       border-color:#167b87;
       box-shadow:0 0 0 3px rgba(22,123,135,.10);
     }
+    .dash-compare-selects{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap:7px;
+      flex-wrap:wrap;
+    }
+    .dash-compare-select-wrap{
+      display:grid;
+      gap:4px;
+    }
+    .dash-compare-select-label{
+      color:#68777f;
+      font-size:9px;
+      font-weight:900;
+      text-transform:uppercase;
+      text-align:left;
+    }
+    .dash-compare-x{
+      align-self:flex-end;
+      padding:0 1px 10px;
+      color:#68777f;
+      font-size:12px;
+      font-weight:900;
+    }
     .dash-compare-list{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -339,10 +492,20 @@ function dEnsurePerformanceBlocks(){
     <div class="dash-performance-card">
       <div class="dash-compare-head">
         <div>
-          <div class="dash-compare-title">Mês selecionado x anterior</div>
-          <div id="comparePeriod" class="dash-compare-period">Aguardando dados...</div>
+          <div class="dash-compare-title">Comparação entre meses</div>
+          <div id="comparePeriod" class="dash-compare-period">Escolha os dois meses para comparar</div>
         </div>
-        <select id="compareMonthSelect" class="dash-compare-select" aria-label="Mês de referência"></select>
+        <div class="dash-compare-selects">
+          <label class="dash-compare-select-wrap">
+            <span class="dash-compare-select-label">Mês 1</span>
+            <select id="compareMonthSelectA" class="dash-compare-select" aria-label="Primeiro mês da comparação"></select>
+          </label>
+          <span class="dash-compare-x" aria-hidden="true">×</span>
+          <label class="dash-compare-select-wrap">
+            <span class="dash-compare-select-label">Mês 2</span>
+            <select id="compareMonthSelectB" class="dash-compare-select" aria-label="Segundo mês da comparação"></select>
+          </label>
+        </div>
       </div>
       <div id="monthlyCompare" class="dash-compare-list"></div>
     </div>
@@ -388,12 +551,13 @@ function dRenderMarginChart(rows){
       <div class="dash-margin-month">
         <div class="dash-margin-value">${pct.toFixed(1).replace('.',',')}%</div>
         <div class="dash-margin-bar-wrap">
-          <div class="dash-margin-bar" style="height:${h}%" title="${dEsc(x.month)} · Margem líquida: ${pct.toFixed(1).replace('.',',')}%"></div>
+          <div class="dash-margin-bar" tabindex="0" role="button" style="height:${h}%" title="${dEsc(x.month)} · Margem líquida: ${pct.toFixed(1).replace('.',',')}%" data-chart-value="${dEsc(x.month)} · Margem líquida: ${pct.toFixed(1).replace('.',',')}%"></div>
         </div>
         <div class="dash-margin-label">${dEsc(label)}</div>
       </div>
     `;
   }).join('');
+  dEnableChartValueClicks(chart);
 }
 
 function dMonthLabel(month){
@@ -418,56 +582,68 @@ function dRenderMonthlyCompare(rows){
   dashCompareRows=rows||[];
 
   const monthly=dMonthlyTotals(dashCompareRows);
-  const select=document.getElementById('compareMonthSelect');
+  const selectA=document.getElementById('compareMonthSelectA');
+  const selectB=document.getElementById('compareMonthSelectB');
   const period=document.getElementById('comparePeriod');
   const box=document.getElementById('monthlyCompare');
 
-  if(!select||!period||!box) return;
+  if(!selectA||!selectB||!period||!box) return;
 
-  if(!select.options.length){
-    select.innerHTML=dashMonths.map((m,i)=>
-      '<option value="'+i+'">'+dEsc(dMonthLabel(m))+'</option>'
-    ).join('');
+  const optionsHtml=dashMonths.map((m,i)=>
+    '<option value="'+i+'">'+dEsc(dMonthLabel(m))+'</option>'
+  ).join('');
 
-    select.addEventListener('change',()=>dRenderMonthlyCompare(dashCompareRows));
+  if(!selectA.options.length) selectA.innerHTML=optionsHtml;
+  if(!selectB.options.length) selectB.innerHTML=optionsHtml;
+
+  if(!selectA.dataset.bound){
+    selectA.addEventListener('change',()=>dRenderMonthlyCompare(dashCompareRows));
+    selectA.dataset.bound='1';
+  }
+  if(!selectB.dataset.bound){
+    selectB.addEventListener('change',()=>dRenderMonthlyCompare(dashCompareRows));
+    selectB.dataset.bound='1';
   }
 
-  if(!select.dataset.initialized){
+  if(!selectA.dataset.initialized||!selectB.dataset.initialized){
     const nowIndex=new Date().getMonth();
-    let defaultIndex=nowIndex;
+    const active=monthly.filter(x=>x.rows.length>0);
+    let firstIndex=(monthly[nowIndex]&&monthly[nowIndex].rows.length)
+      ? nowIndex
+      : (active.length?active[active.length-1].index:nowIndex);
 
-    if(!monthly[defaultIndex] || monthly[defaultIndex].rows.length===0){
-      const active=monthly.filter(x=>x.rows.length>0);
-      defaultIndex=active.length?active[active.length-1].index:nowIndex;
+    let secondIndex=firstIndex>0?firstIndex-1:Math.min(11,firstIndex+1);
+    const earlierActive=active.filter(x=>x.index<firstIndex);
+    if(earlierActive.length) secondIndex=earlierActive[earlierActive.length-1].index;
+    else if(active.length>1){
+      const alternative=active.find(x=>x.index!==firstIndex);
+      if(alternative) secondIndex=alternative.index;
     }
 
-    select.value=String(defaultIndex);
-    select.dataset.initialized='1';
+    selectA.value=String(firstIndex);
+    selectB.value=String(secondIndex);
+    selectA.dataset.initialized='1';
+    selectB.dataset.initialized='1';
   }
 
-  const selectedIndex=Math.max(0,Math.min(11,Number(select.value)||0));
-  const current=monthly[selectedIndex];
-  const previous=selectedIndex>0?monthly[selectedIndex-1]:null;
+  const indexA=Math.max(0,Math.min(11,Number(selectA.value)||0));
+  const indexB=Math.max(0,Math.min(11,Number(selectB.value)||0));
+  const monthA=monthly[indexA];
+  const monthB=monthly[indexB];
 
-  if(!current){
+  if(!monthA||!monthB){
     period.textContent='Sem dados para comparar.';
     box.innerHTML='';
     return;
   }
 
-  if(!previous){
-    period.textContent=dMonthLabel(current.month)+' · não há mês anterior em 2026';
-    box.innerHTML='';
-    return;
-  }
-
-  period.textContent=dMonthLabel(current.month)+' x '+dMonthLabel(previous.month);
+  period.textContent=dMonthLabel(monthA.month)+' x '+dMonthLabel(monthB.month);
 
   const metrics=[
-    {label:'Bruto',cur:current.bruto,prev:previous.bruto,fmt:v=>dashMoney.format(v)},
-    {label:'Líquido',cur:current.liquido,prev:previous.liquido,fmt:v=>dashMoney.format(v)},
-    {label:'Gastos',cur:current.gasto,prev:previous.gasto,fmt:v=>dashMoney.format(v)},
-    {label:'O.S.',cur:current.os,prev:previous.os,fmt:v=>String(v)}
+    {label:'Bruto',cur:monthA.bruto,prev:monthB.bruto,fmt:v=>dashMoney.format(v)},
+    {label:'Líquido',cur:monthA.liquido,prev:monthB.liquido,fmt:v=>dashMoney.format(v)},
+    {label:'Gastos',cur:monthA.gasto,prev:monthB.gasto,fmt:v=>dashMoney.format(v)},
+    {label:'O.S.',cur:monthA.os,prev:monthB.os,fmt:v=>String(v)}
   ];
 
   box.innerHTML=metrics.map(m=>{
@@ -476,7 +652,7 @@ function dRenderMonthlyCompare(rows){
       <div class="dash-compare-item">
         <span>${dEsc(m.label)}</span>
         <strong>${dEsc(m.fmt(m.cur))}</strong>
-        <div class="dash-compare-old">Anterior: ${dEsc(m.fmt(m.prev))}</div>
+        <div class="dash-compare-old">${dEsc(dMonthLabel(monthB.month))}: ${dEsc(m.fmt(m.prev))}</div>
         <div class="dash-change ${ch.cls}">${ch.arrow} ${ch.text}</div>
       </div>
     `;
