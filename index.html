@@ -333,7 +333,39 @@
   .audit-meta{grid-template-columns:1fr}
   .audit-event-top{display:block}
   .audit-event-time{display:block;margin-top:4px}
-  .sheet-head-actions{width:100%;justify-content:space-between}
+
+  /* V4.4.77 · Cabeçalho da ficha no celular */
+  .sheet-head{
+    gap:14px !important;
+  }
+  .sheet-head-actions{
+    width:100%;
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    gap:10px !important;
+    align-items:center !important;
+  }
+  .sheet-head-actions .os-number{
+    order:-1;
+    grid-column:1 / -1;
+    width:100%;
+    display:grid !important;
+    grid-template-columns:auto minmax(0,1fr);
+    align-items:center;
+    gap:10px;
+  }
+  .sheet-head-actions .os-number input{
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+  }
+  .sheet-head-actions .history-btn,
+  .sheet-head-actions .maintenance-history-btn{
+    width:100% !important;
+    min-width:0 !important;
+    justify-content:center !important;
+    text-align:center !important;
+  }
 }
 @media print{
   .history-btn,#auditModal{display:none!important}
@@ -2853,5 +2885,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.63 · Remove CSV e melhora formatação do WhatsApp -->
 <!-- V4.4.75 · Histórico de manutenção por placa/cliente -->
 <!-- V4.4.76 · Importação limitada às 100 O.S. mais recentes e histórico busca por O.S. -->
+<!-- V4.4.77 · Corrige posição da O.S. no cabeçalho mobile -->
 </body>
 </html>
