@@ -1466,7 +1466,7 @@
     <div class="shoficina-modal-head">
       <div>
         <h3 id="shoficinaTitle">Importar do SHOficina</h3>
-        <p>Busque por O.S., cliente ou placa.</p>
+        <p>Busque por O.S., cliente ou placa entre as 100 O.S. mais recentes.</p>
       </div>
       <button class="btn" id="shoficinaCloseBtn" type="button">Fechar</button>
     </div>
@@ -2510,9 +2510,25 @@ async function shoficinaSearch(){
   if(results)results.innerHTML='<div class="shoficina-empty">Buscando...</div>';
 
   try{
+    // A Ficha/O.S. trabalha somente com as 100 O.S. mais recentes.
+    // O histórico de manutenção continua consultando toda a base SHOficina.
+    const {data:recentRows,error:recentError}=await db
+      .from('shoficina_os')
+      .select('source_os_id')
+      .order('source_os_id',{ascending:false})
+      .limit(100);
+    if(recentError) throw recentError;
+
+    const recentIds=(recentRows||[]).map(r=>Number(r.source_os_id)).filter(Boolean);
+    if(!recentIds.length){
+      results.innerHTML='<div class="shoficina-empty">Nenhuma O.S. recente sincronizada.</div>';
+      return;
+    }
+
     let query=db
       .from('shoficina_os')
       .select('*')
+      .in('source_os_id',recentIds)
       .order('source_os_id',{ascending:false})
       .limit(q?50:20);
 
@@ -2536,7 +2552,7 @@ async function shoficinaSearch(){
     shoficinaRows=new Map(rows.map(row=>[String(row.source_os_id),row]));
 
     if(!rows.length){
-      results.innerHTML='<div class="shoficina-empty">Nenhuma O.S. encontrada.</div>';
+      results.innerHTML='<div class="shoficina-empty">Nenhuma O.S. encontrada entre as 100 mais recentes.</div>';
       return;
     }
 
@@ -2832,9 +2848,10 @@ document.addEventListener('mousedown', e => {
 });
 
 </script>
-<script src="./maintenance-history.js?v=4.4.75"></script>
+<script src="./maintenance-history.js?v=4.4.76"></script>
 <script src="./pwa-install.js"></script>
 <!-- V4.4.63 · Remove CSV e melhora formatação do WhatsApp -->
 <!-- V4.4.75 · Histórico de manutenção por placa/cliente -->
+<!-- V4.4.76 · Importação limitada às 100 O.S. mais recentes e histórico busca por O.S. -->
 </body>
 </html>
