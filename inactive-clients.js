@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.93 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.94 */
 (function(){
   'use strict';
 
@@ -87,6 +87,10 @@
       .inactive-service-tag button{border:0;background:transparent;color:inherit;font-weight:950;padding:0;line-height:1;cursor:pointer}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
+      .inactive-sort-wrap{display:flex;align-items:center;gap:6px}
+      .inactive-sort-wrap label{font-size:10px;font-weight:900;text-transform:uppercase;color:#68777f;white-space:nowrap}
+      .inactive-sort-wrap select{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
+      .inactive-alpha-letter{font-size:12px;font-weight:950;color:#53636a;padding:10px 4px 6px;letter-spacing:.05em;text-transform:uppercase}
       #inactiveClientsModal .inactive-head,
       #inactiveClientsModal .inactive-filters,
       #inactiveClientsModal .inactive-toolbar,
@@ -202,6 +206,9 @@
           padding-right:8px;
           font-size:11px;
         }
+        .inactive-sort-wrap{grid-column:1/-1;width:100%}
+        .inactive-sort-wrap label{flex:0 0 auto}
+        .inactive-sort-wrap select{flex:1;min-width:0;width:100%}
         #inactiveWhatsapp{grid-column:1/-1}
         .inactive-results{
           height:auto;
@@ -279,6 +286,14 @@
         </div>
         <div class="inactive-toolbar">
           <div class="inactive-summary" id="inactiveSummary">Defina os filtros e pesquise.</div>
+          <div class="inactive-sort-wrap">
+            <label for="inactiveSort">Ordenar</label>
+            <select id="inactiveSort">
+              <option value="inactive">Mais tempo sem retornar</option>
+              <option value="az">Nome A-Z</option>
+              <option value="za">Nome Z-A</option>
+            </select>
+          </div>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
           <button class="btn primary" id="inactiveWhatsapp" type="button">WhatsApp (0)</button>
@@ -306,6 +321,12 @@
       const value=$('#inactiveMinDate').value||'';
       if(value)localStorage.setItem('frmotors-inactive-min-date',value);
       else localStorage.removeItem('frmotors-inactive-min-date');
+    });
+    const savedSort=localStorage.getItem('frmotors-inactive-sort')||'inactive';
+    $('#inactiveSort').value=['inactive','az','za'].includes(savedSort)?savedSort:'inactive';
+    $('#inactiveSort').addEventListener('change',()=>{
+      localStorage.setItem('frmotors-inactive-sort',$('#inactiveSort').value);
+      render();
     });
 
     btn.onclick=open;
@@ -451,15 +472,41 @@
   function render(){
     const box=$('#inactiveResults');
     if(!rows.length){box.innerHTML='<div class="inactive-empty">Nenhum cliente encontrado com esses filtros.</div>';return}
-    box.innerHTML=rows.map(r=>{
+
+    const mode=$('#inactiveSort')?.value||'inactive';
+    const collator=new Intl.Collator('pt-BR',{sensitivity:'base',numeric:true});
+    const displayRows=[...rows];
+
+    if(mode==='az'){
+      displayRows.sort((a,b)=>collator.compare(String(a.cliente||''),String(b.cliente||'')));
+    }else if(mode==='za'){
+      displayRows.sort((a,b)=>collator.compare(String(b.cliente||''),String(a.cliente||'')));
+    }else{
+      displayRows.sort((a,b)=>{
+        const da=new Date(a.last_visit||0).getTime();
+        const dbb=new Date(b.last_visit||0).getTime();
+        return da-dbb || collator.compare(String(a.cliente||''),String(b.cliente||''));
+      });
+    }
+
+    let lastLetter='';
+    box.innerHTML=displayRows.map(r=>{
       const id=String(r.cod_cliente),checked=selected.has(id);
-      const phone=bestPhone(r);
       const services=Array.isArray(r.recent_services)?r.recent_services:[];
       const serviceHtml=services.length?services.map(s=>'<div class="inactive-service"><strong>'+esc(s.descricao||'Serviço')+'</strong> · O.S. '+esc(s.os)+' · '+esc(dmy(s.data))+'</div>').join(''):'<div class="inactive-service">Nenhuma mão de obra encontrada no recorte.</div>';
-      return '<article class="inactive-card'+(checked?' selected':'')+'" data-client="'+esc(id)+'">'+
+      const name=String(r.cliente||'Cliente sem nome').trim();
+      let letter='';
+      if(mode==='az'||mode==='za'){
+        const first=(name.charAt(0)||'#').toLocaleUpperCase('pt-BR');
+        if(first!==lastLetter){
+          lastLetter=first;
+          letter='<div class="inactive-alpha-letter">'+esc(first)+'</div>';
+        }
+      }
+      return letter+'<article class="inactive-card'+(checked?' selected':'')+'" data-client="'+esc(id)+'">'+
         '<input class="inactive-check" type="checkbox" '+(checked?'checked':'')+' aria-label="Selecionar cliente">'+
         '<div>'+
-          '<div class="inactive-title">'+esc(r.cliente||'Cliente sem nome')+'</div>'+
+          '<div class="inactive-title">'+esc(name)+'</div>'+
           '<div class="inactive-sub">Última O.S. '+esc(r.last_os_id)+' · '+esc(dmy(r.last_visit))+' · '+esc(r.placa||'sem placa')+' · '+esc(r.veiculo||'veículo não informado')+'</div>'+
           '<div class="inactive-chips"><span class="inactive-chip">'+esc(r.os_count)+' O.S.</span><span class="inactive-chip">KM '+esc(r.km??'—')+'</span><span class="inactive-chip">'+esc(r.matching_service_count)+' serviço(s) no histórico</span></div>'+
           '<div class="inactive-contact"><div>Celular: <strong>'+esc(r.celular||'—')+'</strong> · Telefone: <strong>'+esc(r.telefone||'—')+'</strong></div><div>E-mail: <strong>'+esc(r.email||'—')+'</strong>'+(r.cidade?' · '+esc(r.cidade)+(r.uf?'/'+esc(r.uf):''):'')+'</div></div>'+
