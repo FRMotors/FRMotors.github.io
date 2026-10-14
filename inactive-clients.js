@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.98 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.99 */
 (function(){
   'use strict';
 
@@ -92,6 +92,7 @@
       .inactive-sort-wrap select{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
       .inactive-select-all-box{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 9px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;color:#26343a;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap}
       .inactive-select-all-box input{width:18px;height:18px;margin:0;accent-color:#167b87}
+      .inactive-pdf-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important}
       .inactive-alpha-letter{font-size:12px;font-weight:950;color:#53636a;padding:10px 4px 6px;letter-spacing:.05em;text-transform:uppercase}
       #inactiveClientsModal .inactive-head,
       #inactiveClientsModal .inactive-filters,
@@ -300,8 +301,7 @@
           <label class="inactive-select-all-box" for="inactiveSelectAllCheck"><input id="inactiveSelectAllCheck" type="checkbox">Todos os clientes</label>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
-          <button class="btn" id="inactiveExportVcf" type="button">Exportar .VCF</button>
-          <button class="btn" id="inactiveExportPdf" type="button">Exportar PDF</button>
+          <button class="btn primary inactive-pdf-btn" id="inactiveExportPdf" type="button">Exportar PDF</button>
           <button class="btn primary" id="inactiveWhatsapp" type="button">WhatsApp (0)</button>
         </div>
         <div class="inactive-wa-panel" id="inactiveWaPanel">
@@ -352,7 +352,6 @@
       updateSelection();
     });
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
-    $('#inactiveExportVcf').onclick=exportSelectedVcf;
     $('#inactiveExportPdf').onclick=exportSelectedPdf;
     $('#inactiveWhatsapp').onclick=()=>{
       if(!selected.size){
