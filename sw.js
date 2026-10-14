@@ -1,4 +1,4 @@
-const CACHE_NAME = "frmotors-github-v4-4-82";
+const CACHE_NAME = "frmotors-github-v4-4-83";
 const APP_SHELL = [
   "./",
   "./index.html",
