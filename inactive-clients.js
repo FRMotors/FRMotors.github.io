@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.91 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.92 */
 (function(){
   'use strict';
 
@@ -37,7 +37,12 @@
     const style=document.createElement('style');
     style.textContent=`
       .inactive-btn{white-space:nowrap}
-      .inactive-modal-card{width:min(1120px,100%);height:min(91vh,900px);max-height:min(91vh,900px);overflow-y:auto;overflow-x:hidden;display:block;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
+      #inactiveClientsModal{overflow-y:auto;overflow-x:hidden;align-items:flex-start;justify-content:center;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
+      #inactiveClientsModal.show{display:block}
+      #inactiveClientsModal::-webkit-scrollbar{width:8px}
+      #inactiveClientsModal::-webkit-scrollbar-thumb{background:#8f9da3;border-radius:999px}
+      #inactiveClientsModal::-webkit-scrollbar-track{background:rgba(255,255,255,.12)}
+      .inactive-modal-card{width:min(1120px,100%);height:auto;max-height:none;overflow:visible;display:block;margin:0 auto}
       .inactive-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px;border-bottom:1px solid var(--line,#dfe5e8)}
       .inactive-head h3{margin:0 0 4px}.inactive-head p{margin:0;color:var(--muted,#68777f);font-size:12px}
       .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc;overflow:visible}
@@ -55,10 +60,7 @@
       .inactive-service-tag button{border:0;background:transparent;color:inherit;font-weight:950;padding:0;line-height:1;cursor:pointer}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
-      .inactive-results{overflow:visible;padding:14px 20px 22px;background:#f6f8f9}
-      .inactive-modal-card::-webkit-scrollbar{width:7px}
-      .inactive-modal-card::-webkit-scrollbar-thumb{background:#b9c4c8;border-radius:999px}
-      .inactive-modal-card::-webkit-scrollbar-track{background:transparent}
+      .inactive-results{height:auto;max-height:none;overflow:visible;padding:14px 20px 22px;background:#f6f8f9}
       .inactive-empty{padding:28px;text-align:center;color:#78868c;background:#fff;border:1px dashed #d7e0e3;border-radius:14px}
       .inactive-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;background:#fff;border:1px solid #dfe5e8;border-radius:15px;padding:13px;margin-bottom:10px;align-items:start}
       .inactive-card.selected{border-color:#167b87;box-shadow:0 0 0 2px rgba(22,123,135,.08)}
@@ -73,16 +75,17 @@
       .inactive-wa-panel textarea{width:100%;min-height:82px;border:1px solid #d8e0e3;border-radius:11px;padding:9px 10px;resize:vertical}
       .inactive-wa-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
       @media(max-width:800px){
-        .inactive-modal-card{
-          width:min(100%,720px);
-          height:calc(100dvh - 18px);
-          max-height:calc(100dvh - 18px);
-          display:block;
+        #inactiveClientsModal{
+          padding:9px;
           overflow-y:auto;
           overflow-x:hidden;
-          overscroll-behavior:auto;
-          -webkit-overflow-scrolling:touch;
-          scrollbar-gutter:stable;
+        }
+        .inactive-modal-card{
+          width:min(100%,720px);
+          height:auto;
+          max-height:none;
+          display:block;
+          overflow:visible;
         }
         .inactive-head{
           position:static;
@@ -122,15 +125,18 @@
           max-height:none;
           overflow:visible;
         }
+        .inactive-results,.inactive-filters,.inactive-toolbar{overflow:visible}
       }
       @media(max-width:520px){
+        #inactiveClientsModal{
+          padding:6px;
+        }
         .inactive-modal-card{
-          width:calc(100vw - 12px);
-          height:calc(100dvh - 12px);
-          max-height:calc(100dvh - 12px);
+          width:100%;
+          height:auto;
+          max-height:none;
           border-radius:16px;
-          overflow-y:auto;
-          overflow-x:hidden;
+          overflow:visible;
         }
         .inactive-head{
           align-items:center;
