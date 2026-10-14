@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.78 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.79 */
 (function(){
   'use strict';
 
@@ -35,7 +35,7 @@
       .inactive-modal-card{width:min(1120px,100%);max-height:min(91vh,900px);overflow:hidden;display:flex;flex-direction:column}
       .inactive-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px;border-bottom:1px solid var(--line,#dfe5e8)}
       .inactive-head h3{margin:0 0 4px}.inactive-head p{margin:0;color:var(--muted,#68777f);font-size:12px}
-      .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.15fr .8fr 1.35fr 1.35fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc}
+      .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc}
       .inactive-field{display:grid;gap:5px;min-width:0}.inactive-field label{font-size:9px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
       .inactive-field input{min-width:0;width:100%;min-height:42px;padding:8px 10px;border:1px solid #d8e0e3;border-radius:11px;background:#fff}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
@@ -55,7 +55,7 @@
       .inactive-wa-panel textarea{width:100%;min-height:82px;border:1px solid #d8e0e3;border-radius:11px;padding:9px 10px;resize:vertical}
       .inactive-wa-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
       @media(max-width:800px){
-        .inactive-filters{grid-template-columns:1fr 1fr}.inactive-filters .inactive-field:nth-child(3),.inactive-filters .inactive-field:nth-child(4){grid-column:1/-1}.inactive-filters>button{grid-column:1/-1;width:100%}
+        .inactive-filters{grid-template-columns:1fr 1fr}.inactive-filters .inactive-field:nth-child(4),.inactive-filters .inactive-field:nth-child(5){grid-column:1/-1}.inactive-filters>button{grid-column:1/-1;width:100%}
         .inactive-card{grid-template-columns:auto minmax(0,1fr)}.inactive-age{grid-column:2;text-align:left;display:flex;gap:5px;align-items:baseline}
       }
       @media(max-width:520px){.inactive-filters{grid-template-columns:1fr}.inactive-filters .inactive-field{grid-column:1!important}.inactive-toolbar .btn{flex:1}.inactive-results,.inactive-filters,.inactive-head,.inactive-toolbar,.inactive-wa-panel{padding-left:12px;padding-right:12px}}
@@ -84,6 +84,7 @@
         </div>
         <div class="inactive-filters">
           <div class="inactive-field"><label>Data-base</label><input id="inactiveDate" type="date"></div>
+          <div class="inactive-field"><label>Considerar clientes desde</label><input id="inactiveMinDate" type="date"></div>
           <div class="inactive-field"><label>Sem retornar há</label><input id="inactiveMonths" type="number" min="1" max="120" value="6" placeholder="Meses"></div>
           <div class="inactive-field"><label>Mão de obra / serviço</label><input id="inactiveService" list="inactiveServiceList" placeholder="Ex.: troca de óleo"><datalist id="inactiveServiceList"></datalist></div>
           <div class="inactive-field"><label>Cliente, placa ou O.S.</label><input id="inactiveSearch" placeholder="Pesquisa opcional"></div>
@@ -110,6 +111,13 @@
 
     const today=new Date();
     $('#inactiveDate').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+    const savedMinDate=localStorage.getItem('frmotors-inactive-min-date')||'';
+    $('#inactiveMinDate').value=savedMinDate;
+    $('#inactiveMinDate').addEventListener('change',()=>{
+      const value=$('#inactiveMinDate').value||'';
+      if(value)localStorage.setItem('frmotors-inactive-min-date',value);
+      else localStorage.removeItem('frmotors-inactive-min-date');
+    });
 
     btn.onclick=open;
     $('#inactiveClose').onclick=close;
@@ -147,15 +155,17 @@
     const summary=$('#inactiveSummary'),box=$('#inactiveResults');
     const date=$('#inactiveDate').value;
     const months=Math.max(1,Number($('#inactiveMonths').value)||6);
+    const minDate=$('#inactiveMinDate').value||null;
     const service=$('#inactiveService').value.trim()||null;
     const term=$('#inactiveSearch').value.trim()||null;
     summary.textContent='Pesquisando...';
     box.innerHTML='<div class="inactive-empty">Consultando histórico de O.S. e serviços...</div>';
 
     try{
-      const {data,error}=await db.rpc('shoficina_clientes_inativos',{
+      const {data,error}=await db.rpc('shoficina_clientes_inativos_v2',{
         p_reference_date:date,
         p_months:months,
+        p_min_last_visit:minDate,
         p_service:service,
         p_search:term,
         p_limit:400
@@ -163,6 +173,7 @@
       if(error)throw error;
       rows=data||[];
       summary.textContent=rows.length+' cliente'+(rows.length===1?'':'s')+' encontrado'+(rows.length===1?'':'s')+
+        (minDate?' · desde '+new Date(minDate+'T00:00:00').toLocaleDateString('pt-BR'):'')+
         (service?' · serviço: '+service:'');
       render();
     }catch(e){
