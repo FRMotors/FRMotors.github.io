@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.85 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.86 */
 (function(){
   'use strict';
 
@@ -6,6 +6,9 @@
   let rows=[];
   const selected=new Map();
   let serviceLoaded=false;
+  const defaultWhatsappTemplate='Olá, {nome}! Tudo bem? Aqui é da FR Motors. Vimos que já faz um tempo desde a última manutenção do seu veículo {veiculo}. Se quiser, podemos verificar como estão os itens de manutenção e agendar uma avaliação.';
+  let whatsappTemplate=defaultWhatsappTemplate;
+  let previewClientId=null;
 
   const $=(s,r=document)=>r.querySelector(s);
   const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
@@ -206,9 +209,11 @@
         </div>
         <div class="inactive-results" id="inactiveResults"><div class="inactive-empty">Nenhuma pesquisa realizada.</div></div>
         <div class="inactive-wa-panel" id="inactiveWaPanel">
-          <strong>Mensagem para os selecionados</strong>
-          <textarea id="inactiveWaText">Olá, {nome}! Tudo bem? Aqui é da FR Motors. Vimos que já faz um tempo desde a última manutenção do seu veículo {veiculo}. Se quiser, podemos verificar como estão os itens de manutenção e agendar uma avaliação.</textarea>
+          <strong>Mensagem do próximo cliente selecionado</strong>
+          <textarea id="inactiveWaText">${defaultWhatsappTemplate}</textarea>
+          <div class="inactive-summary">Nome e veículo são preenchidos automaticamente conforme o cliente da fila.</div>
           <div class="inactive-wa-actions">
+            <button class="btn" id="inactiveRestoreTemplate" type="button">Restaurar mensagem</button>
             <button class="btn" id="inactiveCopyPhones" type="button">Copiar contatos</button>
             <button class="btn primary" id="inactiveOpenNext" type="button">Abrir próximo no WhatsApp</button>
           </div>
@@ -234,8 +239,13 @@
     $('#inactiveService').addEventListener('focus',loadServices,{once:false});
     $('#inactiveSelectAll').onclick=()=>{rows.forEach(r=>selected.set(String(r.cod_cliente),r));render();updateSelection()};
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
-    $('#inactiveWhatsapp').onclick=()=>{$('#inactiveWaPanel').classList.toggle('show');updateSelection()};
+    $('#inactiveWhatsapp').onclick=()=>{$('#inactiveWaPanel').classList.toggle('show');updateSelection();refreshWhatsappPreview()};
     $('#inactiveCopyPhones').onclick=copyPhones;
+    $('#inactiveRestoreTemplate').onclick=()=>{
+      whatsappTemplate=defaultWhatsappTemplate;
+      refreshWhatsappPreview();
+      $('#inactiveWaStatus').textContent='Mensagem padrão restaurada.';
+    };
     $('#inactiveOpenNext').onclick=openNext;
     modal.addEventListener('click',e=>{if(e.target===modal)close()});
     ready=true;
@@ -331,15 +341,46 @@
     $('#inactiveWaStatus').textContent=selected.size
       ? selected.size+' selecionado(s) · '+valid.length+' com telefone/celular utilizável.'
       : 'Nenhum cliente selecionado.';
+    refreshWhatsappPreview();
+  }
+
+  function vehicleName(r){
+    const v=String(r?.veiculo||'').trim();
+    return v || 'veículo';
+  }
+
+  function buildMessageFromTemplate(r,template=whatsappTemplate){
+    return String(template||defaultWhatsappTemplate)
+      .replaceAll('{nome}',r?.cliente||'')
+      .replaceAll('{veiculo}',vehicleName(r))
+      .replaceAll('{placa}',r?.placa||'')
+      .replaceAll('{os}',String(r?.last_os_id||''))
+      .replaceAll('{meses}',String(r?.months_inactive||''));
+  }
+
+  function refreshWhatsappPreview(){
+    const area=$('#inactiveWaText');
+    if(!area)return;
+    const pending=[...selected.values()].filter(r=>bestPhone(r));
+    const next=pending[0]||[...selected.values()][0]||null;
+
+    if(!next){
+      previewClientId=null;
+      area.value=whatsappTemplate;
+      return;
+    }
+
+    previewClientId=String(next.cod_cliente);
+    area.value=buildMessageFromTemplate(next);
   }
 
   function buildMessage(r){
-    return $('#inactiveWaText').value
-      .replaceAll('{nome}',r.cliente||'')
-      .replaceAll('{veiculo}',[r.veiculo,r.placa].filter(Boolean).join(' · ')||'veículo')
-      .replaceAll('{placa}',r.placa||'')
-      .replaceAll('{os}',String(r.last_os_id||''))
-      .replaceAll('{meses}',String(r.months_inactive||''));
+    // Se o campo exibido ainda corresponde ao cliente atual, respeita edições manuais
+    // feitas especificamente para ele. Caso contrário, gera novamente pelo modelo.
+    if(String(r?.cod_cliente)===String(previewClientId)){
+      return $('#inactiveWaText').value;
+    }
+    return buildMessageFromTemplate(r);
   }
 
   async function copyPhones(){
@@ -358,10 +399,12 @@
     const r=pending[0],phone=bestPhone(r),message=buildMessage(r);
     window.open('https://wa.me/'+encodeURIComponent(phone)+'?text='+encodeURIComponent(message),'_blank','noopener');
     selected.delete(String(r.cod_cliente));
-    const current=rows.find(x=>String(x.cod_cliente)===String(r.cod_cliente));
     render();
     $('#inactiveWaPanel').classList.add('show');
-    $('#inactiveWaStatus').textContent='Conversa aberta para '+(r.cliente||phone)+'. Clique novamente para o próximo.';
+    refreshWhatsappPreview();
+    const next=[...selected.values()].filter(x=>bestPhone(x))[0];
+    $('#inactiveWaStatus').textContent='Conversa aberta para '+(r.cliente||phone)+
+      (next?' · Próximo: '+(next.cliente||bestPhone(next))+'.':' · Fila concluída.');
   }
 
   function boot(){
