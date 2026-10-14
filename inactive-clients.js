@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.06 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.07 */
 (function(){
   'use strict';
 
@@ -77,9 +77,14 @@
       .inactive-field{display:grid;gap:5px;min-width:0}.inactive-field label{font-size:9px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
       .inactive-field input{min-width:0;width:100%;min-height:42px;padding:8px 10px;border:1px solid #d8e0e3;border-radius:11px;background:#fff}
       .inactive-service-field{position:relative}
-      .inactive-service-menu{display:none;position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);max-height:210px;overflow-y:auto;background:#fff;border:1px solid #d7e0e3;border-radius:12px;box-shadow:0 10px 24px rgba(23,33,38,.18);padding:5px}
+      .inactive-service-control{display:grid;grid-template-columns:minmax(0,1fr) 42px;align-items:stretch;position:relative}
+      .inactive-service-control input{border-radius:11px 0 0 11px!important;border-right:0!important}
+      .inactive-service-toggle{border:1px solid #d8e0e3;border-left:0;background:#fff;border-radius:0 11px 11px 0;color:#53636a;font-size:16px;font-weight:900;cursor:pointer;min-height:42px}
+      .inactive-service-toggle:hover,.inactive-service-toggle:focus{background:#f3f7f8;outline:none}
+      .inactive-service-menu{display:none;position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);max-height:240px;overflow-y:auto;background:#fff;border:1px solid #d7e0e3;border-radius:12px;box-shadow:0 10px 24px rgba(23,33,38,.18);padding:5px}
       .inactive-service-menu.show{display:block}
-      .inactive-service-choice{display:block;width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:9px;font-size:12px;font-weight:800;color:#172126}
+      .inactive-service-choice{width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:9px;font-size:12px;font-weight:800;color:#172126;display:grid;gap:2px}
+      .inactive-service-choice small{font-size:10px;font-weight:600;color:#7a898f}
       .inactive-service-choice:hover,.inactive-service-choice:focus{background:#f0f5f6;outline:none}
       .inactive-service-choice.is-selected{background:#e8f4f5;color:#126b74}
       .inactive-service-choice.is-selected::after{content:'✓';float:right;font-weight:950}
@@ -293,7 +298,15 @@
           <div class="inactive-field"><label>Data-base</label><input id="inactiveDate" type="date"></div>
           <div class="inactive-field"><label>Considerar clientes desde</label><input id="inactiveMinDate" type="date"></div>
           <div class="inactive-field"><label>Sem retornar há</label><input id="inactiveMonths" type="number" min="1" max="120" value="6" placeholder="Meses"></div>
-          <div class="inactive-field inactive-service-field"><label>Mão de obra / serviço</label><input id="inactiveService" list="inactiveServiceList" placeholder="Digite ou selecione várias opções" autocomplete="off"><datalist id="inactiveServiceList"></datalist><div id="inactiveServiceMenu" class="inactive-service-menu" role="listbox" aria-multiselectable="true"></div><div id="inactiveServiceTags" class="inactive-service-tags"></div></div>
+          <div class="inactive-field inactive-service-field">
+            <label for="inactiveService">Mão de obra / serviço</label>
+            <div class="inactive-service-control">
+              <input id="inactiveService" placeholder="Digite ou selecione várias opções" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="inactiveServiceMenu">
+              <button id="inactiveServiceToggle" class="inactive-service-toggle" type="button" aria-label="Abrir lista de serviços" aria-expanded="false">▾</button>
+            </div>
+            <div id="inactiveServiceMenu" class="inactive-service-menu" role="listbox" aria-multiselectable="true"></div>
+            <div id="inactiveServiceTags" class="inactive-service-tags"></div>
+          </div>
           <div class="inactive-field"><label>Cliente, placa ou O.S.</label><input id="inactiveSearch" placeholder="Pesquisa opcional"></div>
           <button class="btn primary" id="inactiveSearchBtn" type="button">Pesquisar</button>
         </div>
@@ -359,8 +372,22 @@
     $('#inactiveClose').onclick=close;
     $('#inactiveSearchBtn').onclick=search;
     $('#inactiveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
-    $('#inactiveService').addEventListener('focus',async()=>{await loadServices();showServiceMenu()});
-    $('#inactiveService').addEventListener('input',showServiceMenu);
+    $('#inactiveService').addEventListener('focus',async()=>{
+      await loadServices();
+      showServiceMenu(false);
+    });
+    $('#inactiveService').addEventListener('input',()=>showServiceMenu(false));
+    $('#inactiveService').addEventListener('keydown',e=>{
+      if(e.key==='Escape')hideServiceMenu();
+    });
+    $('#inactiveServiceToggle').addEventListener('click',async e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      await loadServices();
+      const menu=$('#inactiveServiceMenu');
+      if(menu.classList.contains('show'))hideServiceMenu();
+      else showServiceMenu(true);
+    });
     $('#inactiveSelectAll').onclick=()=>{rows.forEach(r=>selected.set(String(r.cod_cliente),r));render();updateSelection()};
     $('#inactiveSelectAllCheck').addEventListener('change',e=>{
       const scope=$('#inactiveSelectScope')?.value||'all';
@@ -408,7 +435,10 @@
       $('#inactiveWaStatus').textContent='Mensagem padrão restaurada.';
     };
     $('#inactiveOpenNext').onclick=openNext;
-    modal.addEventListener('click',e=>{if(e.target===modal)close()});
+    modal.addEventListener('click',e=>{
+      if(!e.target.closest('.inactive-service-field'))hideServiceMenu();
+      if(e.target===modal)close();
+    });
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('show'))close()});
     ready=true;
     return true;
@@ -428,7 +458,11 @@
     document.body.classList.remove('inactive-modal-open');
   }
 
-  function hideServiceMenu(){ $('#inactiveServiceMenu')?.classList.remove('show'); }
+  function hideServiceMenu(){
+    $('#inactiveServiceMenu')?.classList.remove('show');
+    $('#inactiveService')?.setAttribute('aria-expanded','false');
+    $('#inactiveServiceToggle')?.setAttribute('aria-expanded','false');
+  }
 
   function renderServiceTags(){
     const box=$('#inactiveServiceTags');
@@ -440,7 +474,7 @@
     box.querySelectorAll('[data-remove-service]').forEach(btn=>btn.addEventListener('click',()=>{
       selectedServices.splice(Number(btn.dataset.removeService),1);
       renderServiceTags();
-      showServiceMenu();
+      if($('#inactiveServiceMenu')?.classList.contains('show'))showServiceMenu(false);
     }));
   }
 
@@ -452,28 +486,35 @@
     else selectedServices.push(value);
     $('#inactiveService').value='';
     renderServiceTags();
-    showServiceMenu();
   }
 
-  function showServiceMenu(){
+  function showServiceMenu(showAll=false){
     const box=$('#inactiveServiceMenu');
     const input=$('#inactiveService');
     if(!box||!input||!serviceCatalog.length)return;
-    const q=input.value.trim().toLocaleLowerCase('pt-BR');
+
+    const q=showAll?'':input.value.trim().toLocaleLowerCase('pt-BR');
     const found=serviceCatalog
       .filter(x=>!q||String(x.descricao||'').toLocaleLowerCase('pt-BR').includes(q))
-      .slice(0,10);
+      .slice(0,12);
 
     box.innerHTML=found.map(x=>{
       const desc=String(x.descricao||'');
       const active=selectedServices.some(s=>s.toLocaleLowerCase('pt-BR')===desc.toLocaleLowerCase('pt-BR'));
-      return '<button type="button" class="inactive-service-choice'+(active?' is-selected':'')+'" role="option" aria-selected="'+(active?'true':'false')+'">'+esc(desc)+'</button>';
+      return '<button type="button" class="inactive-service-choice'+(active?' is-selected':'')+'" role="option" aria-selected="'+(active?'true':'false')+'">'+esc(desc)+'<small>'+esc(x.ocorrencias||0)+' ocorrências</small></button>';
     }).join('');
 
     box.querySelectorAll('.inactive-service-choice').forEach(b=>b.addEventListener('click',()=>{
-      toggleService(b.textContent?.replace(/✓$/,'').trim()||'');
+      const service=b.firstChild?.textContent?.trim()||b.textContent?.trim()||'';
+      toggleService(service);
+      hideServiceMenu();
+      $('#inactiveService')?.focus();
     }));
-    box.classList.toggle('show',found.length>0);
+
+    const open=found.length>0;
+    box.classList.toggle('show',open);
+    input.setAttribute('aria-expanded',open?'true':'false');
+    $('#inactiveServiceToggle')?.setAttribute('aria-expanded',open?'true':'false');
   }
 
   async function loadServices(){
@@ -482,7 +523,6 @@
       const {data,error}=await db.rpc('shoficina_servicos_catalogo',{p_search:null,p_limit:120});
       if(error)throw error;
       serviceCatalog=data||[];
-      $('#inactiveServiceList').innerHTML=serviceCatalog.map(x=>'<option value="'+esc(x.descricao)+'">'+esc(x.ocorrencias)+' ocorrências</option>').join('');
       serviceLoaded=true;
     }catch(e){console.warn('Catálogo de serviços',e)}
   }
