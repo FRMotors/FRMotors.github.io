@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.02 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.03 */
 (function(){
   'use strict';
 
@@ -13,7 +13,6 @@
   let previewClientId=null;
 
   const $=(s,r=document)=>r.querySelector(s);
-  const $=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
   const dmy=v=>{
     if(!v)return '—';
