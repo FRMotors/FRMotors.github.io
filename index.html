@@ -330,16 +330,22 @@
 /* V4.4.80 · Estado inicial sem ficha selecionada */
 .editor.no-selection{
   min-height:520px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:block;
 }
-.editor.no-selection > *:not(#emptyFichaState){
+.editor.no-selection > .section,
+.editor.no-selection > .footer-actions{
+  display:none!important;
+}
+.editor.no-selection .sheet-head{
+  display:flex!important;
+}
+.editor.no-selection .sheet-head .os-number{
   display:none!important;
 }
 .empty-ficha-state{
   display:none;
   width:min(440px,calc(100% - 36px));
+  margin:54px auto;
   padding:38px 24px;
   text-align:center;
   color:#68777f;
@@ -390,8 +396,8 @@
   .sheet-head-actions{
     width:100%;
     display:grid !important;
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
-    gap:10px !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:8px !important;
     align-items:center !important;
   }
   .sheet-head-actions .os-number{
@@ -409,11 +415,17 @@
     min-width:0 !important;
   }
   .sheet-head-actions .history-btn,
-  .sheet-head-actions .maintenance-history-btn{
+  .sheet-head-actions .maintenance-history-btn,
+  .sheet-head-actions .inactive-btn{
     width:100% !important;
     min-width:0 !important;
     justify-content:center !important;
     text-align:center !important;
+    padding-left:7px!important;
+    padding-right:7px!important;
+    font-size:11px!important;
+    white-space:normal!important;
+    line-height:1.15!important;
   }
 }
 @media print{
@@ -2139,7 +2151,10 @@ async function revertAuditEvent(id){
 
 async function openHistory(){
   const f=current();
-  if(!f) return;
+  if(!f){
+    toast('Selecione uma ficha para ver o histórico de alterações');
+    return;
+  }
   if(f.isNew){
     toast('Salve a O.S. antes de abrir o histórico');
     return;
@@ -2954,5 +2969,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.78 · Clientes inativos, filtro por serviços e fila WhatsApp -->
 <!-- V4.4.79 · Data mínima em clientes inativos -->
 <!-- V4.4.80 · Abre a Ficha/O.S. sem seleção automática -->
+<!-- V4.4.81 · Mantém faixa escura e ações visíveis sem ficha selecionada -->
 </body>
 </html>
