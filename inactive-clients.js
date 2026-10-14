@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.95 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.96 */
 (function(){
   'use strict';
 
@@ -296,6 +296,7 @@
           </div>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
+          <button class="btn" id="inactiveExportVcf" type="button">Exportar .VCF</button>
           <button class="btn primary" id="inactiveWhatsapp" type="button">WhatsApp (0)</button>
         </div>
         <div class="inactive-wa-panel" id="inactiveWaPanel">
@@ -337,6 +338,7 @@
     $('#inactiveService').addEventListener('input',showServiceMenu);
     $('#inactiveSelectAll').onclick=()=>{rows.forEach(r=>selected.set(String(r.cod_cliente),r));render();updateSelection()};
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
+    $('#inactiveExportVcf').onclick=exportSelectedVcf;
     $('#inactiveWhatsapp').onclick=()=>{
       if(!selected.size){
         $('#inactiveWaPanel').classList.remove('show');
@@ -578,6 +580,68 @@
       return $('#inactiveWaText').value;
     }
     return buildMessageFromTemplate(r);
+  }
+
+  function vcfEscape(value){
+    return String(value??'')
+      .replace(/\\/g,'\\\\')
+      .replace(/\r?\n/g,'\\n')
+      .replace(/;/g,'\\;')
+      .replace(/,/g,'\\,');
+  }
+
+  function exportSelectedVcf(){
+    const byPhone=new Map();
+
+    [...selected.values()].forEach(r=>{
+      const phone=bestPhone(r);
+      if(!phone)return;
+      if(!byPhone.has(phone))byPhone.set(phone,r);
+    });
+
+    const contacts=[...byPhone.entries()];
+    if(!contacts.length){
+      const summary=$('#inactiveSummary');
+      if(summary)summary.textContent='Selecione pelo menos um cliente com telefone ou celular para exportar.';
+      return;
+    }
+
+    const cards=contacts.map(([phone,r])=>{
+      const rawName=String(r.cliente||'Cliente').trim()||'Cliente';
+      const displayName='FRM - '+rawName;
+      const tel=phone.startsWith('+')?phone:'+'+phone;
+      const lines=[
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        'FN:'+vcfEscape(displayName),
+        'N:;'+vcfEscape(displayName)+';;;',
+        'ORG:FR Motors',
+        'TEL;TYPE=CELL:'+vcfEscape(tel)
+      ];
+      if(r.email)lines.push('EMAIL;TYPE=INTERNET:'+vcfEscape(r.email));
+      lines.push('NOTE:'+vcfEscape('Cliente FR Motors · O.S. '+(r.last_os_id||'')));
+      lines.push('END:VCARD');
+      return lines.join('\r\n');
+    }).join('\r\n');
+
+    const blob=new Blob(['\ufeff'+cards+'\r\n'],{type:'text/vcard;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const now=new Date();
+    const stamp=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+    a.href=url;
+    a.download='FRM_clientes_'+stamp+'.vcf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+
+    const skipped=selected.size-contacts.length;
+    const summary=$('#inactiveSummary');
+    if(summary){
+      summary.textContent=contacts.length+' contato'+(contacts.length===1?'':'s')+' exportado'+(contacts.length===1?'':'s')+' para .VCF'+
+        (skipped>0?' · '+skipped+' ignorado'+(skipped===1?'':'s')+' por telefone ausente ou repetido':'')+'.';
+    }
   }
 
   async function copyPhones(){
