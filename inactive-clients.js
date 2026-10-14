@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.94 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.95 */
 (function(){
   'use strict';
 
@@ -112,7 +112,7 @@
       .inactive-services{margin-top:10px;border-top:1px solid #edf1f2;padding-top:8px}.inactive-services summary{cursor:pointer;font-size:11px;font-weight:900;color:#53636a}
       .inactive-services-list{display:grid;gap:5px;margin-top:7px}.inactive-service{font-size:11px;color:#56666d;padding:6px 8px;background:#f7f9fa;border-radius:8px}.inactive-service strong{color:#172126}
       .inactive-age{text-align:right;white-space:nowrap}.inactive-age strong{display:block;font-size:20px;color:#172126}.inactive-age span{font-size:10px;color:#68777f;font-weight:850;text-transform:uppercase}
-      .inactive-wa-panel{display:none;padding:12px 20px;border-top:1px solid #dfe5e8;background:#fff}.inactive-wa-panel.show{display:grid;gap:8px}
+      .inactive-wa-panel{display:none;padding:14px 20px;border-top:1px solid #dfe5e8;border-bottom:1px solid #dfe5e8;background:#fff}.inactive-wa-panel.show{display:grid;gap:8px}
       .inactive-wa-panel textarea{width:100%;min-height:82px;border:1px solid #d8e0e3;border-radius:11px;padding:9px 10px;resize:vertical}
       .inactive-wa-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
       @media(max-width:800px){
@@ -298,9 +298,8 @@
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
           <button class="btn primary" id="inactiveWhatsapp" type="button">WhatsApp (0)</button>
         </div>
-        <div class="inactive-results" id="inactiveResults"><div class="inactive-empty">Nenhuma pesquisa realizada.</div></div>
         <div class="inactive-wa-panel" id="inactiveWaPanel">
-          <strong>Mensagem do próximo cliente selecionado</strong>
+          <strong>Mensagem para os clientes selecionados</strong>
           <textarea id="inactiveWaText">${defaultWhatsappTemplate}</textarea>
           <div class="inactive-summary">Mensagem geral para os clientes selecionados. Você pode editar antes de abrir o WhatsApp.</div>
           <div class="inactive-wa-actions">
@@ -310,6 +309,7 @@
           </div>
           <div class="inactive-summary" id="inactiveWaStatus"></div>
         </div>
+        <div class="inactive-results" id="inactiveResults"><div class="inactive-empty">Nenhuma pesquisa realizada.</div></div>
       </div>`;
     document.body.appendChild(modal);
 
