@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.09 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.10 */
 (function(){
   'use strict';
 
@@ -73,6 +73,22 @@
       }
       .inactive-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px;border-bottom:1px solid var(--line,#dfe5e8)}
       .inactive-head h3{margin:0 0 4px}.inactive-head p{margin:0;color:var(--muted,#68777f);font-size:12px}
+      #inactiveClientsModal .btn{
+        background:#fff!important;
+        color:#172126!important;
+        border:1px solid #d7e0e3!important;
+        box-shadow:none!important;
+      }
+      #inactiveClientsModal .btn:hover,
+      #inactiveClientsModal .btn:focus{
+        background:#f4f7f8!important;
+        border-color:#bcc9cd!important;
+        color:#172126!important;
+        outline:none;
+      }
+      #inactiveClientsModal .btn:active{
+        background:#eaf0f2!important;
+      }
       .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc;overflow:visible}
       .inactive-field{display:grid;gap:5px;min-width:0}.inactive-field label{font-size:9px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
       .inactive-field input{min-width:0;width:100%;min-height:42px;padding:8px 10px;border:1px solid #d8e0e3;border-radius:11px;background:#fff}
@@ -88,8 +104,32 @@
       .inactive-service-choice:hover,.inactive-service-choice:focus{background:#f0f5f6;outline:none}
       .inactive-service-choice.is-selected{background:#e8f4f5;color:#126b74}
       .inactive-service-choice.is-selected::after{content:'✓';float:right;font-weight:950}
-      .inactive-service-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
-      .inactive-service-tag{border:1px solid #cfe2e5;background:#eef7f8;color:#1d6269;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:850;display:inline-flex;align-items:center;gap:6px}
+      .inactive-service-tags-row{
+        grid-column:1/-1;
+        display:none;
+        align-items:center;
+        gap:8px;
+        min-width:0;
+        padding-top:2px;
+      }
+      .inactive-service-tags-row.show{display:flex}
+      .inactive-service-tags-label{
+        flex:0 0 auto;
+        font-size:9px;
+        font-weight:900;
+        text-transform:uppercase;
+        color:#68777f;
+        letter-spacing:.04em;
+      }
+      .inactive-service-tags{
+        display:flex;
+        gap:6px;
+        flex-wrap:wrap;
+        align-items:center;
+        min-width:0;
+        margin:0;
+      }
+      .inactive-service-tag{border:1px solid #cfe2e5;background:#fff;color:#1d6269;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:850;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
       .inactive-service-tag button{border:0;background:transparent;color:inherit;font-weight:950;padding:0;line-height:1;cursor:pointer}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
@@ -203,6 +243,8 @@
           padding-bottom:10px;
         }
         .inactive-filters .inactive-field{grid-column:1!important}
+        .inactive-service-tags-row{grid-column:1/-1;align-items:flex-start;flex-direction:column;gap:6px}
+        .inactive-service-tags{width:100%;flex-wrap:wrap}
         .inactive-toolbar{
           display:grid;
           grid-template-columns:1fr 1fr;
@@ -306,10 +348,13 @@
               <button id="inactiveServiceToggle" class="inactive-service-toggle" type="button" aria-label="Abrir lista de serviços" aria-expanded="false">▾</button>
             </div>
             <div id="inactiveServiceMenu" class="inactive-service-menu" role="listbox" aria-multiselectable="true"></div>
-            <div id="inactiveServiceTags" class="inactive-service-tags"></div>
           </div>
           <div class="inactive-field"><label>Cliente, placa ou O.S.</label><input id="inactiveSearch" placeholder="Pesquisa opcional"></div>
           <button class="btn primary" id="inactiveSearchBtn" type="button">Pesquisar</button>
+          <div class="inactive-service-tags-row" id="inactiveServiceTagsRow">
+            <span class="inactive-service-tags-label">Selecionados</span>
+            <div id="inactiveServiceTags" class="inactive-service-tags"></div>
+          </div>
         </div>
         <div class="inactive-toolbar">
           <div class="inactive-summary" id="inactiveSummary">Defina os filtros e pesquise.</div>
@@ -465,7 +510,9 @@
 
   function renderServiceTags(){
     const box=$('#inactiveServiceTags');
+    const row=$('#inactiveServiceTagsRow');
     if(!box)return;
+    if(row)row.classList.toggle('show',selectedServices.length>0);
     box.innerHTML=selectedServices.map((service,index)=>
       '<span class="inactive-service-tag">'+esc(service)+
       '<button type="button" data-remove-service="'+index+'" aria-label="Remover '+esc(service)+'">×</button></span>'
