@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.87 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.88 */
 (function(){
   'use strict';
 
@@ -44,9 +44,9 @@
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
       .inactive-results{overflow:auto;padding:14px 20px 22px;background:#f6f8f9}
-      .inactive-results::-webkit-scrollbar,.inactive-filters::-webkit-scrollbar{width:7px}
-      .inactive-results::-webkit-scrollbar-thumb,.inactive-filters::-webkit-scrollbar-thumb{background:#b9c4c8;border-radius:999px}
-      .inactive-results::-webkit-scrollbar-track,.inactive-filters::-webkit-scrollbar-track{background:transparent}
+      .inactive-modal-card::-webkit-scrollbar{width:7px}
+      .inactive-modal-card::-webkit-scrollbar-thumb{background:#b9c4c8;border-radius:999px}
+      .inactive-modal-card::-webkit-scrollbar-track{background:transparent}
       .inactive-empty{padding:28px;text-align:center;color:#78868c;background:#fff;border:1px dashed #d7e0e3;border-radius:14px}
       .inactive-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;background:#fff;border:1px solid #dfe5e8;border-radius:15px;padding:13px;margin-bottom:10px;align-items:start}
       .inactive-card.selected{border-color:#167b87;box-shadow:0 0 0 2px rgba(22,123,135,.08)}
@@ -68,13 +68,12 @@
           display:block;
           overflow-y:auto;
           overflow-x:hidden;
-          overscroll-behavior:contain;
+          overscroll-behavior:auto;
           -webkit-overflow-scrolling:touch;
+          scrollbar-gutter:stable;
         }
         .inactive-head{
-          position:sticky;
-          top:0;
-          z-index:6;
+          position:static;
           background:#fff;
         }
         .inactive-filters{
@@ -86,20 +85,15 @@
         .inactive-filters .inactive-field:nth-child(5){grid-column:1/-1}
         .inactive-filters>button{grid-column:1/-1;width:100%}
         .inactive-toolbar{
-          position:sticky;
-          top:86px;
-          z-index:5;
+          position:static;
           background:#fff;
         }
         .inactive-results{
-          height:min(48dvh,520px);
-          min-height:330px;
-          max-height:min(48dvh,520px);
-          overflow-y:scroll;
-          overflow-x:hidden;
-          overscroll-behavior:contain;
-          -webkit-overflow-scrolling:touch;
-          scrollbar-gutter:stable;
+          height:auto;
+          min-height:0;
+          max-height:none;
+          overflow:visible;
+          scrollbar-gutter:auto;
         }
         .inactive-card{
           grid-template-columns:auto minmax(0,1fr) auto;
@@ -111,9 +105,10 @@
           text-align:right;
           display:block;
         }
+        .inactive-wa-panel,
         .inactive-wa-panel.show{
-          display:grid;
-          margin:0;
+          max-height:none;
+          overflow:visible;
         }
       }
       @media(max-width:520px){
@@ -122,6 +117,8 @@
           height:calc(100dvh - 12px);
           max-height:calc(100dvh - 12px);
           border-radius:16px;
+          overflow-y:auto;
+          overflow-x:hidden;
         }
         .inactive-head{
           align-items:center;
@@ -136,7 +133,6 @@
         }
         .inactive-filters .inactive-field{grid-column:1!important}
         .inactive-toolbar{
-          top:72px;
           display:grid;
           grid-template-columns:1fr 1fr;
           gap:7px;
@@ -154,9 +150,10 @@
         }
         #inactiveWhatsapp{grid-column:1/-1}
         .inactive-results{
-          height:48dvh;
-          min-height:340px;
-          max-height:48dvh;
+          height:auto;
+          min-height:0;
+          max-height:none;
+          overflow:visible;
           padding-top:10px;
           padding-bottom:14px;
           border-top:1px solid #e3e8ea;
@@ -187,10 +184,12 @@
         .inactive-toolbar,
         .inactive-wa-panel{padding-left:10px;padding-right:10px}
         .inactive-wa-panel{
-          max-height:none;
-          overflow:visible;
           padding-top:14px;
-          padding-bottom:18px;
+          padding-bottom:22px;
+        }
+        .inactive-wa-panel textarea{
+          min-height:150px;
+          max-height:none;
         }
       }
       @media print{#inactiveClientsModal,.inactive-btn{display:none!important}}
@@ -271,9 +270,7 @@
       $('#inactiveWaPanel').classList.toggle('show');
       updateSelection();
       refreshWhatsappPreview();
-      if($('#inactiveWaPanel').classList.contains('show')){
-        setTimeout(()=>$('#inactiveWaPanel').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
-      }
+      // O modal usa um unico scroll; o usuario continua rolando naturalmente ate a mensagem.
     };
     $('#inactiveCopyPhones').onclick=copyPhones;
     $('#inactiveRestoreTemplate').onclick=()=>{
