@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.08 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.09 */
 (function(){
   'use strict';
 
@@ -548,6 +548,9 @@
         p_limit:1500
       });
       if(error)throw error;
+      // Cada nova pesquisa começa com uma seleção limpa.
+      // Evita somar clientes de filtros/pesquisas anteriores ao contador atual.
+      selected.clear();
       rows=data||[];
       summary.textContent=rows.length+' cliente'+(rows.length===1?'':'s')+' encontrado'+(rows.length===1?'':'s')+
         (minDate?' · desde '+new Date(minDate+'T00:00:00').toLocaleDateString('pt-BR'):'')+
