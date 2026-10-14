@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.86 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.87 */
 (function(){
   'use strict';
 
@@ -65,23 +65,37 @@
           width:min(100%,720px);
           height:calc(100dvh - 18px);
           max-height:calc(100dvh - 18px);
+          display:block;
+          overflow-y:auto;
+          overflow-x:hidden;
+          overscroll-behavior:contain;
+          -webkit-overflow-scrolling:touch;
+        }
+        .inactive-head{
+          position:sticky;
+          top:0;
+          z-index:6;
+          background:#fff;
         }
         .inactive-filters{
           grid-template-columns:1fr 1fr;
-          flex:0 0 auto;
-          max-height:38dvh;
-          overflow-y:auto;
-          overscroll-behavior:contain;
+          max-height:none;
+          overflow:visible;
         }
         .inactive-filters .inactive-field:nth-child(4),
         .inactive-filters .inactive-field:nth-child(5){grid-column:1/-1}
         .inactive-filters>button{grid-column:1/-1;width:100%}
-        .inactive-toolbar{flex:0 0 auto}
+        .inactive-toolbar{
+          position:sticky;
+          top:86px;
+          z-index:5;
+          background:#fff;
+        }
         .inactive-results{
-          flex:1 1 auto;
-          min-height:230px;
-          max-height:none;
-          overflow-y:auto;
+          height:min(48dvh,520px);
+          min-height:330px;
+          max-height:min(48dvh,520px);
+          overflow-y:scroll;
           overflow-x:hidden;
           overscroll-behavior:contain;
           -webkit-overflow-scrolling:touch;
@@ -97,6 +111,10 @@
           text-align:right;
           display:block;
         }
+        .inactive-wa-panel.show{
+          display:grid;
+          margin:0;
+        }
       }
       @media(max-width:520px){
         .inactive-modal-card{
@@ -106,7 +124,6 @@
           border-radius:16px;
         }
         .inactive-head{
-          flex:0 0 auto;
           align-items:center;
           padding-top:12px;
           padding-bottom:12px;
@@ -114,12 +131,12 @@
         .inactive-head p{display:none}
         .inactive-filters{
           grid-template-columns:1fr;
-          max-height:34dvh;
           padding-top:10px;
           padding-bottom:10px;
         }
         .inactive-filters .inactive-field{grid-column:1!important}
         .inactive-toolbar{
+          top:72px;
           display:grid;
           grid-template-columns:1fr 1fr;
           gap:7px;
@@ -137,9 +154,13 @@
         }
         #inactiveWhatsapp{grid-column:1/-1}
         .inactive-results{
-          min-height:260px;
+          height:48dvh;
+          min-height:340px;
+          max-height:48dvh;
           padding-top:10px;
           padding-bottom:14px;
+          border-top:1px solid #e3e8ea;
+          border-bottom:1px solid #e3e8ea;
         }
         .inactive-card{
           gap:9px;
@@ -153,7 +174,7 @@
           margin-top:2px;
         }
         .inactive-title{font-size:13px}
-        .inactive-sub{font-size:11px}
+        .inactive-sub{font-size:11px;line-height:1.4}
         .inactive-chips{gap:4px;margin-top:6px}
         .inactive-chip{font-size:9px;padding:3px 5px}
         .inactive-contact{font-size:11px;margin-top:7px}
@@ -166,8 +187,10 @@
         .inactive-toolbar,
         .inactive-wa-panel{padding-left:10px;padding-right:10px}
         .inactive-wa-panel{
-          max-height:42dvh;
-          overflow-y:auto;
+          max-height:none;
+          overflow:visible;
+          padding-top:14px;
+          padding-bottom:18px;
         }
       }
       @media print{#inactiveClientsModal,.inactive-btn{display:none!important}}
@@ -239,7 +262,19 @@
     $('#inactiveService').addEventListener('focus',loadServices,{once:false});
     $('#inactiveSelectAll').onclick=()=>{rows.forEach(r=>selected.set(String(r.cod_cliente),r));render();updateSelection()};
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
-    $('#inactiveWhatsapp').onclick=()=>{$('#inactiveWaPanel').classList.toggle('show');updateSelection();refreshWhatsappPreview()};
+    $('#inactiveWhatsapp').onclick=()=>{
+      if(!selected.size){
+        $('#inactiveWaPanel').classList.remove('show');
+        $('#inactiveSummary').textContent='Selecione pelo menos um cliente para preparar a mensagem do WhatsApp.';
+        return;
+      }
+      $('#inactiveWaPanel').classList.toggle('show');
+      updateSelection();
+      refreshWhatsappPreview();
+      if($('#inactiveWaPanel').classList.contains('show')){
+        setTimeout(()=>$('#inactiveWaPanel').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+      }
+    };
     $('#inactiveCopyPhones').onclick=copyPhones;
     $('#inactiveRestoreTemplate').onclick=()=>{
       whatsappTemplate=defaultWhatsappTemplate;
@@ -341,6 +376,9 @@
     $('#inactiveWaStatus').textContent=selected.size
       ? selected.size+' selecionado(s) · '+valid.length+' com telefone/celular utilizável.'
       : 'Nenhum cliente selecionado.';
+    if(!selected.size){
+      $('#inactiveWaPanel')?.classList.remove('show');
+    }
     refreshWhatsappPreview();
   }
 
