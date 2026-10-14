@@ -2864,13 +2864,88 @@ body.printing .main{gap:6px!important;}
 <div class="botoes orc-actions">
     <button class="orc-btn neutral" onclick="novoOrcamento()">+ Novo orçamento</button>
     <button class="orc-btn neutral" onclick="addLinha()">+ Peça</button>
+    <button class="orc-btn neutral" onclick="abrirListaPecas()">+ Lista de peças</button>
     <button class="orc-btn neutral" onclick="addLoja()">+ Loja</button>
     <button class="orc-btn neutral" onclick="salvar()">Salvar</button>
+    <button class="orc-btn neutral" onclick="abrirImportarFicha()">→ Ficha/O.S.</button>
     <button class="orc-btn neutral" onclick="imprimirPDF()">PDF</button>
     <button class="orc-btn neutral" onclick="gerarImagem()">Imagem</button>
 </div>
 
+<div id="listaPecasModal" class="orc-flow-modal" aria-hidden="true">
+  <div class="orc-flow-card" role="dialog" aria-modal="true" aria-labelledby="listaPecasTitulo">
+    <div class="orc-flow-head">
+      <div>
+        <strong id="listaPecasTitulo">Adicionar lista de peças</strong>
+        <span>Cole uma peça por linha. Cada linha será criada automaticamente na tabela.</span>
+      </div>
+      <button type="button" class="orc-flow-close" onclick="fecharListaPecas()" aria-label="Fechar">×</button>
+    </div>
+    <textarea id="listaPecasTexto" class="orc-bulk-textarea" rows="10" placeholder="Ex.:
+FILTRO DE ÓLEO
+JOGO DE PASTILHAS
+CORREIA DENTADA"></textarea>
+    <div class="orc-flow-status" id="listaPecasStatus">Nenhuma peça na lista.</div>
+    <div class="orc-flow-actions">
+      <button type="button" class="orc-btn neutral" onclick="fecharListaPecas()">Cancelar</button>
+      <button type="button" class="orc-btn primary" onclick="adicionarListaPecas()">Adicionar peças</button>
+    </div>
+  </div>
 </div>
+
+<div id="importarFichaModal" class="orc-flow-modal" aria-hidden="true">
+  <div class="orc-flow-card" role="dialog" aria-modal="true" aria-labelledby="importarFichaTitulo">
+    <div class="orc-flow-head">
+      <div>
+        <strong id="importarFichaTitulo">Importar orçamento para Ficha/O.S.</strong>
+        <span>Escolha a autopeça que será usada como fornecedor das peças.</span>
+      </div>
+      <button type="button" class="orc-flow-close" onclick="fecharImportarFicha()" aria-label="Fechar">×</button>
+    </div>
+    <label class="orc-flow-field">
+      <span>Autopeça / fornecedor</span>
+      <select id="importarFichaLoja" onchange="atualizarResumoImportacaoFicha()"></select>
+    </label>
+    <div id="importarFichaResumo" class="orc-import-summary"></div>
+    <div class="orc-flow-note">Quando houver mais de uma marca com preço para a mesma peça, será usada a opção de menor valor naquela autopeça.</div>
+    <div class="orc-flow-actions">
+      <button type="button" class="orc-btn neutral" onclick="fecharImportarFicha()">Cancelar</button>
+      <button type="button" class="orc-btn primary" id="importarFichaConfirmar" onclick="importarOrcamentoParaFicha()">Criar ficha</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<style>
+.orc-flow-modal{
+  display:none;position:fixed;inset:0;z-index:1200;background:rgba(14,22,27,.58);
+  padding:24px;overflow-y:auto;box-sizing:border-box;
+}
+.orc-flow-modal.show{display:grid;place-items:center}
+.orc-flow-card{
+  width:min(620px,100%);background:#fff;border-radius:18px;border:1px solid #dbe3e6;
+  box-shadow:0 24px 70px rgba(0,0,0,.24);padding:18px;box-sizing:border-box;
+}
+.orc-flow-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
+.orc-flow-head strong{display:block;font-size:17px;color:#172126}
+.orc-flow-head span{display:block;margin-top:4px;color:#68777f;font-size:12px;line-height:1.4}
+.orc-flow-close{width:38px;height:38px;padding:0;border-radius:10px;background:#fff!important;color:#172126!important;border:1px solid #d8e0e3!important;box-shadow:none!important;font-size:20px}
+.orc-bulk-textarea{width:100%;min-height:220px;resize:vertical;border:1px solid #ccd7db;border-radius:12px;padding:12px;font:inherit;line-height:1.5;box-sizing:border-box;background:#fff;color:#172126}
+.orc-flow-status{margin-top:8px;font-size:12px;font-weight:750;color:#607078}
+.orc-flow-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px}
+.orc-flow-field{display:grid;gap:6px}
+.orc-flow-field>span{font-size:10px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
+.orc-flow-field select{width:100%;min-height:44px;border:1px solid #ccd7db;border-radius:11px;background:#fff;padding:8px 10px;color:#172126;font-weight:800}
+.orc-import-summary{margin-top:12px;padding:12px;border:1px solid #e0e6e8;border-radius:12px;background:#f7f9fa;color:#33444b;font-size:12px;line-height:1.55}
+.orc-flow-note{margin-top:10px;color:#718087;font-size:11px;line-height:1.45}
+@media(max-width:600px){
+  .orc-flow-modal{padding:8px;align-items:start}
+  .orc-flow-card{border-radius:15px;padding:14px;margin-top:10px}
+  .orc-bulk-textarea{min-height:260px;font-size:16px}
+  .orc-flow-actions .orc-btn{flex:1;min-width:0}
+}
+</style>
 
 <datalist id="marcasDatalist"></datalist>
 
@@ -3656,6 +3731,213 @@ function removerMarcaCampo(botao){
     ajustarCamposPeca();
     recalcularLinha(tr);
     calcular();
+}
+
+function normalizarLinhaListaPecas(texto){
+    return normalizarTexto(String(texto || '')
+        .replace(/^\s*(?:[-•*]+|\d+[.)-])\s*/,'')
+        .trim());
+}
+
+function linhasDaListaPecas(){
+    const campo = document.getElementById('listaPecasTexto');
+    if(!campo) return [];
+    return campo.value
+        .split(/\r?\n/)
+        .map(normalizarLinhaListaPecas)
+        .filter(Boolean);
+}
+
+function atualizarStatusListaPecas(){
+    const status = document.getElementById('listaPecasStatus');
+    if(!status) return;
+    const itens = linhasDaListaPecas();
+    status.textContent = itens.length
+        ? itens.length + ' peça' + (itens.length === 1 ? '' : 's') + ' pronta' + (itens.length === 1 ? '' : 's') + ' para adicionar.'
+        : 'Nenhuma peça na lista.';
+}
+
+function abrirListaPecas(){
+    const modal = document.getElementById('listaPecasModal');
+    const campo = document.getElementById('listaPecasTexto');
+    if(!modal || !campo) return;
+    campo.value = '';
+    atualizarStatusListaPecas();
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden','false');
+    setTimeout(()=>campo.focus(),30);
+}
+
+function fecharListaPecas(){
+    const modal = document.getElementById('listaPecasModal');
+    if(!modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden','true');
+}
+
+function adicionarListaPecas(){
+    const itens = linhasDaListaPecas();
+    if(!itens.length){
+        alert('Cole pelo menos uma peça, uma por linha.');
+        return;
+    }
+
+    const existentes = [...document.querySelectorAll('#corpo tr')];
+    const unicaVazia = existentes.length === 1 &&
+        !normalizarTexto(existentes[0].querySelector('.peca-input')?.value || '').trim() &&
+        ![...existentes[0].querySelectorAll('.valor-input,.marca-input')].some(el=>String(el.value||'').trim());
+
+    if(unicaVazia) existentes[0].remove();
+    itens.forEach(peca=>addLinha({peca}));
+    fecharListaPecas();
+}
+
+function opcoesValidasDaLoja(linha, lojaIndex){
+    const lista = Array.isArray(linha?.opcoes?.[lojaIndex]) ? linha.opcoes[lojaIndex] : [];
+    return lista
+        .map(op=>({
+            marca: normalizarTexto(op?.marca || '').trim(),
+            valor: parseMoeda(op?.valor || '')
+        }))
+        .filter(op=>op.marca || op.valor > 0);
+}
+
+function escolherOpcaoDaLoja(linha, lojaIndex){
+    const opcoes = opcoesValidasDaLoja(linha,lojaIndex);
+    if(!opcoes.length) return null;
+    const comPreco = opcoes.filter(op=>op.valor > 0).sort((a,b)=>a.valor-b.valor);
+    return comPreco[0] || opcoes[0];
+}
+
+function pecasParaFichaDaLoja(lojaIndex){
+    const loja = lojas[lojaIndex];
+    if(!loja) return [];
+    const desconto = Math.max(0,parsePercentual(loja.perc || 0));
+
+    return capturarLinhas()
+        .map(linha=>{
+            const nome = normalizarTexto(linha.peca || '').trim();
+            const opcao = escolherOpcaoDaLoja(linha,lojaIndex);
+            if(!nome || !opcao) return null;
+            const custo = opcao.valor > 0 ? opcao.valor * (1 - desconto/100) : 0;
+            const fornecedor = [normalizarTexto(loja.nome || '').trim(), opcao.marca].filter(Boolean).join('\n');
+            return {nome,marca:opcao.marca,fornecedor,custo};
+        })
+        .filter(Boolean);
+}
+
+function atualizarResumoImportacaoFicha(){
+    const select = document.getElementById('importarFichaLoja');
+    const resumo = document.getElementById('importarFichaResumo');
+    const confirmar = document.getElementById('importarFichaConfirmar');
+    if(!select || !resumo) return;
+
+    const indice = Number(select.value);
+    const itens = pecasParaFichaDaLoja(indice);
+    const total = itens.reduce((s,p)=>s + Number(p.custo || 0),0);
+    const loja = lojas[indice];
+
+    resumo.innerHTML =
+        '<strong>'+escapeHtml(normalizarTexto(loja?.nome || 'AUTOPEÇA'))+'</strong><br>'+
+        itens.length+' peça'+(itens.length===1?'':'s')+' com opção nesta loja · '+
+        '<strong>'+moeda(total)+'</strong> de custo após desconto.';
+
+    if(confirmar) confirmar.disabled = !itens.length;
+}
+
+function abrirImportarFicha(){
+    if(!currentUser){ showAuth(); return; }
+    const linhas = capturarLinhas().filter(l=>normalizarTexto(l.peca||'').trim());
+    if(!linhas.length){
+        alert('Adicione pelo menos uma peça ao orçamento antes de criar a ficha.');
+        return;
+    }
+
+    const select = document.getElementById('importarFichaLoja');
+    const modal = document.getElementById('importarFichaModal');
+    if(!select || !modal) return;
+
+    select.innerHTML = lojas.map((loja,i)=>{
+        const qtd = pecasParaFichaDaLoja(i).length;
+        return '<option value="'+i+'">'+escapeHtml(normalizarTexto(loja.nome||('LOJA '+(i+1))))+' · '+qtd+' peça'+(qtd===1?'':'s')+'</option>';
+    }).join('');
+
+    atualizarResumoImportacaoFicha();
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden','false');
+}
+
+function fecharImportarFicha(){
+    const modal = document.getElementById('importarFichaModal');
+    if(!modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden','true');
+}
+
+async function importarOrcamentoParaFicha(){
+    if(!currentUser){ showAuth(); return; }
+
+    const select = document.getElementById('importarFichaLoja');
+    const confirmar = document.getElementById('importarFichaConfirmar');
+    const lojaIndex = Number(select?.value || 0);
+    const loja = lojas[lojaIndex];
+    const itens = pecasParaFichaDaLoja(lojaIndex);
+
+    if(!loja || !itens.length){
+        alert('Essa autopeça não possui peças com marca ou valor preenchido neste orçamento.');
+        return;
+    }
+
+    const fichaId = uuid();
+    const agora = new Date().toISOString();
+    const fichaPayload = {
+        id:fichaId,
+        os:null,
+        cliente:null,
+        data_entrada:document.getElementById('data')?.value || dataHojeISO(),
+        carro:normalizarTexto(document.getElementById('carro')?.value || '') || null,
+        marca:null,
+        km:null,
+        placa:normalizarTexto(document.getElementById('placa')?.value || '').toLocaleUpperCase('pt-BR') || null,
+        motor:null,
+        ano:null,
+        tecnico:null,
+        servicos:'[]',
+        observacoes:'Importado de orçamento · '+normalizarTexto(loja.nome || ''),
+        observacoes_cliente:null,
+        updated_at:agora
+    };
+
+    const pecasPayload = itens.map(item=>({
+        id:uuid(),
+        ficha_id:fichaId,
+        nome:item.nome || 'Peça sem descrição',
+        quantidade:1,
+        fornecedor:item.fornecedor || null,
+        forma_pagamento:null,
+        custo:Number(item.custo || 0),
+        preco_cliente:0
+    }));
+
+    if(confirmar){
+        confirmar.disabled = true;
+        confirmar.textContent = 'Criando ficha...';
+    }
+
+    try{
+        const {error} = await db.rpc('save_ficha_v4',{p_ficha:fichaPayload,p_pecas:pecasPayload});
+        if(error) throw error;
+        fecharImportarFicha();
+        window.location.href = './index.html?ficha='+encodeURIComponent(fichaId)+'&origem=orcamento';
+    }catch(error){
+        console.error(error);
+        alert('Não foi possível criar a ficha a partir deste orçamento.');
+    }finally{
+        if(confirmar){
+            confirmar.disabled = false;
+            confirmar.textContent = 'Criar ficha';
+        }
+    }
 }
 
 function addLinha(dados = {}){
@@ -4616,6 +4898,9 @@ function escapeHtml(texto){
 }
 
 preencherDataPadrao();
+document.getElementById('listaPecasTexto')?.addEventListener('input',atualizarStatusListaPecas);
+document.getElementById('listaPecasModal')?.addEventListener('click',event=>{ if(event.target===event.currentTarget) fecharListaPecas(); });
+document.getElementById('importarFichaModal')?.addEventListener('click',event=>{ if(event.target===event.currentTarget) fecharImportarFicha(); });
 renderDatalistMarcas();
 renderTabela();
 renderPerc();
@@ -4815,5 +5100,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.64 · Remove instalar app de Orçamentos -->
 <!-- V4.4.72 · PDF vira download real e pode notificar o Android -->
 <!-- V4.4.74 · PDF com download direto, sem confirmação interna/notificação -->
+<!-- V4.4.80 · Lista de peças e importação para Ficha/O.S. -->
 </body>
 </html>
