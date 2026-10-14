@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.00 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.01 */
 (function(){
   'use strict';
 
@@ -13,6 +13,7 @@
   let previewClientId=null;
 
   const $=(s,r=document)=>r.querySelector(s);
+  const $=(s,r=document)=>[...r.querySelectorAll(s)];
   const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
   const dmy=v=>{
     if(!v)return '—';
@@ -92,7 +93,14 @@
       .inactive-sort-wrap select{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
       .inactive-select-all-box{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 9px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;color:#26343a;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap}
       .inactive-select-all-box input{width:18px;height:18px;margin:0;accent-color:#167b87}
-      .inactive-pdf-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important}
+      .inactive-pdf-wrap{position:relative;display:inline-flex}
+      .inactive-pdf-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center;gap:6px}
+      .inactive-pdf-btn::after{content:'▾';font-size:10px}
+      .inactive-pdf-menu{display:none;position:absolute;z-index:40;right:0;top:calc(100% + 6px);min-width:220px;background:#fff;border:1px solid #d7e0e3;border-radius:12px;box-shadow:0 12px 28px rgba(23,33,38,.18);padding:6px}
+      .inactive-pdf-menu.show{display:grid;gap:3px}
+      .inactive-pdf-option{border:0;background:#fff;border-radius:9px;padding:10px 11px;text-align:left;color:#172126;font:inherit;font-size:11px;font-weight:850;display:flex;justify-content:space-between;gap:10px;cursor:pointer}
+      .inactive-pdf-option:hover,.inactive-pdf-option:focus{background:#f0f5f6;outline:none}
+      .inactive-pdf-count{color:#6f7e84;font-size:10px;font-weight:900}
       .inactive-alpha-letter{font-size:12px;font-weight:950;color:#53636a;padding:10px 4px 6px;letter-spacing:.05em;text-transform:uppercase}
       #inactiveClientsModal .inactive-head,
       #inactiveClientsModal .inactive-filters,
@@ -213,6 +221,9 @@
         .inactive-sort-wrap label{flex:0 0 auto}
         .inactive-sort-wrap select{flex:1;min-width:0;width:100%}
         .inactive-select-all-box{grid-column:1/-1;width:100%;justify-content:flex-start;min-height:42px}
+        .inactive-pdf-wrap{grid-column:1/-1;width:100%}
+        .inactive-pdf-wrap .inactive-pdf-btn{width:100%;justify-content:center}
+        .inactive-pdf-menu{left:0;right:0;min-width:0}
         #inactiveWhatsapp{grid-column:1/-1}
         .inactive-results{
           height:auto;
@@ -301,7 +312,14 @@
           <label class="inactive-select-all-box" for="inactiveSelectAllCheck"><input id="inactiveSelectAllCheck" type="checkbox">Todos os clientes</label>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
-          <button class="btn primary inactive-pdf-btn" id="inactiveExportPdf" type="button">Exportar PDF</button>
+          <div class="inactive-pdf-wrap">
+            <button class="btn primary inactive-pdf-btn" id="inactiveExportPdf" type="button" aria-haspopup="true" aria-expanded="false">Exportar PDF</button>
+            <div class="inactive-pdf-menu" id="inactivePdfMenu" role="menu">
+              <button class="inactive-pdf-option" type="button" data-pdf-filter="with-mobile"><span>Apenas com celular</span><span class="inactive-pdf-count" id="inactivePdfWithMobileCount">0</span></button>
+              <button class="inactive-pdf-option" type="button" data-pdf-filter="without-mobile"><span>Apenas sem celular</span><span class="inactive-pdf-count" id="inactivePdfWithoutMobileCount">0</span></button>
+              <button class="inactive-pdf-option" type="button" data-pdf-filter="all"><span>Todos</span><span class="inactive-pdf-count" id="inactivePdfAllCount">0</span></button>
+            </div>
+          </div>
           <button class="btn primary" id="inactiveWhatsapp" type="button">WhatsApp (0)</button>
         </div>
         <div class="inactive-wa-panel" id="inactiveWaPanel">
@@ -352,7 +370,17 @@
       updateSelection();
     });
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
-    $('#inactiveExportPdf').onclick=exportSelectedPdf;
+    $('#inactiveExportPdf').onclick=e=>{
+      e.stopPropagation();
+      const menu=$('#inactivePdfMenu');
+      const openNow=menu.classList.toggle('show');
+      $('#inactiveExportPdf').setAttribute('aria-expanded',openNow?'true':'false');
+    };
+    $('#inactivePdfMenu [data-pdf-filter]').forEach(btn=>btn.onclick=()=>{
+      const mode=btn.dataset.pdfFilter||'all';
+      hidePdfMenu();
+      exportSelectedPdf(mode);
+    });
     $('#inactiveWhatsapp').onclick=()=>{
       if(!selected.size){
         $('#inactiveWaPanel').classList.remove('show');
@@ -371,7 +399,10 @@
       $('#inactiveWaStatus').textContent='Mensagem padrão restaurada.';
     };
     $('#inactiveOpenNext').onclick=openNext;
-    modal.addEventListener('click',e=>{if(e.target===modal)close()});
+    modal.addEventListener('click',e=>{
+      if(!e.target.closest('.inactive-pdf-wrap'))hidePdfMenu();
+      if(e.target===modal)close();
+    });
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('show'))close()});
     ready=true;
     return true;
@@ -387,11 +418,17 @@
   }
   function close(){
     hideServiceMenu();
+    hidePdfMenu();
     $('#inactiveClientsModal')?.classList.remove('show');
     document.body.classList.remove('inactive-modal-open');
   }
 
   function hideServiceMenu(){ $('#inactiveServiceMenu')?.classList.remove('show'); }
+
+  function hidePdfMenu(){
+    $('#inactivePdfMenu')?.classList.remove('show');
+    $('#inactiveExportPdf')?.setAttribute('aria-expanded','false');
+  }
 
   function renderServiceTags(){
     const box=$('#inactiveServiceTags');
@@ -552,6 +589,17 @@
       ? selected.size+' selecionado(s) · '+valid.length+' com telefone/celular utilizável.'
       : 'Nenhum cliente selecionado.';
 
+    const pdfAll=$('#inactivePdfAllCount');
+    const pdfWith=$('#inactivePdfWithMobileCount');
+    const pdfWithout=$('#inactivePdfWithoutMobileCount');
+    if(pdfAll&&pdfWith&&pdfWithout){
+      const selectedRows=[...selected.values()];
+      const withMobile=selectedRows.filter(r=>Boolean(cleanPhone(r.celular))).length;
+      pdfAll.textContent=String(selectedRows.length);
+      pdfWith.textContent=String(withMobile);
+      pdfWithout.textContent=String(selectedRows.length-withMobile);
+    }
+
     const allCheck=$('#inactiveSelectAllCheck');
     if(allCheck){
       const total=rows.length;
@@ -614,11 +662,25 @@
     return String(value??'').trim()||'—';
   }
 
-  function exportSelectedPdf(){
-    const chosen=[...selected.values()];
-    if(!chosen.length){
+  function exportSelectedPdf(filterMode='all'){
+    const base=[...selected.values()];
+    const hasMobile=r=>Boolean(cleanPhone(r?.celular));
+    const chosen=filterMode==='with-mobile'
+      ? base.filter(hasMobile)
+      : filterMode==='without-mobile'
+        ? base.filter(r=>!hasMobile(r))
+        : base;
+
+    if(!base.length){
       const summary=$('#inactiveSummary');
       if(summary)summary.textContent='Selecione pelo menos um cliente para gerar o PDF.';
+      return;
+    }
+
+    if(!chosen.length){
+      const summary=$('#inactiveSummary');
+      const label=filterMode==='with-mobile'?'com celular':filterMode==='without-mobile'?'sem celular':'';
+      if(summary)summary.textContent='Nenhum dos clientes selecionados está na categoria '+label+'.';
       return;
     }
 
@@ -650,7 +712,8 @@
       doc.text('FR Motors - Lista de clientes',14,16);
       doc.setFont('helvetica','normal');
       doc.setFontSize(9);
-      doc.text('Clientes selecionados: '+ordered.length+' | Gerado em '+generated,14,22);
+      const filterLabel=filterMode==='with-mobile'?'Apenas com celular':filterMode==='without-mobile'?'Apenas sem celular':'Todos os selecionados';
+      doc.text('Filtro: '+filterLabel+' | Clientes: '+ordered.length+' | Gerado em '+generated,14,22);
 
       if(typeof doc.autoTable!=='function'){
         throw new Error('Plugin AutoTable indisponível');
@@ -685,10 +748,11 @@
       });
 
       const stamp=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
-      doc.save('FRM_clientes_'+stamp+'.pdf');
+      const suffix=filterMode==='with-mobile'?'com_celular':filterMode==='without-mobile'?'sem_celular':'todos';
+      doc.save('FRM_clientes_'+suffix+'_'+stamp+'.pdf');
 
       const summary=$('#inactiveSummary');
-      if(summary)summary.textContent=ordered.length+' cliente'+(ordered.length===1?'':'s')+' exportado'+(ordered.length===1?'':'s')+' para PDF em ordem alfabética.';
+      if(summary)summary.textContent=ordered.length+' cliente'+(ordered.length===1?'':'s')+' exportado'+(ordered.length===1?'':'s')+' para PDF ('+(filterMode==='with-mobile'?'com celular':filterMode==='without-mobile'?'sem celular':'todos')+').';
     }catch(e){
       console.error('PDF clientes inativos',e);
       const summary=$('#inactiveSummary');
