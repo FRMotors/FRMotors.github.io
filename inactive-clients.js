@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.99 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.00 */
 (function(){
   'use strict';
 
@@ -642,7 +642,7 @@
         formatPhoneDisplay(r.celular||r.telefone),
         dmy(r.last_visit),
         String(r.last_os_id||'—'),
-        String(r.placa||'—')
+        String(r.veiculo||'—')
       ]);
 
       doc.setFont('helvetica','bold');
@@ -658,7 +658,7 @@
 
       doc.autoTable({
         startY:27,
-        head:[['#','Cliente','Telefone','Última visita','O.S.','Placa']],
+        head:[['#','Cliente','Telefone','Última visita','O.S.','Veículo']],
         body,
         theme:'grid',
         styles:{font:'helvetica',fontSize:8,cellPadding:2.2,overflow:'linebreak',valign:'middle'},
@@ -666,11 +666,11 @@
         alternateRowStyles:{fillColor:[247,249,250]},
         columnStyles:{
           0:{cellWidth:8,halign:'center'},
-          1:{cellWidth:68},
-          2:{cellWidth:34},
-          3:{cellWidth:27},
-          4:{cellWidth:18,halign:'center'},
-          5:{cellWidth:24}
+          1:{cellWidth:60},
+          2:{cellWidth:32},
+          3:{cellWidth:25},
+          4:{cellWidth:16,halign:'center'},
+          5:{cellWidth:38}
         },
         margin:{left:10,right:10,bottom:14},
         didDrawPage:()=>{
