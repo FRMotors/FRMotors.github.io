@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.07 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.08 */
 (function(){
   'use strict';
 
@@ -226,6 +226,7 @@
         .inactive-selected-count{grid-column:1/-1;width:100%;min-height:40px}
         .inactive-select-all-box{width:auto;justify-content:flex-start;min-height:42px}
         .inactive-select-scope{width:100%;min-width:0;min-height:42px}
+        #inactiveExportVcf{grid-column:1/-1;width:100%;justify-content:center}
         .inactive-pdf-btn{grid-column:1/-1;width:100%;justify-content:center}
         #inactiveWhatsapp{grid-column:1/-1}
         .inactive-results{
@@ -334,6 +335,7 @@
           <div class="inactive-selected-count" id="inactiveSelectedCount">0 selecionados</div>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
+          <button class="btn" id="inactiveExportVcf" type="button">Exportar .VCF</button>
           <button class="btn primary inactive-pdf-btn" id="inactiveExportPdf" type="button">Exportar PDF</button>
           <button class="btn primary" id="inactiveWhatsapp" type="button">WhatsApp (0)</button>
         </div>
@@ -377,9 +379,6 @@
       showServiceMenu(false);
     });
     $('#inactiveService').addEventListener('input',()=>showServiceMenu(false));
-    $('#inactiveService').addEventListener('keydown',e=>{
-      if(e.key==='Escape')hideServiceMenu();
-    });
     $('#inactiveServiceToggle').addEventListener('click',async e=>{
       e.preventDefault();
       e.stopPropagation();
@@ -416,6 +415,7 @@
       updateSelection();
     });
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
+    $('#inactiveExportVcf').onclick=exportSelectedVcf;
     $('#inactiveExportPdf').onclick=exportSelectedPdf;
     $('#inactiveWhatsapp').onclick=()=>{
       if(!selected.size){
@@ -436,7 +436,6 @@
     };
     $('#inactiveOpenNext').onclick=openNext;
     modal.addEventListener('click',e=>{
-      if(!e.target.closest('.inactive-service-field'))hideServiceMenu();
       if(e.target===modal)close();
     });
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('show'))close()});
@@ -507,7 +506,7 @@
     box.querySelectorAll('.inactive-service-choice').forEach(b=>b.addEventListener('click',()=>{
       const service=b.firstChild?.textContent?.trim()||b.textContent?.trim()||'';
       toggleService(service);
-      hideServiceMenu();
+      showServiceMenu(false);
       $('#inactiveService')?.focus();
     }));
 
@@ -528,7 +527,6 @@
   }
 
   async function search(){
-    hideServiceMenu();
     const summary=$('#inactiveSummary'),box=$('#inactiveResults');
     const date=$('#inactiveDate').value;
     const months=Math.max(1,Number($('#inactiveMonths').value)||6);
