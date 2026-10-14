@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.03 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.04 */
 (function(){
   'use strict';
 
@@ -27,6 +27,11 @@
     return n;
   };
   const bestPhone=r=>cleanPhone(r.celular)||cleanPhone(r.telefone);
+  const mobilePhone=r=>{
+    const n=cleanPhone(r?.celular);
+    return (n.length===12||n.length===13)?n:'';
+  };
+  const hasMobile=r=>Boolean(mobilePhone(r));
 
   function ensure(){
     if(ready)return true;
@@ -93,8 +98,9 @@
       .inactive-select-all-box{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 9px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;color:#26343a;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap}
       .inactive-select-all-box input{width:18px;height:18px;margin:0;accent-color:#167b87}
       .inactive-pdf-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important}
-      .inactive-select-all-box{gap:8px;flex-wrap:wrap}
-      .inactive-select-all-box select{min-height:32px;border:1px solid #d8e0e3;border-radius:8px;background:#fff;padding:5px 28px 5px 8px;color:#26343a;font-weight:800;font-size:10px}
+      .inactive-select-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+      .inactive-select-all-box{gap:7px;flex-wrap:nowrap}
+      .inactive-select-scope{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
       .inactive-alpha-letter{font-size:12px;font-weight:950;color:#53636a;padding:10px 4px 6px;letter-spacing:.05em;text-transform:uppercase}
       #inactiveClientsModal .inactive-head,
       #inactiveClientsModal .inactive-filters,
@@ -214,8 +220,9 @@
         .inactive-sort-wrap{grid-column:1/-1;width:100%}
         .inactive-sort-wrap label{flex:0 0 auto}
         .inactive-sort-wrap select{flex:1;min-width:0;width:100%}
-        .inactive-select-all-box{grid-column:1/-1;width:100%;justify-content:flex-start;min-height:42px}
-        .inactive-select-all-box select{flex:1;min-width:150px}
+        .inactive-select-group{grid-column:1/-1;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px}
+        .inactive-select-all-box{width:auto;justify-content:flex-start;min-height:42px}
+        .inactive-select-scope{width:100%;min-width:0;min-height:42px}
         .inactive-pdf-btn{grid-column:1/-1;width:100%;justify-content:center}
         #inactiveWhatsapp{grid-column:1/-1}
         .inactive-results{
@@ -302,15 +309,17 @@
               <option value="za">Nome Z-A</option>
             </select>
           </div>
-          <label class="inactive-select-all-box" for="inactiveSelectAllCheck">
-            <input id="inactiveSelectAllCheck" type="checkbox">
-            <span>Selecionar</span>
-            <select id="inactiveSelectScope" aria-label="Grupo de clientes para selecionar">
+          <div class="inactive-select-group">
+            <label class="inactive-select-all-box" for="inactiveSelectAllCheck">
+              <input id="inactiveSelectAllCheck" type="checkbox">
+              <span>Selecionar grupo</span>
+            </label>
+            <select id="inactiveSelectScope" class="inactive-select-scope" aria-label="Grupo de clientes para selecionar">
               <option value="all">Todos os clientes</option>
               <option value="with-mobile">Apenas com celular</option>
               <option value="without-mobile">Apenas sem celular</option>
             </select>
-          </label>
+          </div>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
           <button class="btn primary inactive-pdf-btn" id="inactiveExportPdf" type="button">Exportar PDF</button>
@@ -357,24 +366,31 @@
     $('#inactiveSelectAllCheck').addEventListener('change',e=>{
       const scope=$('#inactiveSelectScope')?.value||'all';
       const inScope=r=>scope==='with-mobile'
-        ? Boolean(cleanPhone(r.celular))
+        ? hasMobile(r)
         : scope==='without-mobile'
-          ? !cleanPhone(r.celular)
+          ? !hasMobile(r)
           : true;
-      rows.filter(inScope).forEach(r=>{
-        if(e.target.checked)selected.set(String(r.cod_cliente),r);
-        else selected.delete(String(r.cod_cliente));
-      });
+
+      if(e.target.checked){
+        // A seleção por grupo é exclusiva: evita misturar o grupo anterior no PDF.
+        rows.forEach(r=>selected.delete(String(r.cod_cliente)));
+        rows.filter(inScope).forEach(r=>selected.set(String(r.cod_cliente),r));
+      }else{
+        rows.filter(inScope).forEach(r=>selected.delete(String(r.cod_cliente)));
+      }
       render();
       updateSelection();
     });
     $('#inactiveSelectScope').addEventListener('change',()=>{
+      // Trocar o grupo limpa a seleção exibida para o próximo clique ser inequívoco.
+      rows.forEach(r=>selected.delete(String(r.cod_cliente)));
       const check=$('#inactiveSelectAllCheck');
       if(check){check.checked=false;check.indeterminate=false;}
+      render();
       updateSelection();
     });
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
-    $('#inactiveExportPdf').onclick=()=>exportSelectedPdf('all');
+    $('#inactiveExportPdf').onclick=exportSelectedPdf;
     $('#inactiveWhatsapp').onclick=()=>{
       if(!selected.size){
         $('#inactiveWaPanel').classList.remove('show');
@@ -578,9 +594,9 @@
     if(allCheck){
       const scope=$('#inactiveSelectScope')?.value||'all';
       const scopedRows=rows.filter(r=>scope==='with-mobile'
-        ? Boolean(cleanPhone(r.celular))
+        ? hasMobile(r)
         : scope==='without-mobile'
-          ? !cleanPhone(r.celular)
+          ? !hasMobile(r)
           : true);
       const selectedInScope=scopedRows.filter(r=>selected.has(String(r.cod_cliente))).length;
       allCheck.checked=scopedRows.length>0&&selectedInScope===scopedRows.length;
@@ -667,7 +683,7 @@
       const body=ordered.map((r,index)=>[
         String(index+1),
         'FRM - '+String(r.cliente||'Cliente sem nome').trim(),
-        formatPhoneDisplay(r.celular||r.telefone),
+        hasMobile(r)?formatPhoneDisplay(r.celular):'SEM CELULAR',
         dmy(r.last_visit),
         String(r.last_os_id||'—'),
         String(r.veiculo||'—')
@@ -686,7 +702,7 @@
 
       doc.autoTable({
         startY:27,
-        head:[['#','Cliente','Telefone','Última visita','O.S.','Veículo']],
+        head:[['#','Cliente','Celular','Última visita','O.S.','Veículo']],
         body,
         theme:'grid',
         styles:{font:'helvetica',fontSize:8,cellPadding:2.2,overflow:'linebreak',valign:'middle'},
