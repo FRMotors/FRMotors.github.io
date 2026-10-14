@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.96 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.97 */
 (function(){
   'use strict';
 
@@ -90,6 +90,8 @@
       .inactive-sort-wrap{display:flex;align-items:center;gap:6px}
       .inactive-sort-wrap label{font-size:10px;font-weight:900;text-transform:uppercase;color:#68777f;white-space:nowrap}
       .inactive-sort-wrap select{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
+      .inactive-select-all-box{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 9px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;color:#26343a;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap}
+      .inactive-select-all-box input{width:18px;height:18px;margin:0;accent-color:#167b87}
       .inactive-alpha-letter{font-size:12px;font-weight:950;color:#53636a;padding:10px 4px 6px;letter-spacing:.05em;text-transform:uppercase}
       #inactiveClientsModal .inactive-head,
       #inactiveClientsModal .inactive-filters,
@@ -209,6 +211,7 @@
         .inactive-sort-wrap{grid-column:1/-1;width:100%}
         .inactive-sort-wrap label{flex:0 0 auto}
         .inactive-sort-wrap select{flex:1;min-width:0;width:100%}
+        .inactive-select-all-box{grid-column:1/-1;width:100%;justify-content:flex-start;min-height:42px}
         #inactiveWhatsapp{grid-column:1/-1}
         .inactive-results{
           height:auto;
@@ -294,6 +297,7 @@
               <option value="za">Nome Z-A</option>
             </select>
           </div>
+          <label class="inactive-select-all-box" for="inactiveSelectAllCheck"><input id="inactiveSelectAllCheck" type="checkbox">Todos os clientes</label>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
           <button class="btn" id="inactiveExportVcf" type="button">Exportar .VCF</button>
@@ -337,6 +341,15 @@
     $('#inactiveService').addEventListener('focus',async()=>{await loadServices();showServiceMenu()});
     $('#inactiveService').addEventListener('input',showServiceMenu);
     $('#inactiveSelectAll').onclick=()=>{rows.forEach(r=>selected.set(String(r.cod_cliente),r));render();updateSelection()};
+    $('#inactiveSelectAllCheck').addEventListener('change',e=>{
+      if(e.target.checked){
+        rows.forEach(r=>selected.set(String(r.cod_cliente),r));
+      }else{
+        rows.forEach(r=>selected.delete(String(r.cod_cliente)));
+      }
+      render();
+      updateSelection();
+    });
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
     $('#inactiveExportVcf').onclick=exportSelectedVcf;
     $('#inactiveWhatsapp').onclick=()=>{
@@ -537,6 +550,16 @@
     $('#inactiveWaStatus').textContent=selected.size
       ? selected.size+' selecionado(s) · '+valid.length+' com telefone/celular utilizável.'
       : 'Nenhum cliente selecionado.';
+
+    const allCheck=$('#inactiveSelectAllCheck');
+    if(allCheck){
+      const total=rows.length;
+      const selectedInRows=rows.filter(r=>selected.has(String(r.cod_cliente))).length;
+      allCheck.checked=total>0&&selectedInRows===total;
+      allCheck.indeterminate=selectedInRows>0&&selectedInRows<total;
+      allCheck.disabled=total===0;
+    }
+
     if(!selected.size){
       $('#inactiveWaPanel')?.classList.remove('show');
     }
