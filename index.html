@@ -1397,11 +1397,6 @@
     </aside>
 
     <main class="panel editor no-selection" id="editor">
-      <div id="emptyFichaState" class="empty-ficha-state">
-        <div class="empty-ficha-mark">FR</div>
-        <strong>Nenhuma ficha selecionada</strong>
-        <span>Selecione uma O.S. na lista, importe do SHOficina ou crie uma nova ficha.</span>
-      </div>
       <div class="sheet-head">
         <div>
           <div class="logo">FRMOTORS</div>
@@ -1411,6 +1406,11 @@
           <button class="btn history-btn internal" id="historyBtn" type="button">Histórico</button>
           <div class="os-number"><strong>O.S.:</strong><input id="os" placeholder="0001" /></div>
         </div>
+      </div>
+      <div id="emptyFichaState" class="empty-ficha-state">
+        <div class="empty-ficha-mark">FR</div>
+        <strong>Nenhuma ficha selecionada</strong>
+        <span>Selecione uma O.S. na lista, importe do SHOficina ou crie uma nova ficha.</span>
       </div>
 
       <section class="section">
@@ -2970,5 +2970,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.81 · Mantém faixa escura e ações visíveis sem ficha selecionada -->
 <!-- V4.4.82 · Cabeçalho escuro no topo com cantos arredondados -->
 <!-- V4.4.83 · Cabeçalho vazio usa exatamente a posição da ficha aberta -->
+<!-- V4.4.84 · Corrige ordem real do cabeçalho no estado vazio -->
 </body>
 </html>
