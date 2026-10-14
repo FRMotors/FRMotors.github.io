@@ -327,6 +327,55 @@
   padding:24px 12px;text-align:center;color:var(--muted);font-size:13px;
   border:1px dashed var(--line);border-radius:13px;
 }
+/* V4.4.80 · Estado inicial sem ficha selecionada */
+.editor.no-selection{
+  min-height:520px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.editor.no-selection > *:not(#emptyFichaState){
+  display:none!important;
+}
+.empty-ficha-state{
+  display:none;
+  width:min(440px,calc(100% - 36px));
+  padding:38px 24px;
+  text-align:center;
+  color:#68777f;
+}
+.editor.no-selection .empty-ficha-state{
+  display:grid;
+  justify-items:center;
+  gap:9px;
+}
+.empty-ficha-mark{
+  width:56px;
+  height:56px;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  background:#172126;
+  color:#fff;
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:.04em;
+  margin-bottom:4px;
+}
+.empty-ficha-state strong{
+  color:#172126;
+  font-size:18px;
+  font-weight:900;
+}
+.empty-ficha-state span{
+  max-width:360px;
+  font-size:12px;
+  line-height:1.55;
+}
+@media(max-width:640px){
+  .editor.no-selection{min-height:360px}
+}
+
 @media(max-width:640px){
   .audit-head{padding:16px}
   .audit-body{padding:13px 16px 18px}
@@ -1337,7 +1386,12 @@
       </div>
     </aside>
 
-    <main class="panel editor" id="editor">
+    <main class="panel editor no-selection" id="editor">
+      <div id="emptyFichaState" class="empty-ficha-state">
+        <div class="empty-ficha-mark">FR</div>
+        <strong>Nenhuma ficha selecionada</strong>
+        <span>Selecione uma O.S. na lista, importe do SHOficina ou crie uma nova ficha.</span>
+      </div>
       <div class="sheet-head">
         <div>
           <div class="logo">FRMOTORS</div>
@@ -1599,7 +1653,7 @@ function discardCurrentChanges(){
   if(!f){ setDirty(false); return; }
   if(f.isNew){
     state.fichas=state.fichas.filter(x=>x.id!==f.id);
-    state.currentId=state.fichas[0]?.id||null;
+    state.currentId=null;
   }else if(state.cleanSnapshot){
     const i=state.fichas.findIndex(x=>x.id===f.id);
     if(i>=0)state.fichas[i]=cloneData(state.cleanSnapshot);
@@ -1770,11 +1824,9 @@ async function loadDB(preserveId=true){
     .order('updated_at',{ascending:false});
   if(error){ console.error(error); setCloud('Erro de conexão', false); toast('Erro ao carregar fichas'); return; }
   state.fichas=(data||[]).map(mapFicha);
-  if(!state.fichas.length){
-    const f=blankFicha(); f.parts=[blankPart()]; f.services=[blankService()]; state.fichas=[f]; state.currentId=f.id;
-  }else{
-    state.currentId = state.fichas.some(f=>f.id===wanted) ? wanted : state.fichas[0].id;
-  }
+  // Ao abrir/recarregar sem uma ficha já selecionada, mantém o editor neutro.
+  // Se a atualização ocorreu enquanto uma ficha estava aberta, preserva essa seleção.
+  state.currentId = (wanted && state.fichas.some(f=>f.id===wanted)) ? wanted : null;
   captureCleanSnapshot(); render();
   state.changeVersion=0; setDirty(false);
   setCloud('Online · ' + (state.user.email||'usuário'), true);
@@ -2147,7 +2199,19 @@ function closeHistory(){
 }
 
 function render(){
-  const f=current(); if(!f)return;
+  const f=current();
+  const editor=$('#editor');
+  if(!f){
+    editor?.classList.add('no-selection');
+    state.rendering=true;
+    fields.forEach(k=>{ const el=$('#'+k); if(el)el.value=''; });
+    $('#partsBody').innerHTML='';
+    $('#servicesBody').innerHTML='';
+    renderList();
+    state.rendering=false;
+    return;
+  }
+  editor?.classList.remove('no-selection');
   state.rendering=true;
   fields.forEach(k=>$('#'+k).value=f[k]||'');
   $('#partsBody').innerHTML='';
@@ -2889,5 +2953,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.77 · Corrige posição da O.S. no cabeçalho mobile -->
 <!-- V4.4.78 · Clientes inativos, filtro por serviços e fila WhatsApp -->
 <!-- V4.4.79 · Data mínima em clientes inativos -->
+<!-- V4.4.80 · Abre a Ficha/O.S. sem seleção automática -->
 </body>
 </html>
