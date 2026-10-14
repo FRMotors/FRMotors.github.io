@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.04 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.05 */
 (function(){
   'use strict';
 
@@ -27,11 +27,7 @@
     return n;
   };
   const bestPhone=r=>cleanPhone(r.celular)||cleanPhone(r.telefone);
-  const mobilePhone=r=>{
-    const n=cleanPhone(r?.celular);
-    return (n.length===12||n.length===13)?n:'';
-  };
-  const hasMobile=r=>Boolean(mobilePhone(r));
+  const hasNumber=r=>Boolean(bestPhone(r));
 
   function ensure(){
     if(ready)return true;
@@ -316,8 +312,8 @@
             </label>
             <select id="inactiveSelectScope" class="inactive-select-scope" aria-label="Grupo de clientes para selecionar">
               <option value="all">Todos os clientes</option>
-              <option value="with-mobile">Apenas com celular</option>
-              <option value="without-mobile">Apenas sem celular</option>
+              <option value="with-mobile">Apenas com número</option>
+              <option value="without-mobile">Apenas sem número</option>
             </select>
           </div>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
@@ -366,9 +362,9 @@
     $('#inactiveSelectAllCheck').addEventListener('change',e=>{
       const scope=$('#inactiveSelectScope')?.value||'all';
       const inScope=r=>scope==='with-mobile'
-        ? hasMobile(r)
+        ? hasNumber(r)
         : scope==='without-mobile'
-          ? !hasMobile(r)
+          ? !hasNumber(r)
           : true;
 
       if(e.target.checked){
@@ -508,7 +504,7 @@
         p_min_last_visit:minDate,
         p_services:services.length?services:null,
         p_search:term,
-        p_limit:400
+        p_limit:1500
       });
       if(error)throw error;
       rows=data||[];
@@ -594,9 +590,9 @@
     if(allCheck){
       const scope=$('#inactiveSelectScope')?.value||'all';
       const scopedRows=rows.filter(r=>scope==='with-mobile'
-        ? hasMobile(r)
+        ? hasNumber(r)
         : scope==='without-mobile'
-          ? !hasMobile(r)
+          ? !hasNumber(r)
           : true);
       const selectedInScope=scopedRows.filter(r=>selected.has(String(r.cod_cliente))).length;
       allCheck.checked=scopedRows.length>0&&selectedInScope===scopedRows.length;
@@ -683,7 +679,7 @@
       const body=ordered.map((r,index)=>[
         String(index+1),
         'FRM - '+String(r.cliente||'Cliente sem nome').trim(),
-        hasMobile(r)?formatPhoneDisplay(r.celular):'SEM CELULAR',
+        hasNumber(r)?formatPhoneDisplay(bestPhone(r)):'SEM NÚMERO',
         dmy(r.last_visit),
         String(r.last_os_id||'—'),
         String(r.veiculo||'—')
@@ -702,7 +698,7 @@
 
       doc.autoTable({
         startY:27,
-        head:[['#','Cliente','Celular','Última visita','O.S.','Veículo']],
+        head:[['#','Cliente','Contato','Última visita','O.S.','Veículo']],
         body,
         theme:'grid',
         styles:{font:'helvetica',fontSize:8,cellPadding:2.2,overflow:'linebreak',valign:'middle'},
