@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.89 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.90 */
 (function(){
   'use strict';
 
@@ -7,6 +7,7 @@
   const selected=new Map();
   let serviceLoaded=false;
   let serviceCatalog=[];
+  const selectedServices=[];
   const defaultWhatsappTemplate='Olá, {nome}! Tudo bem? Aqui é da FR Motors. Vimos que já faz um tempo desde a última manutenção do seu veículo {veiculo}. Se quiser, podemos verificar como estão os itens de manutenção e agendar uma avaliação.';
   let whatsappTemplate=defaultWhatsappTemplate;
   let previewClientId=null;
@@ -47,6 +48,11 @@
       .inactive-service-menu.show{display:block}
       .inactive-service-choice{display:block;width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:9px;font-size:12px;font-weight:800;color:#172126}
       .inactive-service-choice:hover,.inactive-service-choice:focus{background:#f0f5f6;outline:none}
+      .inactive-service-choice.is-selected{background:#e8f4f5;color:#126b74}
+      .inactive-service-choice.is-selected::after{content:'✓';float:right;font-weight:950}
+      .inactive-service-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+      .inactive-service-tag{border:1px solid #cfe2e5;background:#eef7f8;color:#1d6269;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:850;display:inline-flex;align-items:center;gap:6px}
+      .inactive-service-tag button{border:0;background:transparent;color:inherit;font-weight:950;padding:0;line-height:1;cursor:pointer}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
       .inactive-results{overflow:auto;padding:14px 20px 22px;background:#f6f8f9}
@@ -225,7 +231,7 @@
           <div class="inactive-field"><label>Data-base</label><input id="inactiveDate" type="date"></div>
           <div class="inactive-field"><label>Considerar clientes desde</label><input id="inactiveMinDate" type="date"></div>
           <div class="inactive-field"><label>Sem retornar há</label><input id="inactiveMonths" type="number" min="1" max="120" value="6" placeholder="Meses"></div>
-          <div class="inactive-field inactive-service-field"><label>Mão de obra / serviço</label><input id="inactiveService" list="inactiveServiceList" placeholder="Ex.: troca de óleo" autocomplete="off"><datalist id="inactiveServiceList"></datalist><div id="inactiveServiceMenu" class="inactive-service-menu"></div></div>
+          <div class="inactive-field inactive-service-field"><label>Mão de obra / serviço</label><input id="inactiveService" list="inactiveServiceList" placeholder="Digite ou selecione várias opções" autocomplete="off"><datalist id="inactiveServiceList"></datalist><div id="inactiveServiceMenu" class="inactive-service-menu" role="listbox" aria-multiselectable="true"></div><div id="inactiveServiceTags" class="inactive-service-tags"></div></div>
           <div class="inactive-field"><label>Cliente, placa ou O.S.</label><input id="inactiveSearch" placeholder="Pesquisa opcional"></div>
           <button class="btn primary" id="inactiveSearchBtn" type="button">Pesquisar</button>
         </div>
@@ -300,16 +306,48 @@
 
   function hideServiceMenu(){ $('#inactiveServiceMenu')?.classList.remove('show'); }
 
+  function renderServiceTags(){
+    const box=$('#inactiveServiceTags');
+    if(!box)return;
+    box.innerHTML=selectedServices.map((service,index)=>
+      '<span class="inactive-service-tag">'+esc(service)+
+      '<button type="button" data-remove-service="'+index+'" aria-label="Remover '+esc(service)+'">×</button></span>'
+    ).join('');
+    box.querySelectorAll('[data-remove-service]').forEach(btn=>btn.addEventListener('click',()=>{
+      selectedServices.splice(Number(btn.dataset.removeService),1);
+      renderServiceTags();
+      showServiceMenu();
+    }));
+  }
+
+  function toggleService(service){
+    const value=String(service||'').trim();
+    if(!value)return;
+    const idx=selectedServices.findIndex(x=>x.toLocaleLowerCase('pt-BR')===value.toLocaleLowerCase('pt-BR'));
+    if(idx>=0)selectedServices.splice(idx,1);
+    else selectedServices.push(value);
+    $('#inactiveService').value='';
+    renderServiceTags();
+    showServiceMenu();
+  }
+
   function showServiceMenu(){
     const box=$('#inactiveServiceMenu');
     const input=$('#inactiveService');
     if(!box||!input||!serviceCatalog.length)return;
-    const q=input.value.trim().toLowerCase();
-    const found=serviceCatalog.filter(x=>!q||String(x.descricao||'').toLowerCase().includes(q)).slice(0,8);
-    box.innerHTML=found.map(x=>'<button type="button" class="inactive-service-choice">'+esc(x.descricao||'')+'</button>').join('');
+    const q=input.value.trim().toLocaleLowerCase('pt-BR');
+    const found=serviceCatalog
+      .filter(x=>!q||String(x.descricao||'').toLocaleLowerCase('pt-BR').includes(q))
+      .slice(0,10);
+
+    box.innerHTML=found.map(x=>{
+      const desc=String(x.descricao||'');
+      const active=selectedServices.some(s=>s.toLocaleLowerCase('pt-BR')===desc.toLocaleLowerCase('pt-BR'));
+      return '<button type="button" class="inactive-service-choice'+(active?' is-selected':'')+'" role="option" aria-selected="'+(active?'true':'false')+'">'+esc(desc)+'</button>';
+    }).join('');
+
     box.querySelectorAll('.inactive-service-choice').forEach(b=>b.addEventListener('click',()=>{
-      input.value=b.textContent||'';
-      hideServiceMenu();
+      toggleService(b.textContent?.replace(/✓$/,'').trim()||'');
     }));
     box.classList.toggle('show',found.length>0);
   }
@@ -331,17 +369,19 @@
     const date=$('#inactiveDate').value;
     const months=Math.max(1,Number($('#inactiveMonths').value)||6);
     const minDate=$('#inactiveMinDate').value||null;
-    const service=$('#inactiveService').value.trim()||null;
+    const typedService=$('#inactiveService').value.trim();
+    const services=[...selectedServices];
+    if(typedService && !services.some(s=>s.toLocaleLowerCase('pt-BR')===typedService.toLocaleLowerCase('pt-BR')))services.push(typedService);
     const term=$('#inactiveSearch').value.trim()||null;
     summary.textContent='Pesquisando...';
     box.innerHTML='<div class="inactive-empty">Consultando histórico de O.S. e serviços...</div>';
 
     try{
-      const {data,error}=await db.rpc('shoficina_clientes_inativos_v2',{
+      const {data,error}=await db.rpc('shoficina_clientes_inativos_v3',{
         p_reference_date:date,
         p_months:months,
         p_min_last_visit:minDate,
-        p_service:service,
+        p_services:services.length?services:null,
         p_search:term,
         p_limit:400
       });
@@ -349,7 +389,7 @@
       rows=data||[];
       summary.textContent=rows.length+' cliente'+(rows.length===1?'':'s')+' encontrado'+(rows.length===1?'':'s')+
         (minDate?' · desde '+new Date(minDate+'T00:00:00').toLocaleDateString('pt-BR'):'')+
-        (service?' · serviço: '+service:'');
+        (services.length?' · serviços: '+services.join(' + '):'');
       render();
     }catch(e){
       console.error(e);
