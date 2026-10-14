@@ -1315,6 +1315,29 @@
 }
 </style>
 
+<style>
+  #partsBody .supplier-input{
+    width:100%;
+    min-width:120px;
+    min-height:48px;
+    padding:7px 9px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+    line-height:1.25;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+  }
+  #partsBody .supplier-input:focus{
+    outline:2px solid rgba(22,123,135,.16);
+    border-color:var(--accent);
+  }
+  @media(max-width:640px){
+    #partsBody .supplier-input{min-height:56px;font-size:13px}
+  }
+</style>
 </head>
 <body>
 
@@ -1827,7 +1850,9 @@ async function logout(){
 async function loadDB(preserveId=true){
   if(!state.user)return;
   setCloud('Sincronizando...', true);
-  const wanted = preserveId ? state.currentId : null;
+  const params = new URLSearchParams(window.location.search);
+  const requestedId = params.get('ficha');
+  const wanted = requestedId || (preserveId ? state.currentId : null);
   const { data, error } = await db
     .from('fichas')
     .select('*, pecas(*)')
@@ -1835,8 +1860,14 @@ async function loadDB(preserveId=true){
   if(error){ console.error(error); setCloud('Erro de conexão', false); toast('Erro ao carregar fichas'); return; }
   state.fichas=(data||[]).map(mapFicha);
   // Ao abrir/recarregar sem uma ficha já selecionada, mantém o editor neutro.
-  // Se a atualização ocorreu enquanto uma ficha estava aberta, preserva essa seleção.
+  // Links vindos de Orçamentos podem solicitar diretamente a ficha recém-criada.
   state.currentId = (wanted && state.fichas.some(f=>f.id===wanted)) ? wanted : null;
+  if(requestedId && state.currentId){
+    params.delete('ficha');
+    params.delete('origem');
+    const query=params.toString();
+    history.replaceState(null,'',window.location.pathname+(query?'?'+query:'')+window.location.hash);
+  }
   captureCleanSnapshot(); render();
   state.changeVersion=0; setDirty(false);
   setCloud('Online · ' + (state.user.email||'usuário'), true);
@@ -2259,7 +2290,7 @@ function addPartRow(p=blankPart(),dirty=true){
   tr.innerHTML=`
     <td><input data-k="name" value="${esc(p.name)}" placeholder="Ex.: Kit correia"></td>
     <td class="qty-cell"><input class="qty-input" data-k="qty" type="number" min="1" step="1" value="${p.qty||1}"></td>
-    <td class="internal"><input data-k="supplier" value="${esc(p.supplier)}" placeholder="Fornecedor"></td>
+    <td class="internal"><textarea class="supplier-input" data-k="supplier" rows="2" placeholder="Fornecedor&#10;Marca">${esc(p.supplier)}</textarea></td>
     <td class="money internal"><input data-k="cost" type="number" min="0" step="0.01" value="${p.cost||0}"></td>
     <td class="money internal suggested-cell print-hide"><button type="button" class="suggested-price calc-suggested" title="Clique para usar este preço" disabled>R$ 0,00</button></td>
     <td class="money"><input data-k="price" type="number" min="0" step="0.01" value="${p.price||0}"></td>
@@ -2267,7 +2298,7 @@ function addPartRow(p=blankPart(),dirty=true){
     <td class="money calc-sale"></td>
     <td class="money internal calc-margin"></td>
     <td class="remove-cell edit-only"><button class="icon-btn" title="Remover">×</button></td>`;
-  tr.querySelectorAll('input,select').forEach(el=>{ el.addEventListener('input',()=>{recalc();markDirty();}); el.addEventListener('change',markDirty); });
+  tr.querySelectorAll('input,textarea,select').forEach(el=>{ el.addEventListener('input',()=>{recalc();markDirty();}); el.addEventListener('change',markDirty); });
   const suggestedBtn=tr.querySelector('.suggested-price');
   if(suggestedBtn) suggestedBtn.onclick=()=>{
     const value=num(suggestedBtn.dataset.value);
@@ -3000,5 +3031,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.5.09 · Limpa selecao ao realizar nova pesquisa -->
 <!-- V4.5.10 · Refina visual e organiza servicos selecionados -->
 <!-- V4.5.11 · Compacta seletores e restaura Pesquisar preto -->
+<!-- V4.5.12 · Orçamento abre ficha importada e fornecedor em duas linhas -->
 </body>
 </html>
