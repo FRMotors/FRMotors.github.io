@@ -1,4 +1,4 @@
-/* FR Motors · Histórico de manutenção por O.S./placa/cliente · V4.4.76 */
+/* FR Motors · Histórico de manutenção por O.S./placa/cliente · V4.4.77 */
 (function(){
   'use strict';
 
@@ -27,6 +27,17 @@
 
   function normalizeSearch(value){
     return String(value ?? '').trim().replace(/[,()]/g,' ');
+  }
+
+  function escapeRegex(value){
+    const specials='\\.^$|?*+()[]{}';
+    return [...String(value ?? '')].map(ch=>specials.includes(ch)?'\\\\'+ch:ch).join('');
+  }
+
+  function clientWordPattern(value){
+    const tokens=String(value ?? '').trim().split(/\s+/).filter(Boolean).map(escapeRegex);
+    if(!tokens.length) return '';
+    return '[[:<:]]'+tokens.join('[[:space:][:punct:]]+')+'[[:>:]]';
   }
 
   function ensureUi(){
@@ -175,9 +186,18 @@
       const compact=q.replace(/[-\s]/g,'').toUpperCase();
       const isOs=/^\d+$/.test(q);
       const plateLike=/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(compact)||/^[A-Z]{3}[0-9]{4}$/.test(compact);
-      if(isOs) query=query.eq('source_os_id',Number(q));
-      else if(plateLike) query=query.ilike('placa','%'+compact+'%');
-      else query=query.or('cliente.ilike.%'+q+'%,placa.ilike.%'+q+'%');
+      const looksLikeName=/^[A-ZÀ-ÖØ-öø-ÿ' .-]+$/i.test(q) && /[A-ZÀ-ÖØ-öø-ÿ]/i.test(q);
+
+      if(isOs){
+        query=query.eq('source_os_id',Number(q));
+      }else if(plateLike){
+        query=query.ilike('placa','%'+compact+'%');
+      }else if(looksLikeName){
+        const pattern=clientWordPattern(q);
+        query=query.filter('cliente','imatch',pattern);
+      }else{
+        query=query.ilike('placa','%'+compact+'%');
+      }
 
       const {data:osRows,error:osError}=await query;
       if(osError) throw osError;
