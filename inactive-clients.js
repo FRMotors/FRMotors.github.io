@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.92 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.93 */
 (function(){
   'use strict';
 
@@ -37,12 +37,39 @@
     const style=document.createElement('style');
     style.textContent=`
       .inactive-btn{white-space:nowrap}
-      #inactiveClientsModal{overflow-y:auto;overflow-x:hidden;align-items:flex-start;justify-content:center;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
-      #inactiveClientsModal.show{display:block}
-      #inactiveClientsModal::-webkit-scrollbar{width:8px}
+      body.inactive-modal-open{overflow:hidden!important}
+      #inactiveClientsModal.modal-backdrop{
+        display:none;
+        position:fixed;
+        inset:0;
+        width:100vw;
+        height:100dvh;
+        max-height:none;
+        box-sizing:border-box;
+        padding:20px 20px 60px;
+        overflow-y:scroll!important;
+        overflow-x:hidden!important;
+        overscroll-behavior:contain;
+        touch-action:pan-y;
+        align-items:initial!important;
+        justify-content:initial!important;
+        scrollbar-gutter:stable;
+        -webkit-overflow-scrolling:touch;
+      }
+      #inactiveClientsModal.modal-backdrop.show{display:block!important}
+      #inactiveClientsModal::-webkit-scrollbar{width:10px}
       #inactiveClientsModal::-webkit-scrollbar-thumb{background:#8f9da3;border-radius:999px}
       #inactiveClientsModal::-webkit-scrollbar-track{background:rgba(255,255,255,.12)}
-      .inactive-modal-card{width:min(1120px,100%);height:auto;max-height:none;overflow:visible;display:block;margin:0 auto}
+      #inactiveClientsModal .inactive-modal-card{
+        width:min(1120px,100%)!important;
+        height:auto!important;
+        min-height:0!important;
+        max-height:none!important;
+        overflow:visible!important;
+        display:block!important;
+        margin:0 auto!important;
+        box-sizing:border-box;
+      }
       .inactive-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px;border-bottom:1px solid var(--line,#dfe5e8)}
       .inactive-head h3{margin:0 0 4px}.inactive-head p{margin:0;color:var(--muted,#68777f);font-size:12px}
       .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc;overflow:visible}
@@ -60,7 +87,17 @@
       .inactive-service-tag button{border:0;background:transparent;color:inherit;font-weight:950;padding:0;line-height:1;cursor:pointer}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
-      .inactive-results{height:auto;max-height:none;overflow:visible;padding:14px 20px 22px;background:#f6f8f9}
+      #inactiveClientsModal .inactive-head,
+      #inactiveClientsModal .inactive-filters,
+      #inactiveClientsModal .inactive-toolbar,
+      #inactiveClientsModal .inactive-results,
+      #inactiveClientsModal .inactive-wa-panel{
+        position:static!important;
+        height:auto!important;
+        max-height:none!important;
+        overflow:visible!important;
+      }
+      .inactive-results{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;padding:14px 20px 22px;background:#f6f8f9}
       .inactive-empty{padding:28px;text-align:center;color:#78868c;background:#fff;border:1px dashed #d7e0e3;border-radius:14px}
       .inactive-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;background:#fff;border:1px solid #dfe5e8;border-radius:15px;padding:13px;margin-bottom:10px;align-items:start}
       .inactive-card.selected{border-color:#167b87;box-shadow:0 0 0 2px rgba(22,123,135,.08)}
@@ -75,17 +112,16 @@
       .inactive-wa-panel textarea{width:100%;min-height:82px;border:1px solid #d8e0e3;border-radius:11px;padding:9px 10px;resize:vertical}
       .inactive-wa-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
       @media(max-width:800px){
-        #inactiveClientsModal{
-          padding:9px;
-          overflow-y:auto;
-          overflow-x:hidden;
+        #inactiveClientsModal.modal-backdrop{
+          padding:9px 9px 44px!important;
+          overflow-y:scroll!important;
+          overflow-x:hidden!important;
         }
-        .inactive-modal-card{
-          width:min(100%,720px);
-          height:auto;
-          max-height:none;
-          display:block;
-          overflow:visible;
+        #inactiveClientsModal .inactive-modal-card{
+          width:min(100%,720px)!important;
+          height:auto!important;
+          max-height:none!important;
+          overflow:visible!important;
         }
         .inactive-head{
           position:static;
@@ -128,15 +164,15 @@
         .inactive-results,.inactive-filters,.inactive-toolbar{overflow:visible}
       }
       @media(max-width:520px){
-        #inactiveClientsModal{
-          padding:6px;
+        #inactiveClientsModal.modal-backdrop{
+          padding:6px 6px 34px!important;
         }
-        .inactive-modal-card{
-          width:100%;
-          height:auto;
-          max-height:none;
+        #inactiveClientsModal .inactive-modal-card{
+          width:100%!important;
+          height:auto!important;
+          max-height:none!important;
           border-radius:16px;
-          overflow:visible;
+          overflow:visible!important;
         }
         .inactive-head{
           align-items:center;
@@ -299,16 +335,24 @@
     };
     $('#inactiveOpenNext').onclick=openNext;
     modal.addEventListener('click',e=>{if(e.target===modal)close()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('show'))close()});
     ready=true;
     return true;
   }
 
   function open(){
     if(!ensure())return;
-    $('#inactiveClientsModal').classList.add('show');
+    document.body.classList.add('inactive-modal-open');
+    const modal=$('#inactiveClientsModal');
+    modal.classList.add('show');
+    modal.scrollTop=0;
     loadServices();
   }
-  function close(){hideServiceMenu();$('#inactiveClientsModal')?.classList.remove('show')}
+  function close(){
+    hideServiceMenu();
+    $('#inactiveClientsModal')?.classList.remove('show');
+    document.body.classList.remove('inactive-modal-open');
+  }
 
   function hideServiceMenu(){ $('#inactiveServiceMenu')?.classList.remove('show'); }
 
