@@ -330,20 +330,10 @@
 /* V4.4.80 · Estado inicial sem ficha selecionada */
 .editor.no-selection{
   min-height:520px;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  overflow:hidden;
-  border-radius:18px;
 }
 .editor.no-selection > .section,
 .editor.no-selection > .footer-actions{
   display:none!important;
-}
-.editor.no-selection .sheet-head{
-  display:flex!important;
-  margin:0!important;
-  border-radius:18px 18px 0 0;
 }
 .editor.no-selection .sheet-head .os-number{
   display:none!important;
@@ -387,10 +377,6 @@
 @media(max-width:640px){
   .editor.no-selection{
     min-height:360px;
-    border-radius:16px;
-  }
-  .editor.no-selection .sheet-head{
-    border-radius:16px 16px 0 0;
   }
 }
 
@@ -2983,5 +2969,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.80 · Abre a Ficha/O.S. sem seleção automática -->
 <!-- V4.4.81 · Mantém faixa escura e ações visíveis sem ficha selecionada -->
 <!-- V4.4.82 · Cabeçalho escuro no topo com cantos arredondados -->
+<!-- V4.4.83 · Cabeçalho vazio usa exatamente a posição da ficha aberta -->
 </body>
 </html>
