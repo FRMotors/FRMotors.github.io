@@ -137,7 +137,40 @@
       .brand p{display:none}.brand h1{font-size:17px}.brand-mark{width:42px;height:42px}
       .sheet-head{align-items:flex-start;flex-direction:column}.fields{grid-template-columns:1fr}.span2,.span4{grid-column:span 1}
       .totals{grid-template-columns:1fr 1fr}.section{padding:14px}.footer-actions{padding:14px}
-      .parts-head{align-items:flex-start;flex-direction:column}.parts-head-actions{width:100%;justify-content:space-between}.suggestion-tools{flex:1;min-width:0}.suggestion-tools .suggestion-label{font-size:10px}
+      .parts-head{align-items:flex-start;flex-direction:column}
+      .parts-head-actions{
+        width:100%;
+        display:grid;
+        grid-template-columns:minmax(0,1fr);
+        gap:8px;
+      }
+      .suggestion-tools{
+        width:100%;
+        min-width:0;
+        display:grid;
+        grid-template-columns:max-content 58px max-content minmax(0,1fr);
+        align-items:center;
+        gap:6px;
+      }
+      .suggestion-tools .suggestion-label{
+        font-size:9px;
+        min-width:0;
+      }
+      .suggestion-tools .apply-all{
+        width:100%;
+        min-width:0!important;
+        white-space:nowrap;
+      }
+      .parts-head-actions #addPartBtn{
+        width:100%;
+        min-height:42px;
+        justify-content:center;
+        white-space:nowrap;
+      }
+      .parts-head #addServiceBtn{
+        width:100%;
+        min-height:42px;
+      }
     }
 
     /* V4.4.9 · mesma altura/alinhamento do cabeçalho de Orçamentos */
@@ -3033,5 +3066,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.5.11 · Compacta seletores e restaura Pesquisar preto -->
 <!-- V4.5.12 · Orçamento abre ficha importada e fornecedor em duas linhas -->
 <!-- V4.4.77 · Busca de manutenção por nome com palavra inteira -->
+<!-- V4.5.13 · Corrige sobreposicao dos botoes de pecas no celular -->
 </body>
 </html>
