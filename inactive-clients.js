@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.05 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.06 */
 (function(){
   'use strict';
 
@@ -88,6 +88,7 @@
       .inactive-service-tag button{border:0;background:transparent;color:inherit;font-weight:950;padding:0;line-height:1;cursor:pointer}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
+      .inactive-selected-count{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 10px;border-radius:10px;background:#eef4f5;border:1px solid #d7e2e5;color:#24464c;font-size:11px;font-weight:900;white-space:nowrap}
       .inactive-sort-wrap{display:flex;align-items:center;gap:6px}
       .inactive-sort-wrap label{font-size:10px;font-weight:900;text-transform:uppercase;color:#68777f;white-space:nowrap}
       .inactive-sort-wrap select{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
@@ -217,6 +218,7 @@
         .inactive-sort-wrap label{flex:0 0 auto}
         .inactive-sort-wrap select{flex:1;min-width:0;width:100%}
         .inactive-select-group{grid-column:1/-1;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px}
+        .inactive-selected-count{grid-column:1/-1;width:100%;min-height:40px}
         .inactive-select-all-box{width:auto;justify-content:flex-start;min-height:42px}
         .inactive-select-scope{width:100%;min-width:0;min-height:42px}
         .inactive-pdf-btn{grid-column:1/-1;width:100%;justify-content:center}
@@ -316,6 +318,7 @@
               <option value="without-mobile">Apenas sem número</option>
             </select>
           </div>
+          <div class="inactive-selected-count" id="inactiveSelectedCount">0 selecionados</div>
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
           <button class="btn primary inactive-pdf-btn" id="inactiveExportPdf" type="button">Exportar PDF</button>
@@ -582,6 +585,10 @@
   function updateSelection(){
     const valid=[...selected.values()].filter(r=>bestPhone(r));
     $('#inactiveWhatsapp').textContent='WhatsApp ('+selected.size+')';
+    const selectedCount=$('#inactiveSelectedCount');
+    if(selectedCount){
+      selectedCount.textContent=selected.size+' selecionado'+(selected.size===1?'':'s');
+    }
     $('#inactiveWaStatus').textContent=selected.size
       ? selected.size+' selecionado(s) · '+valid.length+' com telefone/celular utilizável.'
       : 'Nenhum cliente selecionado.';
