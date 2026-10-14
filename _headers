@@ -6,3 +6,6 @@
 
 /orcamentos.html
   Cache-Control: no-cache, no-store, must-revalidate
+
+/manifest.webmanifest
+  Cache-Control: no-cache, no-store, must-revalidate
