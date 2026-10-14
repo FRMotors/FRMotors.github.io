@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.97 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.98 */
 (function(){
   'use strict';
 
@@ -301,6 +301,7 @@
           <button class="btn" id="inactiveSelectAll" type="button">Selecionar exibidos</button>
           <button class="btn" id="inactiveClear" type="button">Limpar seleção</button>
           <button class="btn" id="inactiveExportVcf" type="button">Exportar .VCF</button>
+          <button class="btn" id="inactiveExportPdf" type="button">Exportar PDF</button>
           <button class="btn primary" id="inactiveWhatsapp" type="button">WhatsApp (0)</button>
         </div>
         <div class="inactive-wa-panel" id="inactiveWaPanel">
@@ -352,6 +353,7 @@
     });
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
     $('#inactiveExportVcf').onclick=exportSelectedVcf;
+    $('#inactiveExportPdf').onclick=exportSelectedPdf;
     $('#inactiveWhatsapp').onclick=()=>{
       if(!selected.size){
         $('#inactiveWaPanel').classList.remove('show');
@@ -603,6 +605,96 @@
       return $('#inactiveWaText').value;
     }
     return buildMessageFromTemplate(r);
+  }
+
+  function formatPhoneDisplay(value){
+    let n=String(value??'').replace(/\D/g,'');
+    if(n.startsWith('55')&&(n.length===12||n.length===13))n=n.slice(2);
+    if(n.length===11)return '('+n.slice(0,2)+') '+n.slice(2,7)+'-'+n.slice(7);
+    if(n.length===10)return '('+n.slice(0,2)+') '+n.slice(2,6)+'-'+n.slice(6);
+    return String(value??'').trim()||'—';
+  }
+
+  function exportSelectedPdf(){
+    const chosen=[...selected.values()];
+    if(!chosen.length){
+      const summary=$('#inactiveSummary');
+      if(summary)summary.textContent='Selecione pelo menos um cliente para gerar o PDF.';
+      return;
+    }
+
+    if(!window.jspdf?.jsPDF){
+      const summary=$('#inactiveSummary');
+      if(summary)summary.textContent='Não foi possível carregar o gerador de PDF neste navegador.';
+      return;
+    }
+
+    const collator=new Intl.Collator('pt-BR',{sensitivity:'base',numeric:true});
+    const ordered=[...chosen].sort((a,b)=>collator.compare(String(a.cliente||''),String(b.cliente||'')));
+
+    try{
+      const {jsPDF}=window.jspdf;
+      const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+      const now=new Date();
+      const generated=now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      const body=ordered.map((r,index)=>[
+        String(index+1),
+        'FRM - '+String(r.cliente||'Cliente sem nome').trim(),
+        formatPhoneDisplay(r.celular||r.telefone),
+        dmy(r.last_visit),
+        String(r.last_os_id||'—'),
+        String(r.placa||'—')
+      ]);
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(16);
+      doc.text('FR Motors - Lista de clientes',14,16);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9);
+      doc.text('Clientes selecionados: '+ordered.length+' | Gerado em '+generated,14,22);
+
+      if(typeof doc.autoTable!=='function'){
+        throw new Error('Plugin AutoTable indisponível');
+      }
+
+      doc.autoTable({
+        startY:27,
+        head:[['#','Cliente','Telefone','Última visita','O.S.','Placa']],
+        body,
+        theme:'grid',
+        styles:{font:'helvetica',fontSize:8,cellPadding:2.2,overflow:'linebreak',valign:'middle'},
+        headStyles:{fontStyle:'bold',fillColor:[34,48,56],textColor:[255,255,255]},
+        alternateRowStyles:{fillColor:[247,249,250]},
+        columnStyles:{
+          0:{cellWidth:8,halign:'center'},
+          1:{cellWidth:68},
+          2:{cellWidth:34},
+          3:{cellWidth:27},
+          4:{cellWidth:18,halign:'center'},
+          5:{cellWidth:24}
+        },
+        margin:{left:10,right:10,bottom:14},
+        didDrawPage:()=>{
+          const page=doc.internal.getCurrentPageInfo().pageNumber;
+          const total=doc.internal.getNumberOfPages();
+          const h=doc.internal.pageSize.getHeight();
+          doc.setFontSize(8);
+          doc.setTextColor(100);
+          doc.text('FR Motors | Página '+page+' de '+total,14,h-6);
+          doc.setTextColor(0);
+        }
+      });
+
+      const stamp=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+      doc.save('FRM_clientes_'+stamp+'.pdf');
+
+      const summary=$('#inactiveSummary');
+      if(summary)summary.textContent=ordered.length+' cliente'+(ordered.length===1?'':'s')+' exportado'+(ordered.length===1?'':'s')+' para PDF em ordem alfabética.';
+    }catch(e){
+      console.error('PDF clientes inativos',e);
+      const summary=$('#inactiveSummary');
+      if(summary)summary.textContent='Não foi possível gerar o PDF. Tente recarregar a página.';
+    }
   }
 
   function vcfEscape(value){
