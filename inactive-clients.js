@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.88 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.89 */
 (function(){
   'use strict';
 
@@ -6,6 +6,7 @@
   let rows=[];
   const selected=new Map();
   let serviceLoaded=false;
+  let serviceCatalog=[];
   const defaultWhatsappTemplate='Olá, {nome}! Tudo bem? Aqui é da FR Motors. Vimos que já faz um tempo desde a última manutenção do seu veículo {veiculo}. Se quiser, podemos verificar como estão os itens de manutenção e agendar uma avaliação.';
   let whatsappTemplate=defaultWhatsappTemplate;
   let previewClientId=null;
@@ -41,6 +42,11 @@
       .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc}
       .inactive-field{display:grid;gap:5px;min-width:0}.inactive-field label{font-size:9px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
       .inactive-field input{min-width:0;width:100%;min-height:42px;padding:8px 10px;border:1px solid #d8e0e3;border-radius:11px;background:#fff}
+      .inactive-service-field{position:relative}
+      .inactive-service-menu{display:none;position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);max-height:210px;overflow-y:auto;background:#fff;border:1px solid #d7e0e3;border-radius:12px;box-shadow:0 10px 24px rgba(23,33,38,.18);padding:5px}
+      .inactive-service-menu.show{display:block}
+      .inactive-service-choice{display:block;width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:9px;font-size:12px;font-weight:800;color:#172126}
+      .inactive-service-choice:hover,.inactive-service-choice:focus{background:#f0f5f6;outline:none}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
       .inactive-results{overflow:auto;padding:14px 20px 22px;background:#f6f8f9}
@@ -219,7 +225,7 @@
           <div class="inactive-field"><label>Data-base</label><input id="inactiveDate" type="date"></div>
           <div class="inactive-field"><label>Considerar clientes desde</label><input id="inactiveMinDate" type="date"></div>
           <div class="inactive-field"><label>Sem retornar há</label><input id="inactiveMonths" type="number" min="1" max="120" value="6" placeholder="Meses"></div>
-          <div class="inactive-field"><label>Mão de obra / serviço</label><input id="inactiveService" list="inactiveServiceList" placeholder="Ex.: troca de óleo"><datalist id="inactiveServiceList"></datalist></div>
+          <div class="inactive-field inactive-service-field"><label>Mão de obra / serviço</label><input id="inactiveService" list="inactiveServiceList" placeholder="Ex.: troca de óleo" autocomplete="off"><datalist id="inactiveServiceList"></datalist><div id="inactiveServiceMenu" class="inactive-service-menu"></div></div>
           <div class="inactive-field"><label>Cliente, placa ou O.S.</label><input id="inactiveSearch" placeholder="Pesquisa opcional"></div>
           <button class="btn primary" id="inactiveSearchBtn" type="button">Pesquisar</button>
         </div>
@@ -258,7 +264,8 @@
     $('#inactiveClose').onclick=close;
     $('#inactiveSearchBtn').onclick=search;
     $('#inactiveSearch').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
-    $('#inactiveService').addEventListener('focus',loadServices,{once:false});
+    $('#inactiveService').addEventListener('focus',async()=>{await loadServices();showServiceMenu()});
+    $('#inactiveService').addEventListener('input',showServiceMenu);
     $('#inactiveSelectAll').onclick=()=>{rows.forEach(r=>selected.set(String(r.cod_cliente),r));render();updateSelection()};
     $('#inactiveClear').onclick=()=>{selected.clear();render();updateSelection()};
     $('#inactiveWhatsapp').onclick=()=>{
@@ -289,19 +296,37 @@
     $('#inactiveClientsModal').classList.add('show');
     loadServices();
   }
-  function close(){$('#inactiveClientsModal')?.classList.remove('show')}
+  function close(){hideServiceMenu();$('#inactiveClientsModal')?.classList.remove('show')}
+
+  function hideServiceMenu(){ $('#inactiveServiceMenu')?.classList.remove('show'); }
+
+  function showServiceMenu(){
+    const box=$('#inactiveServiceMenu');
+    const input=$('#inactiveService');
+    if(!box||!input||!serviceCatalog.length)return;
+    const q=input.value.trim().toLowerCase();
+    const found=serviceCatalog.filter(x=>!q||String(x.descricao||'').toLowerCase().includes(q)).slice(0,8);
+    box.innerHTML=found.map(x=>'<button type="button" class="inactive-service-choice">'+esc(x.descricao||'')+'</button>').join('');
+    box.querySelectorAll('.inactive-service-choice').forEach(b=>b.addEventListener('click',()=>{
+      input.value=b.textContent||'';
+      hideServiceMenu();
+    }));
+    box.classList.toggle('show',found.length>0);
+  }
 
   async function loadServices(){
     if(serviceLoaded)return;
     try{
       const {data,error}=await db.rpc('shoficina_servicos_catalogo',{p_search:null,p_limit:120});
       if(error)throw error;
-      $('#inactiveServiceList').innerHTML=(data||[]).map(x=>'<option value="'+esc(x.descricao)+'">'+esc(x.ocorrencias)+' ocorrências</option>').join('');
+      serviceCatalog=data||[];
+      $('#inactiveServiceList').innerHTML=serviceCatalog.map(x=>'<option value="'+esc(x.descricao)+'">'+esc(x.ocorrencias)+' ocorrências</option>').join('');
       serviceLoaded=true;
     }catch(e){console.warn('Catálogo de serviços',e)}
   }
 
   async function search(){
+    hideServiceMenu();
     const summary=$('#inactiveSummary'),box=$('#inactiveResults');
     const date=$('#inactiveDate').value;
     const months=Math.max(1,Number($('#inactiveMonths').value)||6);
