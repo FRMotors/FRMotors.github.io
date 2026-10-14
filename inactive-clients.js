@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.79 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.85 */
 (function(){
   'use strict';
 
@@ -41,6 +41,9 @@
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
       .inactive-results{overflow:auto;padding:14px 20px 22px;background:#f6f8f9}
+      .inactive-results::-webkit-scrollbar,.inactive-filters::-webkit-scrollbar{width:7px}
+      .inactive-results::-webkit-scrollbar-thumb,.inactive-filters::-webkit-scrollbar-thumb{background:#b9c4c8;border-radius:999px}
+      .inactive-results::-webkit-scrollbar-track,.inactive-filters::-webkit-scrollbar-track{background:transparent}
       .inactive-empty{padding:28px;text-align:center;color:#78868c;background:#fff;border:1px dashed #d7e0e3;border-radius:14px}
       .inactive-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;background:#fff;border:1px solid #dfe5e8;border-radius:15px;padding:13px;margin-bottom:10px;align-items:start}
       .inactive-card.selected{border-color:#167b87;box-shadow:0 0 0 2px rgba(22,123,135,.08)}
@@ -55,10 +58,115 @@
       .inactive-wa-panel textarea{width:100%;min-height:82px;border:1px solid #d8e0e3;border-radius:11px;padding:9px 10px;resize:vertical}
       .inactive-wa-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
       @media(max-width:800px){
-        .inactive-filters{grid-template-columns:1fr 1fr}.inactive-filters .inactive-field:nth-child(4),.inactive-filters .inactive-field:nth-child(5){grid-column:1/-1}.inactive-filters>button{grid-column:1/-1;width:100%}
-        .inactive-card{grid-template-columns:auto minmax(0,1fr)}.inactive-age{grid-column:2;text-align:left;display:flex;gap:5px;align-items:baseline}
+        .inactive-modal-card{
+          width:min(100%,720px);
+          height:calc(100dvh - 18px);
+          max-height:calc(100dvh - 18px);
+        }
+        .inactive-filters{
+          grid-template-columns:1fr 1fr;
+          flex:0 0 auto;
+          max-height:38dvh;
+          overflow-y:auto;
+          overscroll-behavior:contain;
+        }
+        .inactive-filters .inactive-field:nth-child(4),
+        .inactive-filters .inactive-field:nth-child(5){grid-column:1/-1}
+        .inactive-filters>button{grid-column:1/-1;width:100%}
+        .inactive-toolbar{flex:0 0 auto}
+        .inactive-results{
+          flex:1 1 auto;
+          min-height:230px;
+          max-height:none;
+          overflow-y:auto;
+          overflow-x:hidden;
+          overscroll-behavior:contain;
+          -webkit-overflow-scrolling:touch;
+          scrollbar-gutter:stable;
+        }
+        .inactive-card{
+          grid-template-columns:auto minmax(0,1fr) auto;
+          align-items:start;
+          min-width:0;
+        }
+        .inactive-age{
+          grid-column:auto;
+          text-align:right;
+          display:block;
+        }
       }
-      @media(max-width:520px){.inactive-filters{grid-template-columns:1fr}.inactive-filters .inactive-field{grid-column:1!important}.inactive-toolbar .btn{flex:1}.inactive-results,.inactive-filters,.inactive-head,.inactive-toolbar,.inactive-wa-panel{padding-left:12px;padding-right:12px}}
+      @media(max-width:520px){
+        .inactive-modal-card{
+          width:calc(100vw - 12px);
+          height:calc(100dvh - 12px);
+          max-height:calc(100dvh - 12px);
+          border-radius:16px;
+        }
+        .inactive-head{
+          flex:0 0 auto;
+          align-items:center;
+          padding-top:12px;
+          padding-bottom:12px;
+        }
+        .inactive-head p{display:none}
+        .inactive-filters{
+          grid-template-columns:1fr;
+          max-height:34dvh;
+          padding-top:10px;
+          padding-bottom:10px;
+        }
+        .inactive-filters .inactive-field{grid-column:1!important}
+        .inactive-toolbar{
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:7px;
+        }
+        .inactive-summary{
+          grid-column:1/-1;
+          margin-right:0;
+        }
+        .inactive-toolbar .btn{
+          width:100%;
+          min-width:0;
+          padding-left:8px;
+          padding-right:8px;
+          font-size:11px;
+        }
+        #inactiveWhatsapp{grid-column:1/-1}
+        .inactive-results{
+          min-height:260px;
+          padding-top:10px;
+          padding-bottom:14px;
+        }
+        .inactive-card{
+          gap:9px;
+          padding:11px 10px;
+          margin-bottom:8px;
+          border-radius:12px;
+        }
+        .inactive-check{
+          width:20px;
+          height:20px;
+          margin-top:2px;
+        }
+        .inactive-title{font-size:13px}
+        .inactive-sub{font-size:11px}
+        .inactive-chips{gap:4px;margin-top:6px}
+        .inactive-chip{font-size:9px;padding:3px 5px}
+        .inactive-contact{font-size:11px;margin-top:7px}
+        .inactive-services{margin-top:8px}
+        .inactive-age strong{font-size:16px}
+        .inactive-age span{font-size:8px}
+        .inactive-results,
+        .inactive-filters,
+        .inactive-head,
+        .inactive-toolbar,
+        .inactive-wa-panel{padding-left:10px;padding-right:10px}
+        .inactive-wa-panel{
+          max-height:42dvh;
+          overflow-y:auto;
+        }
+      }
       @media print{#inactiveClientsModal,.inactive-btn{display:none!important}}
     `;
     document.head.appendChild(style);
