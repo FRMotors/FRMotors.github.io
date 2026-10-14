@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.10 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.11 */
 (function(){
   'use strict';
 
@@ -89,6 +89,21 @@
       #inactiveClientsModal .btn:active{
         background:#eaf0f2!important;
       }
+      #inactiveClientsModal #inactiveSearchBtn{
+        background:#172126!important;
+        color:#fff!important;
+        border-color:#172126!important;
+      }
+      #inactiveClientsModal #inactiveSearchBtn:hover,
+      #inactiveClientsModal #inactiveSearchBtn:focus{
+        background:#26363d!important;
+        color:#fff!important;
+        border-color:#26363d!important;
+      }
+      #inactiveClientsModal #inactiveSearchBtn:active{
+        background:#0f171b!important;
+        color:#fff!important;
+      }
       .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc;overflow:visible}
       .inactive-field{display:grid;gap:5px;min-width:0}.inactive-field label{font-size:9px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
       .inactive-field input{min-width:0;width:100%;min-height:42px;padding:8px 10px;border:1px solid #d8e0e3;border-radius:11px;background:#fff}
@@ -134,15 +149,15 @@
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
       .inactive-selected-count{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 10px;border-radius:10px;background:#eef4f5;border:1px solid #d7e2e5;color:#24464c;font-size:11px;font-weight:900;white-space:nowrap}
-      .inactive-sort-wrap{display:flex;align-items:center;gap:6px}
+      .inactive-sort-wrap{display:inline-flex;align-items:center;gap:6px;width:fit-content;max-width:100%;flex:0 0 auto}
       .inactive-sort-wrap label{font-size:10px;font-weight:900;text-transform:uppercase;color:#68777f;white-space:nowrap}
-      .inactive-sort-wrap select{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
+      .inactive-sort-wrap select{width:max-content;max-width:100%;min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
       .inactive-select-all-box{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 9px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;color:#26343a;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap}
       .inactive-select-all-box input{width:18px;height:18px;margin:0;accent-color:#167b87}
       .inactive-pdf-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important}
-      .inactive-select-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+      .inactive-select-group{display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;width:fit-content;max-width:100%;flex:0 0 auto}
       .inactive-select-all-box{gap:7px;flex-wrap:nowrap}
-      .inactive-select-scope{min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
+      .inactive-select-scope{width:max-content;max-width:100%;min-height:38px;border:1px solid #d8e0e3;border-radius:10px;background:#fff;padding:7px 30px 7px 9px;color:#26343a;font-weight:800;font-size:11px}
       .inactive-alpha-letter{font-size:12px;font-weight:950;color:#53636a;padding:10px 4px 6px;letter-spacing:.05em;text-transform:uppercase}
       #inactiveClientsModal .inactive-head,
       #inactiveClientsModal .inactive-filters,
@@ -261,13 +276,13 @@
           padding-right:8px;
           font-size:11px;
         }
-        .inactive-sort-wrap{grid-column:1/-1;width:100%}
+        .inactive-sort-wrap{grid-column:1/-1;width:fit-content;max-width:100%}
         .inactive-sort-wrap label{flex:0 0 auto}
-        .inactive-sort-wrap select{flex:1;min-width:0;width:100%}
-        .inactive-select-group{grid-column:1/-1;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px}
-        .inactive-selected-count{grid-column:1/-1;width:100%;min-height:40px}
+        .inactive-sort-wrap select{width:max-content;max-width:calc(100vw - 120px);min-width:0}
+        .inactive-select-group{grid-column:1/-1;width:fit-content;max-width:100%;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+        .inactive-selected-count{grid-column:1/-1;width:fit-content;max-width:100%;min-height:40px}
         .inactive-select-all-box{width:auto;justify-content:flex-start;min-height:42px}
-        .inactive-select-scope{width:100%;min-width:0;min-height:42px}
+        .inactive-select-scope{width:max-content;max-width:calc(100vw - 36px);min-width:0;min-height:42px}
         #inactiveExportVcf{grid-column:1/-1;width:100%;justify-content:center}
         .inactive-pdf-btn{grid-column:1/-1;width:100%;justify-content:center}
         #inactiveWhatsapp{grid-column:1/-1}
