@@ -2894,20 +2894,17 @@ CORREIA DENTADA"></textarea>
 </div>
 
 <div id="importarFichaModal" class="orc-flow-modal" aria-hidden="true">
-  <div class="orc-flow-card" role="dialog" aria-modal="true" aria-labelledby="importarFichaTitulo">
+  <div class="orc-flow-card orc-import-card" role="dialog" aria-modal="true" aria-labelledby="importarFichaTitulo">
     <div class="orc-flow-head">
       <div>
         <strong id="importarFichaTitulo">Importar orçamento para Ficha/O.S.</strong>
-        <span>Escolha a autopeça que será usada como fornecedor das peças.</span>
+        <span>Escolha separadamente onde cada peça será comprada e qual marca/preço será usado.</span>
       </div>
       <button type="button" class="orc-flow-close" onclick="fecharImportarFicha()" aria-label="Fechar">×</button>
     </div>
-    <label class="orc-flow-field">
-      <span>Autopeça / fornecedor</span>
-      <select id="importarFichaLoja" onchange="atualizarResumoImportacaoFicha()"></select>
-    </label>
+    <div id="importarFichaItens" class="orc-import-items"></div>
     <div id="importarFichaResumo" class="orc-import-summary"></div>
-    <div class="orc-flow-note">Quando houver mais de uma marca com preço para a mesma peça, será usada a opção de menor valor naquela autopeça.</div>
+    <div class="orc-flow-note">Você pode misturar autopeças no mesmo orçamento. O fornecedor da ficha será salvo com a autopeça na primeira linha e a marca logo abaixo.</div>
     <div class="orc-flow-actions">
       <button type="button" class="orc-btn neutral" onclick="fecharImportarFicha()">Cancelar</button>
       <button type="button" class="orc-btn primary" id="importarFichaConfirmar" onclick="importarOrcamentoParaFicha()">Criar ficha</button>
@@ -2937,6 +2934,13 @@ CORREIA DENTADA"></textarea>
 .orc-flow-field{display:grid;gap:6px}
 .orc-flow-field>span{font-size:10px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
 .orc-flow-field select{width:100%;min-height:44px;border:1px solid #ccd7db;border-radius:11px;background:#fff;padding:8px 10px;color:#172126;font-weight:800}
+.orc-import-card{width:min(940px,100%)}
+.orc-import-items{display:grid;gap:8px;max-height:min(56vh,560px);overflow-y:auto;padding:2px 2px 4px}
+.orc-import-item{display:grid;grid-template-columns:minmax(180px,1.15fr) minmax(180px,.9fr) minmax(220px,1.15fr) auto;gap:8px;align-items:center;padding:10px;border:1px solid #e0e6e8;border-radius:12px;background:#fff}
+.orc-import-item-name{min-width:0;font-size:12px;font-weight:900;color:#172126;overflow-wrap:anywhere}
+.orc-import-item select{width:100%;min-width:0;min-height:40px;border:1px solid #ccd7db;border-radius:10px;background:#fff;padding:7px 9px;color:#172126;font-weight:750;font-size:11px}
+.orc-import-item-cost{min-width:92px;text-align:right;font-size:11px;font-weight:900;color:#33444b;white-space:nowrap}
+.orc-import-item.missing{background:#fff9f2;border-color:#ecdcc7}
 .orc-import-summary{margin-top:12px;padding:12px;border:1px solid #e0e6e8;border-radius:12px;background:#f7f9fa;color:#33444b;font-size:12px;line-height:1.55}
 .orc-flow-note{margin-top:10px;color:#718087;font-size:11px;line-height:1.45}
 @media(max-width:600px){
@@ -2944,6 +2948,9 @@ CORREIA DENTADA"></textarea>
   .orc-flow-card{border-radius:15px;padding:14px;margin-top:10px}
   .orc-bulk-textarea{min-height:260px;font-size:16px}
   .orc-flow-actions .orc-btn{flex:1;min-width:0}
+  .orc-import-items{max-height:none}
+  .orc-import-item{grid-template-columns:1fr;gap:7px}
+  .orc-import-item-cost{text-align:left;min-width:0}
 }
 </style>
 
@@ -3809,88 +3816,216 @@ function escolherOpcaoDaLoja(linha, lojaIndex){
     return comPreco[0] || opcoes[0];
 }
 
-function pecasParaFichaDaLoja(lojaIndex){
-    const loja = lojas[lojaIndex];
-    if(!loja) return [];
-    const desconto = Math.max(0,parsePercentual(loja.perc || 0));
+let importarFichaLinhas = [];
 
-    return capturarLinhas()
-        .map(linha=>{
-            const nome = normalizarTexto(linha.peca || '').trim();
-            const opcao = escolherOpcaoDaLoja(linha,lojaIndex);
-            if(!nome || !opcao) return null;
-            const custo = opcao.valor > 0 ? opcao.valor * (1 - desconto/100) : 0;
-            const fornecedor = [normalizarTexto(loja.nome || '').trim(), opcao.marca].filter(Boolean).join('\n');
-            return {nome,marca:opcao.marca,fornecedor,custo};
-        })
-        .filter(Boolean);
+function custoFinalOpcao(lojaIndex, opcao){
+    const loja = lojas[lojaIndex];
+    const valor = Number(opcao?.valor || 0);
+    const desconto = Math.max(0,parsePercentual(loja?.perc || 0));
+    return valor > 0 ? valor * (1 - desconto/100) : 0;
+}
+
+function melhorEscolhaParaLinha(linha){
+    let melhor = null;
+
+    lojas.forEach((_,lojaIndex)=>{
+        opcoesValidasDaLoja(linha,lojaIndex).forEach((opcao,opcaoIndex)=>{
+            const custo = custoFinalOpcao(lojaIndex,opcao);
+            if(custo <= 0) return;
+            if(!melhor || custo < melhor.custo){
+                melhor = {lojaIndex,opcaoIndex,custo};
+            }
+        });
+    });
+
+    if(melhor) return melhor;
+
+    for(let lojaIndex=0;lojaIndex<lojas.length;lojaIndex++){
+        const opcoes=opcoesValidasDaLoja(linha,lojaIndex);
+        if(opcoes.length) return {lojaIndex,opcaoIndex:0,custo:custoFinalOpcao(lojaIndex,opcoes[0])};
+    }
+
+    return {lojaIndex:-1,opcaoIndex:-1,custo:0};
+}
+
+function optionsLojasImportacao(linha, selecionada){
+    const options=['<option value="-1">Não importar esta peça</option>'];
+
+    lojas.forEach((loja,lojaIndex)=>{
+        const opcoes=opcoesValidasDaLoja(linha,lojaIndex);
+        const disabled=opcoes.length?'':' disabled';
+        const selected=Number(selecionada)===lojaIndex?' selected':'';
+        const label=normalizarTexto(loja.nome||('LOJA '+(lojaIndex+1)))+(opcoes.length?'':' · sem cotação');
+        options.push('<option value="'+lojaIndex+'"'+disabled+selected+'>'+escapeHtml(label)+'</option>');
+    });
+
+    return options.join('');
+}
+
+function optionsMarcasImportacao(linha, lojaIndex, selecionada){
+    if(lojaIndex < 0) return '<option value="-1">Sem opção</option>';
+
+    const opcoes=opcoesValidasDaLoja(linha,lojaIndex);
+    if(!opcoes.length) return '<option value="-1">Sem cotação nesta loja</option>';
+
+    return opcoes.map((opcao,opcaoIndex)=>{
+        const custo=custoFinalOpcao(lojaIndex,opcao);
+        const marca=opcao.marca || 'SEM MARCA';
+        const valor=opcao.valor>0 ? moeda(opcao.valor) : 'sem valor';
+        const final=custo>0 ? ' · final '+moeda(custo) : '';
+        const selected=Number(selecionada)===opcaoIndex?' selected':'';
+        return '<option value="'+opcaoIndex+'"'+selected+'>'+escapeHtml(marca+' · '+valor+final)+'</option>';
+    }).join('');
+}
+
+function renderImportarFichaItens(){
+    const box=document.getElementById('importarFichaItens');
+    if(!box) return;
+
+    box.innerHTML=importarFichaLinhas.map((linha,indice)=>{
+        const escolha=linha._importChoice || melhorEscolhaParaLinha(linha);
+        linha._importChoice=escolha;
+        const custo=escolha.lojaIndex>=0
+            ? custoFinalOpcao(escolha.lojaIndex,opcoesValidasDaLoja(linha,escolha.lojaIndex)[escolha.opcaoIndex])
+            : 0;
+
+        return '<div class="orc-import-item'+(escolha.lojaIndex<0?' missing':'')+'" data-import-index="'+indice+'">'+
+            '<div class="orc-import-item-name">'+escapeHtml(normalizarTexto(linha.peca||'PEÇA SEM DESCRIÇÃO'))+'</div>'+
+            '<select class="orc-import-store" aria-label="Autopeça para '+escapeHtml(normalizarTexto(linha.peca||'peça'))+'">'+
+                optionsLojasImportacao(linha,escolha.lojaIndex)+
+            '</select>'+
+            '<select class="orc-import-option" aria-label="Marca e preço para '+escapeHtml(normalizarTexto(linha.peca||'peça'))+'">'+
+                optionsMarcasImportacao(linha,escolha.lojaIndex,escolha.opcaoIndex)+
+            '</select>'+
+            '<div class="orc-import-item-cost">'+(custo>0?moeda(custo):'—')+'</div>'+
+        '</div>';
+    }).join('');
+
+    box.querySelectorAll('.orc-import-item').forEach(row=>{
+        const indice=Number(row.dataset.importIndex);
+        const lojaSelect=row.querySelector('.orc-import-store');
+        const opcaoSelect=row.querySelector('.orc-import-option');
+
+        lojaSelect.addEventListener('change',()=>{
+            const linha=importarFichaLinhas[indice];
+            const lojaIndex=Number(lojaSelect.value);
+            const opcoes=lojaIndex>=0?opcoesValidasDaLoja(linha,lojaIndex):[];
+            let opcaoIndex=-1;
+
+            if(opcoes.length){
+                opcaoIndex=opcoes
+                    .map((opcao,i)=>({i,custo:custoFinalOpcao(lojaIndex,opcao)}))
+                    .filter(x=>x.custo>0)
+                    .sort((a,b)=>a.custo-b.custo)[0]?.i ?? 0;
+            }
+
+            linha._importChoice={lojaIndex,opcaoIndex,custo:0};
+            renderImportarFichaItens();
+            atualizarResumoImportacaoFicha();
+        });
+
+        opcaoSelect.addEventListener('change',()=>{
+            const linha=importarFichaLinhas[indice];
+            const lojaIndex=Number(lojaSelect.value);
+            const opcaoIndex=Number(opcaoSelect.value);
+            linha._importChoice={lojaIndex,opcaoIndex,custo:0};
+            renderImportarFichaItens();
+            atualizarResumoImportacaoFicha();
+        });
+    });
+}
+
+function coletarPecasEscolhidasParaFicha(){
+    return importarFichaLinhas.map(linha=>{
+        const escolha=linha._importChoice || melhorEscolhaParaLinha(linha);
+        if(escolha.lojaIndex<0 || escolha.opcaoIndex<0) return null;
+
+        const loja=lojas[escolha.lojaIndex];
+        const opcoes=opcoesValidasDaLoja(linha,escolha.lojaIndex);
+        const opcao=opcoes[escolha.opcaoIndex];
+        if(!loja || !opcao) return null;
+
+        const nome=normalizarTexto(linha.peca||'').trim();
+        if(!nome) return null;
+
+        const custo=custoFinalOpcao(escolha.lojaIndex,opcao);
+        const fornecedor=[
+            normalizarTexto(loja.nome||'').trim(),
+            normalizarTexto(opcao.marca||'').trim()
+        ].filter(Boolean).join('\n');
+
+        return {
+            nome,
+            loja:normalizarTexto(loja.nome||'').trim(),
+            marca:normalizarTexto(opcao.marca||'').trim(),
+            fornecedor,
+            custo
+        };
+    }).filter(Boolean);
 }
 
 function atualizarResumoImportacaoFicha(){
-    const select = document.getElementById('importarFichaLoja');
-    const resumo = document.getElementById('importarFichaResumo');
-    const confirmar = document.getElementById('importarFichaConfirmar');
-    if(!select || !resumo) return;
+    const resumo=document.getElementById('importarFichaResumo');
+    const confirmar=document.getElementById('importarFichaConfirmar');
+    if(!resumo) return;
 
-    const indice = Number(select.value);
-    const itens = pecasParaFichaDaLoja(indice);
-    const total = itens.reduce((s,p)=>s + Number(p.custo || 0),0);
-    const loja = lojas[indice];
+    const itens=coletarPecasEscolhidasParaFicha();
+    const total=itens.reduce((s,p)=>s+Number(p.custo||0),0);
+    const lojasUsadas=[...new Set(itens.map(x=>x.loja).filter(Boolean))];
 
     resumo.innerHTML =
-        '<strong>'+escapeHtml(normalizarTexto(loja?.nome || 'AUTOPEÇA'))+'</strong><br>'+
-        itens.length+' peça'+(itens.length===1?'':'s')+' com opção nesta loja · '+
-        '<strong>'+moeda(total)+'</strong> de custo após desconto.';
+        '<strong>'+itens.length+' peça'+(itens.length===1?'':'s')+' selecionada'+(itens.length===1?'':'s')+'</strong> · '+
+        moeda(total)+' de custo'+
+        (lojasUsadas.length?' · '+escapeHtml(lojasUsadas.join(' + ')):'')+'.';
 
-    if(confirmar) confirmar.disabled = !itens.length;
+    if(confirmar) confirmar.disabled=!itens.length;
 }
 
 function abrirImportarFicha(){
     if(!currentUser){ showAuth(); return; }
-    const linhas = capturarLinhas().filter(l=>normalizarTexto(l.peca||'').trim());
-    if(!linhas.length){
+
+    importarFichaLinhas=capturarLinhas()
+        .filter(linha=>normalizarTexto(linha.peca||'').trim())
+        .map(linha=>({...linha,_importChoice:melhorEscolhaParaLinha(linha)}));
+
+    if(!importarFichaLinhas.length){
         alert('Adicione pelo menos uma peça ao orçamento antes de criar a ficha.');
         return;
     }
 
-    const select = document.getElementById('importarFichaLoja');
-    const modal = document.getElementById('importarFichaModal');
-    if(!select || !modal) return;
+    const modal=document.getElementById('importarFichaModal');
+    if(!modal) return;
 
-    select.innerHTML = lojas.map((loja,i)=>{
-        const qtd = pecasParaFichaDaLoja(i).length;
-        return '<option value="'+i+'">'+escapeHtml(normalizarTexto(loja.nome||('LOJA '+(i+1))))+' · '+qtd+' peça'+(qtd===1?'':'s')+'</option>';
-    }).join('');
-
+    renderImportarFichaItens();
     atualizarResumoImportacaoFicha();
     modal.classList.add('show');
     modal.setAttribute('aria-hidden','false');
 }
 
 function fecharImportarFicha(){
-    const modal = document.getElementById('importarFichaModal');
+    const modal=document.getElementById('importarFichaModal');
     if(!modal) return;
     modal.classList.remove('show');
     modal.setAttribute('aria-hidden','true');
+    importarFichaLinhas=[];
 }
 
 async function importarOrcamentoParaFicha(){
     if(!currentUser){ showAuth(); return; }
 
-    const select = document.getElementById('importarFichaLoja');
-    const confirmar = document.getElementById('importarFichaConfirmar');
-    const lojaIndex = Number(select?.value || 0);
-    const loja = lojas[lojaIndex];
-    const itens = pecasParaFichaDaLoja(lojaIndex);
+    const confirmar=document.getElementById('importarFichaConfirmar');
+    const itens=coletarPecasEscolhidasParaFicha();
 
-    if(!loja || !itens.length){
-        alert('Essa autopeça não possui peças com marca ou valor preenchido neste orçamento.');
+    if(!itens.length){
+        alert('Selecione pelo menos uma peça para importar.');
         return;
     }
 
-    const fichaId = uuid();
-    const agora = new Date().toISOString();
-    const fichaPayload = {
+    const fichaId=uuid();
+    const agora=new Date().toISOString();
+    const lojasUsadas=[...new Set(itens.map(x=>x.loja).filter(Boolean))];
+
+    const fichaPayload={
         id:fichaId,
         os:null,
         cliente:null,
@@ -3903,12 +4038,12 @@ async function importarOrcamentoParaFicha(){
         ano:null,
         tecnico:null,
         servicos:'[]',
-        observacoes:'Importado de orçamento · '+normalizarTexto(loja.nome || ''),
+        observacoes:'Importado de orçamento · '+lojasUsadas.join(' + '),
         observacoes_cliente:null,
         updated_at:agora
     };
 
-    const pecasPayload = itens.map(item=>({
+    const pecasPayload=itens.map(item=>({
         id:uuid(),
         ficha_id:fichaId,
         nome:item.nome || 'Peça sem descrição',
@@ -3920,22 +4055,22 @@ async function importarOrcamentoParaFicha(){
     }));
 
     if(confirmar){
-        confirmar.disabled = true;
-        confirmar.textContent = 'Criando ficha...';
+        confirmar.disabled=true;
+        confirmar.textContent='Criando ficha...';
     }
 
     try{
-        const {error} = await db.rpc('save_ficha_v4',{p_ficha:fichaPayload,p_pecas:pecasPayload});
+        const {error}=await db.rpc('save_ficha_v4',{p_ficha:fichaPayload,p_pecas:pecasPayload});
         if(error) throw error;
         fecharImportarFicha();
-        window.location.href = './index.html?ficha='+encodeURIComponent(fichaId)+'&origem=orcamento';
+        window.location.href='./index.html?ficha='+encodeURIComponent(fichaId)+'&origem=orcamento';
     }catch(error){
         console.error(error);
         alert('Não foi possível criar a ficha a partir deste orçamento.');
     }finally{
         if(confirmar){
-            confirmar.disabled = false;
-            confirmar.textContent = 'Criar ficha';
+            confirmar.disabled=false;
+            confirmar.textContent='Criar ficha';
         }
     }
 }
@@ -5101,5 +5236,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.72 · PDF vira download real e pode notificar o Android -->
 <!-- V4.4.74 · PDF com download direto, sem confirmação interna/notificação -->
 <!-- V4.4.80 · Lista de peças e importação para Ficha/O.S. -->
+<!-- V4.4.81 · Importação mista por peça e autopeça -->
 </body>
 </html>
