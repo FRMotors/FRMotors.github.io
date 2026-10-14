@@ -4,7 +4,8 @@
   "description": "Gestão de Fichas / O.S. e Orçamentos da FR Motors",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "minimal-ui",
+  "display_override": ["minimal-ui", "browser"],
   "background_color": "#f4f6f7",
   "theme_color": "#101820",
   "icons": [
