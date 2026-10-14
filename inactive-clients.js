@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.4.90 */
+/* FR Motors · Clientes inativos e recuperação · V4.4.91 */
 (function(){
   'use strict';
 
@@ -8,7 +8,7 @@
   let serviceLoaded=false;
   let serviceCatalog=[];
   const selectedServices=[];
-  const defaultWhatsappTemplate='Olá, {nome}! Tudo bem? Aqui é da FR Motors. Vimos que já faz um tempo desde a última manutenção do seu veículo {veiculo}. Se quiser, podemos verificar como estão os itens de manutenção e agendar uma avaliação.';
+  const defaultWhatsappTemplate='Olá! Tudo bem? Aqui é da FR Motors. Passando para lembrar que já faz um tempinho desde sua última visita à nossa oficina. Se quiser, podemos fazer uma avaliação e conferir como está a manutenção do seu veículo. Estamos à disposição! 🔧';
   let whatsappTemplate=defaultWhatsappTemplate;
   let previewClientId=null;
 
@@ -37,10 +37,10 @@
     const style=document.createElement('style');
     style.textContent=`
       .inactive-btn{white-space:nowrap}
-      .inactive-modal-card{width:min(1120px,100%);max-height:min(91vh,900px);overflow:hidden;display:flex;flex-direction:column}
+      .inactive-modal-card{width:min(1120px,100%);height:min(91vh,900px);max-height:min(91vh,900px);overflow-y:auto;overflow-x:hidden;display:block;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}
       .inactive-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px;border-bottom:1px solid var(--line,#dfe5e8)}
       .inactive-head h3{margin:0 0 4px}.inactive-head p{margin:0;color:var(--muted,#68777f);font-size:12px}
-      .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc}
+      .inactive-filters{padding:14px 20px;display:grid;grid-template-columns:1.05fr 1.05fr .75fr 1.25fr 1.25fr auto;gap:9px;align-items:end;border-bottom:1px solid #e8edef;background:#fafcfc;overflow:visible}
       .inactive-field{display:grid;gap:5px;min-width:0}.inactive-field label{font-size:9px;font-weight:900;text-transform:uppercase;color:#68777f;letter-spacing:.04em}
       .inactive-field input{min-width:0;width:100%;min-height:42px;padding:8px 10px;border:1px solid #d8e0e3;border-radius:11px;background:#fff}
       .inactive-service-field{position:relative}
@@ -55,7 +55,7 @@
       .inactive-service-tag button{border:0;background:transparent;color:inherit;font-weight:950;padding:0;line-height:1;cursor:pointer}
       .inactive-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid #e8edef}
       .inactive-summary{margin-right:auto;color:#617078;font-size:12px;font-weight:750}
-      .inactive-results{overflow:auto;padding:14px 20px 22px;background:#f6f8f9}
+      .inactive-results{overflow:visible;padding:14px 20px 22px;background:#f6f8f9}
       .inactive-modal-card::-webkit-scrollbar{width:7px}
       .inactive-modal-card::-webkit-scrollbar-thumb{background:#b9c4c8;border-radius:999px}
       .inactive-modal-card::-webkit-scrollbar-track{background:transparent}
@@ -245,7 +245,7 @@
         <div class="inactive-wa-panel" id="inactiveWaPanel">
           <strong>Mensagem do próximo cliente selecionado</strong>
           <textarea id="inactiveWaText">${defaultWhatsappTemplate}</textarea>
-          <div class="inactive-summary">Nome e veículo são preenchidos automaticamente conforme o cliente da fila.</div>
+          <div class="inactive-summary">Mensagem geral para os clientes selecionados. Você pode editar antes de abrir o WhatsApp.</div>
           <div class="inactive-wa-actions">
             <button class="btn" id="inactiveRestoreTemplate" type="button">Restaurar mensagem</button>
             <button class="btn" id="inactiveCopyPhones" type="button">Copiar contatos</button>
