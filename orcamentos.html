@@ -1655,7 +1655,7 @@ body > header.orc-hero::after{
 .dados-orcamento::before{display:none!important;}
 .orc-fields-grid{
     display:grid;
-    grid-template-columns:170px minmax(220px,1fr) 180px minmax(190px,.8fr);
+    grid-template-columns:190px minmax(240px,1fr) 210px;
     gap:12px;
     margin-top:12px;
 }
@@ -1834,8 +1834,6 @@ tfoot td:first-child{
     border-radius:10px!important;box-shadow:none!important;
 }
 .btn-nome:hover{background:#eef3f4!important;}
-.btn-nome-main{display:block;font-weight:850;line-height:1.3}
-.btn-nome-tech{display:block;margin-top:3px;color:#68777f;font-size:10px;font-weight:750;line-height:1.25}
 .btn-delete{background:#fff!important;color:#a13434!important;border:1px solid #ead9d9!important;box-shadow:none!important;}
 .btn-delete:hover{background:#fff5f5!important;}
 
@@ -1844,6 +1842,7 @@ tfoot td:first-child{
     .orc-hero-badge{display:none;}
     .main{padding:0 12px 22px!important;}
     .orc-fields-grid{grid-template-columns:1fr 1fr;}
+    .orc-field:nth-child(2){grid-column:1 / -1;grid-row:2;}
 }
 @media(max-width:560px){
     body > header.orc-hero{min-height:76px;padding:15px 92px 15px 16px!important;border-radius:16px;}
@@ -1852,6 +1851,7 @@ tfoot td:first-child{
     .orc-hero .menu-btn{right:12px!important;min-width:42px;width:42px;padding:0!important;}
     .orc-hero .menu-btn span{display:none;}
     .orc-fields-grid{grid-template-columns:1fr;gap:10px;}
+    .orc-field:nth-child(2){grid-column:auto;grid-row:auto;}
     #linhaPerc{align-items:stretch!important;}
     #linhaPerc > strong{width:100%;margin-bottom:2px!important;}
     .orc-table-hint{display:none;}
@@ -2845,7 +2845,6 @@ body.printing .main{gap:6px!important;}
         <div class="orc-field"><label for="data">Data</label><input id="data" type="date"></div>
         <div class="orc-field"><label for="carro">Carro</label><input id="carro" placeholder="Veículo" autocomplete="on"></div>
         <div class="orc-field"><label for="placa">Placa</label><input id="placa" placeholder="ABC1D23" autocomplete="on"></div>
-        <div class="orc-field"><label for="technician">Técnico</label><input id="technician" placeholder="Responsável pela manutenção" autocomplete="on"></div>
     </div>
 </section>
 <div id="infoImpressao" class="info-impressao"></div>
@@ -3038,7 +3037,7 @@ async function getSessionOrc(){
 function mapOrcamento(row){
     return {
         id: row.id, titulo: row.titulo || 'ORÇAMENTO', data: row.data || '',
-        carro: row.carro || '', placa: row.placa || '', tecnico: row.tecnico || '',
+        carro: row.carro || '', placa: row.placa || '',
         lojas: Array.isArray(row.lojas) ? row.lojas : [],
         linhas: Array.isArray(row.linhas) ? row.linhas : [],
         created_at: row.created_at, updated_at: row.updated_at
@@ -3060,7 +3059,6 @@ function carregarOrcamentosLocais(){
             data:item.data || '',
             carro:item.carro || '',
             placa:item.placa || '',
-            tecnico:item.tecnico || '',
             lojas:Array.isArray(item.lojas) ? item.lojas : [],
             linhas:Array.isArray(item.linhas) ? item.linhas : [],
             created_at:item.created_at || item.updated_at || new Date().toISOString(),
@@ -3121,7 +3119,6 @@ async function oferecerMigracaoLocal(){
         const payload = {
             id: uuid(), titulo:item.titulo || 'ORÇAMENTO', data:item.data || null,
             carro:normalizarTexto(item.carro || '') || null, placa:normalizarTexto(item.placa || '') || null,
-            tecnico:normalizarTexto(item.tecnico || '') || null,
             lojas:Array.isArray(item.lojas) ? item.lojas : [], linhas:Array.isArray(item.linhas) ? item.linhas : [],
             updated_at:new Date().toISOString()
         };
@@ -4039,7 +4036,7 @@ async function importarOrcamentoParaFicha(){
         placa:normalizarTexto(document.getElementById('placa')?.value || '').toLocaleUpperCase('pt-BR') || null,
         motor:null,
         ano:null,
-        tecnico:normalizarTexto(document.getElementById('technician')?.value || '') || null,
+        tecnico:null,
         servicos:'[]',
         observacoes:'Importado de orçamento · '+lojasUsadas.join(' + '),
         observacoes_cliente:null,
@@ -4258,13 +4255,11 @@ function gerarLinhaInformacoes(separador = ' | '){
     const data = formatarDataBR(document.getElementById('data').value);
     const carro = normalizarTexto(document.getElementById('carro').value.trim());
     const placa = normalizarTexto(document.getElementById('placa').value.trim());
-    const tecnico = normalizarTexto(document.getElementById('technician').value.trim());
 
     const partes = [];
     if(data) partes.push(`DATA: ${data}`);
     if(carro) partes.push(`CARRO: ${carro}`);
     if(placa) partes.push(`PLACA: ${placa}`);
-    if(tecnico) partes.push(`TÉCNICO: ${tecnico}`);
 
     return partes.join(separador);
 }
@@ -4311,7 +4306,6 @@ async function salvar(){
         data: document.getElementById('data').value || null,
         carro: normalizarTexto(document.getElementById('carro').value) || null,
         placa: normalizarTexto(document.getElementById('placa').value) || null,
-        tecnico: normalizarTexto(document.getElementById('technician').value) || null,
         lojas: lojas.map(loja => ({ nome: normalizarTexto(loja.nome), perc: loja.perc })),
         linhas,
         updated_at: new Date().toISOString()
@@ -4324,7 +4318,6 @@ async function salvar(){
             data:payload.data || '',
             carro:payload.carro || '',
             placa:payload.placa || '',
-            tecnico:payload.tecnico || '',
             created_at:orcamentosCache.find(item => String(item.id) === String(id))?.created_at || new Date().toISOString()
         };
         const idx = orcamentosCache.findIndex(item => String(item.id) === String(id));
@@ -4346,7 +4339,6 @@ async function salvar(){
             data:payload.data || '',
             carro:payload.carro || '',
             placa:payload.placa || '',
-            tecnico:payload.tecnico || '',
             created_at:new Date().toISOString()
         };
         currentOrcamentoId = id;
@@ -4384,8 +4376,7 @@ function renderLista(filtro = ''){
     const orcamentos = obterOrcamentos().filter(item =>
         String(item.titulo || '').toLowerCase().includes(termo) ||
         String(item.carro || '').toLowerCase().includes(termo) ||
-        String(item.placa || '').toLowerCase().includes(termo) ||
-        String(item.tecnico || '').toLowerCase().includes(termo)
+        String(item.placa || '').toLowerCase().includes(termo)
     );
 
     if(!orcamentos.length){
@@ -4420,7 +4411,6 @@ function carregarOrcamento(id){
     document.getElementById('data').value = item.data || dataHojeISO();
     document.getElementById('carro').value = normalizarTexto(item.carro || '');
     document.getElementById('placa').value = normalizarTexto(item.placa || '');
-    document.getElementById('technician').value = normalizarTexto(item.tecnico || '');
 
     renderTabela((item.linhas || []).map(linha => ({
         ...linha,
@@ -4457,7 +4447,7 @@ async function excluirOrcamento(id){
 
 function novoOrcamento(confirmar=true){
     if(confirmar){
-        const temDados = document.getElementById('carro').value.trim() || document.getElementById('placa').value.trim() || document.getElementById('technician').value.trim() || capturarLinhas().length;
+        const temDados = document.getElementById('carro').value.trim() || document.getElementById('placa').value.trim() || capturarLinhas().length;
         if(temDados && !confirm('Criar um novo orçamento? As alterações ainda não salvas desta tela serão descartadas.')) return;
     }
     currentOrcamentoId = null;
@@ -4469,7 +4459,6 @@ function novoOrcamento(confirmar=true){
     document.getElementById('data').value = dataHojeISO();
     document.getElementById('carro').value = '';
     document.getElementById('placa').value = '';
-    document.getElementById('technician').value = '';
     renderTabela();
     renderPerc();
     atualizarInfoImpressao();
@@ -5044,7 +5033,7 @@ function escapeHtml(texto){
 }
 
 preencherDataPadrao();
-['data','carro','placa','technician'].forEach(id=>document.getElementById(id)?.addEventListener('input',atualizarInfoImpressao));
+['data','carro','placa'].forEach(id=>document.getElementById(id)?.addEventListener('input',atualizarInfoImpressao));
 document.getElementById('listaPecasTexto')?.addEventListener('input',atualizarStatusListaPecas);
 document.getElementById('listaPecasModal')?.addEventListener('click',event=>{ if(event.target===event.currentTarget) fecharListaPecas(); });
 document.getElementById('importarFichaModal')?.addEventListener('click',event=>{ if(event.target===event.currentTarget) fecharImportarFicha(); });
@@ -5249,6 +5238,5 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.74 · PDF com download direto, sem confirmação interna/notificação -->
 <!-- V4.4.80 · Lista de peças e importação para Ficha/O.S. -->
 <!-- V4.4.81 · Importação mista por peça e autopeça -->
-<!-- V4.4.82 · Técnico responsável por orçamento -->
 </body>
 </html>
