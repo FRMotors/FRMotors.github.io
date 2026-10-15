@@ -1,4 +1,4 @@
-/* FR Motors · Histórico de manutenção por O.S./placa/cliente · V4.4.78 */
+/* FR Motors · Histórico de manutenção por O.S./placa/cliente · V4.4.79 */
 (function(){
   'use strict';
 
@@ -216,6 +216,20 @@
         fetchItemsChunked('shoficina_servicos',ids,'source_line_id,source_os_id,descricao,qtd,total,custo,tecnico,inicio,fim')
       ]);
 
+      const technicianIds=[...new Set(services.map(s=>Number(s.tecnico)).filter(n=>Number.isFinite(n)&&n>0))];
+      let technicianMap=new Map();
+      if(technicianIds.length){
+        const {data:technicians,error:techniciansError}=await db
+          .from('shoficina_funcionarios')
+          .select('source_funcionario_id,nome,tecnico')
+          .in('source_funcionario_id',technicianIds);
+        if(techniciansError) throw techniciansError;
+        technicianMap=new Map((technicians||[]).map(t=>[
+          Number(t.source_funcionario_id),
+          String(t.nome||t.tecnico||'').trim()
+        ]));
+      }
+
       const partsByOs=new Map(),servicesByOs=new Map();
       parts.forEach(item=>{const k=String(item.source_os_id);if(!partsByOs.has(k))partsByOs.set(k,[]);partsByOs.get(k).push(item)});
       services.forEach(item=>{const k=String(item.source_os_id);if(!servicesByOs.has(k))servicesByOs.set(k,[]);servicesByOs.get(k).push(item)});
@@ -227,7 +241,12 @@
         ' · '+clients.size+' cliente'+(clients.size===1?'':'s')+
         ' · '+plates.size+' placa'+(plates.size===1?'':'s');
 
-      body.innerHTML=rows.map(row=>renderOs(row,partsByOs.get(String(row.source_os_id))||[],servicesByOs.get(String(row.source_os_id))||[])).join('');
+      body.innerHTML=rows.map(row=>renderOs(
+        row,
+        partsByOs.get(String(row.source_os_id))||[],
+        servicesByOs.get(String(row.source_os_id))||[],
+        technicianMap
+      )).join('');
     }catch(error){
       console.error('Histórico de manutenção:',error);
       summary.textContent='Erro ao consultar histórico.';
@@ -235,7 +254,7 @@
     }
   }
 
-  function renderOs(row,parts,services){
+  function renderOs(row,parts,services,technicianMap=new Map()){
     const vehicle=[row.marca,row.aparelho].filter(Boolean).join(' ')||'Veículo não informado';
     const plate=row.placa||'sem placa';
     const client=row.cliente||'Cliente não informado';
@@ -250,7 +269,10 @@
 
     const servicesHtml=services.length?services.map(s=>{
       const qty=Number(s.qtd)||1,totalValue=Number(s.total)||0;
-      const tecnico=Number(s.tecnico)>0?'Técnico #'+Number(s.tecnico):'';
+      const tecnicoId=Number(s.tecnico);
+      const tecnico=tecnicoId>0
+        ? (technicianMap.get(tecnicoId)||('Técnico #'+tecnicoId))
+        : '';
       return `<div class="maintenance-item"><div><strong>${escHtml(s.descricao||'Serviço')}</strong><br><span>${escHtml(qty)}x${s.inicio?' · '+escHtml(dateLabel(s.inicio)):''}</span>${tecnico?'<br><span class="maintenance-technician">'+escHtml(tecnico)+'</span>':''}</div><div class="maintenance-item-value">${escHtml(money(totalValue))}</div></div>`
     }).join(''):'<div class="maintenance-group-empty">Nenhum serviço registrado.</div>';
 
