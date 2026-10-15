@@ -2402,6 +2402,7 @@ function renderList(){
     <div class="os-item ${f.id===state.currentId?'active':''}" data-id="${f.id}">
       <strong>O.S. ${esc(f.os||'sem número')} · ${esc(f.plate||'sem placa')}</strong>
       <span>${esc(f.client||'Cliente não informado')} · ${esc(f.car||'Veículo não informado')}</span>
+      <span>${f.technician ? 'Técnico: '+esc(f.technician) : 'Técnico não informado'}</span>
     </div>`).join('') : `<div class="empty">Nenhuma ficha encontrada.</div>`;
   const toggle=$('#toggleSidebarBtn');
   if(toggle) toggle.textContent=`☰ O.S. (${list.length})`;
@@ -2479,7 +2480,8 @@ async function whatsapp(){
   const header=[
     `*FR MOTORS · O.S. ${f.os||'-'}*`,
     `${f.car||'Veículo'} ${f.year||''} · ${f.plate||'sem placa'}`,
-    f.client?`Cliente: ${f.client}`:''
+    f.client?`Cliente: ${f.client}`:'',
+    f.technician?`Técnico responsável: ${f.technician}`:''
   ].filter(Boolean).join('\n');
 
   const partsBlock=parts.length
@@ -3067,5 +3069,6 @@ document.addEventListener('mousedown', e => {
 <!-- V4.5.12 · Orçamento abre ficha importada e fornecedor em duas linhas -->
 <!-- V4.4.77 · Busca de manutenção por nome com palavra inteira -->
 <!-- V4.5.13 · Corrige sobreposicao dos botoes de pecas no celular -->
+<!-- V4.5.14 · Técnico visível no orçamento da Ficha/O.S. -->
 </body>
 </html>
