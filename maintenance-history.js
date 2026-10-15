@@ -1,4 +1,4 @@
-/* FR Motors · Histórico de manutenção por O.S./placa/cliente · V4.4.77 */
+/* FR Motors · Histórico de manutenção por O.S./placa/cliente · V4.4.78 */
 (function(){
   'use strict';
 
@@ -212,7 +212,7 @@
       const ids=rows.map(r=>r.source_os_id);
       const [parts,services]=await Promise.all([
         fetchItemsChunked('shoficina_pecas',ids,'source_line_id,source_os_id,descricao,qtd,custo,valor,dia'),
-        fetchItemsChunked('shoficina_servicos',ids,'source_line_id,source_os_id,descricao,qtd,total,custo,inicio,fim')
+        fetchItemsChunked('shoficina_servicos',ids,'source_line_id,source_os_id,descricao,qtd,total,custo,tecnico,inicio,fim')
       ]);
 
       const partsByOs=new Map(),servicesByOs=new Map();
