@@ -71,6 +71,7 @@
       .maintenance-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:9px 10px;border-top:1px solid #edf1f2;font-size:12px;align-items:start}
       .maintenance-item:first-of-type{border-top:0}
       .maintenance-item strong{font-size:12px;color:#172126}.maintenance-item span{color:#68777f;font-size:11px}
+      .maintenance-technician{display:inline-flex;margin-top:4px;padding:3px 7px;border-radius:999px;background:#eef4f5;border:1px solid #dbe5e8;color:#415159!important;font-size:10px!important;font-weight:900}
       .maintenance-item-value{font-weight:900;color:#172126;white-space:nowrap;text-align:right}
       .maintenance-group-empty{padding:12px 10px;color:#88959b;font-size:12px}
       .maintenance-totals{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid #edf1f2;color:#53636a;font-size:11px;font-weight:800}
@@ -249,7 +250,8 @@
 
     const servicesHtml=services.length?services.map(s=>{
       const qty=Number(s.qtd)||1,totalValue=Number(s.total)||0;
-      return `<div class="maintenance-item"><div><strong>${escHtml(s.descricao||'Serviço')}</strong><br><span>${escHtml(qty)}x${s.inicio?' · '+escHtml(dateLabel(s.inicio)):''}</span></div><div class="maintenance-item-value">${escHtml(money(totalValue))}</div></div>`
+      const tecnico=Number(s.tecnico)>0?'Técnico #'+Number(s.tecnico):'';
+      return `<div class="maintenance-item"><div><strong>${escHtml(s.descricao||'Serviço')}</strong><br><span>${escHtml(qty)}x${s.inicio?' · '+escHtml(dateLabel(s.inicio)):''}</span>${tecnico?'<br><span class="maintenance-technician">'+escHtml(tecnico)+'</span>':''}</div><div class="maintenance-item-value">${escHtml(money(totalValue))}</div></div>`
     }).join(''):'<div class="maintenance-group-empty">Nenhum serviço registrado.</div>';
 
     return `
