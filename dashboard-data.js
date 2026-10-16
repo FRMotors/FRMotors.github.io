@@ -1132,7 +1132,7 @@ function dParseWorkbook(workbook){
     const hoje=new Date();
     const anoAtual=hoje.getFullYear();
     const mesAtualIndex=hoje.getMonth();
-    const mesJaEncerrado=year<anoAtual || (year===anoAtual && mesIndex>=0 && mesIndex<mesAtualIndex);
+    const mesJaEncerrado=year===anoAtual && mesIndex>=0 && mesIndex<mesAtualIndex;
     const semMovimento=Math.abs(bruto)<0.005 && Math.abs(gasto)<0.005 && Math.abs(maoObra)<0.005 && Math.abs(liquido)<0.005;
     if(mesIndex>=0 && mesJaEncerrado && semMovimento && !tecnico) continue;
 
@@ -1251,8 +1251,15 @@ async function dImport(file){
     const baseName='BASE '+year;
     status.textContent='Lendo '+baseName+'...';
     const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
-    const monthlySummary=dMonthlyWorkbookSummary(wb);
+    let monthlySummary=dMonthlyWorkbookSummary(wb);
     const rows=dParseWorkbook(wb);
+    if(!monthlySummary.count){
+      monthlySummary={
+        bruto:rows.reduce((a,r)=>a+dNum(r.bruto),0),
+        count:rows.length,
+        byMonth:{}
+      };
+    }
     dSaveReconciliation(monthlySummary,file.name);
 
     status.textContent='Comparando com a nuvem...';
@@ -1316,8 +1323,9 @@ async function dImport(file){
     await dLoad();
   }catch(err){
     console.error(err);
-    alert('Não foi possível sincronizar a planilha.\n\n'+(err?.message||err));
-    status.textContent='Erro na sincronização.';
+    const detail=String(err?.message||err||'Erro desconhecido');
+    alert('Não foi possível sincronizar a planilha.\n\nAno selecionado: '+dSelectedYear()+'\n'+detail);
+    status.textContent='Erro: '+detail;
   }
 }
 
