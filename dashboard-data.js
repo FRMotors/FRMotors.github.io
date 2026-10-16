@@ -1179,7 +1179,15 @@ async function dLoad(){
 
   if(error){
     console.error(error);
-    if(status) status.textContent='Erro ao carregar indicadores.';
+    if(error.code==='PGRST303' || /jwt|token|401/i.test(String(error.message||''))){
+      currentUser=null;
+      showAuth();
+      const msg=document.getElementById('loginMsg');
+      if(msg) msg.textContent='Sua sessão expirou. Entre novamente para continuar.';
+      if(status) status.textContent='Sessão expirada. Entre novamente.';
+      return;
+    }
+    if(status) status.textContent='Erro ao carregar indicadores: '+String(error.message||error);
     return;
   }
   dashRows=(data||[]).filter(r=>dText(r.cliente));
