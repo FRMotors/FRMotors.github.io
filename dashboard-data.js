@@ -2,8 +2,23 @@
 const dashMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const dashMonths=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
 let dashRows=[];
-const DASH_BACKUP_KEY='frmotors-dashboard-last-import-backup-v1';
-const DASH_RECON_KEY='frmotors-dashboard-financial-check-v1';
+const DASH_BACKUP_PREFIX='frmotors-dashboard-last-import-backup-v2-';
+const DASH_RECON_PREFIX='frmotors-dashboard-financial-check-v2-';
+
+function dSelectedYear(){
+  const value=Number(document.getElementById('yearFilter')?.value||2026);
+  return value===2025?2025:2026;
+}
+function dBackupKey(){return DASH_BACKUP_PREFIX+dSelectedYear();}
+function dReconKey(){return DASH_RECON_PREFIX+dSelectedYear();}
+function dBaseSheetName(){return 'BASE '+dSelectedYear();}
+function dUpdateYearUi(){
+  const year=dSelectedYear();
+  const btn=document.getElementById('importExcelBtn');
+  const empty=document.getElementById('dashboardEmpty');
+  if(btn) btn.textContent='Importar Base '+year;
+  if(empty) empty.innerHTML='Importe a planilha com a aba <b>BASE '+year+'</b> para alimentar o Dashboard.';
+}
 
 /* V4.4.73 · VALORES DOS GRAFICOS POR CLIQUE/TOQUE */
 let dashChartTooltipTimer=null;
@@ -932,7 +947,7 @@ function dMonthlyWorkbookSummary(workbook){
 
 function dGetBackup(){
   try{
-    const raw=localStorage.getItem(DASH_BACKUP_KEY);
+    const raw=localStorage.getItem(dBackupKey());
     return raw?JSON.parse(raw):null;
   }catch(_){return null}
 }
@@ -962,7 +977,7 @@ function dSaveBackup(rows,sourceName){
     sourceName:sourceName||'importação',
     rows:(rows||[]).map(r=>({...r}))
   };
-  localStorage.setItem(DASH_BACKUP_KEY,JSON.stringify(payload));
+  localStorage.setItem(dBackupKey(),JSON.stringify(payload));
   dUpdateBackupUi();
 }
 
@@ -973,13 +988,13 @@ function dSaveReconciliation(sourceSummary,sourceName){
     sourceBruto:dNum(sourceSummary?.bruto),
     sourceCount:Number(sourceSummary?.count)||0
   };
-  localStorage.setItem(DASH_RECON_KEY,JSON.stringify(payload));
+  localStorage.setItem(dReconKey(),JSON.stringify(payload));
   dRenderFinancialCheck();
 }
 
 function dGetReconciliation(){
   try{
-    const raw=localStorage.getItem(DASH_RECON_KEY);
+    const raw=localStorage.getItem(dReconKey());
     return raw?JSON.parse(raw):null;
   }catch(_){return null}
 }
@@ -1037,7 +1052,7 @@ async function dUndoLastImport(){
     const {data:current,error:loadErr}=await db
       .from('indicadores_oficina')
       .select('id')
-      .eq('ano',2026)
+      .eq('ano',dSelectedYear())
       .range(0,4999);
     if(loadErr) throw loadErr;
 
@@ -1061,7 +1076,7 @@ async function dUndoLastImport(){
       if(upErr) throw upErr;
     }
 
-    localStorage.removeItem(DASH_BACKUP_KEY);
+    localStorage.removeItem(dBackupKey());
     if(status) status.textContent='Última importação desfeita com sucesso.';
     dUpdateBackupUi();
     await dLoad();
@@ -1073,11 +1088,13 @@ async function dUndoLastImport(){
 }
 
 function dParseWorkbook(workbook){
-  const sheetName=workbook.SheetNames.find(n=>dNorm(n)==='BASE 2026');
-  if(!sheetName) throw new Error('A planilha não possui a aba "BASE 2026".');
+  const year=dSelectedYear();
+  const baseName='BASE '+year;
+  const sheetName=workbook.SheetNames.find(n=>dNorm(n)===dNorm(baseName));
+  if(!sheetName) throw new Error('A planilha não possui a aba "'+baseName+'".');
 
   const matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,defval:null,raw:true});
-  if(matrix.length<2) throw new Error('A aba BASE 2026 está vazia.');
+  if(matrix.length<2) throw new Error('A aba '+baseName+' está vazia.');
 
   const h=(matrix[0]||[]).map(dNorm);
   const find=(...names)=>h.findIndex(x=>names.map(dNorm).includes(x));
@@ -1094,7 +1111,7 @@ function dParseWorkbook(workbook){
     pagamento:find('PAGAMENTO'),
     status:find('STATUS','LIQ / BRUTO','LIQ >= BRUTO')
   };
-  if(ix.mes<0||ix.os<0||ix.cliente<0) throw new Error('A BASE 2026 não está no formato esperado.');
+  if(ix.mes<0||ix.os<0||ix.cliente<0) throw new Error('A '+baseName+' não está no formato esperado.');
 
   const byOs=new Map();
   for(const r of matrix.slice(1)){
@@ -1112,12 +1129,15 @@ function dParseWorkbook(workbook){
     const tecnico=dText(r[ix.tecnico]).toLocaleUpperCase('pt-BR');
 
     const mesIndex=dashMonths.findIndex(m=>dNorm(m)===dNorm(mes));
-    const mesAtualIndex=new Date().getMonth();
+    const hoje=new Date();
+    const anoAtual=hoje.getFullYear();
+    const mesAtualIndex=hoje.getMonth();
+    const mesJaEncerrado=year<anoAtual || (year===anoAtual && mesIndex>=0 && mesIndex<mesAtualIndex);
     const semMovimento=Math.abs(bruto)<0.005 && Math.abs(gasto)<0.005 && Math.abs(maoObra)<0.005 && Math.abs(liquido)<0.005;
-    if(mesIndex>=0 && mesIndex<mesAtualIndex && semMovimento && !tecnico) continue;
+    if(mesIndex>=0 && mesJaEncerrado && semMovimento && !tecnico) continue;
 
     const row={
-      ano:2026,
+      ano:year,
       mes,
       os,
       cliente,
@@ -1135,19 +1155,21 @@ function dParseWorkbook(workbook){
     byOs.set(os,row);
   }
   const rows=[...byOs.values()];
-  if(!rows.length) throw new Error('Nenhuma O.S. válida foi encontrada em BASE 2026.');
+  if(!rows.length) throw new Error('Nenhuma O.S. válida foi encontrada em '+baseName+'.');
   return rows;
 }
 
 async function dLoad(){
   if(!currentUser) return;
   const status=document.getElementById('importStatus');
-  if(status) status.textContent='Carregando indicadores...';
+  const year=dSelectedYear();
+  dUpdateYearUi();
+  if(status) status.textContent='Carregando indicadores de '+year+'...';
 
   const {data,error}=await db
     .from('indicadores_oficina')
     .select('*')
-    .eq('ano',2026)
+    .eq('ano',dSelectedYear())
     .neq('cliente','')
     .order('os',{ascending:true})
     .range(0,4999);
@@ -1158,7 +1180,7 @@ async function dLoad(){
     return;
   }
   dashRows=(data||[]).filter(r=>dText(r.cliente));
-  if(status) status.textContent=dashRows.length?dashRows.length+' registros válidos na base.':'Nenhuma base importada ainda.';
+  if(status) status.textContent=dashRows.length?dashRows.length+' registros válidos em '+year+'.':'Nenhuma base importada para '+year+'.';
   const empty=document.getElementById('dashboardEmpty');
   if(empty) empty.style.display=dashRows.length?'none':'block';
   dRender();
@@ -1225,14 +1247,16 @@ function dRender(){
 async function dImport(file){
   const status=document.getElementById('importStatus');
   try{
-    status.textContent='Lendo BASE 2026...';
+    const year=dSelectedYear();
+    const baseName='BASE '+year;
+    status.textContent='Lendo '+baseName+'...';
     const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
     const monthlySummary=dMonthlyWorkbookSummary(wb);
     const rows=dParseWorkbook(wb);
     dSaveReconciliation(monthlySummary,file.name);
 
     status.textContent='Comparando com a nuvem...';
-    const {data:existing,error}=await db.from('indicadores_oficina').select('*').eq('ano',2026).range(0,4999);
+    const {data:existing,error}=await db.from('indicadores_oficina').select('*').eq('ano',dSelectedYear()).range(0,4999);
     if(error) throw error;
 
     const currentRows=existing||[];
@@ -1250,10 +1274,10 @@ async function dImport(file){
     const removidos=currentRows.filter(r=>!newMap.has(Number(r.os)));
 
     const ok=confirm(
-      'Sincronização da BASE 2026\n\n'+
+      'Sincronização da '+baseName+'\n\n'+
       'Conferência financeira:\n'+
       'Abas mensais: '+dashMoney.format(monthlySummary.bruto)+'\n'+
-      'BASE 2026 a importar: '+dashMoney.format(rows.reduce((a,r)=>a+dNum(r.bruto),0))+'\n'+
+      baseName+' a importar: '+dashMoney.format(rows.reduce((a,r)=>a+dNum(r.bruto),0))+'\n'+
       'Diferença: '+dashMoney.format(monthlySummary.bruto-rows.reduce((a,r)=>a+dNum(r.bruto),0))+'\n\n'+
       rows.length+' O.S. válidas na planilha\n'+
       novos+' novas\n'+
@@ -1262,7 +1286,7 @@ async function dImport(file){
       removidos.length+' removidas do Dashboard\n'+
       (removidos.length?'O.S. removidas: '+removidos.slice(0,30).map(r=>r.os).join(', ')+(removidos.length>30?' ...':'')+'\n':'')+
       '\nO.S. antigas totalmente zeradas e sem técnico também são ignoradas.\n'+
-      'Somente a aba BASE 2026 será considerada.\n\nContinuar?'
+      'Somente a aba '+baseName+' será considerada.\n\nContinuar?'
     );
     if(!ok){status.textContent='Sincronização cancelada.';return;}
 
@@ -1304,7 +1328,14 @@ document.getElementById('excelInput')?.addEventListener('change',async e=>{
   e.target.value='';
 });
 document.getElementById('empresaFilter')?.addEventListener('change',dRender);
+document.getElementById('yearFilter')?.addEventListener('change',async()=>{
+  dUpdateYearUi();
+  dUpdateBackupUi();
+  dRenderFinancialCheck();
+  await dLoad();
+});
 document.getElementById('undoImportBtn')?.addEventListener('click',dUndoLastImport);
+dUpdateYearUi();
 dUpdateBackupUi();
 dRenderFinancialCheck();
 
