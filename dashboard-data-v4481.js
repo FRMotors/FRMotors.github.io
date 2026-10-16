@@ -1,0 +1,1420 @@
+/* V4.4.81 · PAGINAÇÃO COMPLETA · carrega mais de 1000 registros por ano */
+/* FR Motors · Dashboard data/import */
+const dashMoney=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const dashMonths=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
+let dashRows=[];
+const DASH_BACKUP_PREFIX='frmotors-dashboard-last-import-backup-v2-';
+const DASH_RECON_PREFIX='frmotors-dashboard-financial-check-v2-';
+
+function dSelectedYear(){
+  const value=Number(document.getElementById('yearFilter')?.value||2026);
+  return value===2025?2025:2026;
+}
+function dBackupKey(){return DASH_BACKUP_PREFIX+dSelectedYear();}
+function dReconKey(){return DASH_RECON_PREFIX+dSelectedYear();}
+function dBaseSheetName(){return 'BASE '+dSelectedYear();}
+function dUpdateYearUi(){
+  const year=dSelectedYear();
+  const btn=document.getElementById('importExcelBtn');
+  const empty=document.getElementById('dashboardEmpty');
+  if(btn) btn.textContent='Importar Base '+year;
+  if(empty) empty.innerHTML='Importe a planilha com a aba <b>BASE '+year+'</b> para alimentar o Dashboard.';
+}
+
+async function dFetchAllYearRows(year,{nonEmptyClient=false}={}){
+  const pageSize=1000;
+  const all=[];
+  let from=0;
+
+  for(let page=0;page<100;page++){
+    let query=db
+      .from('indicadores_oficina')
+      .select('*')
+      .eq('ano',year)
+      .order('os',{ascending:true})
+      .range(from,from+pageSize-1);
+
+    if(nonEmptyClient) query=query.neq('cliente','');
+
+    const {data,error}=await query;
+    if(error) return {data:null,error};
+
+    const batch=data||[];
+    all.push(...batch);
+
+    if(batch.length<pageSize) return {data:all,error:null};
+    from+=pageSize;
+  }
+
+  return {
+    data:null,
+    error:{message:'Limite de paginação excedido ao carregar os indicadores.'}
+  };
+}
+
+/* V4.4.73 · VALORES DOS GRAFICOS POR CLIQUE/TOQUE */
+let dashChartTooltipTimer=null;
+
+function dEnsureChartTooltip(){
+  let tooltip=document.getElementById('dashChartValueTooltip');
+  if(tooltip) return tooltip;
+
+  tooltip=document.createElement('div');
+  tooltip.id='dashChartValueTooltip';
+  tooltip.className='dash-chart-value-tooltip';
+  tooltip.setAttribute('role','status');
+  tooltip.setAttribute('aria-live','polite');
+  document.body.appendChild(tooltip);
+
+  if(!document.getElementById('dashChartTooltipStyle')){
+    const style=document.createElement('style');
+    style.id='dashChartTooltipStyle';
+    style.textContent=`
+      .dash-chart-value-tooltip{
+        position:fixed;
+        z-index:10000;
+        max-width:min(280px,calc(100vw - 24px));
+        padding:8px 10px;
+        border-radius:9px;
+        background:#101820;
+        color:#fff;
+        box-shadow:0 8px 24px rgba(16,24,32,.24);
+        font:800 12px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+        text-align:center;
+        pointer-events:none;
+        opacity:0;
+        transform:translate(-50%,-100%) scale(.96);
+        transition:opacity .12s ease,transform .12s ease;
+      }
+      .dash-chart-value-tooltip.visible{
+        opacity:1;
+        transform:translate(-50%,-100%) scale(1);
+      }
+      .dash-chart-bar,
+      .dash-margin-bar{
+        cursor:pointer !important;
+        touch-action:manipulation;
+      }
+      .dash-chart-bar:focus-visible,
+      .dash-margin-bar:focus-visible{
+        outline:3px solid rgba(22,123,135,.28);
+        outline-offset:3px;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  if(!document.documentElement.dataset.dashChartOutsideBound){
+    document.addEventListener('pointerdown',event=>{
+      if(!event.target.closest?.('[data-chart-value]')) dHideChartTooltip();
+    },true);
+    document.documentElement.dataset.dashChartOutsideBound='1';
+  }
+
+  return tooltip;
+}
+
+function dHideChartTooltip(){
+  const tooltip=document.getElementById('dashChartValueTooltip');
+  if(tooltip) tooltip.classList.remove('visible');
+  if(dashChartTooltipTimer){
+    clearTimeout(dashChartTooltipTimer);
+    dashChartTooltipTimer=null;
+  }
+}
+
+function dShowChartTooltip(target,text){
+  if(!target||!text) return;
+  const tooltip=dEnsureChartTooltip();
+  tooltip.textContent=text;
+  tooltip.classList.add('visible');
+
+  requestAnimationFrame(()=>{
+    const r=target.getBoundingClientRect();
+    const tw=tooltip.offsetWidth||160;
+    const th=tooltip.offsetHeight||36;
+    const half=tw/2+8;
+    let left=r.left+(r.width/2);
+    left=Math.max(half,Math.min(window.innerWidth-half,left));
+
+    let top=r.top-8;
+    if(top-th<8){
+      top=Math.min(window.innerHeight-th-8,r.bottom+th+8);
+      tooltip.style.transform='translate(-50%,0) scale(1)';
+    }else{
+      tooltip.style.transform='';
+    }
+
+    tooltip.style.left=left+'px';
+    tooltip.style.top=top+'px';
+  });
+
+  if(dashChartTooltipTimer) clearTimeout(dashChartTooltipTimer);
+  dashChartTooltipTimer=setTimeout(dHideChartTooltip,3200);
+}
+
+function dEnableChartValueClicks(container){
+  if(!container||container.dataset.valueClicksBound==='1') return;
+
+  const activate=target=>{
+    if(!target) return;
+    dShowChartTooltip(target,target.dataset.chartValue||target.getAttribute('title')||'');
+  };
+
+  container.addEventListener('click',event=>{
+    const target=event.target.closest?.('[data-chart-value]');
+    if(target&&container.contains(target)) activate(target);
+  });
+
+  container.addEventListener('keydown',event=>{
+    const target=event.target.closest?.('[data-chart-value]');
+    if(!target||!container.contains(target)) return;
+    if(event.key==='Enter'||event.key===' '){
+      event.preventDefault();
+      activate(target);
+    }
+  });
+
+  container.dataset.valueClicksBound='1';
+}
+
+
+/* V4.4.54 · GRAFICO BRUTO X LIQUIDO */
+function dEnsureRevenueChart(){
+  if(document.getElementById('revenueChart')) return;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    .dash-chart-card{
+      margin-top:16px;
+      background:#fff;
+      border:1px solid #dfe5e8;
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 8px 22px rgba(23,33,38,.05);
+    }
+    .dash-chart-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .dash-chart-title{
+      font-size:15px;
+      font-weight:900;
+      color:#172126;
+    }
+    .dash-chart-subtitle{
+      margin-top:3px;
+      color:#68777f;
+      font-size:12px;
+    }
+    .dash-chart-legend{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      font-size:12px;
+      font-weight:800;
+      color:#415159;
+    }
+    .dash-chart-key{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .dash-chart-dot{
+      width:10px;
+      height:10px;
+      border-radius:3px;
+      display:inline-block;
+    }
+    .dash-chart-dot.bruto{background:#172126;}
+    .dash-chart-dot.liquido{background:#167b87;}
+    .dash-chart-scroll{
+      overflow-x:auto;
+      padding-bottom:4px;
+    }
+    .dash-chart{
+      min-width:760px;
+      height:280px;
+      display:grid;
+      grid-template-columns:repeat(12,minmax(48px,1fr));
+      gap:10px;
+      align-items:end;
+      padding:12px 4px 0;
+      border-bottom:1px solid #dfe5e8;
+      background:
+        linear-gradient(to top, rgba(223,229,232,.55) 1px, transparent 1px);
+      background-size:100% 25%;
+    }
+    .dash-chart-month{
+      height:250px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:center;
+      gap:6px;
+    }
+    .dash-chart-bars{
+      width:100%;
+      height:218px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      gap:4px;
+    }
+    .dash-chart-bar{
+      width:min(19px,42%);
+      min-height:0;
+      border-radius:5px 5px 2px 2px;
+      transition:height .25s ease;
+      cursor:default;
+    }
+    .dash-chart-bar.bruto{background:#172126;}
+    .dash-chart-bar.liquido{background:#167b87;}
+    .dash-chart-label{
+      font-size:10px;
+      font-weight:800;
+      color:#68777f;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    .dash-chart-total{
+      font-size:9px;
+      font-weight:850;
+      color:#68777f;
+      white-space:nowrap;
+      line-height:1;
+    }
+    @media(max-width:700px){
+      .dash-chart-card{padding:13px;}
+      .dash-chart{min-width:720px;}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const card=document.createElement('section');
+  card.className='dash-chart-card';
+  card.innerHTML=`
+    <div class="dash-chart-head">
+      <div>
+        <div class="dash-chart-title">Bruto x Líquido por mês</div>
+        <div class="dash-chart-subtitle">Comparação mensal conforme o filtro selecionado</div>
+      </div>
+      <div class="dash-chart-legend">
+        <span class="dash-chart-key"><i class="dash-chart-dot bruto"></i>Bruto</span>
+        <span class="dash-chart-key"><i class="dash-chart-dot liquido"></i>Líquido</span>
+      </div>
+    </div>
+    <div class="dash-chart-scroll">
+      <div id="revenueChart" class="dash-chart"></div>
+    </div>
+  `;
+
+  const kpis=document.querySelector('.kpis');
+  if(kpis) kpis.insertAdjacentElement('afterend',card);
+}
+
+function dRenderRevenueChart(monthly){
+  dEnsureRevenueChart();
+  const chart=document.getElementById('revenueChart');
+  if(!chart) return;
+
+  const empresa=document.getElementById('empresaFilter')?.value||'TODAS';
+  const subtitle=chart.closest('.dash-chart-card')?.querySelector('.dash-chart-subtitle');
+  if(subtitle) subtitle.textContent='Comparação mensal · '+dSelectedYear()+' · '+(empresa==='TODAS'?'Todas as empresas':empresa);
+
+  const max=Math.max(1,...monthly.flatMap(x=>[x.bruto,x.liquido]));
+  chart.innerHTML=monthly.map(x=>{
+    const hb=Math.max(0,(x.bruto/max)*100);
+    const hl=Math.max(0,(x.liquido/max)*100);
+    const label=x.month.slice(0,3);
+    return `
+      <div class="dash-chart-month">
+        <div class="dash-chart-total">${dEsc(dashMoney.format(x.bruto))}</div>
+        <div class="dash-chart-bars">
+          <div class="dash-chart-bar bruto" tabindex="0" role="button" style="height:${hb}%" title="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}" data-chart-value="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}"></div>
+          <div class="dash-chart-bar liquido" tabindex="0" role="button" style="height:${hl}%" title="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}" data-chart-value="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}"></div>
+        </div>
+        <div class="dash-chart-label">${dEsc(label)}</div>
+      </div>
+    `;
+  }).join('');
+  dEnableChartValueClicks(chart);
+}
+
+
+
+/* V4.4.55 · MARGEM E COMPARATIVO MENSAL */
+function dEnsurePerformanceBlocks(){
+  if(document.getElementById('marginChart')) return;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    .dash-performance-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+      gap:16px;
+      margin-top:16px;
+    }
+    .dash-performance-card{
+      background:#fff;
+      border:1px solid #dfe5e8;
+      border-radius:16px;
+      padding:16px;
+      box-shadow:0 8px 22px rgba(23,33,38,.05);
+      min-width:0;
+    }
+    .dash-margin-chart{
+      height:245px;
+      min-width:680px;
+      display:grid;
+      grid-template-columns:repeat(12,minmax(44px,1fr));
+      gap:9px;
+      align-items:end;
+      padding:10px 4px 0;
+      border-bottom:1px solid #dfe5e8;
+      background:
+        linear-gradient(to top,rgba(223,229,232,.55) 1px,transparent 1px);
+      background-size:100% 25%;
+    }
+    .dash-margin-month{
+      height:220px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:center;
+      gap:6px;
+    }
+    .dash-margin-value{
+      font-size:10px;
+      font-weight:900;
+      color:#0f646e;
+      white-space:nowrap;
+    }
+    .dash-margin-bar-wrap{
+      height:175px;
+      width:100%;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+    }
+    .dash-margin-bar{
+      width:min(24px,55%);
+      border-radius:6px 6px 2px 2px;
+      background:#167b87;
+      min-height:0;
+      transition:height .25s ease;
+    }
+    .dash-margin-label{
+      font-size:10px;
+      font-weight:800;
+      color:#68777f;
+      text-transform:uppercase;
+    }
+    .dash-compare-title{
+      font-size:15px;
+      font-weight:900;
+      color:#172126;
+    }
+    .dash-compare-period{
+      margin-top:3px;
+      color:#68777f;
+      font-size:12px;
+    }
+    .dash-compare-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .dash-compare-select{
+      height:38px;
+      min-width:130px;
+      border:1px solid #dfe5e8;
+      border-radius:10px;
+      background:#fff;
+      color:#172126;
+      padding:0 10px;
+      font:700 12px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      outline:none;
+    }
+    .dash-compare-select:focus{
+      border-color:#167b87;
+      box-shadow:0 0 0 3px rgba(22,123,135,.10);
+    }
+    .dash-compare-selects{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap:7px;
+      flex-wrap:wrap;
+    }
+    .dash-compare-select-wrap{
+      display:grid;
+      gap:4px;
+    }
+    .dash-compare-select-label{
+      color:#68777f;
+      font-size:9px;
+      font-weight:900;
+      text-transform:uppercase;
+      text-align:left;
+    }
+    .dash-compare-x{
+      align-self:flex-end;
+      padding:0 1px 10px;
+      color:#68777f;
+      font-size:12px;
+      font-weight:900;
+    }
+    .dash-compare-list{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:14px;
+    }
+    .dash-compare-item{
+      border:1px solid #e4eaec;
+      border-radius:13px;
+      padding:12px;
+      background:#f8fafb;
+      text-align:center;
+    }
+    .dash-compare-item span{
+      display:block;
+      color:#68777f;
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .dash-compare-item strong{
+      display:block;
+      margin-top:5px;
+      font-size:16px;
+      color:#172126;
+    }
+    .dash-compare-old{
+      margin-top:4px;
+      font-size:11px;
+      color:#7b898f;
+    }
+    .dash-change{
+      display:inline-flex;
+      margin-top:7px;
+      padding:4px 7px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+    }
+    .dash-change.up{background:#e8f4ed;color:#17613d}
+    .dash-change.down{background:#fdecec;color:#9b2626}
+    .dash-change.flat{background:#eef2f3;color:#68777f}
+    @media(max-width:900px){
+      .dash-performance-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:700px){
+      .dash-performance-card{padding:13px}
+      .dash-compare-list{grid-template-columns:1fr 1fr}
+      .dash-margin-chart{min-width:700px}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const wrap=document.createElement('section');
+  wrap.className='dash-performance-grid';
+  wrap.innerHTML=`
+    <div class="dash-performance-card">
+      <div class="dash-chart-head">
+        <div>
+          <div class="dash-chart-title">Margem líquida por mês</div>
+          <div class="dash-chart-subtitle">Percentual do líquido em relação ao bruto</div>
+        </div>
+      </div>
+      <div class="dash-chart-scroll">
+        <div id="marginChart" class="dash-margin-chart"></div>
+      </div>
+    </div>
+
+    <div class="dash-performance-card">
+      <div class="dash-compare-head">
+        <div>
+          <div class="dash-compare-title">Comparação entre meses</div>
+          <div id="comparePeriod" class="dash-compare-period">Escolha os dois meses para comparar</div>
+        </div>
+        <div class="dash-compare-selects">
+          <label class="dash-compare-select-wrap">
+            <span class="dash-compare-select-label">Mês 1</span>
+            <select id="compareMonthSelectA" class="dash-compare-select" aria-label="Primeiro mês da comparação"></select>
+          </label>
+          <span class="dash-compare-x" aria-hidden="true">×</span>
+          <label class="dash-compare-select-wrap">
+            <span class="dash-compare-select-label">Mês 2</span>
+            <select id="compareMonthSelectB" class="dash-compare-select" aria-label="Segundo mês da comparação"></select>
+          </label>
+        </div>
+      </div>
+      <div id="monthlyCompare" class="dash-compare-list"></div>
+    </div>
+  `;
+
+  const revenue=document.querySelector('.dash-chart-card');
+  if(revenue) revenue.insertAdjacentElement('afterend',wrap);
+}
+
+function dMonthlyTotals(rows){
+  return dashMonths.map((month,index)=>{
+    const rs=rows.filter(r=>dNorm(r.mes)===dNorm(month));
+    const sum=k=>rs.reduce((a,r)=>a+dNum(r[k]),0);
+    const bruto=sum('bruto');
+    const liquido=sum('liquido');
+    return {
+      month,
+      index,
+      rows:rs,
+      bruto,
+      liquido,
+      gasto:sum('gasto'),
+      mao_obra:sum('mao_obra'),
+      os:rs.length,
+      ok:rs.filter(r=>dNorm(r.status)==='OK').length,
+      abaixo:rs.filter(r=>dNorm(r.status)==='ABAIXO').length,
+      margem:bruto!==0?(liquido/bruto)*100:0
+    };
+  });
+}
+
+function dRenderMarginChart(rows){
+  dEnsurePerformanceBlocks();
+  const chart=document.getElementById('marginChart');
+  if(!chart) return;
+
+  const monthly=dMonthlyTotals(rows);
+  const positive=monthly.map(x=>Math.max(0,x.margem));
+  const max=Math.max(100,...positive,1);
+
+  chart.innerHTML=monthly.map(x=>{
+    const h=Math.max(0,Math.min(100,(Math.max(0,x.margem)/max)*100));
+    const label=x.month.slice(0,3);
+    const pct=Number.isFinite(x.margem)?x.margem:0;
+    return `
+      <div class="dash-margin-month">
+        <div class="dash-margin-value">${pct.toFixed(1).replace('.',',')}%</div>
+        <div class="dash-margin-bar-wrap">
+          <div class="dash-margin-bar" tabindex="0" role="button" style="height:${h}%" title="${dEsc(x.month)} · Margem líquida: ${pct.toFixed(1).replace('.',',')}%" data-chart-value="${dEsc(x.month)} · Margem líquida: ${pct.toFixed(1).replace('.',',')}%"></div>
+        </div>
+        <div class="dash-margin-label">${dEsc(label)}</div>
+      </div>
+    `;
+  }).join('');
+  dEnableChartValueClicks(chart);
+}
+
+function dMonthLabel(month){
+  return month.charAt(0)+month.slice(1).toLocaleLowerCase('pt-BR');
+}
+
+function dPctChange(current,previous){
+  if(previous===0){
+    if(current===0) return {text:'0,0%',cls:'flat',arrow:'•'};
+    return {text:'novo',cls:'up',arrow:'↑'};
+  }
+  const pct=((current-previous)/Math.abs(previous))*100;
+  const cls=pct>0.05?'up':pct<-0.05?'down':'flat';
+  const arrow=cls==='up'?'↑':cls==='down'?'↓':'•';
+  return {text:Math.abs(pct).toFixed(1).replace('.',',')+'%',cls,arrow};
+}
+
+let dashCompareRows=[];
+
+function dRenderMonthlyCompare(rows){
+  dEnsurePerformanceBlocks();
+  dashCompareRows=rows||[];
+
+  const monthly=dMonthlyTotals(dashCompareRows);
+  const selectA=document.getElementById('compareMonthSelectA');
+  const selectB=document.getElementById('compareMonthSelectB');
+  const period=document.getElementById('comparePeriod');
+  const box=document.getElementById('monthlyCompare');
+
+  if(!selectA||!selectB||!period||!box) return;
+
+  const optionsHtml=dashMonths.map((m,i)=>
+    '<option value="'+i+'">'+dEsc(dMonthLabel(m))+'</option>'
+  ).join('');
+
+  if(!selectA.options.length) selectA.innerHTML=optionsHtml;
+  if(!selectB.options.length) selectB.innerHTML=optionsHtml;
+
+  if(!selectA.dataset.bound){
+    selectA.addEventListener('change',()=>dRenderMonthlyCompare(dashCompareRows));
+    selectA.dataset.bound='1';
+  }
+  if(!selectB.dataset.bound){
+    selectB.addEventListener('change',()=>dRenderMonthlyCompare(dashCompareRows));
+    selectB.dataset.bound='1';
+  }
+
+  if(!selectA.dataset.initialized||!selectB.dataset.initialized){
+    const nowIndex=new Date().getMonth();
+    const active=monthly.filter(x=>x.rows.length>0);
+    let firstIndex=(monthly[nowIndex]&&monthly[nowIndex].rows.length)
+      ? nowIndex
+      : (active.length?active[active.length-1].index:nowIndex);
+
+    let secondIndex=firstIndex>0?firstIndex-1:Math.min(11,firstIndex+1);
+    const earlierActive=active.filter(x=>x.index<firstIndex);
+    if(earlierActive.length) secondIndex=earlierActive[earlierActive.length-1].index;
+    else if(active.length>1){
+      const alternative=active.find(x=>x.index!==firstIndex);
+      if(alternative) secondIndex=alternative.index;
+    }
+
+    selectA.value=String(firstIndex);
+    selectB.value=String(secondIndex);
+    selectA.dataset.initialized='1';
+    selectB.dataset.initialized='1';
+  }
+
+  const indexA=Math.max(0,Math.min(11,Number(selectA.value)||0));
+  const indexB=Math.max(0,Math.min(11,Number(selectB.value)||0));
+  const monthA=monthly[indexA];
+  const monthB=monthly[indexB];
+
+  if(!monthA||!monthB){
+    period.textContent='Sem dados para comparar.';
+    box.innerHTML='';
+    return;
+  }
+
+  period.textContent=dMonthLabel(monthA.month)+' x '+dMonthLabel(monthB.month);
+
+  const metrics=[
+    {label:'Bruto',cur:monthA.bruto,prev:monthB.bruto,fmt:v=>dashMoney.format(v)},
+    {label:'Líquido',cur:monthA.liquido,prev:monthB.liquido,fmt:v=>dashMoney.format(v)},
+    {label:'Gastos',cur:monthA.gasto,prev:monthB.gasto,fmt:v=>dashMoney.format(v)},
+    {label:'O.S.',cur:monthA.os,prev:monthB.os,fmt:v=>String(v)}
+  ];
+
+  box.innerHTML=metrics.map(m=>{
+    const ch=dPctChange(m.cur,m.prev);
+    return `
+      <div class="dash-compare-item">
+        <span>${dEsc(m.label)}</span>
+        <strong>${dEsc(m.fmt(m.cur))}</strong>
+        <div class="dash-compare-old">${dEsc(dMonthLabel(monthB.month))}: ${dEsc(m.fmt(m.prev))}</div>
+        <div class="dash-change ${ch.cls}">${ch.arrow} ${ch.text}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+
+/* V4.4.61 · DETALHES DE TECNICO NAO INFORMADO */
+let dashRenderedRows=[];
+
+function dEnsureNoTechModal(){
+  if(document.getElementById('noTechModal')) return;
+
+  const style=document.createElement('style');
+  style.textContent=`
+    .dash-no-tech-btn{
+      border:0;
+      background:transparent;
+      color:#167b87;
+      font:800 12px system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      text-decoration:underline;
+      text-underline-offset:3px;
+      cursor:pointer;
+      padding:4px 6px;
+      border-radius:7px;
+    }
+    .dash-no-tech-btn:hover{background:#eef7f8}
+    .dash-modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      background:rgba(17,25,29,.48);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+    .dash-modal-backdrop.open{display:flex}
+    .dash-modal{
+      width:min(1040px,100%);
+      max-height:min(82vh,760px);
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 24px 70px rgba(14,24,29,.28);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .dash-modal-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 20px;
+      border-bottom:1px solid #e4eaec;
+    }
+    .dash-modal-head h2{
+      margin:0;
+      font-size:18px;
+      color:#172126;
+    }
+    .dash-modal-head p{
+      margin:5px 0 0;
+      font-size:12px;
+      color:#68777f;
+    }
+    .dash-modal-close{
+      border:1px solid #dfe5e8;
+      background:#fff;
+      border-radius:10px;
+      width:36px;
+      height:36px;
+      font-size:20px;
+      line-height:1;
+      cursor:pointer;
+      color:#415159;
+    }
+    .dash-modal-body{
+      overflow:auto;
+      padding:0 20px 20px;
+    }
+    .dash-no-tech-table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:820px;
+    }
+    .dash-no-tech-table th,
+    .dash-no-tech-table td{
+      padding:11px 9px;
+      border-bottom:1px solid #edf1f2;
+      text-align:center;
+      white-space:nowrap;
+      font-size:12px;
+    }
+    .dash-no-tech-table th{
+      position:sticky;
+      top:0;
+      z-index:1;
+      background:#f8fafb;
+      color:#53636a;
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .dash-no-tech-table td:nth-child(3),
+    .dash-no-tech-table td:nth-child(4){
+      text-align:left;
+    }
+    .dash-no-tech-empty{
+      padding:24px 0 4px;
+      text-align:center;
+      color:#68777f;
+      font-size:13px;
+    }
+    @media(max-width:700px){
+      .dash-modal-backdrop{padding:8px}
+      .dash-modal{max-height:88vh;border-radius:14px}
+      .dash-modal-head{padding:15px}
+      .dash-modal-body{padding:0 12px 14px}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const modal=document.createElement('div');
+  modal.id='noTechModal';
+  modal.className='dash-modal-backdrop';
+  modal.innerHTML=`
+    <div class="dash-modal" role="dialog" aria-modal="true" aria-labelledby="noTechModalTitle">
+      <div class="dash-modal-head">
+        <div>
+          <h2 id="noTechModalTitle">O.S. sem técnico informado</h2>
+          <p id="noTechModalSubtitle">Carregando...</p>
+        </div>
+        <button id="noTechModalClose" class="dash-modal-close" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div id="noTechModalBody" class="dash-modal-body"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const close=()=>modal.classList.remove('open');
+  document.getElementById('noTechModalClose').addEventListener('click',close);
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+}
+
+async function dOpenNoTechModal(){
+  dEnsureNoTechModal();
+
+  const modal=document.getElementById('noTechModal');
+  const subtitle=document.getElementById('noTechModalSubtitle');
+  const body=document.getElementById('noTechModalBody');
+  const rows=dashRenderedRows
+    .filter(r=>!dText(r.tecnico))
+    .sort((a,b)=>Number(b.os)-Number(a.os));
+
+  modal.classList.add('open');
+  subtitle.textContent=rows.length+' O.S. no filtro atual';
+  body.innerHTML=rows.length?'<div class="dash-no-tech-empty">Carregando veículos...</div>':'<div class="dash-no-tech-empty">Nenhuma O.S. sem técnico no filtro atual.</div>';
+
+  if(!rows.length) return;
+
+  const vehicleMap=new Map();
+  try{
+    const ids=rows.map(r=>Number(r.os)).filter(Boolean);
+    const {data:vehicles,error}=await db
+      .from('shoficina_os')
+      .select('source_os_id,marca,aparelho,placa')
+      .in('source_os_id',ids);
+    if(!error){
+      (vehicles||[]).forEach(v=>vehicleMap.set(Number(v.source_os_id),v));
+    }
+  }catch(err){
+    console.warn('Veículos SHOficina indisponíveis no modal:',err);
+  }
+
+  body.innerHTML=`
+    <table class="dash-no-tech-table">
+      <thead>
+        <tr>
+          <th>O.S.</th>
+          <th>Mês</th>
+          <th>Cliente</th>
+          <th>Veículo</th>
+          <th>Placa</th>
+          <th>Bruto</th>
+          <th>Líquido</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r=>{
+          const v=vehicleMap.get(Number(r.os))||{};
+          const veiculo=[dText(v.marca),dText(v.aparelho)].filter(Boolean).join(' ')||'—';
+          return `
+            <tr>
+              <td>${dEsc(r.os)}</td>
+              <td>${dEsc(dMonthLabel(dNorm(r.mes)))}</td>
+              <td>${dEsc(r.cliente||'—')}</td>
+              <td>${dEsc(veiculo)}</td>
+              <td>${dEsc(v.placa||'—')}</td>
+              <td>${dEsc(dashMoney.format(dNum(r.bruto)))}</td>
+              <td>${dEsc(dashMoney.format(dNum(r.liquido)))}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function dText(v){return String(v??'').trim()}
+function dNum(v){
+  if(typeof v==='number') return Number.isFinite(v)?v:0;
+  let s=dText(v).replace(/R\$\s*/gi,'').replace(/\s/g,'');
+  if(s.includes(',')&&s.includes('.')) s=s.replace(/\./g,'').replace(',','.');
+  else if(s.includes(',')) s=s.replace(',','.');
+  const n=Number(s);
+  return Number.isFinite(n)?n:0;
+}
+function dNorm(v){
+  return dText(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+}
+function dEmpresa(cliente){
+  const s=dNorm(cliente);
+  if(s.includes('ISOCAR'))return 'ISOCAR';
+  if(s.includes('EASYCAR'))return 'EASYCAR';
+  if(s.includes('TOPLINE'))return 'TOPLINE';
+  return 'OUTROS';
+}
+function dEsc(v){
+  return dText(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function dSame(a,b){
+  const textFields=['mes','cliente','empresa','tecnico','pagamento','status'];
+  const numFields=['bruto','gasto','mao_obra','liquido','percentual_desconto'];
+  return textFields.every(k=>dText(a?.[k])===dText(b?.[k])) &&
+    numFields.every(k=>Math.abs(dNum(a?.[k])-dNum(b?.[k]))<0.005);
+}
+
+
+/* V4.4.65 · CONFERENCIA FINANCEIRA + DESFAZER IMPORTACAO */
+function dMonthlyWorkbookSummary(workbook){
+  let bruto=0;
+  let count=0;
+  const byMonth={};
+
+  for(const month of dashMonths){
+    const sheetName=workbook.SheetNames.find(n=>dNorm(n)===dNorm(month));
+    if(!sheetName) continue;
+
+    const matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,defval:null,raw:true});
+    if(!matrix.length) continue;
+
+    const h=(matrix[0]||[]).map(dNorm);
+    const find=(...names)=>h.findIndex(x=>names.map(dNorm).includes(x));
+    const ixOs=find('O.S.','O.S','OS');
+    const ixCliente=find('CLIENTE');
+    const ixBruto=find('BRUTO');
+    if(ixOs<0||ixCliente<0||ixBruto<0) continue;
+
+    let monthBruto=0;
+    let monthCount=0;
+    for(const r of matrix.slice(1)){
+      const os=Math.trunc(dNum(r[ixOs]));
+      const cliente=dText(r[ixCliente]);
+      if(!os||!cliente) continue;
+      monthBruto+=dNum(r[ixBruto]);
+      monthCount++;
+    }
+    bruto+=monthBruto;
+    count+=monthCount;
+    byMonth[month]={bruto:monthBruto,count:monthCount};
+  }
+
+  return {bruto,count,byMonth};
+}
+
+function dGetBackup(){
+  try{
+    const raw=localStorage.getItem(dBackupKey());
+    return raw?JSON.parse(raw):null;
+  }catch(_){return null}
+}
+
+function dUpdateBackupUi(){
+  const backup=dGetBackup();
+  const btn=document.getElementById('undoImportBtn');
+  const info=document.getElementById('backupInfo');
+  if(btn) btn.disabled=!backup?.rows?.length;
+  if(!info) return;
+
+  if(!backup?.rows?.length){
+    info.textContent='Nenhuma importação disponível para desfazer.';
+    return;
+  }
+
+  const when=backup.createdAt
+    ? new Date(backup.createdAt).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})
+    : 'data não informada';
+  info.textContent='Backup anterior disponível · '+backup.rows.length+' O.S. · '+when+
+    (backup.sourceName?' · antes de '+backup.sourceName:'');
+}
+
+function dSaveBackup(rows,sourceName){
+  const payload={
+    createdAt:new Date().toISOString(),
+    sourceName:sourceName||'importação',
+    rows:(rows||[]).map(r=>({...r}))
+  };
+  localStorage.setItem(dBackupKey(),JSON.stringify(payload));
+  dUpdateBackupUi();
+}
+
+function dSaveReconciliation(sourceSummary,sourceName){
+  const payload={
+    createdAt:new Date().toISOString(),
+    sourceName:sourceName||'Excel',
+    sourceBruto:dNum(sourceSummary?.bruto),
+    sourceCount:Number(sourceSummary?.count)||0
+  };
+  localStorage.setItem(dReconKey(),JSON.stringify(payload));
+  dRenderFinancialCheck();
+}
+
+function dGetReconciliation(){
+  try{
+    const raw=localStorage.getItem(dReconKey());
+    return raw?JSON.parse(raw):null;
+  }catch(_){return null}
+}
+
+function dRenderFinancialCheck(){
+  const source=dGetReconciliation();
+  const dashBruto=dashRows.reduce((a,r)=>a+dNum(r.bruto),0);
+  const sourceEl=document.getElementById('financialSourceTotal');
+  const dashEl=document.getElementById('financialDashboardTotal');
+  const diffEl=document.getElementById('financialDifference');
+  const statusEl=document.getElementById('financialCheckStatus');
+
+  if(dashEl) dashEl.textContent=dashMoney.format(dashBruto);
+
+  if(!source){
+    if(sourceEl) sourceEl.textContent='—';
+    if(diffEl) diffEl.textContent='—';
+    if(statusEl){statusEl.textContent='Aguardando Excel';statusEl.className='financial-check-status neutral';}
+    return;
+  }
+
+  const sourceBruto=dNum(source.sourceBruto);
+  const diff=sourceBruto-dashBruto;
+  if(sourceEl) sourceEl.textContent=dashMoney.format(sourceBruto);
+  if(diffEl) diffEl.textContent=dashMoney.format(diff);
+
+  if(statusEl){
+    const ok=Math.abs(diff)<0.005;
+    statusEl.textContent=ok?'Conferido':'Divergência';
+    statusEl.className='financial-check-status '+(ok?'ok':'error');
+  }
+}
+
+async function dUndoLastImport(){
+  const sessionOk=typeof ensureDashboardSession==='function' ? await ensureDashboardSession() : !!currentUser;
+  if(!sessionOk) return;
+  const backup=dGetBackup();
+  if(!backup?.rows?.length){
+    alert('Não existe uma importação anterior disponível para desfazer.');
+    dUpdateBackupUi();
+    return;
+  }
+
+  const when=backup.createdAt?new Date(backup.createdAt).toLocaleString('pt-BR'):'';
+  const ok=confirm(
+    'Desfazer a última importação?\n\n'+
+    'O Dashboard será restaurado para '+backup.rows.length+' O.S.'+
+    (when?' do backup criado em '+when:'')+'.\n\n'+
+    'O estado atual será substituído pelo estado anterior.'
+  );
+  if(!ok) return;
+
+  const status=document.getElementById('importStatus');
+  try{
+    if(status) status.textContent='Restaurando backup anterior...';
+
+    const {data:current,error:loadErr}=await db
+      .from('indicadores_oficina')
+      .select('id')
+      .eq('ano',dSelectedYear())
+      .range(0,4999);
+    if(loadErr) throw loadErr;
+
+    const ids=(current||[]).map(r=>r.id).filter(Boolean);
+    for(let i=0;i<ids.length;i+=200){
+      const {error:delErr}=await db.from('indicadores_oficina').delete().in('id',ids.slice(i,i+200));
+      if(delErr) throw delErr;
+    }
+
+    const rows=backup.rows.map(r=>{
+      const x={...r};
+      delete x.id;
+      x.updated_at=new Date().toISOString();
+      return x;
+    });
+
+    for(let i=0;i<rows.length;i+=200){
+      const {error:upErr}=await db
+        .from('indicadores_oficina')
+        .upsert(rows.slice(i,i+200),{onConflict:'ano,os'});
+      if(upErr) throw upErr;
+    }
+
+    localStorage.removeItem(dBackupKey());
+    if(status) status.textContent='Última importação desfeita com sucesso.';
+    dUpdateBackupUi();
+    await dLoad();
+  }catch(err){
+    console.error(err);
+    alert('Não foi possível restaurar o backup.\n\n'+(err?.message||err));
+    if(status) status.textContent='Erro ao desfazer importação.';
+  }
+}
+
+function dParseWorkbook(workbook){
+  const year=dSelectedYear();
+  const baseName='BASE '+year;
+  const sheetName=workbook.SheetNames.find(n=>dNorm(n)===dNorm(baseName));
+  if(!sheetName) throw new Error('A planilha não possui a aba "'+baseName+'".');
+
+  const matrix=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{header:1,defval:null,raw:true});
+  if(matrix.length<2) throw new Error('A aba '+baseName+' está vazia.');
+
+  const h=(matrix[0]||[]).map(dNorm);
+  const find=(...names)=>h.findIndex(x=>names.map(dNorm).includes(x));
+  const ix={
+    mes:find('MÊS','MES'),
+    os:find('O.S.','O.S','OS'),
+    cliente:find('CLIENTE'),
+    bruto:find('BRUTO'),
+    gasto:find('GASTO','GASTOS'),
+    mo:find('M.O.','M.O','MO'),
+    liquido:find('LÍQUIDO','LIQUIDO'),
+    desc:find('% DESC','% DESCONTO'),
+    tecnico:find('TÉCNICO','TECNICO'),
+    pagamento:find('PAGAMENTO'),
+    status:find('STATUS','LIQ / BRUTO','LIQ >= BRUTO')
+  };
+  if(ix.mes<0||ix.os<0||ix.cliente<0) throw new Error('A '+baseName+' não está no formato esperado.');
+
+  const byOs=new Map();
+  for(const r of matrix.slice(1)){
+    const os=Math.trunc(dNum(r[ix.os]));
+    if(!os) continue;
+
+    const cliente=dText(r[ix.cliente]);
+    if(!cliente) continue;
+
+    const mes=dText(r[ix.mes]).toLocaleUpperCase('pt-BR');
+    const bruto=dNum(r[ix.bruto]);
+    const gasto=dNum(r[ix.gasto]);
+    const maoObra=dNum(r[ix.mo]);
+    const liquido=dNum(r[ix.liquido]);
+    const tecnico=dText(r[ix.tecnico]).toLocaleUpperCase('pt-BR');
+
+    const mesIndex=dashMonths.findIndex(m=>dNorm(m)===dNorm(mes));
+    const hoje=new Date();
+    const anoAtual=hoje.getFullYear();
+    const mesAtualIndex=hoje.getMonth();
+    const mesJaEncerrado=year===anoAtual && mesIndex>=0 && mesIndex<mesAtualIndex;
+    const semMovimento=Math.abs(bruto)<0.005 && Math.abs(gasto)<0.005 && Math.abs(maoObra)<0.005 && Math.abs(liquido)<0.005;
+    if(mesIndex>=0 && mesJaEncerrado && semMovimento && !tecnico) continue;
+
+    const row={
+      ano:year,
+      mes,
+      os,
+      cliente,
+      empresa:dEmpresa(cliente),
+      bruto,
+      gasto,
+      mao_obra:maoObra,
+      liquido,
+      percentual_desconto:dNum(r[ix.desc]),
+      tecnico,
+      pagamento:dText(r[ix.pagamento]).toLocaleUpperCase('pt-BR'),
+      status:dText(r[ix.status]).toLocaleUpperCase('pt-BR'),
+      updated_at:new Date().toISOString()
+    };
+    byOs.set(os,row);
+  }
+  const rows=[...byOs.values()];
+  if(!rows.length) throw new Error('Nenhuma O.S. válida foi encontrada em '+baseName+'.');
+  return rows;
+}
+
+async function dLoad(){
+  const sessionOk=typeof ensureDashboardSession==='function' ? await ensureDashboardSession() : !!currentUser;
+  if(!sessionOk) return;
+  const status=document.getElementById('importStatus');
+  const year=dSelectedYear();
+  dUpdateYearUi();
+  if(status) status.textContent='Carregando indicadores de '+year+'...';
+
+  const {data,error}=await dFetchAllYearRows(dSelectedYear(),{nonEmptyClient:true});
+
+  if(error){
+    console.error(error);
+    if(error.code==='PGRST303' || /jwt|token|401/i.test(String(error.message||''))){
+      currentUser=null;
+      showAuth();
+      const msg=document.getElementById('loginMsg');
+      if(msg) msg.textContent='Sua sessão expirou. Entre novamente para continuar.';
+      if(status) status.textContent='Sessão expirada. Entre novamente.';
+      return;
+    }
+    if(status) status.textContent='Erro ao carregar indicadores: '+String(error.message||error);
+    return;
+  }
+  dashRows=(data||[]).filter(r=>dText(r.cliente));
+  if(status) status.textContent=dashRows.length?dashRows.length+' registros válidos em '+year+'.':'Nenhuma base importada para '+year+'.';
+  const empty=document.getElementById('dashboardEmpty');
+  if(empty) empty.style.display=dashRows.length?'none':'block';
+  dRender();
+  dRenderFinancialCheck();
+  dUpdateBackupUi();
+}
+
+function dRender(){
+  const empresa=document.getElementById('empresaFilter')?.value||'TODAS';
+  const rows=empresa==='TODAS'?dashRows:dashRows.filter(r=>r.empresa===empresa);
+  dashRenderedRows=rows;
+  const sum=k=>rows.reduce((a,r)=>a+dNum(r[k]),0);
+
+  document.getElementById('kpiBruto').textContent=dashMoney.format(sum('bruto'));
+  document.getElementById('kpiLiquido').textContent=dashMoney.format(sum('liquido'));
+  document.getElementById('kpiGasto').textContent=dashMoney.format(sum('gasto'));
+  document.getElementById('kpiOs').textContent=String(rows.length);
+  document.getElementById('kpiOk').textContent=String(rows.filter(r=>dNorm(r.status)==='OK').length);
+  document.getElementById('kpiAbaixo').textContent=String(rows.filter(r=>dNorm(r.status)==='ABAIXO').length);
+
+  const monthlyTotals=dMonthlyTotals(rows);
+  window.__FR_DASH_BUILD__='4.4.81';
+  const dezembro=monthlyTotals.find(x=>dNorm(x.month)==='DEZEMBRO');
+  if(dSelectedYear()===2025 && dezembro){
+    console.info('[FR Dashboard 4.4.81] Dezembro 2025', {
+      bruto:dezembro.bruto,
+      liquido:dezembro.liquido,
+      os:dezembro.os
+    });
+  }
+  dRenderRevenueChart(monthlyTotals);
+  dRenderMarginChart(rows);
+  dRenderMonthlyCompare(rows);
+
+  const monthly=document.getElementById('monthlyBody');
+  monthly.innerHTML=monthlyTotals.map(x=>{
+    const label=x.month.charAt(0)+x.month.slice(1).toLocaleLowerCase('pt-BR');
+    return '<tr><td>'+dEsc(label)+'</td>'+
+      '<td class="num">'+dashMoney.format(x.bruto)+'</td>'+
+      '<td class="num">'+dashMoney.format(x.gasto)+'</td>'+
+      '<td class="num">'+dashMoney.format(x.mao_obra)+'</td>'+
+      '<td class="num">'+dashMoney.format(x.liquido)+'</td>'+
+      '<td class="num">'+x.os+'</td>'+
+      '<td class="num">'+x.ok+'</td>'+
+      '<td class="num">'+x.abaixo+'</td></tr>';
+  }).join('');
+
+  const techMap=new Map();
+  rows.forEach(r=>{
+    const tech=dText(r.tecnico)||'NÃO INFORMADO';
+    if(!techMap.has(tech)) techMap.set(tech,{cars:0,bruto:0,liquido:0,maoObra:0});
+    const x=techMap.get(tech);
+    x.cars++;
+    x.bruto+=dNum(r.bruto);
+    x.liquido+=dNum(r.liquido);
+    x.maoObra+=dNum(r.mao_obra);
+  });
+  const tech=document.getElementById('technicianBody');
+  tech.innerHTML=[...techMap.entries()]
+    .sort((a,b)=>b[1].cars-a[1].cars)
+    .map(([name,x])=>{
+      const label=name==='NÃO INFORMADO'
+        ? '<button type="button" class="dash-no-tech-btn" onclick="dOpenNoTechModal()">NÃO INFORMADO</button>'
+        : dEsc(name);
+      return '<tr><td>'+label+'</td><td class="num">'+x.cars+'</td><td class="num">'+dashMoney.format(x.bruto)+'</td><td class="num">'+dashMoney.format(x.liquido)+'</td><td class="num">'+dashMoney.format(x.maoObra)+'</td></tr>';
+    })
+    .join('');
+}
+
+async function dImport(file){
+  const status=document.getElementById('importStatus');
+  try{
+    const sessionOk=typeof ensureDashboardSession==='function' ? await ensureDashboardSession() : !!currentUser;
+    if(!sessionOk){
+      if(status) status.textContent='Sessão expirada. Entre novamente.';
+      return;
+    }
+    const year=dSelectedYear();
+    const baseName='BASE '+year;
+    status.textContent='Lendo '+baseName+'...';
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+    let monthlySummary=dMonthlyWorkbookSummary(wb);
+    const rows=dParseWorkbook(wb);
+    if(!monthlySummary.count){
+      monthlySummary={
+        bruto:rows.reduce((a,r)=>a+dNum(r.bruto),0),
+        count:rows.length,
+        byMonth:{}
+      };
+    }
+    dSaveReconciliation(monthlySummary,file.name);
+
+    status.textContent='Comparando com a nuvem...';
+    const {data:existing,error}=await dFetchAllYearRows(dSelectedYear());
+    if(error){
+      if(error.code==='PGRST303' || /jwt|token|401/i.test(String(error.message||''))){
+        currentUser=null;
+        showAuth();
+        const msg=document.getElementById('loginMsg');
+        if(msg) msg.textContent='Sua sessão expirou. Entre novamente para continuar.';
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      throw error;
+    }
+
+    const currentRows=existing||[];
+    const oldMap=new Map(currentRows.map(r=>[Number(r.os),r]));
+    const newMap=new Map(rows.map(r=>[Number(r.os),r]));
+
+    let novos=0,alterados=0,iguais=0;
+    rows.forEach(r=>{
+      const old=oldMap.get(r.os);
+      if(!old) novos++;
+      else if(dSame(old,r)) iguais++;
+      else alterados++;
+    });
+
+    const removidos=currentRows.filter(r=>!newMap.has(Number(r.os)));
+
+    const ok=confirm(
+      'Sincronização da '+baseName+'\n\n'+
+      'Conferência financeira:\n'+
+      'Abas mensais: '+dashMoney.format(monthlySummary.bruto)+'\n'+
+      baseName+' a importar: '+dashMoney.format(rows.reduce((a,r)=>a+dNum(r.bruto),0))+'\n'+
+      'Diferença: '+dashMoney.format(monthlySummary.bruto-rows.reduce((a,r)=>a+dNum(r.bruto),0))+'\n\n'+
+      rows.length+' O.S. válidas na planilha\n'+
+      novos+' novas\n'+
+      alterados+' alteradas\n'+
+      iguais+' sem mudanças\n'+
+      removidos.length+' removidas do Dashboard\n'+
+      (removidos.length?'O.S. removidas: '+removidos.slice(0,30).map(r=>r.os).join(', ')+(removidos.length>30?' ...':'')+'\n':'')+
+      '\nO.S. antigas totalmente zeradas e sem técnico também são ignoradas.\n'+
+      'Somente a aba '+baseName+' será considerada.\n\nContinuar?'
+    );
+    if(!ok){status.textContent='Sincronização cancelada.';return;}
+
+    dSaveBackup(currentRows,file.name);
+
+    const changed=rows.filter(r=>!oldMap.has(r.os)||!dSame(oldMap.get(r.os),r));
+    for(let i=0;i<changed.length;i+=200){
+      status.textContent='Enviando '+Math.min(i+200,changed.length)+' de '+changed.length+' alterações...';
+      const {error:upErr}=await db
+        .from('indicadores_oficina')
+        .upsert(changed.slice(i,i+200),{onConflict:'ano,os'});
+      if(upErr) throw upErr;
+    }
+
+    for(let i=0;i<removidos.length;i+=200){
+      const ids=removidos.slice(i,i+200).map(r=>r.id).filter(Boolean);
+      if(!ids.length) continue;
+      status.textContent='Removendo '+Math.min(i+200,removidos.length)+' de '+removidos.length+' registros antigos...';
+      const {error:delErr}=await db
+        .from('indicadores_oficina')
+        .delete()
+        .in('id',ids);
+      if(delErr) throw delErr;
+    }
+
+    status.textContent='Concluído: '+novos+' novas, '+alterados+' atualizadas e '+removidos.length+' removidas.';
+    await dLoad();
+  }catch(err){
+    console.error(err);
+    const detail=String(err?.message||err||'Erro desconhecido');
+    alert('Não foi possível sincronizar a planilha.\n\nAno selecionado: '+dSelectedYear()+'\n'+detail);
+    status.textContent='Erro: '+detail;
+  }
+}
+
+document.getElementById('importExcelBtn')?.addEventListener('click',()=>document.getElementById('excelInput')?.click());
+document.getElementById('excelInput')?.addEventListener('change',async e=>{
+  const file=e.target.files?.[0];
+  if(file) await dImport(file);
+  e.target.value='';
+});
+document.getElementById('empresaFilter')?.addEventListener('change',dRender);
+document.getElementById('yearFilter')?.addEventListener('change',async()=>{
+  const empresa=document.getElementById('empresaFilter');
+  if(empresa) empresa.value='TODAS';
+  dUpdateYearUi();
+  dUpdateBackupUi();
+  dRenderFinancialCheck();
+  await dLoad();
+});
+document.getElementById('undoImportBtn')?.addEventListener('click',dUndoLastImport);
+dUpdateYearUi();
+dUpdateBackupUi();
+dRenderFinancialCheck();
+
+db.auth.onAuthStateChange((_event,session)=>{
+  if(session?.user) setTimeout(dLoad,0);
+});
+db.auth.getSession().then(({data})=>{
+  if(data.session?.user) dLoad();
+});
