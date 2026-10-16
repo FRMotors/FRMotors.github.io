@@ -3,10 +3,104 @@
 <title>FR Motors · CRM de recuperação</title>
 <style>
 :root{--dark:#101820;--ink:#172126;--muted:#68777f;--line:#dfe5e8;--bg:#f4f6f7;--teal:#167b87}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}.top{background:var(--dark);color:#fff;padding:16px 20px}.top-in{max-width:1240px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.top b{font-size:18px}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;padding:8px 11px;border-radius:9px;background:#26343b;color:#f5f7f8;font-weight:750}.nav a.active{background:#fff;color:var(--dark)}main{max-width:1240px;margin:0 auto;padding:22px 16px 60px}h1{margin:0;font-size:27px}p{color:var(--muted)}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px;box-shadow:0 6px 16px #1018200a}.filters{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.field{display:grid;gap:5px;min-width:155px;flex:1}.field label{font-size:11px;font-weight:800;color:#53636a}.field input,.field select,textarea{min-height:42px;border:1px solid #cdd8dc;border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);width:100%}textarea{min-height:90px;resize:vertical}.btn{border:1px solid #cdd8dc;border-radius:9px;padding:10px 14px;background:#fff;font-weight:800;min-height:42px}.btn.dark{background:var(--dark);color:#fff;border-color:var(--dark)}.btn:disabled{opacity:.5;cursor:not-allowed}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.kpi{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fff}.kpi strong{display:block;font-size:24px}.kpi span{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,1fr);gap:14px;margin-top:14px}.list{display:grid;gap:8px;max-height:66vh;overflow:auto}.item{display:block;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;width:100%}.item.active{border:2px solid var(--teal);background:#eef8f9}.item strong{display:block}.sub{font-size:12px;color:var(--muted);margin-top:4px}.pill{display:inline-block;background:#e9f0f2;color:#27383e;border-radius:50px;padding:3px 8px;font-size:11px;font-weight:800;margin-top:7px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.feedback{min-height:18px;margin:10px 0;color:#53636a}.hidden{display:none!important}.checkbox{display:flex;align-items:center;gap:8px;font-size:12px}.checkbox input{width:auto;min-height:auto}.note{font-size:12px;color:var(--muted)}#editPanel h2{margin:0 0 12px;font-size:18px}#history{max-height:180px;overflow:auto;font-size:12px;color:#53636a}.historyItem{padding:8px 0;border-bottom:1px solid var(--line)}@media(max-width:850px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.list{max-height:45vh}.top-in{display:block}.nav{margin-top:12px}.nav a{font-size:12px;padding:8px}.panel{padding:14px}}@media(max-width:420px){.kpis{gap:7px}.kpi strong{font-size:21px}.field{min-width:130px}h1{font-size:23px}}
+.system-topbar{
+    position:fixed; top:0; left:0; right:0; z-index:500;
+    min-height:68px; background:rgba(244,246,247,.96);
+    backdrop-filter:blur(12px); border-bottom:1px solid var(--fr-line);
+    box-shadow:0 8px 28px rgba(16,24,32,.07);
+}
+.system-topbar-inner{
+    max-width:1280px; min-height:68px; margin:0 auto; padding:9px 20px;
+    display:flex; align-items:center; gap:18px;
+}
+.system-brand{display:flex;align-items:center;gap:11px;min-width:max-content;}
+.system-brand-mark{
+    width:46px;height:46px;border-radius:14px;background:var(--fr-dark);color:#fff;
+    display:grid;place-items:center;font-weight:900;font-style:italic;font-size:16px;line-height:1;letter-spacing:-2px;
+    box-shadow:0 8px 22px rgba(16,24,32,.16);
+}
+.system-brand-copy strong{display:block;color:#172126;font-size:18px;line-height:1.05;}
+.system-brand-copy span{display:block;color:var(--fr-muted);font-size:11px;margin-top:3px;}
+.system-nav{
+    display:flex;align-items:center;gap:6px;padding:5px;background:#e9edef;
+    border:1px solid var(--fr-line);border-radius:14px;
+}
+.system-nav a{
+    min-height:38px;padding:8px 13px;border-radius:10px;display:inline-flex;align-items:center;
+    justify-content:center;text-decoration:none;color:#415159;font-size:13px;font-weight:850;white-space:nowrap;
+}
+.system-nav a:hover{background:#fff;color:#172126;}
+.system-nav a.active{background:var(--fr-dark);color:#fff;box-shadow:0 6px 16px rgba(16,24,32,.16);}
+.system-spacer{flex:1;}
+.system-status{
+    display:inline-flex;align-items:center;min-height:38px;padding:8px 12px;border-radius:10px;
+    background:#fff;border:1px solid var(--fr-line);color:#415159;font-size:12px;font-weight:750;white-space:nowrap;
+}
+.system-logout{
+    min-height:38px;padding:8px 13px;border-radius:10px;border:1px solid var(--fr-line)!important;
+    background:#fff!important;color:#172126!important;box-shadow:none!important;font-weight:800;
+}
+.system-logout:hover{background:#eef1f2!important;transform:none!important;}
+
+
+/* FR Motors: cabeçalho padronizado, versão privada do CRM */
+body.crm-authorized{padding-top:78px;background:#f4f6f7}
+.system-topbar{border-bottom:0;box-shadow:none;background:rgba(244,246,247,.94)}
+.system-topbar-inner{max-width:1280px;padding-left:18px;padding-right:18px}
+.system-status{border-radius:12px;min-height:40px}
+.system-logout{border-radius:12px!important;min-height:40px}
+.system-nav a.active{color:#fff}
+.crm-access-gate{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;background:#f4f6f7}
+.crm-access-box{max-width:430px;width:100%;background:#fff;border:1px solid #dfe5e8;border-radius:22px;box-shadow:0 18px 60px rgba(16,24,32,.12);padding:26px}
+.crm-access-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px;font-size:20px}
+.crm-brand-mark{background:#101820;border-radius:15px;width:52px;height:52px;display:grid;place-items:center;color:#fff;font-weight:950;font-style:italic}
+.crm-access-box h2{margin:0;font-size:20px}
+.crm-access-box a{display:inline-flex;text-decoration:none;background:#101820;color:#fff;border-radius:12px;padding:11px 14px;font-weight:800;margin-top:10px}
+.crm-private{display:none}
+body.crm-authorized .crm-private{display:block}
+body.crm-authorized .crm-access-gate{display:none}
+.crm-page{max-width:1280px;margin:auto;padding:20px 18px 48px}
+.crm-page h1{font-size:26px;line-height:1.15}
+.crm-page>p{margin:6px 0 18px}
+.crm-page .panel{border-radius:18px;box-shadow:0 8px 22px rgba(23,33,38,.05)}
+.crm-page .btn{border-radius:12px}
+.crm-page .item{border-radius:12px}
+.crm-page .item.active{border-width:1px;box-shadow:inset 0 0 0 1px #167b87}
+.crm-page .field input:focus,.crm-page .field select:focus,.crm-page textarea:focus{outline:0;border-color:#167b87;box-shadow:0 0 0 3px rgba(22,123,135,.12)}
+.crm-page .kpis{margin-top:14px!important}
+@media(max-width:900px){
+body.crm-authorized{padding-top:126px}
+.system-topbar-inner{flex-wrap:wrap;gap:7px 10px;padding:8px 12px;min-height:126px}
+.system-brand{flex:1}.system-brand-copy span{display:none}.system-brand-mark{width:42px;height:42px}
+.system-nav{order:3;width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.system-nav a{width:100%;font-size:12px;padding:8px 5px}
+.system-status{display:none}
+.crm-page{padding:16px 12px 40px}
+}
+@media(max-width:520px){
+.system-brand-copy strong{font-size:16px}
+.system-logout{padding:7px 10px!important}
+.system-nav a{font-size:11px;padding:8px 3px}
+.crm-page .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+.crm-page .field{min-width:130px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body>
-<header class="top"><div class="top-in"><b>FR Motors · CRM</b><nav class="nav"><a href="./">Ficha / O.S.</a><a href="./orcamentos.html">Orçamentos</a><a href="./dashboard.html">Dashboard</a><a href="./crm.html" class="active">Recuperação</a></nav></div></header>
-<main><h1>Recuperação de clientes</h1><p>Encontre clientes sem retorno, acompanhe as conversas e organize os próximos contatos. Abrir o WhatsApp não registra uma mensagem como enviada.</p>
+<div id="crmAccessGate" class="crm-access-gate"><div class="crm-access-box">
+  <div class="crm-access-brand"><div class="crm-brand-mark">FR</div><strong>FR Motors</strong></div>
+  <h2>CRM de Recuperação</h2>
+  <p id="crmGateMessage">Verificando permissão de acesso...</p>
+  <a href="./">Voltar para Ficha / O.S.</a>
+</div></div>
+<div class="crm-private" id="crmPrivate">
+<div class="system-topbar"><div class="system-topbar-inner">
+  <div class="system-brand"><div class="system-brand-mark">FR</div><div class="system-brand-copy"><strong>FR Motors</strong><span>Gestão da oficina</span></div></div>
+  <nav class="system-nav" aria-label="Módulos FR Motors"><a href="./">Ficha / O.S.</a><a href="./orcamentos.html">Orçamentos</a><a href="./dashboard.html">Dashboard</a><a class="active" href="./crm.html" aria-current="page">CRM</a></nav>
+  <div class="system-spacer"></div><span id="cloudStatusCrm" class="system-status">Acesso restrito</span>
+  <button id="logoutBtnCrm" class="system-logout" type="button">Sair</button>
+</div></div>
+<main class="crm-page"><h1>Recuperação de clientes</h1><p>Encontre clientes sem retorno, acompanhe as conversas e organize os próximos contatos. Abrir o WhatsApp não registra uma mensagem como enviada.</p>
 <section class="panel"><div id="authMessage" class="feedback">Verificando acesso...</div><div class="filters">
 <div class="field"><label for="refDate">Data-base</label><input type="date" id="refDate"></div>
 <div class="field"><label for="months">Sem retorno há (meses)</label><input type="number" min="1" max="120" id="months" value="12"></div>
@@ -22,7 +116,7 @@
 <div class="field" style="margin-top:10px"><label for="notes">Observações internas</label><textarea id="notes" maxlength="2000" placeholder="Ex.: cliente pediu retorno na próxima semana"></textarea></div>
 <div class="actions"><button class="btn dark" id="saveBtn">Salvar acompanhamento</button><button class="btn" id="waBtn">Abrir WhatsApp</button></div>
 <p class="note">Ao abrir o WhatsApp, confirme o envio na conversa. Registre “Contato realizado” somente depois de realmente falar ou enviar a mensagem ao cliente. Respeite pedidos de não contato.</p>
-<h3 style="font-size:14px">Histórico de alterações</h3><div id="history">Nenhum registro anterior.</div></div></section></div></main>
+<h3 style="font-size:14px">Histórico de alterações</h3><div id="history">Nenhum registro anterior.</div></div></section></div></main></div>
 <script>
 const SUPABASE_URL="https://rtdndffvbxhrhftqstwx.supabase.co";
 const SUPABASE_KEY="sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip";
@@ -45,7 +139,30 @@ $('kContacted').textContent=clients.filter(c=>['contatado','respondeu','agendado
 $('kRecovered').textContent=clients.filter(c=>stateFor(c).status==='recuperado').length;
 $('summary').textContent=shown.length+' cliente(s) exibidos de '+clients.length+' localizados. Os totais refletem a pesquisa atual.';
 }
-async function ensure(){const {data:{session},error}=await db.auth.getSession();if(error||!session){$('authMessage').textContent='Acesse a Ficha / O.S. e entre na sua conta para utilizar o CRM.';ready=false;return false}ready=true;$('authMessage').textContent='Conectado ao FR Motors.';return true}
+async function ensure(){
+  try {
+    const {data:{user},error:userError}=await db.auth.getUser();
+    if(userError||!user){
+      ready=false;document.body.classList.remove('crm-authorized');
+      $('crmGateMessage').textContent='Entre com a conta autorizada na Ficha / O.S. para acessar o CRM.';
+      return false;
+    }
+    const {data:allowed,error:permissionError}=await db.rpc('crm_recuperacao_autorizado');
+    if(permissionError||allowed!==true){
+      ready=false;document.body.classList.remove('crm-authorized');
+      $('crmGateMessage').textContent='Acesso restrito. Este módulo está disponível apenas para a conta de teste autorizada.';
+      return false;
+    }
+    ready=true;document.body.classList.add('crm-authorized');
+    $('authMessage').textContent='Acesso autorizado · Módulo em testes.';
+    $('cloudStatusCrm').textContent='CRM · Acesso autorizado';
+    return true;
+  } catch(e) {
+    ready=false;document.body.classList.remove('crm-authorized');
+    $('crmGateMessage').textContent='Não foi possível verificar sua permissão. Confira a conexão e tente novamente.';
+    return false;
+  }
+}
 async function fetchAll(query){let result=[];for(let i=0;i<20;i++){const {data,error}=await query(i*1000,i*1000+999);if(error)throw error;result.push(...(data||[]));if(!data||data.length<1000)break}return result}
 async function load(){
 if(!await ensure())return;
@@ -68,5 +185,8 @@ $('saveBtn').disabled=true;
 try{const {data,error}=await db.from('crm_recuperacao_clientes').upsert({cod_cliente:c.cod_cliente,status,proximo_contato:next,observacao:note},{onConflict:'cod_cliente'}).select().single();if(error)throw error;states.set(id,data);await choose(id);$('summary').textContent='Acompanhamento salvo com sucesso.'}catch(e){alert('Falha ao salvar: '+(e.message||'Tente novamente'))}finally{$('saveBtn').disabled=false}}
 function whatsapp(){if(!current)return;const c=clients.find(x=>String(x.cod_cliente)===current),s=stateFor(c);if(s.status==='nao_contatar'){alert('Este cliente está marcado como Não contatar.');return}const phone=phoneFor(c);if(!phone){alert('Cliente sem celular válido.');return}const msg='Olá! Tudo bem? Aqui é da FR Motors. Faz um tempo desde sua última visita e gostaríamos de saber se precisa de algum serviço ou revisão no seu veículo. Estamos à disposição!';window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank','noopener')}
 const date=new Date();$('refDate').value=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
-$('loadBtn').onclick=load;$('saveBtn').onclick=save;$('waBtn').onclick=whatsapp;$('statusFilter').onchange=refresh;$('search').onkeydown=e=>{if(e.key==='Enter')load()};ensure();
+$('loadBtn').onclick=load;$('saveBtn').onclick=save;$('waBtn').onclick=whatsapp;$('statusFilter').onchange=refresh;$('search').onkeydown=e=>{if(e.key==='Enter')load()};
+$('logoutBtnCrm').onclick=async()=>{await db.auth.signOut();window.location.assign('./');};
+db.auth.onAuthStateChange((_event,_session)=>{setTimeout(()=>ensure(),0)});
+ensure();
 </script></body></html>
