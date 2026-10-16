@@ -1029,6 +1029,8 @@ function dRenderFinancialCheck(){
 }
 
 async function dUndoLastImport(){
+  const sessionOk=typeof ensureDashboardSession==='function' ? await ensureDashboardSession() : !!currentUser;
+  if(!sessionOk) return;
   const backup=dGetBackup();
   if(!backup?.rows?.length){
     alert('Não existe uma importação anterior disponível para desfazer.');
@@ -1160,7 +1162,8 @@ function dParseWorkbook(workbook){
 }
 
 async function dLoad(){
-  if(!currentUser) return;
+  const sessionOk=typeof ensureDashboardSession==='function' ? await ensureDashboardSession() : !!currentUser;
+  if(!sessionOk) return;
   const status=document.getElementById('importStatus');
   const year=dSelectedYear();
   dUpdateYearUi();
@@ -1247,6 +1250,11 @@ function dRender(){
 async function dImport(file){
   const status=document.getElementById('importStatus');
   try{
+    const sessionOk=typeof ensureDashboardSession==='function' ? await ensureDashboardSession() : !!currentUser;
+    if(!sessionOk){
+      if(status) status.textContent='Sessão expirada. Entre novamente.';
+      return;
+    }
     const year=dSelectedYear();
     const baseName='BASE '+year;
     status.textContent='Lendo '+baseName+'...';
@@ -1264,7 +1272,16 @@ async function dImport(file){
 
     status.textContent='Comparando com a nuvem...';
     const {data:existing,error}=await db.from('indicadores_oficina').select('*').eq('ano',dSelectedYear()).range(0,4999);
-    if(error) throw error;
+    if(error){
+      if(error.code==='PGRST303' || /jwt|token|401/i.test(String(error.message||''))){
+        currentUser=null;
+        showAuth();
+        const msg=document.getElementById('loginMsg');
+        if(msg) msg.textContent='Sua sessão expirou. Entre novamente para continuar.';
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      throw error;
+    }
 
     const currentRows=existing||[];
     const oldMap=new Map(currentRows.map(r=>[Number(r.os),r]));
