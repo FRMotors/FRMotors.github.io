@@ -283,6 +283,10 @@ function dRenderRevenueChart(rows){
   const chart=document.getElementById('revenueChart');
   if(!chart) return;
 
+  const empresa=document.getElementById('empresaFilter')?.value||'TODAS';
+  const subtitle=chart.closest('.dash-chart-card')?.querySelector('.dash-chart-subtitle');
+  if(subtitle) subtitle.textContent='Comparação mensal · '+dSelectedYear()+' · '+(empresa==='TODAS'?'Todas as empresas':empresa);
+
   const monthly=dashMonths.map(m=>{
     const rs=rows.filter(r=>dNorm(r.mes)===dNorm(m));
     return {
@@ -1362,6 +1366,8 @@ document.getElementById('excelInput')?.addEventListener('change',async e=>{
 });
 document.getElementById('empresaFilter')?.addEventListener('change',dRender);
 document.getElementById('yearFilter')?.addEventListener('change',async()=>{
+  const empresa=document.getElementById('empresaFilter');
+  if(empresa) empresa.value='TODAS';
   dUpdateYearUi();
   dUpdateBackupUi();
   dRenderFinancialCheck();
