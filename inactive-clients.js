@@ -345,8 +345,21 @@
     crmLink.className='btn history-btn internal inactive-btn';
     crmLink.textContent='CRM · Recuperação';
     crmLink.title='Acompanhar contatos e recuperação de clientes';
-    crmLink.style.cssText='display:inline-flex;align-items:center;justify-content:center;text-decoration:none';
+    crmLink.style.cssText='display:none;align-items:center;justify-content:center;text-decoration:none';
     btn.insertAdjacentElement('afterend',crmLink);
+    let crmPermissionCheck=0;
+    async function refreshCrmAccess(){
+      const check=++crmPermissionCheck;
+      crmLink.style.display='none';
+      try{
+        const {data:{user},error:userError}=await db.auth.getUser();
+        if(userError||!user||check!==crmPermissionCheck)return;
+        const {data:allowed,error}=await db.rpc('crm_recuperacao_autorizado');
+        if(!error&&allowed===true&&check===crmPermissionCheck)crmLink.style.display='inline-flex';
+      }catch(e){console.warn('CRM: permissão indisponível',e)}
+    }
+    db.auth.onAuthStateChange(()=>setTimeout(refreshCrmAccess,0));
+    refreshCrmAccess();
 
     const modal=document.createElement('div');
     modal.className='modal-backdrop';
