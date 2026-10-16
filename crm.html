@@ -85,6 +85,8 @@ body.crm-authorized{padding-top:126px}
 .crm-page .field{min-width:130px}
 }
 
+
+.vcf-contact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}.vcf-contact strong{font-size:13px}.vcf-status{border-radius:10px;border:1px solid var(--line);background:white;padding:9px;min-width:170px;max-width:230px}.vcf-contacts{max-height:430px;overflow:auto}.vcf-help{font-size:12px;color:var(--muted)}@media(max-width:520px){.vcf-contact{align-items:stretch;flex-direction:column;gap:6px}.vcf-status{min-width:100%;max-width:100%}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body>
 <div id="crmAccessGate" class="crm-access-gate"><div class="crm-access-box">
@@ -107,6 +109,7 @@ body.crm-authorized{padding-top:126px}
 <div class="field"><label for="search">Cliente, placa ou O.S.</label><input id="search" placeholder="Pesquisa opcional"></div>
 <div class="field"><label for="statusFilter">Situação CRM</label><select id="statusFilter"><option value="all">Todas</option><option value="pendente">Pendentes</option><option value="contatado">Contatados</option><option value="respondeu">Responderam</option><option value="agendado">Agendados</option><option value="recuperado">Recuperados</option><option value="sem_interesse">Sem interesse</option><option value="nao_contatar">Não contatar</option></select></div>
 <button id="loadBtn" class="btn dark">Pesquisar clientes</button></div><div id="summary" class="feedback"></div></section>
+<section class="panel" id="vcfCampaigns"><h2 style="margin:0 0 8px;font-size:18px">Listas de transmissão · VCF</h2><p class="vcf-help">Use o VCF exportado em Clientes inativos. Ele identifica os contatos, mas não verifica automaticamente a entrega das mensagens. Registre o resultado após conferir o WhatsApp do Fred.</p><div class="filters"><div class="field"><label for="vcfName">Nome da lista</label><input id="vcfName" maxlength="100" placeholder="Ex.: Transmissão Fred 01"></div><div class="field"><label for="vcfFile">Arquivo de contatos (.vcf)</label><input id="vcfFile" type="file" accept=".vcf,text/vcard,text/x-vcard"></div><button id="vcfImport" class="btn dark" type="button">Criar lista pelo VCF</button></div><div id="vcfMessage" class="feedback" role="status"></div><div class="filters" style="margin-top:10px"><div class="field"><label for="vcfList">Listas salvas</label><select id="vcfList"><option value="">Selecionar lista salva</option></select></div><div class="field"><label for="vcfStatusFilter">Filtrar entregas</label><select id="vcfStatusFilter"><option value="all">Todas</option><option value="aguardando">Aguardando confirmação</option><option value="recebeu">Recebeu</option><option value="nao_recebeu">Não recebeu</option><option value="respondeu">Respondeu</option><option value="nao_contatar">Não contatar</option></select></div></div><div id="vcfCount" class="feedback">Selecione uma lista para consultar.</div><div id="vcfContacts" class="vcf-contacts"></div></section>
 <section class="kpis" style="margin-top:14px"><div class="kpi"><strong id="kAll">0</strong><span>Clientes localizados</span></div><div class="kpi"><strong id="kPending">0</strong><span>Sem contato registrado</span></div><div class="kpi"><strong id="kContacted">0</strong><span>Em acompanhamento</span></div><div class="kpi"><strong id="kRecovered">0</strong><span>Retornos registrados</span></div></section>
 <div class="grid"><section class="panel" style="margin:0"><h2 style="margin:0 0 12px;font-size:18px">Clientes</h2><div id="clients" class="list"><p>Faça uma pesquisa para começar.</p></div></section>
 <section class="panel" id="editPanel" style="margin:0"><h2>Acompanhamento</h2><p id="selectHint">Selecione um cliente para consultar os dados e registrar o atendimento.</p>
@@ -189,4 +192,4 @@ $('loadBtn').onclick=load;$('saveBtn').onclick=save;$('waBtn').onclick=whatsapp;
 $('logoutBtnCrm').onclick=async()=>{await db.auth.signOut();window.location.assign('./');};
 db.auth.onAuthStateChange((_event,_session)=>{setTimeout(()=>ensure(),0)});
 ensure();
-</script></body></html>
+</script><script src="./crm-transmissoes.js?v=1.0"></script></body></html>
