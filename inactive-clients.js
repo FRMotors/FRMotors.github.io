@@ -1,4 +1,4 @@
-/* FR Motors · Clientes inativos e recuperação · V4.5.11 */
+/* FR Motors · Clientes inativos e recuperação · V4.5.14 */
 (function(){
   'use strict';
 
@@ -112,7 +112,7 @@
       .inactive-service-control input{border-radius:11px 0 0 11px!important;border-right:0!important}
       .inactive-service-toggle{border:1px solid #d8e0e3;border-left:0;background:#fff;border-radius:0 11px 11px 0;color:#53636a;font-size:16px;font-weight:900;cursor:pointer;min-height:42px}
       .inactive-service-toggle:hover,.inactive-service-toggle:focus{background:#f3f7f8;outline:none}
-      .inactive-service-menu{display:none;position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);max-height:240px;overflow-y:auto;background:#fff;border:1px solid #d7e0e3;border-radius:12px;box-shadow:0 10px 24px rgba(23,33,38,.18);padding:5px}
+      .inactive-service-menu{display:none;position:absolute;z-index:30;left:0;right:0;top:calc(100% + 5px);max-height:360px;overflow-y:auto;background:#fff;border:1px solid #d7e0e3;border-radius:12px;box-shadow:0 10px 24px rgba(23,33,38,.18);padding:5px}
       .inactive-service-menu.show{display:block}
       .inactive-service-choice{width:100%;border:0;background:#fff;text-align:left;padding:10px;border-radius:9px;font-size:12px;font-weight:800;color:#172126;display:grid;gap:2px}
       .inactive-service-choice small{font-size:10px;font-weight:600;color:#7a898f}
@@ -354,7 +354,7 @@
         </div>
         <div class="inactive-filters">
           <div class="inactive-field"><label>Data-base</label><input id="inactiveDate" type="date"></div>
-          <div class="inactive-field"><label>Considerar clientes desde</label><input id="inactiveMinDate" type="date"></div>
+          <div class="inactive-field"><label>Última visita até</label><input id="inactiveMinDate" type="date"></div>
           <div class="inactive-field"><label>Sem retornar há</label><input id="inactiveMonths" type="number" min="1" max="120" value="6" placeholder="Meses"></div>
           <div class="inactive-field inactive-service-field">
             <label for="inactiveService">Mão de obra / serviço</label>
@@ -416,12 +416,12 @@
 
     const today=new Date();
     $('#inactiveDate').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
-    const savedMinDate=localStorage.getItem('frmotors-inactive-min-date')||'';
+    const savedMinDate=localStorage.getItem('frmotors-inactive-last-visit-until')||'';
     $('#inactiveMinDate').value=savedMinDate;
     $('#inactiveMinDate').addEventListener('change',()=>{
       const value=$('#inactiveMinDate').value||'';
-      if(value)localStorage.setItem('frmotors-inactive-min-date',value);
-      else localStorage.removeItem('frmotors-inactive-min-date');
+      if(value)localStorage.setItem('frmotors-inactive-last-visit-until',value);
+      else localStorage.removeItem('frmotors-inactive-last-visit-until');
     });
     const savedSort=localStorage.getItem('frmotors-inactive-sort')||'inactive';
     $('#inactiveSort').value=['inactive','az','za'].includes(savedSort)?savedSort:'inactive';
@@ -557,7 +557,7 @@
     const q=showAll?'':input.value.trim().toLocaleLowerCase('pt-BR');
     const found=serviceCatalog
       .filter(x=>!q||String(x.descricao||'').toLocaleLowerCase('pt-BR').includes(q))
-      .slice(0,12);
+      .slice(0,60);
 
     box.innerHTML=found.map(x=>{
       const desc=String(x.descricao||'');
@@ -581,7 +581,7 @@
   async function loadServices(){
     if(serviceLoaded)return;
     try{
-      const {data,error}=await db.rpc('shoficina_servicos_catalogo',{p_search:null,p_limit:120});
+      const {data,error}=await db.rpc('shoficina_servicos_catalogo',{p_search:null,p_limit:200});
       if(error)throw error;
       serviceCatalog=data||[];
       serviceLoaded=true;
@@ -601,10 +601,10 @@
     box.innerHTML='<div class="inactive-empty">Consultando histórico de O.S. e serviços...</div>';
 
     try{
-      const {data,error}=await db.rpc('shoficina_clientes_inativos_v3',{
+      const {data,error}=await db.rpc('shoficina_clientes_inativos_v4',{
         p_reference_date:date,
         p_months:months,
-        p_min_last_visit:minDate,
+        p_last_visit_until:minDate,
         p_services:services.length?services:null,
         p_search:term,
         p_limit:1500
@@ -615,7 +615,7 @@
       selected.clear();
       rows=data||[];
       summary.textContent=rows.length+' cliente'+(rows.length===1?'':'s')+' encontrado'+(rows.length===1?'':'s')+
-        (minDate?' · desde '+new Date(minDate+'T00:00:00').toLocaleDateString('pt-BR'):'')+
+        (minDate?' · última visita até '+new Date(minDate+'T00:00:00').toLocaleDateString('pt-BR'):'')+
         (services.length?' · serviços: '+services.join(' + '):'');
       render();
     }catch(e){
