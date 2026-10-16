@@ -253,7 +253,7 @@ async function importVCF(){
   info('Relacionando contatos e salvando lista...');
   let lookup=new Map();
   try{lookup=await knownClients()}catch(matchError){console.warn('[CRM] Comparação com SHOficina indisponível; VCF será salvo mesmo assim.',matchError)}
-  const {data:campaign,error:e1}=await db.from('crm_listas_transmissao').insert({nome}).select('id').single();
+  const {data:campaign,error:e1}=await db.from('crm_listas_transmissao').insert({nome:name}).select('id').single();
   if(e1)throw e1;
   campaignId=campaign.id;
   const rows=contacts.map(c=>({...c,lista_id:campaignId,cod_cliente:lookup.get(c.telefone)||null,situacao:'aguardando'}));
