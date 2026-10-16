@@ -249,6 +249,13 @@ function dEnsureRevenueChart(){
       text-transform:uppercase;
       white-space:nowrap;
     }
+    .dash-chart-total{
+      font-size:9px;
+      font-weight:850;
+      color:#68777f;
+      white-space:nowrap;
+      line-height:1;
+    }
     @media(max-width:700px){
       .dash-chart-card{padding:13px;}
       .dash-chart{min-width:720px;}
@@ -278,7 +285,7 @@ function dEnsureRevenueChart(){
   if(kpis) kpis.insertAdjacentElement('afterend',card);
 }
 
-function dRenderRevenueChart(rows){
+function dRenderRevenueChart(monthly){
   dEnsureRevenueChart();
   const chart=document.getElementById('revenueChart');
   if(!chart) return;
@@ -287,15 +294,6 @@ function dRenderRevenueChart(rows){
   const subtitle=chart.closest('.dash-chart-card')?.querySelector('.dash-chart-subtitle');
   if(subtitle) subtitle.textContent='Comparação mensal · '+dSelectedYear()+' · '+(empresa==='TODAS'?'Todas as empresas':empresa);
 
-  const monthly=dashMonths.map(m=>{
-    const rs=rows.filter(r=>dNorm(r.mes)===dNorm(m));
-    return {
-      month:m,
-      bruto:rs.reduce((a,r)=>a+dNum(r.bruto),0),
-      liquido:rs.reduce((a,r)=>a+dNum(r.liquido),0)
-    };
-  });
-
   const max=Math.max(1,...monthly.flatMap(x=>[x.bruto,x.liquido]));
   chart.innerHTML=monthly.map(x=>{
     const hb=Math.max(0,(x.bruto/max)*100);
@@ -303,6 +301,7 @@ function dRenderRevenueChart(rows){
     const label=x.month.slice(0,3);
     return `
       <div class="dash-chart-month">
+        <div class="dash-chart-total">${dEsc(dashMoney.format(x.bruto))}</div>
         <div class="dash-chart-bars">
           <div class="dash-chart-bar bruto" tabindex="0" role="button" style="height:${hb}%" title="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}" data-chart-value="${dEsc(x.month)} · Bruto: ${dEsc(dashMoney.format(x.bruto))}"></div>
           <div class="dash-chart-bar liquido" tabindex="0" role="button" style="height:${hl}%" title="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}" data-chart-value="${dEsc(x.month)} · Líquido: ${dEsc(dashMoney.format(x.liquido))}"></div>
@@ -547,7 +546,10 @@ function dMonthlyTotals(rows){
       bruto,
       liquido,
       gasto:sum('gasto'),
+      mao_obra:sum('mao_obra'),
       os:rs.length,
+      ok:rs.filter(r=>dNorm(r.status)==='OK').length,
+      abaixo:rs.filter(r=>dNorm(r.status)==='ABAIXO').length,
       margem:bruto!==0?(liquido/bruto)*100:0
     };
   });
@@ -1216,25 +1218,22 @@ function dRender(){
   document.getElementById('kpiOk').textContent=String(rows.filter(r=>dNorm(r.status)==='OK').length);
   document.getElementById('kpiAbaixo').textContent=String(rows.filter(r=>dNorm(r.status)==='ABAIXO').length);
 
-  dRenderRevenueChart(rows);
+  const monthlyTotals=dMonthlyTotals(rows);
+  dRenderRevenueChart(monthlyTotals);
   dRenderMarginChart(rows);
   dRenderMonthlyCompare(rows);
 
   const monthly=document.getElementById('monthlyBody');
-  monthly.innerHTML=dashMonths.map(m=>{
-    const rs=rows.filter(r=>dNorm(r.mes)===dNorm(m));
-    const sm=k=>rs.reduce((a,r)=>a+dNum(r[k]),0);
-    const ok=rs.filter(r=>dNorm(r.status)==='OK').length;
-    const below=rs.filter(r=>dNorm(r.status)==='ABAIXO').length;
-    const label=m.charAt(0)+m.slice(1).toLocaleLowerCase('pt-BR');
+  monthly.innerHTML=monthlyTotals.map(x=>{
+    const label=x.month.charAt(0)+x.month.slice(1).toLocaleLowerCase('pt-BR');
     return '<tr><td>'+dEsc(label)+'</td>'+
-      '<td class="num">'+dashMoney.format(sm('bruto'))+'</td>'+
-      '<td class="num">'+dashMoney.format(sm('gasto'))+'</td>'+
-      '<td class="num">'+dashMoney.format(sm('mao_obra'))+'</td>'+
-      '<td class="num">'+dashMoney.format(sm('liquido'))+'</td>'+
-      '<td class="num">'+rs.length+'</td>'+
-      '<td class="num">'+ok+'</td>'+
-      '<td class="num">'+below+'</td></tr>';
+      '<td class="num">'+dashMoney.format(x.bruto)+'</td>'+
+      '<td class="num">'+dashMoney.format(x.gasto)+'</td>'+
+      '<td class="num">'+dashMoney.format(x.mao_obra)+'</td>'+
+      '<td class="num">'+dashMoney.format(x.liquido)+'</td>'+
+      '<td class="num">'+x.os+'</td>'+
+      '<td class="num">'+x.ok+'</td>'+
+      '<td class="num">'+x.abaixo+'</td></tr>';
   }).join('');
 
   const techMap=new Map();
