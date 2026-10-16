@@ -53,6 +53,8 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
 .page{max-width:1280px;margin:0 auto;padding:20px}
 .hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
 .hero h1{margin:0;font-size:26px}.hero p{margin:5px 0 0;color:var(--muted)}
+.hero-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.year-select{height:38px;border:1px solid var(--line);border-radius:11px;background:#fff;padding:0 34px 0 12px;font:800 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);cursor:pointer}
 .btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 14px;border-radius:12px;font-weight:800}
 .btn.primary{background:#101820;color:#fff;border-color:#101820}
 .btn[disabled]{opacity:.48;cursor:not-allowed}
@@ -103,7 +105,7 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
   .system-status{display:none!important}
   .kpis{grid-template-columns:1fr 1fr}
 }
-@media(max-width:540px){.page{padding:14px}.kpis{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.financial-check-grid{grid-template-columns:1fr}}
+@media(max-width:540px){.page{padding:14px}.kpis{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero-title-row{width:100%}.year-select{height:36px}.financial-check-grid{grid-template-columns:1fr}}
 </style>
 <link rel="stylesheet" href="./fr-header.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -176,12 +178,18 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
 <main class="page">
   <div class="hero">
     <div>
-      <h1>Dashboard</h1>
+      <div class="hero-title-row">
+        <h1>Dashboard</h1>
+        <select id="yearFilter" class="year-select" aria-label="Ano do Dashboard">
+          <option value="2026" selected>2026</option>
+          <option value="2025">2025</option>
+        </select>
+      </div>
       <p>Indicadores financeiros e operacionais da FR Motors.</p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" id="undoImportBtn" type="button" disabled>Desfazer última importação</button>
-      <button class="btn primary" id="importExcelBtn" type="button">Importar Base Excel</button>
+      <button class="btn primary" id="importExcelBtn" type="button">Importar Base 2026</button>
     </div>
     <input id="excelInput" type="file" accept=".xlsx,.xlsm,.xls" hidden>
   </div>
@@ -289,12 +297,13 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
   document.getElementById('financialCheckToggle')?.setAttribute('aria-expanded',collapsed?'false':'true');
 });
 </script>
-<script src="./dashboard-data.js?v=4.4.73"></script>
+<script src="./dashboard-data.js?v=4.4.74"></script>
 <!-- V4.4.67 · Símbolo FR padronizado com Ficha/O.S. -->
 <!-- V4.4.68 · Cabeçalho desktop idêntico a Orçamentos -->
 <!-- V4.4.69 · Completa padronização estrutural do cabeçalho -->
 <!-- V4.4.70 · Recuo do cabeçalho alinhado ao Dashboard -->
 <!-- V4.4.71 · Cabeçalho mobile alinhado a Orçamentos: status oculto e altura corrigida -->
 <!-- V4.4.73 · Comparativo com dois meses e valores dos gráficos por clique -->
+<!-- V4.4.74 · Dashboard com seleção anual 2025/2026 -->
 </body>
 </html>
