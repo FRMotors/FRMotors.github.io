@@ -340,6 +340,13 @@
     btn.textContent='Clientes inativos';
     btn.title='Encontrar clientes que não retornam há alguns meses';
     maint.insertAdjacentElement('afterend',btn);
+    const crmLink=document.createElement('a');
+    crmLink.href='./crm.html';
+    crmLink.className='btn history-btn internal inactive-btn';
+    crmLink.textContent='CRM · Recuperação';
+    crmLink.title='Acompanhar contatos e recuperação de clientes';
+    crmLink.style.cssText='display:inline-flex;align-items:center;justify-content:center;text-decoration:none';
+    btn.insertAdjacentElement('afterend',crmLink);
 
     const modal=document.createElement('div');
     modal.className='modal-backdrop';
