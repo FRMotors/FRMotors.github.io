@@ -57,7 +57,7 @@ async function importVCF(){
   if(contacts.length>1000){info('O arquivo tem mais de 1000 contatos. Separe em listas menores.');return}
   info('Relacionando contatos e salvando lista...');
   const lookup=await knownClients();
-  const {data:campaign,error:e1}=await db.from('crm_listas_transmissao').insert({nome}).select('id').single();
+  const {data:campaign,error:e1}=await db.from('crm_listas_transmissao').insert({nome:name}).select('id').single();
   if(e1)throw e1;
   campaignId=campaign.id;
   const rows=contacts.map(c=>({...c,lista_id:campaignId,cod_cliente:lookup.get(c.telefone)||null,situacao:'aguardando'}));
