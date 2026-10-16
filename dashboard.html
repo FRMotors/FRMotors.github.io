@@ -262,6 +262,46 @@ function showAuth(){
   document.getElementById('loginScreen').style.display=currentUser?'none':'flex';
   document.getElementById('cloudStatusDash').textContent=currentUser?'Online · '+(currentUser.email||'usuário'):'Desconectado';
 }
+
+async function ensureDashboardSession(){
+  try{
+    let {data,error}=await db.auth.getSession();
+    if(error) throw error;
+    let session=data?.session||null;
+
+    if(!session){
+      currentUser=null;
+      showAuth();
+      return false;
+    }
+
+    const expiresAt=Number(session.expires_at||0)*1000;
+    const needsRefresh=!expiresAt || expiresAt<=Date.now()+60000;
+
+    if(needsRefresh){
+      const refreshed=await db.auth.refreshSession();
+      if(refreshed.error || !refreshed.data?.session){
+        currentUser=null;
+        showAuth();
+        const msg=document.getElementById('loginMsg');
+        if(msg) msg.textContent='Sua sessão expirou. Entre novamente para continuar.';
+        return false;
+      }
+      session=refreshed.data.session;
+    }
+
+    currentUser=session.user||null;
+    showAuth();
+    return !!currentUser;
+  }catch(err){
+    console.error('Falha ao validar sessão do Dashboard',err);
+    currentUser=null;
+    showAuth();
+    const msg=document.getElementById('loginMsg');
+    if(msg) msg.textContent='Sua sessão expirou. Entre novamente para continuar.';
+    return false;
+  }
+}
 async function signIn(){
   const email=document.getElementById('loginEmail').value.trim();
   const password=document.getElementById('loginPassword').value;
@@ -285,7 +325,7 @@ document.getElementById('magicLinkBtn').onclick=magic;
 document.getElementById('logoutBtnDash').onclick=logout;
 document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')signIn()});
 db.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;showAuth()});
-db.auth.getSession().then(({data})=>{currentUser=data.session?.user||null;showAuth()});
+ensureDashboardSession();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 
@@ -297,7 +337,7 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
   document.getElementById('financialCheckToggle')?.setAttribute('aria-expanded',collapsed?'false':'true');
 });
 </script>
-<script src="./dashboard-data.js?v=4.4.75"></script>
+<script src="./dashboard-data.js?v=4.4.76"></script>
 <!-- V4.4.67 · Símbolo FR padronizado com Ficha/O.S. -->
 <!-- V4.4.68 · Cabeçalho desktop idêntico a Orçamentos -->
 <!-- V4.4.69 · Completa padronização estrutural do cabeçalho -->
@@ -306,5 +346,6 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
 <!-- V4.4.73 · Comparativo com dois meses e valores dos gráficos por clique -->
 <!-- V4.4.74 · Dashboard com seleção anual 2025/2026 -->
 <!-- V4.4.75 · Importação histórica por BASE isolada -->
+<!-- V4.4.76 · Renovação explícita de sessão do Dashboard -->
 </body>
 </html>
