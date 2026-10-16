@@ -105,6 +105,7 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
   .system-status{display:none!important}
   .kpis{grid-template-columns:1fr 1fr}
 }
+@media(max-width:767px){.dashboard-import-actions{display:none!important}}
 @media(max-width:540px){.page{padding:14px}.kpis{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero-title-row{width:100%}.year-select{height:36px}.financial-check-grid{grid-template-columns:1fr}}
 </style>
 <link rel="stylesheet" href="./fr-header.css">
@@ -187,7 +188,7 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
       </div>
       <p>Indicadores financeiros e operacionais da FR Motors.</p>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div class="dashboard-import-actions" style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" id="undoImportBtn" type="button" disabled>Desfazer última importação</button>
       <button class="btn primary" id="importExcelBtn" type="button">Importar Base 2026</button>
     </div>
