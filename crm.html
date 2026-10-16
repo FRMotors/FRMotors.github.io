@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101820">
+<title>FR Motors · CRM de recuperação</title>
+<style>
+:root{--dark:#101820;--ink:#172126;--muted:#68777f;--line:#dfe5e8;--bg:#f4f6f7;--teal:#167b87}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}.top{background:var(--dark);color:#fff;padding:16px 20px}.top-in{max-width:1240px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.top b{font-size:18px}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;padding:8px 11px;border-radius:9px;background:#26343b;color:#f5f7f8;font-weight:750}.nav a.active{background:#fff;color:var(--dark)}main{max-width:1240px;margin:0 auto;padding:22px 16px 60px}h1{margin:0;font-size:27px}p{color:var(--muted)}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px;box-shadow:0 6px 16px #1018200a}.filters{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.field{display:grid;gap:5px;min-width:155px;flex:1}.field label{font-size:11px;font-weight:800;color:#53636a}.field input,.field select,textarea{min-height:42px;border:1px solid #cdd8dc;border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);width:100%}textarea{min-height:90px;resize:vertical}.btn{border:1px solid #cdd8dc;border-radius:9px;padding:10px 14px;background:#fff;font-weight:800;min-height:42px}.btn.dark{background:var(--dark);color:#fff;border-color:var(--dark)}.btn:disabled{opacity:.5;cursor:not-allowed}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.kpi{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fff}.kpi strong{display:block;font-size:24px}.kpi span{font-size:12px;color:var(--muted)}.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,1fr);gap:14px;margin-top:14px}.list{display:grid;gap:8px;max-height:66vh;overflow:auto}.item{display:block;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;width:100%}.item.active{border:2px solid var(--teal);background:#eef8f9}.item strong{display:block}.sub{font-size:12px;color:var(--muted);margin-top:4px}.pill{display:inline-block;background:#e9f0f2;color:#27383e;border-radius:50px;padding:3px 8px;font-size:11px;font-weight:800;margin-top:7px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.feedback{min-height:18px;margin:10px 0;color:#53636a}.hidden{display:none!important}.checkbox{display:flex;align-items:center;gap:8px;font-size:12px}.checkbox input{width:auto;min-height:auto}.note{font-size:12px;color:var(--muted)}#editPanel h2{margin:0 0 12px;font-size:18px}#history{max-height:180px;overflow:auto;font-size:12px;color:#53636a}.historyItem{padding:8px 0;border-bottom:1px solid var(--line)}@media(max-width:850px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.list{max-height:45vh}.top-in{display:block}.nav{margin-top:12px}.nav a{font-size:12px;padding:8px}.panel{padding:14px}}@media(max-width:420px){.kpis{gap:7px}.kpi strong{font-size:21px}.field{min-width:130px}h1{font-size:23px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body>
+<header class="top"><div class="top-in"><b>FR Motors · CRM</b><nav class="nav"><a href="./">Ficha / O.S.</a><a href="./orcamentos.html">Orçamentos</a><a href="./dashboard.html">Dashboard</a><a href="./crm.html" class="active">Recuperação</a></nav></div></header>
+<main><h1>Recuperação de clientes</h1><p>Encontre clientes sem retorno, acompanhe as conversas e organize os próximos contatos. Abrir o WhatsApp não registra uma mensagem como enviada.</p>
+<section class="panel"><div id="authMessage" class="feedback">Verificando acesso...</div><div class="filters">
+<div class="field"><label for="refDate">Data-base</label><input type="date" id="refDate"></div>
+<div class="field"><label for="months">Sem retorno há (meses)</label><input type="number" min="1" max="120" id="months" value="12"></div>
+<div class="field"><label for="search">Cliente, placa ou O.S.</label><input id="search" placeholder="Pesquisa opcional"></div>
+<div class="field"><label for="statusFilter">Situação CRM</label><select id="statusFilter"><option value="all">Todas</option><option value="pendente">Pendentes</option><option value="contatado">Contatados</option><option value="respondeu">Responderam</option><option value="agendado">Agendados</option><option value="recuperado">Recuperados</option><option value="sem_interesse">Sem interesse</option><option value="nao_contatar">Não contatar</option></select></div>
+<button id="loadBtn" class="btn dark">Pesquisar clientes</button></div><div id="summary" class="feedback"></div></section>
+<section class="kpis" style="margin-top:14px"><div class="kpi"><strong id="kAll">0</strong><span>Clientes localizados</span></div><div class="kpi"><strong id="kPending">0</strong><span>Sem contato registrado</span></div><div class="kpi"><strong id="kContacted">0</strong><span>Em acompanhamento</span></div><div class="kpi"><strong id="kRecovered">0</strong><span>Retornos registrados</span></div></section>
+<div class="grid"><section class="panel" style="margin:0"><h2 style="margin:0 0 12px;font-size:18px">Clientes</h2><div id="clients" class="list"><p>Faça uma pesquisa para começar.</p></div></section>
+<section class="panel" id="editPanel" style="margin:0"><h2>Acompanhamento</h2><p id="selectHint">Selecione um cliente para consultar os dados e registrar o atendimento.</p>
+<div id="editor" class="hidden"><strong id="clientTitle"></strong><div class="sub" id="clientMeta"></div>
+<div class="field" style="margin-top:12px"><label for="clientStatus">Status do relacionamento</label><select id="clientStatus"><option value="pendente">Pendente</option><option value="contatado">Contato realizado</option><option value="respondeu">Respondeu</option><option value="agendado">Agendado</option><option value="recuperado">Retornou à oficina (confirmado manualmente)</option><option value="sem_interesse">Sem interesse</option><option value="nao_contatar">Não contatar</option></select></div>
+<div class="field" style="margin-top:10px"><label for="followup">Próximo acompanhamento</label><input id="followup" type="date"></div>
+<div class="field" style="margin-top:10px"><label for="notes">Observações internas</label><textarea id="notes" maxlength="2000" placeholder="Ex.: cliente pediu retorno na próxima semana"></textarea></div>
+<div class="actions"><button class="btn dark" id="saveBtn">Salvar acompanhamento</button><button class="btn" id="waBtn">Abrir WhatsApp</button></div>
+<p class="note">Ao abrir o WhatsApp, confirme o envio na conversa. Registre “Contato realizado” somente depois de realmente falar ou enviar a mensagem ao cliente. Respeite pedidos de não contato.</p>
+<h3 style="font-size:14px">Histórico de alterações</h3><div id="history">Nenhum registro anterior.</div></div></section></div></main>
+<script>
+const SUPABASE_URL="https://rtdndffvbxhrhftqstwx.supabase.co";
+const SUPABASE_KEY="sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let clients=[],states=new Map(),current=null,ready=false;
+const statusLabels={pendente:'Pendente',contatado:'Contato realizado',respondeu:'Respondeu',agendado:'Agendado',recuperado:'Retorno registrado',sem_interesse:'Sem interesse',nao_contatar:'Não contatar'};
+function phoneFor(c){let n=String(c.celular||c.telefone||'').replace(/\D/g,'');if(n.length===10||n.length===11)n='55'+n;return n.length>=12&&n.startsWith('55')?n:''}
+function dmy(date){return date?new Date(date.length===10?date+'T12:00:00':date).toLocaleDateString('pt-BR'):'—'}
+function stateFor(c){return states.get(String(c.cod_cliente))||{status:'pendente',observacao:'',proximo_contato:null}}
+function getVisible(){const status=$('statusFilter').value;return clients.filter(c=>status==='all'||stateFor(c).status===status)}
+function refresh(){
+const shown=getVisible();const div=$('clients');
+div.innerHTML=shown.map(c=>{const s=stateFor(c),id=String(c.cod_cliente);return '<button class="item'+(current===id?' active':'')+'" data-id="'+escapeHtml(id)+'"><strong>'+escapeHtml(c.cliente||'Cliente')+'</strong><div class="sub">'+escapeHtml(c.veiculo||'Veículo não informado')+' · Última visita: '+escapeHtml(dmy(c.last_visit))+' · '+escapeHtml(c.months_inactive)+' meses sem retorno</div><span class="pill">'+escapeHtml(statusLabels[s.status]||s.status)+'</span>'+(s.proximo_contato?'<span class="pill">Próximo: '+escapeHtml(dmy(s.proximo_contato))+'</span>':'')+'</button>'}).join('')||'<p>Nenhum cliente para estes filtros.</p>';
+div.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>choose(b.dataset.id));
+$('kAll').textContent=clients.length;
+$('kPending').textContent=clients.filter(c=>stateFor(c).status==='pendente').length;
+$('kContacted').textContent=clients.filter(c=>['contatado','respondeu','agendado'].includes(stateFor(c).status)).length;
+$('kRecovered').textContent=clients.filter(c=>stateFor(c).status==='recuperado').length;
+$('summary').textContent=shown.length+' cliente(s) exibidos de '+clients.length+' localizados. Os totais refletem a pesquisa atual.';
+}
+async function ensure(){const {data:{session},error}=await db.auth.getSession();if(error||!session){$('authMessage').textContent='Acesse a Ficha / O.S. e entre na sua conta para utilizar o CRM.';ready=false;return false}ready=true;$('authMessage').textContent='Conectado ao FR Motors.';return true}
+async function fetchAll(query){let result=[];for(let i=0;i<20;i++){const {data,error}=await query(i*1000,i*1000+999);if(error)throw error;result.push(...(data||[]));if(!data||data.length<1000)break}return result}
+async function load(){
+if(!await ensure())return;
+$('loadBtn').disabled=true;$('summary').textContent='Buscando clientes e acompanhamentos...';
+try{
+const {data,error}=await db.rpc('shoficina_clientes_inativos_v4',{p_reference_date:$('refDate').value,p_months:Math.max(1,Math.min(120,Number($('months').value)||12)),p_last_visit_until:null,p_services:null,p_search:$('search').value.trim()||null,p_limit:2000});if(error)throw error;
+clients=data||[];let ids=new Set(clients.map(c=>String(c.cod_cliente)));let allStates=await fetchAll((a,b)=>db.from('crm_recuperacao_clientes').select('*').range(a,b).order('cod_cliente'));
+states=new Map(allStates.map(s=>[String(s.cod_cliente),s]));
+current=null;$('editor').classList.add('hidden');$('selectHint').classList.remove('hidden');refresh();
+if(clients.length>=2000)$('summary').textContent+=' Limite de 2.000 resultados; refine sua pesquisa.';
+}catch(err){$('summary').textContent='Não foi possível consultar os dados: '+(err.message||'Erro desconhecido');console.error(err)}
+finally{$('loadBtn').disabled=false}
+}
+async function choose(id){current=id;refresh();const c=clients.find(x=>String(x.cod_cliente)===id);if(!c)return;const s=stateFor(c);$('selectHint').classList.add('hidden');$('editor').classList.remove('hidden');$('clientTitle').textContent=c.cliente||'Cliente';$('clientMeta').textContent=[c.veiculo||'Veículo não informado',c.placa||'Sem placa','Última O.S.: '+(c.last_os_id||'—'),'Última visita: '+dmy(c.last_visit),'Telefone: '+(c.celular||c.telefone||'—')].join(' · ');$('clientStatus').value=s.status;$('followup').value=s.proximo_contato||'';$('notes').value=s.observacao||'';$('waBtn').disabled=s.status==='nao_contatar'||!phoneFor(c);$('history').textContent='Carregando histórico...';
+const {data,error}=await db.from('crm_recuperacao_historico').select('status_anterior,status_novo,proximo_contato,observacao,registrado_em').eq('cod_cliente',c.cod_cliente).order('registrado_em',{ascending:false}).limit(20);
+if(current!==id)return;$('history').innerHTML=error?'Erro ao consultar histórico.':(data||[]).map(x=>'<div class="historyItem"><strong>'+escapeHtml(statusLabels[x.status_novo]||x.status_novo)+'</strong> · '+escapeHtml(dmy(x.registrado_em))+(x.proximo_contato?' · Retorno previsto: '+escapeHtml(dmy(x.proximo_contato)):'')+(x.observacao?'<div>'+escapeHtml(x.observacao)+'</div>':'')+'</div>').join('')||'Nenhum registro anterior.'}
+async function save(){if(!ready||!current)return;const c=clients.find(x=>String(x.cod_cliente)===current),id=current;const old=stateFor(c),status=$('clientStatus').value;const next=$('followup').value||null;const note=$('notes').value.trim();
+if(status==='recuperado'&&old.status!=='recuperado'&&!confirm('Confirma que o cliente realmente retornou à oficina?'))return;
+$('saveBtn').disabled=true;
+try{const {data,error}=await db.from('crm_recuperacao_clientes').upsert({cod_cliente:c.cod_cliente,status,proximo_contato:next,observacao:note},{onConflict:'cod_cliente'}).select().single();if(error)throw error;states.set(id,data);await choose(id);$('summary').textContent='Acompanhamento salvo com sucesso.'}catch(e){alert('Falha ao salvar: '+(e.message||'Tente novamente'))}finally{$('saveBtn').disabled=false}}
+function whatsapp(){if(!current)return;const c=clients.find(x=>String(x.cod_cliente)===current),s=stateFor(c);if(s.status==='nao_contatar'){alert('Este cliente está marcado como Não contatar.');return}const phone=phoneFor(c);if(!phone){alert('Cliente sem celular válido.');return}const msg='Olá! Tudo bem? Aqui é da FR Motors. Faz um tempo desde sua última visita e gostaríamos de saber se precisa de algum serviço ou revisão no seu veículo. Estamos à disposição!';window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank','noopener')}
+const date=new Date();$('refDate').value=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
+$('loadBtn').onclick=load;$('saveBtn').onclick=save;$('waBtn').onclick=whatsapp;$('statusFilter').onchange=refresh;$('search').onkeydown=e=>{if(e.key==='Enter')load()};ensure();
+</script></body></html>
