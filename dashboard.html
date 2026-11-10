@@ -107,6 +107,14 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
 }
 @media(max-width:767px){.dashboard-import-actions{display:none!important}}
 @media(max-width:540px){.page{padding:14px}.kpis{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero-title-row{width:100%}.year-select{height:36px}.financial-check-grid{grid-template-columns:1fr}}
+
+/* Fluxo de Caixa integrado como subpagina do Dashboard; preserva os graficos existentes */
+.dashboard-section-switch{display:flex;gap:7px;flex-wrap:wrap;padding:5px;background:#e9edef;border:1px solid var(--line);border-radius:14px;margin-bottom:16px;max-width:max-content}
+.dashboard-section-switch button{border:0;border-radius:10px;padding:10px 15px;font:850 13px system-ui,-apple-system,"Segoe UI",Arial,sans-serif;cursor:pointer;background:transparent;color:#415159}
+.dashboard-section-switch button[aria-selected="true"]{background:#101820;color:#fff;box-shadow:0 6px 16px rgba(16,24,32,.16)}
+.dashboard-finance-iframe{display:block;width:100%;height:1780px;min-height:100vh;border:0;border-radius:16px;background:#f4f6f7}
+.dashboard-subpage[hidden]{display:none!important}
+@media(max-width:750px){.dashboard-section-switch{width:100%;max-width:none}.dashboard-section-switch button{flex:1;padding:12px 8px}.dashboard-finance-iframe{height:1920px}}
 </style>
 <link rel="stylesheet" href="./fr-header.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -177,6 +185,11 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
 </div>
 
 <main class="page">
+  <div class="dashboard-section-switch" role="tablist" aria-label="Seções do Dashboard">
+    <button id="dashboardTabOficina" role="tab" aria-selected="true" aria-controls="dashboardPageOficina" type="button">Indicadores da oficina</button>
+    <button id="dashboardTabFluxo" role="tab" aria-selected="false" aria-controls="dashboardPageFluxo" type="button">Fluxo de Caixa</button>
+  </div>
+  <div id="dashboardPageOficina" class="dashboard-subpage" role="tabpanel" aria-labelledby="dashboardTabOficina">
   <div class="hero">
     <div>
       <div class="hero-title-row">
@@ -251,6 +264,10 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
   </div>
 
   <div id="dashboardEmpty" class="empty">Importe a planilha com a aba <b>BASE 2026</b> para alimentar o Dashboard.</div>
+  </div>
+  <div id="dashboardPageFluxo" class="dashboard-subpage" role="tabpanel" aria-labelledby="dashboardTabFluxo" hidden>
+    <iframe id="financeSubpageFrame" class="dashboard-finance-iframe" title="Fluxo de Caixa da FR Motors" loading="lazy" referrerpolicy="same-origin" src="about:blank"></iframe>
+  </div>
 </main>
 
 <script>
@@ -339,6 +356,27 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
 });
 </script>
 <script src="./dashboard-data-v4481.js?build=20261016b"></script>
+<script>
+(function(){
+ const oficina=document.getElementById('dashboardPageOficina');
+ const fluxo=document.getElementById('dashboardPageFluxo');
+ const frame=document.getElementById('financeSubpageFrame');
+ const tabOficina=document.getElementById('dashboardTabOficina');
+ const tabFluxo=document.getElementById('dashboardTabFluxo');
+ function switchView(target){
+  const cash=target==='fluxo';
+  oficina.hidden=cash;fluxo.hidden=!cash;
+  tabOficina.setAttribute('aria-selected',String(!cash));
+  tabFluxo.setAttribute('aria-selected',String(cash));
+  if(cash&&frame.getAttribute('src')==='about:blank')frame.src='./fluxo-caixa.html';
+ }
+ tabOficina.addEventListener('click',()=>{switchView('oficina');history.replaceState(null,'',location.pathname+location.search+'#indicadores')});
+ tabFluxo.addEventListener('click',()=>{switchView('fluxo');history.replaceState(null,'',location.pathname+location.search+'#fluxo-caixa')});
+ if(location.hash==='#fluxo-caixa')switchView('fluxo');
+ window.addEventListener('hashchange',()=>switchView(location.hash==='#fluxo-caixa'?'fluxo':'oficina'));
+})();
+</script>
+
 <!-- V4.4.67 · Símbolo FR padronizado com Ficha/O.S. -->
 <!-- V4.4.68 · Cabeçalho desktop idêntico a Orçamentos -->
 <!-- V4.4.69 · Completa padronização estrutural do cabeçalho -->
