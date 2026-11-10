@@ -82,9 +82,20 @@ function renderTable(reset=false){
   rows=data.p.filter(x=>applies(x.month)).map(x=>[monthBR(x.month),money(x.expectedIn),money(x.expectedOut),money(x.actualIn),money(x.actualOut),money(x.projected),money(x.realBalance)]);
  }else if(activeTab==='pay'||activeTab==='receive'){
   const isPay=activeTab==='pay',source=isPay?data.duePay:data.dueReceive;
-  headers=['Vencimento',isPay?'Fornecedor':'Cliente','Categoria','Descrição','Valor','Situação'];
-  rows=source.filter(r=>applies(mm(r.due))).sort((a,b)=>dateValue(b.due)-dateValue(a.due))
-   .map(r=>[dateBR(r.due),r.partner||'Não informado',r.category,r.description,money(r.value),r.status]);
+  // Contas a pagar: mostrar somente "Em aberto", sem coluna Fornecedor e da mais antiga para a mais recente.
+  // Contas a receber: manter a exibição existente, sem alterações.
+  if(isPay){
+   const isOpen=r=>String(r.status||'').trim().toLocaleLowerCase('pt-BR')==='em aberto';
+   headers=['Vencimento','Categoria','Descrição','Valor','Situação'];
+   rows=source.filter(r=>applies(mm(r.due))&&isOpen(r))
+    .sort((a,b)=>dateValue(a.due)-dateValue(b.due))
+    .map(r=>[dateBR(r.due),r.category,r.description,money(r.value),r.status]);
+  }else{
+   headers=['Vencimento','Cliente','Categoria','Descrição','Valor','Situação'];
+   rows=source.filter(r=>applies(mm(r.due)))
+    .sort((a,b)=>dateValue(b.due)-dateValue(a.due))
+    .map(r=>[dateBR(r.due),r.partner||'Não informado',r.category,r.description,money(r.value),r.status]);
+  }
  }else if(activeTab==='transactions'){
   headers=['Data','Tipo','Categoria','Descrição','Conta','Valor','Status'];
   rows=data.transactions.filter(r=>applies(mm(r.date))).sort((a,b)=>dateValue(b.date)-dateValue(a.date))
