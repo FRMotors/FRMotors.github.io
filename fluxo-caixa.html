@@ -6,7 +6,21 @@
 .cash-summary-item span{color:var(--muted);font-weight:800;font-size:11px;text-transform:uppercase;line-height:1.4}
 .cash-summary-item strong{display:block;color:var(--ink);font-size:20px;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .cash-summary-item:last-child{grid-column:1/-1;background:#eef5f5;border-color:#dce8e8}
-@media(max-width:490px){.cash-summary-grid{grid-template-columns:1fr}.cash-summary-item:last-child{grid-column:auto}.cash-summary-item{min-height:78px}.cash-summary-item strong{font-size:19px}}.tools{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;margin:12px 0}.tools select{width:auto;min-width:160px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.tab{background:#edf1f2;border:0;color:#45545b;border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer}.tab[aria-selected=true]{background:var(--dark);color:#fff}.scroll{overflow:auto;max-height:540px}table{width:100%;border-collapse:collapse;min-width:640px}th,td{border-bottom:1px solid #edf0f2;text-align:left;padding:10px;font-size:12px}th{font-size:11px;background:#f5f8f9;text-transform:uppercase;color:#53636a}td.money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}td.negative{color:var(--bad)}.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.empty{padding:22px;text-align:center;color:var(--muted)}.pill{display:inline-block;border-radius:30px;background:#e9edef;padding:3px 8px;font-size:10px;font-weight:850}.pill.warn{background:#fff0e1;color:#955118}.pill.good{background:#e7f6f1;color:#176b52}.bars{display:flex;align-items:end;gap:8px;overflow:auto;height:215px;padding:12px 3px 20px;border-bottom:1px solid var(--line)}.barCol{flex:1;min-width:38px;height:100%;display:flex;justify-content:end;flex-direction:column;gap:3px;align-items:center;font-size:10px;color:var(--muted)}.barPair{width:100%;display:flex;gap:3px;align-items:end;justify-content:center;height:170px}.bar{width:44%;background:var(--teal);border-radius:4px 4px 0 0;min-height:1px}.bar.out{background:#556570}.legend{display:flex;gap:15px;font-size:11px;color:var(--muted);margin-top:10px}.dot{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--teal);margin-right:5px}.dot.out{background:#556570}.hidden{display:none!important}#financePrivate{display:none}body.allowed #financePrivate{display:block}body.allowed #accessGate{display:none}#accessGate{max-width:520px;margin:60px auto;background:#fff;padding:26px;border-radius:16px;border:1px solid var(--line)}@media(max-width:750px){.page{padding:10px 2px 25px}.kpis{grid-template-columns:repeat(2,1fr);gap:9px}.row2{grid-template-columns:1fr}.metric strong{font-size:18px}.panel{padding:13px}}
+@media(max-width:490px){.cash-summary-grid{grid-template-columns:1fr}.cash-summary-item:last-child{grid-column:auto}.cash-summary-item{min-height:78px}.cash-summary-item strong{font-size:19px}}.tools{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;margin:12px 0}.tools select{width:auto;min-width:160px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.tab{background:#edf1f2;border:0;color:#45545b;border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer}.tab[aria-selected=true]{background:var(--dark);color:#fff}.scroll{overflow:auto;max-height:540px}
+.cash-detail-tools{align-items:flex-end}
+#cashTableCount{min-height:42px;display:flex;align-items:center;justify-content:flex-end;text-align:right}
+#cashTable{border:1px solid #e6ecef;border-radius:12px}
+#cashTable table{width:100%;min-width:720px;border-collapse:separate;border-spacing:0}
+#cashTable th,#cashTable td{padding:12px 14px;vertical-align:middle;line-height:1.45}
+#cashTable th{position:sticky;top:0;z-index:2;background:#f3f6f7;white-space:nowrap;text-align:left;border-bottom:2px solid #dfe5e8}
+#cashTable th.money,#cashTable td.money{text-align:right;min-width:136px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#cashTable th.center,#cashTable td.center{text-align:center;white-space:nowrap}
+#cashTable th.description,#cashTable td.description{text-align:left;min-width:210px}
+#cashTable th.category,#cashTable td.category{text-align:left;min-width:140px}
+#cashTable td{overflow-wrap:anywhere}
+#cashTable tbody tr:nth-child(even){background:#fafbfc}
+#cashTable tbody tr:hover{background:#f1f6f7}
+@media(max-width:600px){#cashTableCount{min-height:auto;justify-content:flex-start;text-align:left}#cashTable th,#cashTable td{padding:10px 12px}}table{width:100%;border-collapse:collapse;min-width:640px}th,td{border-bottom:1px solid #edf0f2;text-align:left;padding:10px;font-size:12px}th{font-size:11px;background:#f5f8f9;text-transform:uppercase;color:#53636a}td.money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}td.negative{color:var(--bad)}.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.empty{padding:22px;text-align:center;color:var(--muted)}.pill{display:inline-block;border-radius:30px;background:#e9edef;padding:3px 8px;font-size:10px;font-weight:850}.pill.warn{background:#fff0e1;color:#955118}.pill.good{background:#e7f6f1;color:#176b52}.bars{display:flex;align-items:end;gap:8px;overflow:auto;height:215px;padding:12px 3px 20px;border-bottom:1px solid var(--line)}.barCol{flex:1;min-width:38px;height:100%;display:flex;justify-content:end;flex-direction:column;gap:3px;align-items:center;font-size:10px;color:var(--muted)}.barPair{width:100%;display:flex;gap:3px;align-items:end;justify-content:center;height:170px}.bar{width:44%;background:var(--teal);border-radius:4px 4px 0 0;min-height:1px}.bar.out{background:#556570}.legend{display:flex;gap:15px;font-size:11px;color:var(--muted);margin-top:10px}.dot{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--teal);margin-right:5px}.dot.out{background:#556570}.hidden{display:none!important}#financePrivate{display:none}body.allowed #financePrivate{display:block}body.allowed #accessGate{display:none}#accessGate{max-width:520px;margin:60px auto;background:#fff;padding:26px;border-radius:16px;border:1px solid var(--line)}@media(max-width:750px){.page{padding:10px 2px 25px}.kpis{grid-template-columns:repeat(2,1fr);gap:9px}.row2{grid-template-columns:1fr}.metric strong{font-size:18px}.panel{padding:13px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
 <div id="accessGate"><h2>Fluxo de Caixa · FR Motors</h2><p id="accessText">Verificando acesso...</p><a href="./dashboard.html">Voltar para Dashboard</a></div>
@@ -16,7 +30,7 @@
 <section class="kpis"><div class="metric"><span>Entradas realizadas</span><strong id="cashIn">R$ 0,00</strong></div><div class="metric"><span>Saídas realizadas</span><strong id="cashOut">R$ 0,00</strong></div><div class="metric"><span>Resultado do mês</span><strong id="cashNet">R$ 0,00</strong></div><div class="metric"><span>Saldo real acumulado</span><strong id="cashBalance">R$ 0,00</strong></div></section>
 <div class="row2"><section class="panel"><h2>Entradas e saídas realizadas · 12 meses</h2><div id="cashChart" class="bars"></div><div class="legend"><span><i class="dot"></i>Entradas</span><span><i class="dot out"></i>Saídas</span></div></section>
 <section class="panel"><h2>Resumo do mês</h2><div class="cash-summary-grid"><div class="cash-summary-item"><span>Entradas previstas</span><strong id="cashExpectedIn">—</strong></div><div class="cash-summary-item"><span>Saídas previstas</span><strong id="cashExpectedOut">—</strong></div><div class="cash-summary-item"><span>Contas a pagar em aberto</span><strong id="cashPendingPay">—</strong></div><div class="cash-summary-item"><span>Contas a receber em aberto</span><strong id="cashPendingReceive">—</strong></div><div class="cash-summary-item"><span>Saldo projetado</span><strong id="cashProjected">—</strong></div></div></section></div>
-<section class="panel"><h2>Detalhamento financeiro</h2><div class="tabs" role="tablist" aria-label="Detalhamento financeiro"><button class="tab" data-tab="forecast" aria-selected="true">Previsões</button><button class="tab" data-tab="pay" aria-selected="false">Contas a pagar</button><button class="tab" data-tab="receive" aria-selected="false">Contas a receber</button><button class="tab" data-tab="transactions" aria-selected="false">Lançamentos</button><button class="tab" data-tab="calendar" aria-selected="false">Calendário</button></div><div class="tools" style="margin:3px 0 12px"><div class="field" style="max-width:290px"><label for="cashDetailMonth">Período dos registros</label><select id="cashDetailMonth"><option value="all">Todos os meses disponíveis</option></select></div><div id="cashTableCount" class="note" role="status"></div></div><div id="cashTable" class="scroll"></div></section></div>
+<section class="panel"><h2>Detalhamento financeiro</h2><div class="tabs" role="tablist" aria-label="Detalhamento financeiro"><button class="tab" data-tab="forecast" aria-selected="true">Previsões</button><button class="tab" data-tab="pay" aria-selected="false">Contas a pagar</button><button class="tab" data-tab="receive" aria-selected="false">Contas a receber</button><button class="tab" data-tab="transactions" aria-selected="false">Lançamentos</button><button class="tab" data-tab="calendar" aria-selected="false">Calendário</button></div><div class="tools cash-detail-tools" style="margin:3px 0 12px"><div class="field" style="max-width:290px"><label for="cashDetailMonth">Período dos registros</label><select id="cashDetailMonth"><option value="all">Todos os meses disponíveis</option><option value="last6">Últimos 6 meses</option></select></div><div id="cashTableCount" class="note" role="status"></div></div><div id="cashTable" class="scroll"></div></section></div>
 </main></div>
 <script>
 'use strict';
@@ -77,10 +91,22 @@ function render(){
  renderTable();
 }
 let tableVisibleLimit=150;
+// Último mês com dados até o mês atual: ignora meses futuros apenas previstos.
+function lastSixMonthsPeriod(){
+ const now=new Date();
+ const currentMonth=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+ const available=(data?.availableMonths||[]).filter(x=>/^\d{4}-(0[1-9]|1[0-2])$/.test(x)).sort();
+ const reference=available.filter(x=>x<=currentMonth).pop()||available.at(-1)||currentMonth;
+ const [year,month]=reference.split('-').map(Number);
+ const startDate=new Date(Date.UTC(year,month-6,1));
+ const start=startDate.getUTCFullYear()+'-'+String(startDate.getUTCMonth()+1).padStart(2,'0');
+ return {start,end:reference};
+}
 function renderTable(reset=false){
  if(reset)tableVisibleLimit=150;
  const selectedMonth=$('cashDetailMonth').value||'all';
- const applies=r=>selectedMonth==='all'||r===selectedMonth;
+ const sixMonths=lastSixMonthsPeriod();
+ const applies=r=>selectedMonth==='all'||(selectedMonth==='last6'?(r>=sixMonths.start&&r<=sixMonths.end):r===selectedMonth);
  let headers=[],rows=[];
  if(activeTab==='forecast'){
   headers=['Mês','Entradas previstas','Saídas previstas','Entradas reais','Saídas reais','Saldo projetado','Saldo real'];
@@ -111,14 +137,21 @@ function renderTable(reset=false){
    .map(r=>[dateBR(r.date),money(r.income),money(r.expense),money(r.balance)]);
  }
  const box=$('cashTable'),counter=$('cashTableCount');
- counter.textContent=rows.length+' registro(s) encontrado(s)'+(selectedMonth==='all'?' no arquivo.':' em '+monthBR(selectedMonth)+'.');
+ counter.textContent=rows.length+' registro(s) encontrado(s)'+(selectedMonth==='all'?' no arquivo.':selectedMonth==='last6'?' entre '+monthBR(sixMonths.start)+' e '+monthBR(sixMonths.end)+'.':' em '+monthBR(selectedMonth)+'.');
  if(!rows.length){
   const hint=activeTab==='calendar'?'A aba Calendário da planilha possui somente os dias gerados para o mês configurado no Excel.':'';
   box.innerHTML='<div class="empty">Nenhum registro para esse período. Selecione "Todos os meses disponíveis" acima. '+escapeHtml(hint)+'</div>';return;
  }
  const visible=rows.slice(0,tableVisibleLimit);
- box.innerHTML='<table><thead><tr>'+headers.map(h=>'<th>'+escapeHtml(h)+'</th>').join('')+'</tr></thead><tbody>'+
- visible.map(r=>'<tr>'+r.map(v=>'<td'+((String(v).startsWith('R$')||String(v).startsWith('-R$'))?' class="money"':'')+'>'+escapeHtml(v)+'</td>').join('')+'</tr>').join('')+
+ const columnClasses=headers.map(h=>{
+  if(/^(Valor|Entradas|Saídas|Saldo)/i.test(h))return 'money';
+  if(/^(Mês|Vencimento|Data|Dia|Situação|Status)$/i.test(h))return 'center';
+  if(h==='Descrição')return 'description';
+  if(h==='Categoria')return 'category';
+  return '';
+ });
+ box.innerHTML='<table><thead><tr>'+headers.map((h,i)=>'<th class="'+columnClasses[i]+'">'+escapeHtml(h)+'</th>').join('')+'</tr></thead><tbody>'+
+ visible.map(r=>'<tr>'+r.map((v,i)=>'<td class="'+columnClasses[i]+'">'+escapeHtml(v)+'</td>').join('')+'</tr>').join('')+
  '</tbody></table>'+(visible.length<rows.length?'<div class="empty"><button class="btn" type="button" id="cashMore">Mostrar mais '+Math.min(150,rows.length-visible.length)+' registros</button></div>':'');
  const more=$('cashMore');if(more)more.onclick=()=>{tableVisibleLimit+=150;renderTable()};
 }
@@ -127,7 +160,7 @@ function setCashData(parsed,source,storedAt){
  data=parsed;
  data.availableMonths=Array.isArray(data.availableMonths)?data.availableMonths:[];
  $('cashMonth').innerHTML=data.p.map(x=>'<option value="'+escapeHtml(x.month)+'">'+escapeHtml(monthBR(x.month))+'</option>').join('');
- $('cashDetailMonth').innerHTML='<option value="all">Todos os meses disponíveis</option>'+
+ $('cashDetailMonth').innerHTML='<option value="all">Todos os meses disponíveis</option><option value="last6">Últimos 6 meses</option>'+
    data.availableMonths.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(monthBR(x))+'</option>').join('');
  $('cashDetailMonth').value='all';tableVisibleLimit=150;
  const nowMonth=new Date().toISOString().slice(0,7);
