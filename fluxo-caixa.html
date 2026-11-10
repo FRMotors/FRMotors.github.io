@@ -5,8 +5,8 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
 <div id="accessGate"><h2>Fluxo de Caixa · FR Motors</h2><p id="accessText">Verificando acesso...</p><a href="./dashboard.html">Voltar para Dashboard</a></div>
-<div id="financePrivate"><main class="page"><h1>Fluxo de Caixa</h1><p class="subtitle">Previsões, movimentações e vencimentos em um só lugar. Seus arquivos são lidos neste navegador e não são enviados ao site.</p>
-<section class="panel"><div class="upload"><div class="field"><label for="cashFile">Planilha de Fluxo de Caixa (.xlsm ou .xlsx)</label><input id="cashFile" type="file" accept=".xlsm,.xlsx,.xls"></div><button id="cashLoad" class="btn" type="button">Carregar planilha</button></div><div id="cashStatus" class="status" role="status">Selecione a planilha atualizada para visualizar os dados.</div><div class="note">Importação de leitura: macros não são executadas e os números não são enviados ao Supabase. Para atualizar a visualização após editar o Excel, carregue o arquivo novamente.</div></section>
+<div id="financePrivate"><main class="page"><h1>Fluxo de Caixa</h1><p class="subtitle">Previsões, movimentações e vencimentos em um só lugar. Importe sua planilha e consulte os dados salvos em qualquer dispositivo autorizado.</p>
+<section class="panel"><div class="upload"><div class="field"><label for="cashFile">Planilha de Fluxo de Caixa (.xlsm ou .xlsx)</label><input id="cashFile" type="file" accept=".xlsm,.xlsx,.xls"></div><button id="cashLoad" class="btn" type="button">Importar e salvar no site</button></div><div id="cashStatus" class="status" role="status">Carregando os dados financeiros salvos...</div><div class="note">A importação substitui o último conjunto salvo no Supabase. Somente a conta autorizada pode consultar ou atualizar os dados. O arquivo Excel original e as macros não são enviados nem executados; apenas os registros financeiros utilizados nesta página são armazenados.</div></section>
 <div id="cashContent" class="hidden"><div class="tools"><div class="field" style="max-width:230px"><label for="cashMonth">Mês de análise</label><select id="cashMonth"></select></div><div class="note" id="cashSource"></div></div>
 <section class="kpis"><div class="metric"><span>Entradas realizadas</span><strong id="cashIn">R$ 0,00</strong></div><div class="metric"><span>Saídas realizadas</span><strong id="cashOut">R$ 0,00</strong></div><div class="metric"><span>Resultado do mês</span><strong id="cashNet">R$ 0,00</strong></div><div class="metric"><span>Saldo real acumulado</span><strong id="cashBalance">R$ 0,00</strong></div></section>
 <div class="row2"><section class="panel"><h2>Entradas e saídas realizadas · 12 meses</h2><div id="cashChart" class="bars"></div><div class="legend"><span><i class="dot"></i>Entradas</span><span><i class="dot out"></i>Saídas</span></div></section>
@@ -25,7 +25,7 @@ const mm=v=>{const d=dateValue(v);return d?d.getUTCFullYear()+'-'+String(d.getUT
 const dateBR=v=>{const d=dateValue(v);return d?d.toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—'};
 const monthBR=s=>{const [y,m]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,1)).toLocaleDateString('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'})};
 const cell=(row,index)=>row?.[index]??'';
-let data=null,activeTab='forecast';
+let data=null,activeTab='forecast', cashClient=null, cashUser=null, savingCash=false;
 function normalizeRows(sheet){if(!sheet)return[];return XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true,blankrows:false})}
 function rowsAfterHeader(sheet,heading){
  const rows=normalizeRows(sheet);
@@ -117,27 +117,55 @@ function renderTable(reset=false){
  '</tbody></table>'+(visible.length<rows.length?'<div class="empty"><button class="btn" type="button" id="cashMore">Mostrar mais '+Math.min(150,rows.length-visible.length)+' registros</button></div>':'');
  const more=$('cashMore');if(more)more.onclick=()=>{tableVisibleLimit+=150;renderTable()};
 }
+function setCashData(parsed,source,storedAt){
+ if(!parsed||!Array.isArray(parsed.p)||!parsed.p.length)throw Error('O arquivo salvo não contém previsões válidas.');
+ data=parsed;
+ data.availableMonths=Array.isArray(data.availableMonths)?data.availableMonths:[];
+ $('cashMonth').innerHTML=data.p.map(x=>'<option value="'+escapeHtml(x.month)+'">'+escapeHtml(monthBR(x.month))+'</option>').join('');
+ $('cashDetailMonth').innerHTML='<option value="all">Todos os meses disponíveis</option>'+
+   data.availableMonths.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(monthBR(x))+'</option>').join('');
+ $('cashDetailMonth').value='all';tableVisibleLimit=150;
+ const nowMonth=new Date().toISOString().slice(0,7);
+ $('cashMonth').value=data.p.find(x=>x.month===nowMonth)?.month||data.p[0].month;
+ $('cashSource').textContent='Fonte: '+(source||'Importação anterior')+(storedAt?' · salvo em '+new Date(storedAt).toLocaleString('pt-BR'):'');
+ $('cashContent').classList.remove('hidden');
+ render();
+}
+async function loadSavedCash(){
+ if(!cashClient)return;
+ const {data:rows,error}=await cashClient.from('fluxo_caixa_snapshot')
+  .select('dados,arquivo_nome,atualizado_em').eq('id',1).limit(1);
+ if(error)throw error;
+ if(!rows?.length){panelStatus('Ainda não existem dados salvos. Selecione sua planilha e clique em Importar e salvar no site.');return}
+ setCashData(rows[0].dados,rows[0].arquivo_nome,rows[0].atualizado_em);
+ panelStatus('Dados financeiros carregados do site. Para atualizar, importe uma nova planilha.');
+}
 async function loadFile(){
- const file=$('cashFile').files?.[0];if(!file){panelStatus('Selecione uma planilha .xlsm ou .xlsx.');return}
- $('cashLoad').disabled=true;panelStatus('Lendo a planilha localmente...');
+ const file=$('cashFile').files?.[0];
+ if(!file){panelStatus('Selecione a planilha .xlsm ou .xlsx para importar e salvar.');return}
+ if(!cashClient||!cashUser){panelStatus('Sem permissão para salvar. Entre com a conta autorizada da FR Motors.');return}
+ if(savingCash)return;
+ savingCash=true;$('cashLoad').disabled=true;panelStatus('Lendo planilha e conferindo os registros...');
  try{
-  if(!/\.(xlsm|xlsx|xls)$/i.test(file.name))throw Error('Formato inválido. Use .xlsm, .xlsx ou .xls');
+  if(!/\.(xlsm|xlsx|xls)$/i.test(file.name))throw Error('Formato inválido. Use .xlsm, .xlsx ou .xls.');
   if(file.size>25*1024*1024)throw Error('Arquivo muito grande (limite de 25 MB).');
-  if(!window.XLSX)throw Error('Biblioteca de leitura indisponível. Verifique a conexão com a internet.');
+  if(!window.XLSX)throw Error('Biblioteca de leitura indisponível. Verifique sua internet.');
   const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false,cellFormula:false});
-  const parsed=parseWorkbook(wb);if(!parsed.p.length)throw Error('A aba Previsões não contém meses válidos.');
-  data=parsed;
-  $('cashMonth').innerHTML=data.p.map(x=>'<option value="'+escapeHtml(x.month)+'">'+escapeHtml(monthBR(x.month))+'</option>').join('');
-  $('cashDetailMonth').innerHTML='<option value="all">Todos os meses disponíveis</option>'+
-    data.availableMonths.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(monthBR(x))+'</option>').join('');
-  $('cashDetailMonth').value='all';tableVisibleLimit=150;
-  $('cashMonth').value=data.p.find(x=>x.month===new Date().toISOString().slice(0,7))?.month||data.p[0].month;
-  $('cashSource').textContent='Fonte: '+file.name;
-  $('cashContent').classList.remove('hidden');
-  panelStatus('Planilha carregada: '+data.p.length+' meses de previsão (de '+monthBR(data.p[0].month)+' a '+monthBR(data.p[data.p.length-1].month)+'), '+data.transactions.length+' lançamentos, '+data.duePay.length+' contas a pagar, '+data.dueReceive.length+' a receber e '+data.calendar.length+' dias no calendário. As tabelas mostram todos os meses por padrão.');
-  render();
- }catch(e){console.error('Fluxo de caixa',e);panelStatus('Falha ao carregar: '+(e.message||'Erro desconhecido.'))}
- finally{$('cashLoad').disabled=false}
+  const parsed=parseWorkbook(wb);
+  if(!parsed.p.length)throw Error('A aba Previsões não contém meses válidos.');
+  // Uma importação substitui o snapshot inteiro, nunca mistura dados antigos e novos.
+  // A política RLS autoriza a operação apenas à conta financeira cadastrada.
+  panelStatus('Enviando os registros financeiros ao site...');
+  const payload={id:1,dados:parsed,arquivo_nome:file.name.slice(0,255),atualizado_em:new Date().toISOString(),atualizado_por:cashUser.id};
+  const {data:written,error}=await cashClient.from('fluxo_caixa_snapshot')
+   .upsert(payload,{onConflict:'id'}).select('arquivo_nome,atualizado_em').single();
+  if(error)throw Error('Não foi possível salvar no banco: '+error.message);
+  if(!written)throw Error('O banco não confirmou a gravação. Verifique as permissões do usuário.');
+  setCashData(parsed,written.arquivo_nome,written.atualizado_em);
+  panelStatus('Importação salva com sucesso! '+parsed.p.length+' meses, '+parsed.transactions.length+' lançamentos, '+parsed.duePay.length+' contas a pagar, '+parsed.dueReceive.length+' a receber e '+parsed.calendar.length+' dias no calendário. Os registros serão carregados automaticamente nos próximos acessos.');
+  $('cashFile').value='';
+ }catch(e){console.error('Importação do Fluxo de Caixa',e);panelStatus('Importação não concluída. '+(e.message||'Erro desconhecido.')+' O último conjunto salvo foi preservado.')}
+ finally{savingCash=false;$('cashLoad').disabled=false}
 }
 $('cashLoad').addEventListener('click',loadFile);
 $('cashMonth').addEventListener('change',render);
@@ -146,10 +174,17 @@ $('cashFile').addEventListener('change',()=>panelStatus($('cashFile').files?.[0]
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{activeTab=b.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x===b)));renderTable(true)}));
 (async function checkAccess(){
  try{
+  if(!window.supabase){$('accessText').textContent='A autenticação não carregou. Confira sua conexão.';return}
   const client=window.supabase.createClient('https://rtdndffvbxhrhftqstwx.supabase.co','sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip');
-  const {data,error}=await client.auth.getUser();
-  if(error||!data?.user){$('accessText').textContent='Acesse o Dashboard com sua conta FR Motors para visualizar o Fluxo de Caixa.';return}
+  const {data:userData,error:userError}=await client.auth.getUser();
+  if(userError||!userData?.user){$('accessText').textContent='Entre no Dashboard com a conta financeira da FR Motors para acessar os dados.';return}
+  const {data:authorized,error:checkError}=await client.rpc('fluxo_caixa_autorizado');
+  if(checkError){$('accessText').textContent='Não foi possível conferir sua permissão: '+checkError.message;return}
+  if(authorized!==true){$('accessText').textContent='Sua conta não tem acesso aos dados financeiros do Fluxo de Caixa.';return}
+  cashClient=client;cashUser=userData.user;
   document.body.classList.add('allowed');
+  try{await loadSavedCash()}
+  catch(e){console.error('Falha ao carregar Fluxo de Caixa',e);panelStatus('Não foi possível carregar os dados salvos: '+e.message+'. Confira a conexão e atualize a página.')}
  }catch(e){$('accessText').textContent='Não foi possível confirmar sua sessão. Abra o Dashboard e entre novamente.'}
 })();
 </script></body></html>
