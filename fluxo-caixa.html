@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101820"><title>FR Motors · Fluxo de Caixa</title>
+<style>
+:root{--ink:#172126;--muted:#68777f;--line:#dfe5e8;--dark:#101820;--bg:#f4f6f7;--teal:#167b87;--good:#176b52;--bad:#a43d3d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}.page{max-width:1280px;padding:12px 4px 36px;margin:auto}h1{font-size:25px;margin:0}h2{font-size:16px;margin:0 0 12px}p{color:var(--muted)}.subtitle{margin:5px 0 17px}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 8px 22px rgba(23,33,38,.04);margin-bottom:14px}.upload{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{display:grid;gap:6px;flex:1;min-width:180px}.field label{font-size:11px;color:#55646c;font-weight:800;text-transform:uppercase}input[type=file],select{background:#fff;border:1px solid #cbd5d9;border-radius:11px;min-height:42px;padding:9px;color:var(--ink);width:100%;font:inherit}.btn{border:1px solid var(--dark);background:var(--dark);border-radius:12px;color:#fff;padding:10px 16px;min-height:42px;font:800 13px system-ui;cursor:pointer}.btn:disabled{opacity:.5}.note{font-size:12px;color:var(--muted)}.status{min-height:20px;margin-top:10px;font-size:12px}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.metric{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;text-align:center}.metric span{display:block;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase}.metric strong{display:block;margin-top:7px;font-size:22px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.metric.negative strong{color:var(--bad)}.metric.positive strong{color:var(--good)}.tools{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;margin:12px 0}.tools select{width:auto;min-width:160px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.tab{background:#edf1f2;border:0;color:#45545b;border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer}.tab[aria-selected=true]{background:var(--dark);color:#fff}.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:640px}th,td{border-bottom:1px solid #edf0f2;text-align:left;padding:10px;font-size:12px}th{font-size:11px;background:#f5f8f9;text-transform:uppercase;color:#53636a}td.money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}td.negative{color:var(--bad)}.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.empty{padding:22px;text-align:center;color:var(--muted)}.pill{display:inline-block;border-radius:30px;background:#e9edef;padding:3px 8px;font-size:10px;font-weight:850}.pill.warn{background:#fff0e1;color:#955118}.pill.good{background:#e7f6f1;color:#176b52}.bars{display:flex;align-items:end;gap:8px;overflow:auto;height:215px;padding:12px 3px 20px;border-bottom:1px solid var(--line)}.barCol{flex:1;min-width:38px;height:100%;display:flex;justify-content:end;flex-direction:column;gap:3px;align-items:center;font-size:10px;color:var(--muted)}.barPair{width:100%;display:flex;gap:3px;align-items:end;justify-content:center;height:170px}.bar{width:44%;background:var(--teal);border-radius:4px 4px 0 0;min-height:1px}.bar.out{background:#556570}.legend{display:flex;gap:15px;font-size:11px;color:var(--muted);margin-top:10px}.dot{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--teal);margin-right:5px}.dot.out{background:#556570}.hidden{display:none!important}#financePrivate{display:none}body.allowed #financePrivate{display:block}body.allowed #accessGate{display:none}#accessGate{max-width:520px;margin:60px auto;background:#fff;padding:26px;border-radius:16px;border:1px solid var(--line)}@media(max-width:750px){.page{padding:10px 2px 25px}.kpis{grid-template-columns:repeat(2,1fr);gap:9px}.row2{grid-template-columns:1fr}.metric strong{font-size:18px}.panel{padding:13px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
+<div id="accessGate"><h2>Fluxo de Caixa · FR Motors</h2><p id="accessText">Verificando acesso...</p><a href="./dashboard.html">Voltar para Dashboard</a></div>
+<div id="financePrivate"><main class="page"><h1>Fluxo de Caixa</h1><p class="subtitle">Previsões, movimentações e vencimentos em um só lugar. Seus arquivos são lidos neste navegador e não são enviados ao site.</p>
+<section class="panel"><div class="upload"><div class="field"><label for="cashFile">Planilha de Fluxo de Caixa (.xlsm ou .xlsx)</label><input id="cashFile" type="file" accept=".xlsm,.xlsx,.xls"></div><button id="cashLoad" class="btn" type="button">Carregar planilha</button></div><div id="cashStatus" class="status" role="status">Selecione a planilha atualizada para visualizar os dados.</div><div class="note">Importação de leitura: macros não são executadas e os números não são enviados ao Supabase. Para atualizar a visualização após editar o Excel, carregue o arquivo novamente.</div></section>
+<div id="cashContent" class="hidden"><div class="tools"><div class="field" style="max-width:230px"><label for="cashMonth">Mês de análise</label><select id="cashMonth"></select></div><div class="note" id="cashSource"></div></div>
+<section class="kpis"><div class="metric"><span>Entradas realizadas</span><strong id="cashIn">R$ 0,00</strong></div><div class="metric"><span>Saídas realizadas</span><strong id="cashOut">R$ 0,00</strong></div><div class="metric"><span>Resultado do mês</span><strong id="cashNet">R$ 0,00</strong></div><div class="metric"><span>Saldo real acumulado</span><strong id="cashBalance">R$ 0,00</strong></div></section>
+<div class="row2"><section class="panel"><h2>Entradas e saídas realizadas · 12 meses</h2><div id="cashChart" class="bars"></div><div class="legend"><span><i class="dot"></i>Entradas</span><span><i class="dot out"></i>Saídas</span></div></section>
+<section class="panel"><h2>Resumo do mês</h2><div class="scroll"><table style="min-width:300px"><tbody><tr><th>Entradas previstas</th><td class="money" id="cashExpectedIn">—</td></tr><tr><th>Saídas previstas</th><td class="money" id="cashExpectedOut">—</td></tr><tr><th>Contas a pagar em aberto</th><td class="money" id="cashPendingPay">—</td></tr><tr><th>Contas a receber em aberto</th><td class="money" id="cashPendingReceive">—</td></tr><tr><th>Saldo projetado</th><td class="money" id="cashProjected">—</td></tr></tbody></table></div></section></div>
+<section class="panel"><h2>Detalhamento financeiro</h2><div class="tabs" role="tablist" aria-label="Detalhamento financeiro"><button class="tab" data-tab="forecast" aria-selected="true">Previsões</button><button class="tab" data-tab="pay" aria-selected="false">Contas a pagar</button><button class="tab" data-tab="receive" aria-selected="false">Contas a receber</button><button class="tab" data-tab="transactions" aria-selected="false">Lançamentos</button><button class="tab" data-tab="calendar" aria-selected="false">Calendário</button></div><div id="cashTable" class="scroll"></div></section></div>
+</main></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+const brl=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const money=n=>brl.format(Number(n)||0);
+const dateserial=n=>typeof n==='number'&&Number.isFinite(n)&&n>20000&&n<100000?new Date(Math.round((n-25569)*86400000)):null;
+const dateValue=v=>{if(v instanceof Date)return v;if(typeof v==='number')return dateserial(v);if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v))return new Date(v+'T12:00:00');return null};
+const mm=v=>{const d=dateValue(v);return d?d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0'):''};
+const dateBR=v=>{const d=dateValue(v);return d?d.toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—'};
+const monthBR=s=>{const [y,m]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,1)).toLocaleDateString('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'})};
+const cell=(row,index)=>row?.[index]??'';
+let data=null,activeTab='forecast';
+function normalizeRows(sheet){if(!sheet)return[];return XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true,blankrows:false})}
+function number(v){return typeof v==='number'&&Number.isFinite(v)?v:Number(String(v||'0').replace(/\./g,'').replace(',','.'))||0}
+function isActualPositive(v){return Math.abs(number(v))}
+function panelStatus(msg){$('cashStatus').textContent=msg}
+function parseWorkbook(wb){
+ const required=['Previsões','Lançamentos','Contas a Pagar','Contas a Receber','Calendário'];
+ const missing=required.filter(s=>!wb.Sheets[s]);if(missing.length)throw Error('Faltam abas: '+missing.join(', ')+'. Escolha a planilha original do fluxo de caixa.');
+ const p=normalizeRows(wb.Sheets['Previsões']).slice(4).filter(r=>mm(cell(r,0))).map(r=>({
+ month:mm(cell(r,0)),expectedIn:number(cell(r,3)),expectedOut:number(cell(r,6)),projected:number(cell(r,8)),
+ actualIn:number(cell(r,9)),actualOut:number(cell(r,10)),realBalance:number(cell(r,12)),pendingPay:number(cell(r,5)),pendingReceive:number(cell(r,2))
+ }));
+ const due=(name)=>normalizeRows(wb.Sheets[name]).slice(4).filter(r=>dateValue(cell(r,1))&&number(cell(r,5))!==0).map(r=>({
+ due:cell(r,1),partner:String(cell(r,2)||cell(r,4)||''),category:String(cell(r,3)||''),description:String(cell(r,4)||''),value:isActualPositive(cell(r,5)),status:String(cell(r,6)||''),paidAt:cell(r,7)
+ }));
+ const transactions=normalizeRows(wb.Sheets['Lançamentos']).slice(1).filter(r=>dateValue(cell(r,1))&&number(cell(r,7))!==0).map(r=>({
+ date:cell(r,1),type:String(cell(r,2)||''),category:String(cell(r,3)||''),description:String(cell(r,4)||''),
+ account:String(cell(r,5)||''),value:number(cell(r,7)),status:String(cell(r,10)||'')
+ }));
+ const calendar=normalizeRows(wb.Sheets['Calendário']).slice(5).filter(r=>dateValue(cell(r,0))).map(r=>({date:cell(r,0),income:number(cell(r,2)),expense:number(cell(r,3)),balance:number(cell(r,4))}));
+ return {p,duePay:due('Contas a Pagar'),dueReceive:due('Contas a Receber'),transactions,calendar};
+}
+function setMetric(id,val){$(id).textContent=money(val);const box=$(id).closest('.metric');box.classList.toggle('negative',val<0);box.classList.toggle('positive',val>0&&['cashNet','cashBalance'].includes(id))}
+function render(){
+ if(!data)return;
+ const month=$('cashMonth').value,sel=data.p.find(x=>x.month===month)||data.p[0];
+ if(!sel)return;
+ setMetric('cashIn',sel.actualIn);setMetric('cashOut',sel.actualOut);setMetric('cashNet',sel.actualIn-sel.actualOut);setMetric('cashBalance',sel.realBalance);
+ for(const [id,val] of [['cashExpectedIn',sel.expectedIn],['cashExpectedOut',sel.expectedOut],['cashPendingPay',sel.pendingPay],['cashPendingReceive',sel.pendingReceive],['cashProjected',sel.projected]])$(id).textContent=money(val);
+ const max=Math.max(1,...data.p.map(v=>Math.max(v.actualIn,v.actualOut)));
+ $('cashChart').innerHTML=data.p.map(x=>'<div class="barCol" title="'+escapeHtml(monthBR(x.month))+'"><div class="barPair"><div class="bar" style="height:'+Math.max(1,100*x.actualIn/max)+'%" title="Entradas: '+escapeHtml(money(x.actualIn))+'"></div><div class="bar out" style="height:'+Math.max(1,100*x.actualOut/max)+'%" title="Saídas: '+escapeHtml(money(x.actualOut))+'"></div></div><span>'+escapeHtml(x.month.slice(5))+'/'+escapeHtml(x.month.slice(2,4))+'</span></div>').join('');
+ renderTable();
+}
+function renderTable(){
+ const month=$('cashMonth').value;let headers=[],rows=[];
+ if(activeTab==='forecast'){
+  headers=['Mês','Entradas previstas','Saídas previstas','Entradas reais','Saídas reais','Saldo projetado','Saldo real'];
+  rows=data.p.map(x=>[monthBR(x.month),money(x.expectedIn),money(x.expectedOut),money(x.actualIn),money(x.actualOut),money(x.projected),money(x.realBalance)]);
+ }else if(activeTab==='pay'||activeTab==='receive'){
+  const isPay=activeTab==='pay';const source=isPay?data.duePay:data.dueReceive;
+  headers=['Vencimento',isPay?'Fornecedor':'Cliente','Categoria','Descrição','Valor','Situação'];
+  rows=source.filter(r=>mm(r.due)===month).sort((a,b)=>Number(a.due)-Number(b.due)).map(r=>[dateBR(r.due),r.partner,r.category,r.description,money(r.value),r.status]);
+ }else if(activeTab==='transactions'){
+  headers=['Data','Tipo','Categoria','Descrição','Conta','Valor','Status'];
+  rows=data.transactions.filter(r=>mm(r.date)===month).sort((a,b)=>Number(a.date)-Number(b.date)).map(r=>[dateBR(r.date),r.type,r.category,r.description,r.account,money(r.value),r.status]);
+ }else if(activeTab==='calendar'){
+  headers=['Dia','Entradas','Saídas','Saldo final'];
+  rows=data.calendar.filter(r=>mm(r.date)===month).map(r=>[dateBR(r.date),money(r.income),money(r.expense),money(r.balance)]);
+ }
+ const box=$('cashTable');if(!rows.length){box.innerHTML='<div class="empty">Nenhum registro nesta visão para o mês selecionado.</div>';return}
+ box.innerHTML='<table><thead><tr>'+headers.map(h=>'<th>'+escapeHtml(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((v,i)=>'<td'+((String(v).startsWith('R$')||String(v).startsWith('-R$'))?' class="money"':'')+'>'+escapeHtml(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+}
+async function loadFile(){
+ const file=$('cashFile').files?.[0];if(!file){panelStatus('Selecione uma planilha .xlsm ou .xlsx.');return}
+ $('cashLoad').disabled=true;panelStatus('Lendo a planilha localmente...');
+ try{
+  if(!/\.(xlsm|xlsx|xls)$/i.test(file.name))throw Error('Formato inválido. Use .xlsm, .xlsx ou .xls');
+  if(file.size>25*1024*1024)throw Error('Arquivo muito grande (limite de 25 MB).');
+  if(!window.XLSX)throw Error('Biblioteca de leitura indisponível. Verifique a conexão com a internet.');
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false,cellFormula:false});
+  const parsed=parseWorkbook(wb);if(!parsed.p.length)throw Error('A aba Previsões não contém meses válidos.');
+  data=parsed;
+  $('cashMonth').innerHTML=data.p.map(x=>'<option value="'+escapeHtml(x.month)+'">'+escapeHtml(monthBR(x.month))+'</option>').join('');
+  $('cashMonth').value=data.p.find(x=>x.month===new Date().toISOString().slice(0,7))?.month||data.p[0].month;
+  $('cashSource').textContent='Fonte: '+file.name;
+  $('cashContent').classList.remove('hidden');
+  panelStatus('Planilha carregada: '+data.p.length+' meses, '+data.transactions.length+' lançamentos, '+data.duePay.length+' contas a pagar e '+data.dueReceive.length+' a receber.');
+  render();
+ }catch(e){console.error('Fluxo de caixa',e);panelStatus('Falha ao carregar: '+(e.message||'Erro desconhecido.'))}
+ finally{$('cashLoad').disabled=false}
+}
+$('cashLoad').addEventListener('click',loadFile);
+$('cashMonth').addEventListener('change',render);
+$('cashFile').addEventListener('change',()=>panelStatus($('cashFile').files?.[0]?'Arquivo selecionado: '+$('cashFile').files[0].name+'. Clique em Carregar planilha.':'Selecione um arquivo.'));
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{activeTab=b.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x===b)));renderTable()}));
+(async function checkAccess(){
+ try{
+  const client=window.supabase.createClient('https://rtdndffvbxhrhftqstwx.supabase.co','sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip');
+  const {data,error}=await client.auth.getUser();
+  if(error||!data?.user){$('accessText').textContent='Acesse o Dashboard com sua conta FR Motors para visualizar o Fluxo de Caixa.';return}
+  document.body.classList.add('allowed');
+ }catch(e){$('accessText').textContent='Não foi possível confirmar sua sessão. Abra o Dashboard e entre novamente.'}
+})();
+</script></body></html>
