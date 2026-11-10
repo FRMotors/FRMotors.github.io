@@ -368,7 +368,7 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
   oficina.hidden=cash;fluxo.hidden=!cash;
   tabOficina.setAttribute('aria-selected',String(!cash));
   tabFluxo.setAttribute('aria-selected',String(cash));
-  if(cash&&frame.getAttribute('src')==='about:blank')frame.src='./fluxo-caixa.html?build=20261110-layout2';
+  if(cash&&frame.getAttribute('src')==='about:blank')frame.src='./fluxo-caixa.html?build=20261110-period6-align3';
  }
  tabOficina.addEventListener('click',()=>{switchView('oficina');history.replaceState(null,'',location.pathname+location.search+'#indicadores')});
  tabFluxo.addEventListener('click',()=>{switchView('fluxo');history.replaceState(null,'',location.pathname+location.search+'#fluxo-caixa')});
