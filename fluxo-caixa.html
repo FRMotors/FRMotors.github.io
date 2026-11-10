@@ -13,7 +13,7 @@
 #cashTable table{width:100%;min-width:720px;border-collapse:separate;border-spacing:0}
 #cashTable th,#cashTable td{padding:12px 14px;vertical-align:middle;line-height:1.45}
 #cashTable th{position:sticky;top:0;z-index:2;background:#f3f6f7;white-space:nowrap;text-align:left;border-bottom:2px solid #dfe5e8}
-#cashTable th.money,#cashTable td.money{text-align:right;min-width:136px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#cashTable th.money,#cashTable td.money{text-align:center;min-width:150px;font-variant-numeric:tabular-nums;white-space:nowrap}
 #cashTable th.center,#cashTable td.center{text-align:center;white-space:nowrap}
 #cashTable th.description,#cashTable td.description{text-align:left;min-width:210px}
 #cashTable th.category,#cashTable td.category{text-align:left;min-width:140px}
@@ -30,7 +30,7 @@
 <section class="kpis"><div class="metric"><span>Entradas realizadas</span><strong id="cashIn">R$ 0,00</strong></div><div class="metric"><span>Saídas realizadas</span><strong id="cashOut">R$ 0,00</strong></div><div class="metric"><span>Resultado do mês</span><strong id="cashNet">R$ 0,00</strong></div><div class="metric"><span>Saldo real acumulado</span><strong id="cashBalance">R$ 0,00</strong></div></section>
 <div class="row2"><section class="panel"><h2>Entradas e saídas realizadas · 12 meses</h2><div id="cashChart" class="bars"></div><div class="legend"><span><i class="dot"></i>Entradas</span><span><i class="dot out"></i>Saídas</span></div></section>
 <section class="panel"><h2>Resumo do mês</h2><div class="cash-summary-grid"><div class="cash-summary-item"><span>Entradas previstas</span><strong id="cashExpectedIn">—</strong></div><div class="cash-summary-item"><span>Saídas previstas</span><strong id="cashExpectedOut">—</strong></div><div class="cash-summary-item"><span>Contas a pagar em aberto</span><strong id="cashPendingPay">—</strong></div><div class="cash-summary-item"><span>Contas a receber em aberto</span><strong id="cashPendingReceive">—</strong></div><div class="cash-summary-item"><span>Saldo projetado</span><strong id="cashProjected">—</strong></div></div></section></div>
-<section class="panel"><h2>Detalhamento financeiro</h2><div class="tabs" role="tablist" aria-label="Detalhamento financeiro"><button class="tab" data-tab="forecast" aria-selected="true">Previsões</button><button class="tab" data-tab="pay" aria-selected="false">Contas a pagar</button><button class="tab" data-tab="receive" aria-selected="false">Contas a receber</button><button class="tab" data-tab="transactions" aria-selected="false">Lançamentos</button><button class="tab" data-tab="calendar" aria-selected="false">Calendário</button></div><div class="tools cash-detail-tools" style="margin:3px 0 12px"><div class="field" style="max-width:290px"><label for="cashDetailMonth">Período dos registros</label><select id="cashDetailMonth"><option value="all">Todos os meses disponíveis</option><option value="last6">Últimos 6 meses</option></select></div><div id="cashTableCount" class="note" role="status"></div></div><div id="cashTable" class="scroll"></div></section></div>
+<section class="panel"><h2>Detalhamento financeiro</h2><div class="tabs" role="tablist" aria-label="Detalhamento financeiro"><button class="tab" data-tab="forecast" aria-selected="true">Previsões</button><button class="tab" data-tab="pay" aria-selected="false">Contas a pagar</button><button class="tab" data-tab="receive" aria-selected="false">Contas a receber</button><button class="tab" data-tab="transactions" aria-selected="false">Lançamentos</button><button class="tab" data-tab="calendar" aria-selected="false">Calendário</button></div><div class="tools cash-detail-tools" style="margin:3px 0 12px"><div class="field" style="max-width:290px"><label for="cashDetailMonth">Período dos registros</label><select id="cashDetailMonth"><option value="all">Todos os meses disponíveis</option><option value="last6">Últimos 6 meses</option></select></div><div id="cashTableCount" class="note" role="status"></div></div><div id="cashTable" class="scroll"></div><p class="note" id="cashHistoryInfo" style="display:none">Meses anteriores ao início da aba Previsões são apresentados com os lançamentos e pagamentos realizados. Previsões retroativas não são calculadas.</p></section></div>
 </main></div>
 <script>
 'use strict';
@@ -44,7 +44,7 @@ const mm=v=>{const d=dateValue(v);return d?d.getUTCFullYear()+'-'+String(d.getUT
 const dateBR=v=>{const d=dateValue(v);return d?d.toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—'};
 const monthBR=s=>{const [y,m]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,1)).toLocaleDateString('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'})};
 const cell=(row,index)=>row?.[index]??'';
-let data=null,activeTab='forecast', cashClient=null, cashUser=null, savingCash=false;
+let data=null,historicalRecords=[],activeTab='forecast', cashClient=null, cashUser=null, savingCash=false;
 function normalizeRows(sheet){if(!sheet)return[];return XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:true,blankrows:false})}
 function rowsAfterHeader(sheet,heading){
  const rows=normalizeRows(sheet);
@@ -79,13 +79,53 @@ function parseWorkbook(wb){
  const availableMonths=[...new Set([...p.map(r=>r.month),...due('Contas a Pagar').map(r=>mm(r.due)),...due('Contas a Receber').map(r=>mm(r.due)),...transactions.map(r=>mm(r.date)),...calendar.map(r=>mm(r.date))])].filter(Boolean).sort();
  return {p,duePay:due('Contas a Pagar'),dueReceive:due('Contas a Receber'),transactions,calendar,availableMonths};
 }
+// Histórico real obtido dos Lançamentos e dos pagamentos/recebimentos efetivados.
+// Para o saldo final de meses anteriores, ancora o acumulado no primeiro mês
+// de Previsões (já calculado pelo próprio Excel), evitando totais inventados.
+function buildHistoricalRecords(){
+ const result=new Map();
+ const normalize=s=>String(s||'').trim().toLocaleLowerCase('pt-BR');
+ const add=(month,type,amount)=>{
+  if(!month||!Number.isFinite(amount)||amount===0)return;
+  if(!result.has(month))result.set(month,{month,actualIn:0,actualOut:0});
+  result.get(month)[type]+=Math.abs(amount);
+ };
+ for(const t of data.transactions||[]){
+  const status=normalize(t.status),type=normalize(t.type),m=mm(t.date);
+  if(type==='entrada'&&status==='recebido')add(m,'actualIn',number(t.value));
+  if(type==='saída'&&status==='pago')add(m,'actualOut',number(t.value));
+ }
+ for(const t of data.duePay||[]){
+  if(normalize(t.status)==='pago')add(mm(t.paidAt),'actualOut',number(t.value));
+ }
+ for(const t of data.dueReceive||[]){
+  if(normalize(t.status)==='recebido')add(mm(t.paidAt),'actualIn',number(t.value));
+ }
+ const anchor=[...(data.p||[])].sort((a,b)=>a.month.localeCompare(b.month))[0];
+ if(!anchor)return[];
+ const keys=[...result.keys()].filter(k=>k<=anchor.month).sort();
+ const endingAtAnchor=Number(anchor.realBalance);
+ // A âncora permite reconstituir saldos anteriores com a mesma lógica
+ // de recebimentos/pagamentos da planilha, sem supor saldo inicial zero.
+ const movement=keys.reduce((sum,k)=>{const x=result.get(k);return sum+x.actualIn-x.actualOut},0);
+ let balance=Number.isFinite(endingAtAnchor)?endingAtAnchor-movement:NaN;
+ return keys.map(k=>{
+  const r=result.get(k);
+  balance+=r.actualIn-r.actualOut;
+  return {...r,realBalance:Number.isFinite(balance)?balance:null,historical:true};
+ }).filter(r=>r.month<anchor.month);
+}
 function setMetric(id,val){$(id).textContent=money(val);const box=$(id).closest('.metric');box.classList.toggle('negative',val<0);box.classList.toggle('positive',val>0&&['cashNet','cashBalance'].includes(id))}
 function render(){
  if(!data)return;
- const month=$('cashMonth').value,sel=data.p.find(x=>x.month===month)||data.p[0];
+ const month=$('cashMonth').value,sel=data.p.find(x=>x.month===month)||historicalRecords.find(x=>x.month===month);
  if(!sel)return;
- setMetric('cashIn',sel.actualIn);setMetric('cashOut',sel.actualOut);setMetric('cashNet',sel.actualIn-sel.actualOut);setMetric('cashBalance',sel.realBalance);
- for(const [id,val] of [['cashExpectedIn',sel.expectedIn],['cashExpectedOut',sel.expectedOut],['cashPendingPay',sel.pendingPay],['cashPendingReceive',sel.pendingReceive],['cashProjected',sel.projected]])$(id).textContent=money(val);
+ setMetric('cashIn',sel.actualIn);setMetric('cashOut',sel.actualOut);setMetric('cashNet',sel.actualIn-sel.actualOut);
+ $('cashBalance').textContent=sel.realBalance===null?'—':money(sel.realBalance);
+ const balanceBox=$('cashBalance').closest('.metric');
+ balanceBox.classList.toggle('negative',sel.realBalance!==null&&sel.realBalance<0);
+ balanceBox.classList.toggle('positive',sel.realBalance!==null&&sel.realBalance>0);
+ for(const [id,val] of [['cashExpectedIn',sel.expectedIn],['cashExpectedOut',sel.expectedOut],['cashPendingPay',sel.pendingPay],['cashPendingReceive',sel.pendingReceive],['cashProjected',sel.projected]])$(id).textContent=sel.historical?'—':money(val);
  const max=Math.max(1,...data.p.map(v=>Math.max(v.actualIn,v.actualOut)));
  $('cashChart').innerHTML=data.p.map(x=>'<div class="barCol" title="'+escapeHtml(monthBR(x.month))+'"><div class="barPair"><div class="bar" style="height:'+Math.max(1,100*x.actualIn/max)+'%" title="Entradas: '+escapeHtml(money(x.actualIn))+'"></div><div class="bar out" style="height:'+Math.max(1,100*x.actualOut/max)+'%" title="Saídas: '+escapeHtml(money(x.actualOut))+'"></div></div><span>'+escapeHtml(x.month.slice(5))+'/'+escapeHtml(x.month.slice(2,4))+'</span></div>').join('');
  renderTable();
@@ -110,7 +150,13 @@ function renderTable(reset=false){
  let headers=[],rows=[];
  if(activeTab==='forecast'){
   headers=['Mês','Entradas previstas','Saídas previstas','Entradas reais','Saídas reais','Saldo projetado','Saldo real'];
-  rows=data.p.filter(x=>applies(x.month)).map(x=>[monthBR(x.month),money(x.expectedIn),money(x.expectedOut),money(x.actualIn),money(x.actualOut),money(x.projected),money(x.realBalance)]);
+  // A aba Previsões começa no mês corrente. Para meses anteriores, usar
+  // exclusivamente valores realizados no histórico, sem criar previsões.
+  const allForecastRows=[
+   ...historicalRecords.map(x=>({month:x.month,cells:[monthBR(x.month),'—','—',money(x.actualIn),money(x.actualOut),'—',x.realBalance===null?'—':money(x.realBalance)]})),
+   ...data.p.map(x=>({month:x.month,cells:[monthBR(x.month),money(x.expectedIn),money(x.expectedOut),money(x.actualIn),money(x.actualOut),money(x.projected),money(x.realBalance)]}))
+  ];
+  rows=allForecastRows.filter(x=>applies(x.month)).sort((a,b)=>a.month.localeCompare(b.month)).map(x=>x.cells);
  }else if(activeTab==='pay'||activeTab==='receive'){
   const isPay=activeTab==='pay',source=isPay?data.duePay:data.dueReceive;
   // Contas a pagar: mostrar somente "Em aberto", sem coluna Fornecedor e da mais antiga para a mais recente.
@@ -136,11 +182,12 @@ function renderTable(reset=false){
   rows=data.calendar.filter(r=>applies(mm(r.date))).sort((a,b)=>dateValue(b.date)-dateValue(a.date))
    .map(r=>[dateBR(r.date),money(r.income),money(r.expense),money(r.balance)]);
  }
+ $('cashHistoryInfo').style.display=(activeTab==='forecast'&&historicalRecords.some(r=>applies(r.month)))?'block':'none';
  const box=$('cashTable'),counter=$('cashTableCount');
  counter.textContent=rows.length+' registro(s) encontrado(s)'+(selectedMonth==='all'?' no arquivo.':selectedMonth==='last6'?' entre '+monthBR(sixMonths.start)+' e '+monthBR(sixMonths.end)+'.':' em '+monthBR(selectedMonth)+'.');
  if(!rows.length){
   const hint=activeTab==='calendar'?'A aba Calendário da planilha possui somente os dias gerados para o mês configurado no Excel.':'';
-  box.innerHTML='<div class="empty">Nenhum registro para esse período. Selecione "Todos os meses disponíveis" acima. '+escapeHtml(hint)+'</div>';return;
+  box.innerHTML='<div class="empty">Não há registros de '+escapeHtml(({forecast:'previsões ou movimentações realizadas',pay:'contas a pagar em aberto',receive:'contas a receber',transactions:'lançamentos',calendar:'calendário'}[activeTab]||'movimentações'))+' nesse período na planilha importada. '+escapeHtml(hint)+'</div>';return;
  }
  const visible=rows.slice(0,tableVisibleLimit);
  const columnClasses=headers.map(h=>{
@@ -159,12 +206,14 @@ function setCashData(parsed,source,storedAt){
  if(!parsed||!Array.isArray(parsed.p)||!parsed.p.length)throw Error('O arquivo salvo não contém previsões válidas.');
  data=parsed;
  data.availableMonths=Array.isArray(data.availableMonths)?data.availableMonths:[];
- $('cashMonth').innerHTML=data.p.map(x=>'<option value="'+escapeHtml(x.month)+'">'+escapeHtml(monthBR(x.month))+'</option>').join('');
+ historicalRecords=buildHistoricalRecords();
+ const dashboardMonths=[...new Set([...historicalRecords.map(x=>x.month),...data.p.map(x=>x.month)])].sort();
+ $('cashMonth').innerHTML=dashboardMonths.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(monthBR(x))+'</option>').join('');
  $('cashDetailMonth').innerHTML='<option value="all">Todos os meses disponíveis</option><option value="last6">Últimos 6 meses</option>'+
    data.availableMonths.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(monthBR(x))+'</option>').join('');
  $('cashDetailMonth').value='all';tableVisibleLimit=150;
  const nowMonth=new Date().toISOString().slice(0,7);
- $('cashMonth').value=data.p.find(x=>x.month===nowMonth)?.month||data.p[0].month;
+ $('cashMonth').value=dashboardMonths.includes(nowMonth)?nowMonth:(dashboardMonths.filter(x=>x<=nowMonth).at(-1)||dashboardMonths[0]);
  $('cashSource').textContent='Fonte: '+(source||'Importação anterior')+(storedAt?' · salvo em '+new Date(storedAt).toLocaleString('pt-BR'):'');
  $('cashContent').classList.remove('hidden');
  render();
