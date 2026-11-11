@@ -51,6 +51,32 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (min-width:540px){main{padding:35px 36px 42px}.action{min-height:94px}.logo{margin-bottom:28px}.buttons{gap:14px}.box{padding:20px 24px}}
 @media (max-width:375px){main{padding:24px 13px 38px}.logo-art{width:100%;max-width:100%}.logo-sub{font-size:9px;letter-spacing:4.8px}.buttons{gap:8px}.action{padding:8px 6px;gap:6px;min-height:75px;border-radius:16px}.action .glyph{width:36px;height:36px;flex-basis:36px}.action svg{width:23px;height:23px}.action .copy{font-size:12px}.action .chev{font-size:23px}.box .major{font-size:15px}.box .secondary{font-size:12px}.box h2{font-size:12px}.pix-box{gap:10px;padding:13px 11px}.pix-symbol{width:45px;flex-basis:45px;padding-right:10px}.pix-symbol svg{width:32px}.pix-info .heading{font-size:12px}.pix-info .number{font-size:18px}}
+
+/* Cartão digital: maior aproveitamento vertical em telas de celular. */
+@media (max-width:539px){
+  main{
+    min-height:108vh;
+    min-height:108dvh;
+    display:flex;
+    flex-direction:column;
+    padding-top:clamp(28px,4dvh,44px);
+    padding-bottom:clamp(38px,5dvh,60px);
+  }
+  .logo{margin-bottom:clamp(28px,4dvh,40px)}
+  .buttons{
+    margin-top:clamp(28px,4dvh,42px);
+    margin-bottom:clamp(24px,3.5dvh,34px);
+  }
+  .action{min-height:clamp(82px,10dvh,102px)}
+  .box{
+    padding-top:clamp(18px,2.5dvh,26px);
+    padding-bottom:clamp(18px,2.5dvh,26px);
+    margin-bottom:clamp(18px,2.5dvh,28px);
+  }
+  .pix-box{min-height:clamp(86px,11dvh,106px);margin-bottom:clamp(18px,2.5dvh,26px)}
+  .mail{margin-bottom:clamp(26px,3.5dvh,38px)}
+  footer{margin-top:auto;padding-top:clamp(14px,2.5dvh,25px)}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
