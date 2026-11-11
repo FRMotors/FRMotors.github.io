@@ -88,6 +88,7 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 }
 .pdf-download:hover{background:#24190e}
 .card-pdf-exporting main{min-height:0!important;padding-bottom:24px!important;box-shadow:none!important}
+.card-pdf-exporting .logo-art{visibility:hidden!important}
 .card-pdf-exporting .pdf-download{display:none!important}
 .pdf-download:disabled{opacity:.6;cursor:wait}
 @media print{.pdf-download{display:none!important}}
@@ -222,10 +223,7 @@ async function generateMobilePdf(){
   const pngs=await Promise.all(svgs.map(rasterizeIcon));
   document.body.classList.add('card-pdf-exporting');
   pdfMode=true;
-  if(logoPng&&logo){
-   logo.replaceWith(logoPng);
-   replacements.push([logo,logoPng]);
-  }
+  // O SVG original permanece no DOM. O PNG sera desenhado UMA UNICA VEZ no canvas.
   for(let i=0;i<svgs.length;i++){
    svgs[i].replaceWith(pngs[i]);
    replacements.push([svgs[i],pngs[i]]);
@@ -248,11 +246,11 @@ async function generateMobilePdf(){
    imageTimeout:15000
   });
   if(!canvas||canvas.width<200||canvas.height<200)throw new Error('Captura do cartão indisponível');
-  // Sobrepõe a logo PNG na captura para garantir a presença dela no PDF,
-  // mesmo nos visualizadores Android que ignoram a imagem durante o html2canvas.
-  if(logoPng&&logoPng.isConnected){
+  // SVG ficou invisivel apenas durante a captura: desenhamos a logo PNG
+  // EXATAMENTE nas dimensoes e posicao da imagem original, sem duplicacao.
+  if(logoPng&&logo.isConnected){
    const mainRect=main.getBoundingClientRect();
-   const logoRect=logoPng.getBoundingClientRect();
+   const logoRect=logo.getBoundingClientRect();
    const scale=canvas.width/mainRect.width;
    canvas.getContext('2d').drawImage(logoPng,
     (logoRect.left-mainRect.left)*scale,(logoRect.top-mainRect.top)*scale,
@@ -276,7 +274,7 @@ async function generateMobilePdf(){
    }
   });
   // Nome novo impede o Android/Drive de reabrir o PDF antigo com ícones em letras.
-  pdf.save('FR_Motors_Cartao_Logo_e_Pix_v3.pdf');
+  pdf.save('FR_Motors_Cartao_Corrigido_v4.pdf');
   notice('Novo PDF com ícones originais gerado!');
  }catch(e){
   console.error('Falha ao gerar PDF atualizado',e);
