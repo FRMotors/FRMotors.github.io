@@ -271,7 +271,7 @@ async function generateMobilePdf(){
   });
   // Nome novo impede o Android/Drive de reabrir o PDF antigo com ícones em letras.
   pdf.save('Cartão FR Motors.pdf');
-  notice('Novo PDF com ícones originais gerado!');
+  notice('PDF gerado');
  }catch(e){
   console.error('Falha ao gerar PDF atualizado',e);
   notice('Erro ao gerar o novo PDF. Tente novamente.');
