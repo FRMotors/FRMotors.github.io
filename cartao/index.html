@@ -77,6 +77,17 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
   .mail{margin-bottom:clamp(26px,3.5dvh,38px)}
   footer{margin-top:auto;padding-top:clamp(14px,2.5dvh,25px)}
 }
+
+.pdf-download{
+ display:flex;align-items:center;justify-content:center;gap:9px;
+ width:max-content;max-width:100%;margin:14px auto 0;
+ padding:10px 16px;border:1px solid #a65b12;border-radius:999px;
+ background:#16110d;color:#ffb35b;font-size:12px;font-weight:800;
+ cursor:pointer;box-shadow:0 0 12px #ff8b0012;
+}
+.pdf-download:hover{background:#24190e}
+.pdf-download:disabled{opacity:.6;cursor:wait}
+@media print{.pdf-download{display:none!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -103,6 +114,7 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 <a class="mail" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para frd.morais@hotmail.com"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2.5 7 9.5 7 9.5-7"/></svg><span>frd.morais@hotmail.com</span></a>
 <div class="glowline" aria-hidden="true"></div>
 <footer><p>FR MOTORS · MANUTENÇÃO AUTOMOTIVA</p></footer>
+<button class="pdf-download" id="downloadPdfBtn" type="button" aria-label="Baixar cartão digital em PDF para celular">↓ Baixar cartão em PDF</button>
 </main>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
@@ -116,5 +128,89 @@ const area=document.createElement("textarea");area.value=pix;area.style.cssText=
 if(ok){notice("Chave Pix copiada!")}else{window.prompt("Copie a chave Pix CNPJ:",pix)}
 }
 document.getElementById("pixButton").addEventListener("click",copyPix);
+
+const pdfButton=document.getElementById('downloadPdfBtn');
+async function generateMobilePdf(){
+ const button=pdfButton;button.disabled=true;
+ const originalText=button.textContent;button.textContent='Preparando PDF...';
+ try{
+  if(!window.jspdf?.jsPDF){
+   await new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+    s.onload=resolve;s.onerror=()=>reject(new Error('Falha ao carregar gerador de PDF'));
+    document.head.appendChild(s);
+   });
+  }
+  const {jsPDF}=window.jspdf;
+  // Proporção 9:19,5, sem as margens brancas de A4.
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[108,234],compress:true});
+  const W=108;
+  pdf.setFillColor(7,7,9);pdf.rect(0,0,W,234,'F');
+  const txt=(text,x,y,size=9,bold=false,color=[246,246,247])=>{
+   pdf.setFont('helvetica',bold?'bold':'normal');
+   pdf.setFontSize(size);pdf.setTextColor(...color);pdf.text(text,x,y);
+  };
+  const card=(x,y,w,h,accent=true)=>{
+   pdf.setFillColor(18,16,17);
+   pdf.setDrawColor(...(accent?[255,139,0]:[119,119,123]));
+   pdf.setLineWidth(.34);
+   pdf.roundedRect(x,y,w,h,4.8,4.8,'FD');
+  };
+  const logo=document.querySelector('.logo-art');
+  if(!logo.complete||!logo.naturalWidth){
+   await new Promise((resolve,reject)=>{
+    logo.addEventListener('load',resolve,{once:true});
+    logo.addEventListener('error',()=>reject(new Error('Logo indisponível')),{once:true});
+    if(logo.complete&&logo.naturalWidth)resolve();
+   });
+  }
+  const canvas=document.createElement('canvas');
+  canvas.width=1330;canvas.height=780;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(logo,0,0,canvas.width,canvas.height);
+  pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,3,98,57,undefined,'FAST');
+  pdf.setDrawColor(255,139,0);pdf.setLineWidth(.25);pdf.line(30,60,78,60);
+  const cols=[7,55], ys=[65,90], bw=46, bh=20;
+  const labels=[['Fale no','WhatsApp'],['Instagram','Em breve'],['Nossa','Localização'],['Enviar','E-mail']];
+  labels.forEach((l,i)=>{
+   const x=cols[i%2],y=ys[Math.floor(i/2)];card(x,y,bw,bh,i!==1);
+   pdf.setFillColor(...(i===1?[60,60,63]:[246,131,0]));
+   pdf.roundedRect(x+3,y+4,12,12,2.6,2.6,'F');
+   txt(['WA','IG','MAP','@'][i],x+(i===2?4.25:5),y+11.7,i===2?7.2:9,true);
+   txt(l[0],x+17,y+9.4,9.3,true);
+   txt(l[1],x+17,y+14.7,8.3,true,i===1?[160,160,166]:[246,246,247]);
+  });
+  pdf.link(7,65,46,20,{url:'https://wa.me/5511998865280'});
+  pdf.link(7,90,46,20,{url:'https://www.google.com/maps/search/?api=1&query=FR%20MOTORS%20AUTO%20MEC%C3%82NICA%2C%20Av.%20Hildebrando%20de%20Lima%2C%20255%2C%20Osasco%20SP'});
+  pdf.link(55,90,46,20,{url:'mailto:frd.morais@hotmail.com'});
+  card(7,115,94,41);
+  txt('ENDEREÇO',12,122,8.6,true,[255,146,14]);
+  txt('Av. Hildebrando de Lima, 255 · Km 18',12,129.1,9.4,true);
+  txt('Osasco / SP · CEP 06190-160',12,134.6,8.4,false,[191,190,194]);
+  pdf.setDrawColor(65,65,68);pdf.line(12,138.5,96,138.5);
+  txt('HORÁRIOS DE FUNCIONAMENTO',12,144.2,8.6,true,[255,146,14]);
+  txt('Seg a qui: 8h às 18h  |  Sex: 8h às 17h',12,149.4,8.7,true);
+  txt('Sábado e domingo: fechado',12,154,8.2,false,[191,190,194]);
+  card(7,161,94,26);
+  pdf.setFillColor(255,139,0);pdf.roundedRect(11,165.6,16,16,4,4,'F');
+  txt('PIX',13.3,175.8,13,true);
+  txt('PIX · CHAVE CNPJ',31,170.8,9.2,true,[255,146,14]);
+  txt('10.492.268/0001-41',31,179.3,13.1,true);
+  card(7,195,94,15);
+  txt('✉',12,204.4,11,true,[255,146,14]);
+  txt('frd.morais@hotmail.com',24,204.4,11,true);
+  pdf.link(7,195,94,15,{url:'mailto:frd.morais@hotmail.com'});
+  pdf.setDrawColor(255,139,0);pdf.setLineWidth(.3);pdf.line(26,217,82,217);
+  txt('FR MOTORS · MANUTENÇÃO AUTOMOTIVA',18,225,8.1,true,[178,178,186]);
+  pdf.save('FR_Motors_Cartao_Digital_Celular.pdf');
+  notice('PDF do cartão gerado!');
+ }catch(e){
+  console.error('Falha ao gerar PDF do cartão',e);
+  notice('Não foi possível gerar o PDF. Tente novamente.');
+ }finally{button.textContent=originalText;button.disabled=false}
+}
+pdfButton.addEventListener('click',generateMobilePdf);
+
 })();
 </script></body></html>
