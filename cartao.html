@@ -113,7 +113,7 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 </section>
 <button class="pix-box" id="pixButton" type="button" aria-label="Copiar chave Pix CNPJ 10.492.268/0001-41">
 <span class="pix-symbol" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 7 13.5 17.5a8 8 0 0 1-11 0L16 4a11.3 11.3 0 0 1 16 0l13.5 13.5a8 8 0 0 1-11 0L24 7Zm0 34 10.5-10.5a8 8 0 0 1 11 0L32 44a11.3 11.3 0 0 1-16 0L2.5 30.5a8 8 0 0 1 11 0L24 41Zm-17-17 10.5-10.5a8 8 0 0 1 0-11L4 16a11.3 11.3 0 0 0 0 16l13.5 13.5a8 8 0 0 1 0-11L7 24Zm34 0L30.5 34.5a8 8 0 0 1 0 11L44 32a11.3 11.3 0 0 0 0-16L30.5 2.5a8 8 0 0 1 0 11L41 24Z"/></svg></span>
-<span class="pix-info"><span class="heading">PIX · CHAVE CNPJ</span><span class="number">10.492.268/0001-41</span><span class="copy-hint">pressione para copiar</span></span>
+<span class="pix-info"><span class="heading">PIX · CHAVE CNPJ</span><span class="number">10.492.268/0001-41</span><span class="copy-hint">Pressione para copiar</span></span>
 </button>
 <a class="mail" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para frd.morais@hotmail.com"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2.5 7 9.5 7 9.5-7"/></svg><span>frd.morais@hotmail.com</span></a>
 <div class="glowline" aria-hidden="true"></div>
@@ -269,7 +269,7 @@ async function generateMobilePdf(){
    }
   });
   // Nome novo impede o Android/Drive de reabrir o PDF antigo com ícones em letras.
-  pdf.save('FR_Motors_Cartao_Sem_Sobreposicao_v6.pdf');
+  pdf.save('Cartão FR Motors.pdf');
   notice('Novo PDF com ícones originais gerado!');
  }catch(e){
   console.error('Falha ao gerar PDF atualizado',e);
