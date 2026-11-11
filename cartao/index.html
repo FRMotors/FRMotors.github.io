@@ -224,16 +224,11 @@ async function generateMobilePdf(){
   const pngs=await Promise.all(svgs.map(rasterizeIcon));
   document.body.classList.add('card-pdf-exporting');
   pdfMode=true;
-  // Remove a logo do DOM somente durante a captura, preservando seu espaço.
-  // Assim o html2canvas não renderiza o SVG novamente em tamanho gigante.
-  let logoPlaceholder=null;
+  // A imagem PNG assume o lugar EXATO do SVG de origem antes da captura.
+  // O html2canvas renderiza o elemento uma única vez, no fluxo correto da página.
   if(logo&&logoPng){
-   const logoSize=logo.getBoundingClientRect();
-   logoPlaceholder=document.createElement('div');
-   logoPlaceholder.setAttribute('aria-hidden','true');
-   logoPlaceholder.style.cssText='display:block;margin:0 auto;flex-shrink:0;width:'+logoSize.width+'px;height:'+logoSize.height+'px;max-width:100%';
-   logo.replaceWith(logoPlaceholder);
-   replacements.push([logo,logoPlaceholder]);
+   logo.replaceWith(logoPng);
+   replacements.push([logo,logoPng]);
   }
   for(let i=0;i<svgs.length;i++){
    svgs[i].replaceWith(pngs[i]);
@@ -257,24 +252,6 @@ async function generateMobilePdf(){
    imageTimeout:15000
   });
   if(!canvas||canvas.width<200||canvas.height<200)throw new Error('Captura do cartão indisponível');
-  // A captura nao contém a logo. Inserimos o PNG apenas uma vez,
-  // dentro das dimensoes exatas do espaço reservado no topo.
-  if(logoPng&&logoPlaceholder&&logoPlaceholder.isConnected){
-   const mainRect=main.getBoundingClientRect();
-   const logoRect=logoPlaceholder.getBoundingClientRect();
-   const scale=canvas.width/mainRect.width;
-   const x=(logoRect.left-mainRect.left)*scale;
-   const y=(logoRect.top-mainRect.top)*scale;
-   const w=logoRect.width*scale;
-   const h=logoRect.height*scale;
-   const pdfCtx=canvas.getContext('2d');
-   pdfCtx.save();
-   pdfCtx.beginPath();
-   pdfCtx.rect(x,y,w,h);
-   pdfCtx.clip();
-   pdfCtx.drawImage(logoPng,x,y,w,h);
-   pdfCtx.restore();
-  }
   const {jsPDF}=window.jspdf;
   const pageW=108;
   const pageH=pageW*canvas.height/canvas.width;
@@ -293,7 +270,7 @@ async function generateMobilePdf(){
    }
   });
   // Nome novo impede o Android/Drive de reabrir o PDF antigo com ícones em letras.
-  pdf.save('FR_Motors_Cartao_Com_Instagram_v5.pdf');
+  pdf.save('FR_Motors_Cartao_Sem_Sobreposicao_v6.pdf');
   notice('Novo PDF com ícones originais gerado!');
  }catch(e){
   console.error('Falha ao gerar PDF atualizado',e);
