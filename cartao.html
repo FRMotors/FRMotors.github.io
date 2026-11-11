@@ -26,6 +26,11 @@ main:after{content:"";width:45%;height:10px;position:absolute;right:-12%;bottom:
 .action .glyph{width:43px;height:43px;flex:0 0 43px;border-radius:12px;background:linear-gradient(145deg,#ffa11a,#ed6f00);box-shadow:0 5px 13px #d774003c;display:grid;place-items:center;color:#fff}
 .action svg{width:27px;height:27px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .action .copy{flex:1;font-size:15px;font-weight:780;line-height:1.18}
+.action.email-action{gap:6px;padding-left:8px;padding-right:8px}
+.action.email-action .copy{white-space:nowrap;font-size:clamp(10px,2.6vw,13px);letter-spacing:-.25px}
+.action.email-action .glyph{width:34px;height:34px;flex-basis:34px}
+.action.email-action .chev{font-size:23px}
+@media(max-width:375px){.action.email-action{gap:4px;padding-left:6px;padding-right:6px}.action.email-action .glyph{width:29px;height:29px;flex-basis:29px}.action.email-action .chev{font-size:18px}.action.email-action .copy{font-size:10.5px}}
 .action .social-handle{display:block;margin-top:3px;font-size:clamp(8px,2.3vw,10px);color:#f2c18d;font-weight:650;letter-spacing:-.1px;white-space:nowrap}
 .instagram-action .copy{min-width:0;overflow:visible}
 .action .chev{color:var(--orange);font-size:30px;font-weight:350;line-height:1;margin-left:auto}
@@ -104,7 +109,7 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 <a class="action" href="https://wa.me/5511998865280" target="_blank" rel="noopener noreferrer" aria-label="Fale no WhatsApp da FR Motors"><span class="glyph"><svg viewBox="0 0 24 24"><path d="M20.5 11.6A8.5 8.5 0 0 1 8 19l-5 1.5L4.5 16a8.5 8.5 0 1 1 16-4.4Z"/><path d="M8.2 8.4c.4-.6.8-.7 1.2-.2l1.1 1.5-.7 1c.9 1.7 2 2.5 3.7 3.1l.9-.9 1.7 1c.4.3.4.7 0 1.1-1.3 1.5-5.7-.2-7.9-3.7-1.1-1.7-1.3-2.6 0-2.9Z"/></svg></span><span class="copy">Fale no<br>WhatsApp</span><span class="chev" aria-hidden="true">›</span></a>
 <a class="action instagram-action" href="https://www.instagram.com/frmotors.automecanica/" target="_blank" rel="noopener noreferrer" aria-label="Abrir Instagram @frmotors.automecanica"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.6" cy="6.6" r=".8" fill="currentColor" stroke="none"/></svg></span><span class="copy">Instagram<br><span class="social-handle">@frmotors.automecanica</span></span><span class="chev" aria-hidden="true">›</span></a>
 <a class="action" href="https://www.google.com/maps/search/?api=1&amp;query=FR%20MOTORS%20AUTO%20MEC%C3%82NICA%2C%20Av.%20Hildebrando%20de%20Lima%2C%20255%2C%20Osasco%20SP" target="_blank" rel="noopener noreferrer" aria-label="Abrir localização da FR Motors no Google Maps"><span class="glyph"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg></span><span class="copy">Nossa<br>Localização</span><span class="chev" aria-hidden="true">›</span></a>
-<a class="action" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para FR Motors"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="m3 7 9 7 9-7"/></svg></span><span class="copy">Enviar<br>E-mail</span><span class="chev" aria-hidden="true">›</span></a>
+<a class="action email-action" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para FR Motors"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="m3 7 9 7 9-7"/></svg></span><span class="copy">Enviar Email</span><span class="chev" aria-hidden="true">›</span></a>
 </section>
 <section class="box" aria-label="Endereço e horários">
 <h2>ENDEREÇO</h2><p class="major">Av. Hildebrando de Lima, 255 · Km 18</p><p class="secondary">Osasco / SP · CEP 06190-160</p>
@@ -113,7 +118,7 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 </section>
 <button class="pix-box" id="pixButton" type="button" aria-label="Copiar chave Pix CNPJ 10.492.268/0001-41">
 <span class="pix-symbol" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 7 13.5 17.5a8 8 0 0 1-11 0L16 4a11.3 11.3 0 0 1 16 0l13.5 13.5a8 8 0 0 1-11 0L24 7Zm0 34 10.5-10.5a8 8 0 0 1 11 0L32 44a11.3 11.3 0 0 1-16 0L2.5 30.5a8 8 0 0 1 11 0L24 41Zm-17-17 10.5-10.5a8 8 0 0 1 0-11L4 16a11.3 11.3 0 0 0 0 16l13.5 13.5a8 8 0 0 1 0-11L7 24Zm34 0L30.5 34.5a8 8 0 0 1 0 11L44 32a11.3 11.3 0 0 0 0-16L30.5 2.5a8 8 0 0 1 0 11L41 24Z"/></svg></span>
-<span class="pix-info"><span class="heading">PIX · CHAVE CNPJ</span><span class="number">10.492.268/0001-41</span><span class="copy-hint">Pressione para copiar</span></span>
+<span class="pix-info"><span class="heading">PIX · CHAVE CNPJ</span><span class="number">10.492.268/0001-41</span><span class="copy-hint">Clique para copiar</span></span>
 </button>
 <a class="mail" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para frd.morais@hotmail.com"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2.5 7 9.5 7 9.5-7"/></svg><span>frd.morais@hotmail.com</span></a>
 <div class="glowline" aria-hidden="true"></div>
