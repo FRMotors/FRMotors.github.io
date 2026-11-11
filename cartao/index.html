@@ -27,6 +27,8 @@ main:after{content:"";width:45%;height:10px;position:absolute;right:-12%;bottom:
 .action .glyph{width:43px;height:43px;flex:0 0 43px;border-radius:12px;background:linear-gradient(145deg,#ffa11a,#ed6f00);box-shadow:0 5px 13px #d774003c;display:grid;place-items:center;color:#fff}
 .action svg{width:27px;height:27px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .action .copy{flex:1;font-size:15px;font-weight:780;line-height:1.18}
+.action .social-handle{display:block;margin-top:3px;font-size:clamp(8px,2.3vw,10px);color:#f2c18d;font-weight:650;letter-spacing:-.1px;white-space:nowrap}
+.instagram-action .copy{min-width:0;overflow:visible}
 .action .chev{color:var(--orange);font-size:30px;font-weight:350;line-height:1;margin-left:auto}
 .action.is-disabled{border-color:#77777b;color:#b5b7b9;filter:saturate(.2);box-shadow:none;cursor:default}
 .action.is-disabled .glyph{background:#393b3e;box-shadow:none}
@@ -88,7 +90,6 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 }
 .pdf-download:hover{background:#24190e}
 .card-pdf-exporting main{min-height:0!important;padding-bottom:24px!important;box-shadow:none!important}
-.card-pdf-exporting .logo-art{visibility:hidden!important}
 .card-pdf-exporting .pdf-download{display:none!important}
 .pdf-download:disabled{opacity:.6;cursor:wait}
 @media print{.pdf-download{display:none!important}}
@@ -102,7 +103,7 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
 </header>
 <section class="buttons" aria-label="Contato e localização">
 <a class="action" href="https://wa.me/5511998865280" target="_blank" rel="noopener noreferrer" aria-label="Fale no WhatsApp da FR Motors"><span class="glyph"><svg viewBox="0 0 24 24"><path d="M20.5 11.6A8.5 8.5 0 0 1 8 19l-5 1.5L4.5 16a8.5 8.5 0 1 1 16-4.4Z"/><path d="M8.2 8.4c.4-.6.8-.7 1.2-.2l1.1 1.5-.7 1c.9 1.7 2 2.5 3.7 3.1l.9-.9 1.7 1c.4.3.4.7 0 1.1-1.3 1.5-5.7-.2-7.9-3.7-1.1-1.7-1.3-2.6 0-2.9Z"/></svg></span><span class="copy">Fale no<br>WhatsApp</span><span class="chev" aria-hidden="true">›</span></a>
-<div class="action is-disabled" aria-label="Instagram, em breve"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.6" cy="6.6" r=".8" fill="currentColor" stroke="none"/></svg></span><span class="copy">Instagram<br><span class="soon">EM BREVE</span></span><span class="chev" aria-hidden="true">›</span></div>
+<a class="action instagram-action" href="https://www.instagram.com/frmotors.automecanica/" target="_blank" rel="noopener noreferrer" aria-label="Abrir Instagram @frmotors.automecanica"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.6" cy="6.6" r=".8" fill="currentColor" stroke="none"/></svg></span><span class="copy">Instagram<br><span class="social-handle">@frmotors.automecanica</span></span><span class="chev" aria-hidden="true">›</span></a>
 <a class="action" href="https://www.google.com/maps/search/?api=1&amp;query=FR%20MOTORS%20AUTO%20MEC%C3%82NICA%2C%20Av.%20Hildebrando%20de%20Lima%2C%20255%2C%20Osasco%20SP" target="_blank" rel="noopener noreferrer" aria-label="Abrir localização da FR Motors no Google Maps"><span class="glyph"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg></span><span class="copy">Nossa<br>Localização</span><span class="chev" aria-hidden="true">›</span></a>
 <a class="action" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para FR Motors"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="m3 7 9 7 9-7"/></svg></span><span class="copy">Enviar<br>E-mail</span><span class="chev" aria-hidden="true">›</span></a>
 </section>
@@ -223,7 +224,17 @@ async function generateMobilePdf(){
   const pngs=await Promise.all(svgs.map(rasterizeIcon));
   document.body.classList.add('card-pdf-exporting');
   pdfMode=true;
-  // O SVG original permanece no DOM. O PNG sera desenhado UMA UNICA VEZ no canvas.
+  // Remove a logo do DOM somente durante a captura, preservando seu espaço.
+  // Assim o html2canvas não renderiza o SVG novamente em tamanho gigante.
+  let logoPlaceholder=null;
+  if(logo&&logoPng){
+   const logoSize=logo.getBoundingClientRect();
+   logoPlaceholder=document.createElement('div');
+   logoPlaceholder.setAttribute('aria-hidden','true');
+   logoPlaceholder.style.cssText='display:block;margin:0 auto;flex-shrink:0;width:'+logoSize.width+'px;height:'+logoSize.height+'px;max-width:100%';
+   logo.replaceWith(logoPlaceholder);
+   replacements.push([logo,logoPlaceholder]);
+  }
   for(let i=0;i<svgs.length;i++){
    svgs[i].replaceWith(pngs[i]);
    replacements.push([svgs[i],pngs[i]]);
@@ -246,15 +257,23 @@ async function generateMobilePdf(){
    imageTimeout:15000
   });
   if(!canvas||canvas.width<200||canvas.height<200)throw new Error('Captura do cartão indisponível');
-  // SVG ficou invisivel apenas durante a captura: desenhamos a logo PNG
-  // EXATAMENTE nas dimensoes e posicao da imagem original, sem duplicacao.
-  if(logoPng&&logo.isConnected){
+  // A captura nao contém a logo. Inserimos o PNG apenas uma vez,
+  // dentro das dimensoes exatas do espaço reservado no topo.
+  if(logoPng&&logoPlaceholder&&logoPlaceholder.isConnected){
    const mainRect=main.getBoundingClientRect();
-   const logoRect=logo.getBoundingClientRect();
+   const logoRect=logoPlaceholder.getBoundingClientRect();
    const scale=canvas.width/mainRect.width;
-   canvas.getContext('2d').drawImage(logoPng,
-    (logoRect.left-mainRect.left)*scale,(logoRect.top-mainRect.top)*scale,
-    logoRect.width*scale,logoRect.height*scale);
+   const x=(logoRect.left-mainRect.left)*scale;
+   const y=(logoRect.top-mainRect.top)*scale;
+   const w=logoRect.width*scale;
+   const h=logoRect.height*scale;
+   const pdfCtx=canvas.getContext('2d');
+   pdfCtx.save();
+   pdfCtx.beginPath();
+   pdfCtx.rect(x,y,w,h);
+   pdfCtx.clip();
+   pdfCtx.drawImage(logoPng,x,y,w,h);
+   pdfCtx.restore();
   }
   const {jsPDF}=window.jspdf;
   const pageW=108;
@@ -274,13 +293,13 @@ async function generateMobilePdf(){
    }
   });
   // Nome novo impede o Android/Drive de reabrir o PDF antigo com ícones em letras.
-  pdf.save('FR_Motors_Cartao_Corrigido_v4.pdf');
+  pdf.save('FR_Motors_Cartao_Com_Instagram_v5.pdf');
   notice('Novo PDF com ícones originais gerado!');
  }catch(e){
   console.error('Falha ao gerar PDF atualizado',e);
   notice('Erro ao gerar o novo PDF. Tente novamente.');
  }finally{
-  for(const [svg,img] of replacements)if(img.isConnected)img.replaceWith(svg);
+  for(const [original,temporary] of replacements.reverse())if(temporary.isConnected)temporary.replaceWith(original);
   if(pdfMode)document.body.classList.remove('card-pdf-exporting');
   button.textContent=originalText;
   button.disabled=false;
