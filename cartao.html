@@ -85,6 +85,8 @@ footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
  cursor:pointer;box-shadow:0 0 12px #ff8b0012;
 }
 .pdf-download:hover{background:#24190e}
+.card-pdf-exporting main{min-height:0!important;padding-bottom:24px!important;box-shadow:none!important}
+.card-pdf-exporting .pdf-download{display:none!important}
 .pdf-download:disabled{opacity:.6;cursor:wait}
 @media print{.pdf-download{display:none!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -130,121 +132,81 @@ document.getElementById("pixButton").addEventListener("click",copyPix);
 
 const pdfButton=document.getElementById('downloadPdfBtn');
 async function generateMobilePdf(){
- const button=pdfButton;button.disabled=true;
- const originalText=button.textContent;button.textContent='Preparando PDF...';
+ const button=pdfButton;
+ if(button.disabled)return;
+ button.disabled=true;
+ const originalText=button.textContent;
+ button.textContent='Preparando PDF...';
  try{
-  if(!window.jspdf?.jsPDF){
-   await new Promise((resolve,reject)=>{
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
-    s.onload=resolve;s.onerror=()=>reject(new Error('Falha ao carregar gerador de PDF'));
-    document.head.appendChild(s);
-   });
-  }
-  const {jsPDF}=window.jspdf;
-  // Proporção 9:19,5, sem as margens brancas de A4.
-  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[108,234],compress:true});
-  const W=108;
-  pdf.setFillColor(7,7,9);pdf.rect(0,0,W,234,'F');
-  const txt=(text,x,y,size=9,bold=false,color=[246,246,247])=>{
-   pdf.setFont('helvetica',bold?'bold':'normal');
-   pdf.setFontSize(size);pdf.setTextColor(...color);pdf.text(text,x,y);
-  };
-  const card=(x,y,w,h,accent=true)=>{
-   pdf.setFillColor(18,16,17);
-   pdf.setDrawColor(...(accent?[255,139,0]:[119,119,123]));
-   pdf.setLineWidth(.34);
-   pdf.roundedRect(x,y,w,h,4.8,4.8,'FD');
-  };
-  const logo=document.querySelector('.logo-art');
-  if(!logo.complete||!logo.naturalWidth){
+  // Captura o próprio cartão, em vez de reconstruir o layout com caixas e textos.
+  const loadScript=(src,test)=>test()?Promise.resolve():new Promise((resolve,reject)=>{
+   const script=document.createElement('script');
+   script.src=src;
+   script.onload=()=>test()?resolve():reject(new Error('Biblioteca indisponível'));
+   script.onerror=()=>reject(new Error('Falha ao carregar biblioteca do PDF'));
+   document.head.appendChild(script);
+  });
+  await Promise.all([
+   loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',()=>typeof window.html2canvas==='function'),
+   loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF)
+  ]);
+  await document.fonts?.ready;
+  const main=document.querySelector('main');
+  if(!main)throw new Error('Cartão não encontrado');
+  const logo=main.querySelector('.logo-art');
+  if(logo&&!logo.complete){
    await new Promise((resolve,reject)=>{
     logo.addEventListener('load',resolve,{once:true});
     logo.addEventListener('error',()=>reject(new Error('Logo indisponível')),{once:true});
-    if(logo.complete&&logo.naturalWidth)resolve();
    });
   }
-  const canvas=document.createElement('canvas');
-  canvas.width=1330;canvas.height=780;
-  const ctx=canvas.getContext('2d');
-  ctx.drawImage(logo,0,0,canvas.width,canvas.height);
-  pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,3,98,57,undefined,'FAST');
-  pdf.setDrawColor(255,139,0);pdf.setLineWidth(.25);pdf.line(30,60,78,60);
-  // Renderiza os SVGs ja exibidos no cartao, evitando siglas WA/IG/MAP no PDF.
-  const addDomSvgIcon=async(selector,x,y,w,h,{stroke='#ffffff',fill='none'}={})=>{
-   const original=document.querySelector(selector);
-   if(!original)throw new Error('Ícone não encontrado: '+selector);
-   const svg=original.cloneNode(true);
-   svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
-   svg.setAttribute('width','160');svg.setAttribute('height','160');
-   svg.setAttribute('stroke',stroke);
-   svg.setAttribute('stroke-width','2.2');
-   svg.setAttribute('stroke-linecap','round');
-   svg.setAttribute('stroke-linejoin','round');
-   svg.setAttribute('fill',fill);
-   svg.querySelectorAll('*').forEach(part=>{
-    if(part.getAttribute('fill')==='currentColor')part.setAttribute('fill',stroke==='none'?fill:stroke);
-    if(part.getAttribute('stroke')==='currentColor')part.setAttribute('stroke',stroke);
+  if(logo&&!logo.naturalWidth)throw new Error('Logo indisponível');
+  // Remove apenas o botão de download da imagem final.
+  document.body.classList.add('card-pdf-exporting');
+  let canvas,links,cardWidth;
+  try{
+   await new Promise(requestAnimationFrame);
+   const rect=main.getBoundingClientRect();
+   cardWidth=rect.width;
+   links=Array.from(main.querySelectorAll('a[href]')).filter(a=>a.getAttribute('href')&&a.getAttribute('href')!=='#').map(a=>{
+    const r=a.getBoundingClientRect();
+    return {href:a.href,x:r.left-rect.left,y:r.top-rect.top,w:r.width,h:r.height};
    });
-   const markup=new XMLSerializer().serializeToString(svg);
-   const img=new Image();
-   await new Promise((resolve,reject)=>{
-    img.onload=resolve;
-    img.onerror=()=>reject(new Error('Falha ao renderizar ícone: '+selector));
-    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(markup);
+   canvas=await html2canvas(main,{
+    backgroundColor:'#070709',
+    scale:Math.min(3,Math.max(2,window.devicePixelRatio||2)),
+    useCORS:true,
+    allowTaint:false,
+    logging:false,
+    scrollX:0,
+    scrollY:-window.scrollY,
+    imageTimeout:12000
    });
-   const iconCanvas=document.createElement('canvas');
-   iconCanvas.width=160;iconCanvas.height=160;
-   const context=iconCanvas.getContext('2d');
-   if(!context)throw new Error('Canvas indisponível');
-   context.drawImage(img,0,0,160,160);
-   pdf.addImage(iconCanvas.toDataURL('image/png'),'PNG',x,y,w,h,undefined,'FAST');
-  };
-  const cols=[7,55], ys=[65,90], bw=46, bh=20;
-  const labels=[['Fale no','WhatsApp'],['Instagram','Em breve'],['Nossa','Localização'],['Enviar','E-mail']];
-  const buttonIcons=[
-   '.buttons .action:nth-child(1) .glyph svg',
-   '.buttons .action:nth-child(2) .glyph svg',
-   '.buttons .action:nth-child(3) .glyph svg',
-   '.buttons .action:nth-child(4) .glyph svg'
-  ];
-  for(let i=0;i<labels.length;i++){
-   const l=labels[i];
-   const x=cols[i%2],y=ys[Math.floor(i/2)];card(x,y,bw,bh,i!==1);
-   pdf.setFillColor(...(i===1?[60,60,63]:[246,131,0]));
-   pdf.roundedRect(x+3,y+4,12,12,2.6,2.6,'F');
-   await addDomSvgIcon(buttonIcons[i],x+5.0,y+5.9,8,8);
-   txt(l[0],x+17,y+9.4,9.3,true);
-   txt(l[1],x+17,y+14.7,8.3,true,i===1?[160,160,166]:[246,246,247]);
+  }finally{
+   document.body.classList.remove('card-pdf-exporting');
   }
-  pdf.link(7,65,46,20,{url:'https://wa.me/5511998865280'});
-  pdf.link(7,90,46,20,{url:'https://www.google.com/maps/search/?api=1&query=FR%20MOTORS%20AUTO%20MEC%C3%82NICA%2C%20Av.%20Hildebrando%20de%20Lima%2C%20255%2C%20Osasco%20SP'});
-  pdf.link(55,90,46,20,{url:'mailto:frd.morais@hotmail.com'});
-  card(7,115,94,41);
-  txt('ENDEREÇO',12,122,8.6,true,[255,146,14]);
-  txt('Av. Hildebrando de Lima, 255 · Km 18',12,129.1,9.4,true);
-  txt('Osasco / SP · CEP 06190-160',12,134.6,8.4,false,[191,190,194]);
-  pdf.setDrawColor(65,65,68);pdf.line(12,138.5,96,138.5);
-  txt('HORÁRIOS DE FUNCIONAMENTO',12,144.2,8.6,true,[255,146,14]);
-  txt('Seg a qui: 8h às 18h  |  Sex: 8h às 17h',12,149.4,8.7,true);
-  txt('Sábado e domingo: fechado',12,154,8.2,false,[191,190,194]);
-  card(7,161,94,26);
-  pdf.setFillColor(255,139,0);pdf.roundedRect(11,165.6,16,16,4,4,'F');
-  await addDomSvgIcon('.pix-symbol svg',14.2,168.7,9.5,9.5,{stroke:'none',fill:'#ffffff'});
-  txt('PIX · CHAVE CNPJ',31,170.8,9.2,true,[255,146,14]);
-  txt('10.492.268/0001-41',31,179.3,13.1,true);
-  card(7,195,94,15);
-  await addDomSvgIcon('.mail svg',11.4,199.1,7.4,7.4,{stroke:'#ff920e',fill:'none'});
-  txt('frd.morais@hotmail.com',24,204.4,11,true);
-  pdf.link(7,195,94,15,{url:'mailto:frd.morais@hotmail.com'});
-  pdf.setDrawColor(255,139,0);pdf.setLineWidth(.3);pdf.line(26,217,82,217);
-  txt('FR MOTORS · MANUTENÇÃO AUTOMOTIVA',18,225,8.1,true,[178,178,186]);
+  if(!canvas||canvas.width<200||canvas.height<200)throw new Error('Imagem do cartão indisponível');
+  const {jsPDF}=window.jspdf;
+  const pageW=108;
+  const pageH=pageW*canvas.height/canvas.width;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:[pageW,pageH],compress:true});
+  pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,pageW,pageH,undefined,'FAST');
+  // Mantém os links clicáveis na versão em PDF.
+  const factor=pageW/cardWidth;
+  links.forEach(link=>{
+   if(link.w>0&&link.h>0&&/^https?:|^mailto:/i.test(link.href)){
+    pdf.link(link.x*factor,link.y*factor,link.w*factor,link.h*factor,{url:link.href});
+   }
+  });
   pdf.save('FR_Motors_Cartao_Digital_Celular.pdf');
   notice('PDF do cartão gerado!');
  }catch(e){
   console.error('Falha ao gerar PDF do cartão',e);
   notice('Não foi possível gerar o PDF. Tente novamente.');
- }finally{button.textContent=originalText;button.disabled=false}
+ }finally{
+  button.textContent=originalText;
+  button.disabled=false;
+ }
 }
 pdfButton.addEventListener('click',generateMobilePdf);
 
