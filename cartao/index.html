@@ -171,16 +171,53 @@ async function generateMobilePdf(){
   ctx.drawImage(logo,0,0,canvas.width,canvas.height);
   pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,3,98,57,undefined,'FAST');
   pdf.setDrawColor(255,139,0);pdf.setLineWidth(.25);pdf.line(30,60,78,60);
+  // Renderiza os SVGs ja exibidos no cartao, evitando siglas WA/IG/MAP no PDF.
+  const addDomSvgIcon=async(selector,x,y,w,h,{stroke='#ffffff',fill='none'}={})=>{
+   const original=document.querySelector(selector);
+   if(!original)throw new Error('Ícone não encontrado: '+selector);
+   const svg=original.cloneNode(true);
+   svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+   svg.setAttribute('width','160');svg.setAttribute('height','160');
+   svg.setAttribute('stroke',stroke);
+   svg.setAttribute('stroke-width','2.2');
+   svg.setAttribute('stroke-linecap','round');
+   svg.setAttribute('stroke-linejoin','round');
+   svg.setAttribute('fill',fill);
+   svg.querySelectorAll('*').forEach(part=>{
+    if(part.getAttribute('fill')==='currentColor')part.setAttribute('fill',stroke==='none'?fill:stroke);
+    if(part.getAttribute('stroke')==='currentColor')part.setAttribute('stroke',stroke);
+   });
+   const markup=new XMLSerializer().serializeToString(svg);
+   const img=new Image();
+   await new Promise((resolve,reject)=>{
+    img.onload=resolve;
+    img.onerror=()=>reject(new Error('Falha ao renderizar ícone: '+selector));
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(markup);
+   });
+   const iconCanvas=document.createElement('canvas');
+   iconCanvas.width=160;iconCanvas.height=160;
+   const context=iconCanvas.getContext('2d');
+   if(!context)throw new Error('Canvas indisponível');
+   context.drawImage(img,0,0,160,160);
+   pdf.addImage(iconCanvas.toDataURL('image/png'),'PNG',x,y,w,h,undefined,'FAST');
+  };
   const cols=[7,55], ys=[65,90], bw=46, bh=20;
   const labels=[['Fale no','WhatsApp'],['Instagram','Em breve'],['Nossa','Localização'],['Enviar','E-mail']];
-  labels.forEach((l,i)=>{
+  const buttonIcons=[
+   '.buttons .action:nth-child(1) .glyph svg',
+   '.buttons .action:nth-child(2) .glyph svg',
+   '.buttons .action:nth-child(3) .glyph svg',
+   '.buttons .action:nth-child(4) .glyph svg'
+  ];
+  for(let i=0;i<labels.length;i++){
+   const l=labels[i];
    const x=cols[i%2],y=ys[Math.floor(i/2)];card(x,y,bw,bh,i!==1);
    pdf.setFillColor(...(i===1?[60,60,63]:[246,131,0]));
    pdf.roundedRect(x+3,y+4,12,12,2.6,2.6,'F');
-   txt(['WA','IG','MAP','@'][i],x+(i===2?4.25:5),y+11.7,i===2?7.2:9,true);
+   await addDomSvgIcon(buttonIcons[i],x+5.0,y+5.9,8,8);
    txt(l[0],x+17,y+9.4,9.3,true);
    txt(l[1],x+17,y+14.7,8.3,true,i===1?[160,160,166]:[246,246,247]);
-  });
+  }
   pdf.link(7,65,46,20,{url:'https://wa.me/5511998865280'});
   pdf.link(7,90,46,20,{url:'https://www.google.com/maps/search/?api=1&query=FR%20MOTORS%20AUTO%20MEC%C3%82NICA%2C%20Av.%20Hildebrando%20de%20Lima%2C%20255%2C%20Osasco%20SP'});
   pdf.link(55,90,46,20,{url:'mailto:frd.morais@hotmail.com'});
@@ -194,11 +231,11 @@ async function generateMobilePdf(){
   txt('Sábado e domingo: fechado',12,154,8.2,false,[191,190,194]);
   card(7,161,94,26);
   pdf.setFillColor(255,139,0);pdf.roundedRect(11,165.6,16,16,4,4,'F');
-  txt('PIX',13.3,175.8,13,true);
+  await addDomSvgIcon('.pix-symbol svg',14.2,168.7,9.5,9.5,{stroke:'none',fill:'#ffffff'});
   txt('PIX · CHAVE CNPJ',31,170.8,9.2,true,[255,146,14]);
   txt('10.492.268/0001-41',31,179.3,13.1,true);
   card(7,195,94,15);
-  txt('@',12,204.4,11,true,[255,146,14]);
+  await addDomSvgIcon('.mail svg',11.4,199.1,7.4,7.4,{stroke:'#ff920e',fill:'none'});
   txt('frd.morais@hotmail.com',24,204.4,11,true);
   pdf.link(7,195,94,15,{url:'mailto:frd.morais@hotmail.com'});
   pdf.setDrawColor(255,139,0);pdf.setLineWidth(.3);pdf.line(26,217,82,217);
