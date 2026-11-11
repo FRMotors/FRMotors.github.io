@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090b">
+<meta name="description" content="Cartão digital da FR Motors. WhatsApp, localização, horários de atendimento, e-mail e chave Pix.">
+<link rel="icon" href="./fr-icon.svg" type="image/svg+xml">
+<title>FR Motors | Cartão Digital</title>
+<style>
+:root{color-scheme:dark;--orange:#ff8b00;--pale:#f7f6f7;--text:#f5f4f4;--muted:#a8adb7;--border:#ff8b00;--bg:#070709}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--bg)}
+body{margin:0;font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,a{-webkit-tap-highlight-color:transparent}
+button{font:inherit}
+main{max-width:520px;min-height:100dvh;margin:auto;position:relative;isolation:isolate;overflow:hidden;padding:30px 22px 48px;background:radial-gradient(ellipse at 55% -13%,#3b1d09 0,transparent 44%),radial-gradient(ellipse at 95% 100%,#23140b 0,transparent 38%),#070709;box-shadow:0 0 60px #000a}
+main:before{content:"";width:60%;height:9px;position:absolute;left:-20%;top:20px;background:#fb8700;transform:rotate(-47deg);box-shadow:0 0 28px #eb790077;z-index:-1}
+main:after{content:"";width:45%;height:10px;position:absolute;right:-12%;bottom:32px;background:#ff8b00;transform:rotate(-43deg);box-shadow:0 0 26px #ff8b0077;z-index:-1}
+.logo{position:relative;text-align:center;padding-top:2px;margin-bottom:23px}
+.logo-mark{height:86px;display:flex;justify-content:center;align-items:center;gap:0;line-height:.85;font:italic 950 106px/1 Impact,"Arial Black",system-ui,sans-serif;letter-spacing:-12px;transform:skewX(-10deg)}
+.logo-mark .f{color:var(--orange);text-shadow:0 0 24px #ff8b002b}
+.logo-mark .r{color:#f1f1f2;text-shadow:0 5px 18px #ffffff18}
+.logo-mark:after{content:"";position:absolute;width:180px;height:4px;top:43px;background:#ff8b00;transform:rotate(-9deg);clip-path:polygon(0 0,100% 0,84% 100%,0 100%)}
+.logo-word{font-size:56px;font-style:italic;line-height:.96;letter-spacing:-5px;font-weight:360;color:#eeeef2;margin-top:8px}
+.logo-word strong{font-weight:950}
+.logo-sub{font-size:11px;letter-spacing:6px;margin:9px 0 20px;color:#d8d7db;white-space:nowrap}
+.glowline{width:55%;height:1px;margin:0 auto;background:linear-gradient(90deg,transparent,#ff8c00 35%,#ff8c00 65%,transparent);box-shadow:0 0 15px 2px #ff8b007a}
+.buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:26px 0 20px}
+.action{min-width:0;min-height:82px;display:flex;align-items:center;gap:10px;text-decoration:none;border:1.3px solid var(--border);border-radius:21px;padding:12px 10px;background:linear-gradient(120deg,#151214,#050607);color:var(--text);box-shadow:inset 0 0 18px #ff8b0008,0 0 14px #ff8b0015;transition:transform .15s ease,background .15s ease}
+.action:active{transform:scale(.98)}
+.action .glyph{width:43px;height:43px;flex:0 0 43px;border-radius:12px;background:linear-gradient(145deg,#ffa11a,#ed6f00);box-shadow:0 5px 13px #d774003c;display:grid;place-items:center;color:#fff}
+.action svg{width:27px;height:27px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.action .copy{flex:1;font-size:15px;font-weight:780;line-height:1.18}
+.action .chev{color:var(--orange);font-size:30px;font-weight:350;line-height:1;margin-left:auto}
+.action.is-disabled{border-color:#77777b;color:#b5b7b9;filter:saturate(.2);box-shadow:none;cursor:default}
+.action.is-disabled .glyph{background:#393b3e;box-shadow:none}
+.action.is-disabled .chev{color:#838383}
+.soon{display:inline-block;font-size:9px;letter-spacing:.06em;padding:1px 6px;border:1px solid #999;border-radius:20px;margin-top:6px}
+.box{border:1.3px solid var(--orange);border-radius:21px;padding:16px 19px;margin-bottom:16px;background:linear-gradient(160deg,#191516,#07080a);box-shadow:0 0 18px #ff8b000b}
+.box h2,.pix-info .heading{font-size:14px;line-height:1.2;font-weight:850;letter-spacing:.018em;margin:0 0 5px;color:var(--orange)}
+.box .major{font-size:17px;line-height:1.28;font-weight:770;margin:0}
+.box .secondary{color:#b6b6bd;margin:4px 0 0;font-size:14px}
+.box hr{border:0;height:1px;background:#3f4145;margin:15px 0 15px}
+.pix-box{width:100%;display:flex;align-items:center;gap:16px;border:1.5px solid var(--orange);border-radius:20px;background:linear-gradient(160deg,#211708,#070708 60%);color:#fff;padding:15px 18px;margin:0 0 16px;cursor:pointer;text-align:left;box-shadow:0 0 18px #ff8b0033}
+.pix-box:focus-visible,.action:focus-visible,.mail:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.pix-symbol{width:56px;height:56px;flex:0 0 56px;display:grid;place-items:center;border-right:1px solid #ff8b00;padding-right:15px}
+.pix-symbol svg{width:40px;height:40px;fill:#f3f4f6}
+.pix-info{min-width:0}
+.pix-info .heading{margin-bottom:4px;font-size:15px;display:block}
+.pix-info .number{font-size:clamp(17px,5.2vw,25px);font-weight:900;letter-spacing:-.45px;line-height:1.1;white-space:nowrap}
+.mail{display:flex;align-items:center;justify-content:center;gap:12px;width:max-content;max-width:100%;border:1.3px solid var(--orange);border-radius:50px;padding:10px 16px;margin:0 auto 25px;color:#efeff1;text-decoration:none;background:#0d0b0c;font-weight:760;font-size:clamp(13px,3.7vw,18px);overflow-wrap:anywhere}
+.mail svg{width:23px;height:23px;flex-shrink:0;fill:none;stroke:var(--orange);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+footer{text-align:center;color:#9b9ba1;font-size:11px;letter-spacing:.02em}
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);z-index:10;opacity:0;transition:opacity .18s,transform .18s;background:#1c1a1a;border:1px solid var(--orange);color:white;border-radius:14px;padding:13px 20px;font-size:14px;font-weight:750;pointer-events:none;white-space:nowrap;box-shadow:0 8px 30px #000b}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (min-width:540px){main{padding:35px 36px 42px}.action{min-height:94px}.logo{margin-bottom:28px}.buttons{gap:14px}.box{padding:20px 24px}}
+@media (max-width:375px){main{padding:24px 13px 38px}.logo-mark{font-size:83px;height:70px}.logo-mark:after{top:36px;width:140px}.logo-word{font-size:45px}.logo-sub{font-size:9px;letter-spacing:4.8px}.buttons{gap:8px}.action{padding:8px 6px;gap:6px;min-height:75px;border-radius:16px}.action .glyph{width:36px;height:36px;flex-basis:36px}.action svg{width:23px;height:23px}.action .copy{font-size:12px}.action .chev{font-size:23px}.box .major{font-size:15px}.box .secondary{font-size:12px}.box h2{font-size:12px}.pix-box{gap:10px;padding:13px 11px}.pix-symbol{width:45px;flex-basis:45px;padding-right:10px}.pix-symbol svg{width:32px}.pix-info .heading{font-size:12px}.pix-info .number{font-size:18px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header class="logo" aria-label="FR Motors Manutenção Automotiva">
+<div class="logo-mark" aria-hidden="true"><span class="f">F</span><span class="r">R</span></div>
+<div class="logo-word"><strong>MO</strong>TORS</div>
+<div class="logo-sub">MANUTENÇÃO AUTOMOTIVA</div><div class="glowline"></div>
+</header>
+<section class="buttons" aria-label="Contato e localização">
+<a class="action" href="https://wa.me/5511998865280" target="_blank" rel="noopener noreferrer" aria-label="Fale no WhatsApp da FR Motors"><span class="glyph"><svg viewBox="0 0 24 24"><path d="M20.5 11.6A8.5 8.5 0 0 1 8 19l-5 1.5L4.5 16a8.5 8.5 0 1 1 16-4.4Z"/><path d="M8.2 8.4c.4-.6.8-.7 1.2-.2l1.1 1.5-.7 1c.9 1.7 2 2.5 3.7 3.1l.9-.9 1.7 1c.4.3.4.7 0 1.1-1.3 1.5-5.7-.2-7.9-3.7-1.1-1.7-1.3-2.6 0-2.9Z"/></svg></span><span class="copy">Fale no<br>WhatsApp</span><span class="chev" aria-hidden="true">›</span></a>
+<div class="action is-disabled" aria-label="Instagram, em breve"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.6" cy="6.6" r=".8" fill="currentColor" stroke="none"/></svg></span><span class="copy">Instagram<br><span class="soon">EM BREVE</span></span><span class="chev" aria-hidden="true">›</span></div>
+<a class="action" href="https://www.google.com/maps/search/?api=1&amp;query=FR%20MOTORS%20AUTO%20MEC%C3%82NICA%2C%20Av.%20Hildebrando%20de%20Lima%2C%20255%2C%20Osasco%20SP" target="_blank" rel="noopener noreferrer" aria-label="Abrir localização da FR Motors no Google Maps"><span class="glyph"><svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg></span><span class="copy">Nossa<br>Localização</span><span class="chev" aria-hidden="true">›</span></a>
+<a class="action" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para FR Motors"><span class="glyph"><svg viewBox="0 0 24 24"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="m3 7 9 7 9-7"/></svg></span><span class="copy">Enviar<br>E-mail</span><span class="chev" aria-hidden="true">›</span></a>
+</section>
+<section class="box" aria-label="Endereço e horários">
+<h2>ENDEREÇO</h2><p class="major">Av. Hildebrando de Lima, 255 · Km 18</p><p class="secondary">Osasco / SP · CEP 06190-160</p>
+<hr>
+<h2>HORÁRIOS DE FUNCIONAMENTO</h2><p class="major">Seg a qui: 8h às 18h | Sex: 8h às 17h</p><p class="secondary">Sábado e domingo: fechado</p>
+</section>
+<button class="pix-box" id="pixButton" type="button" aria-label="Copiar chave Pix CNPJ 10.492.268/0001-41">
+<span class="pix-symbol" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 7 13.5 17.5a8 8 0 0 1-11 0L16 4a11.3 11.3 0 0 1 16 0l13.5 13.5a8 8 0 0 1-11 0L24 7Zm0 34 10.5-10.5a8 8 0 0 1 11 0L32 44a11.3 11.3 0 0 1-16 0L2.5 30.5a8 8 0 0 1 11 0L24 41Zm-17-17 10.5-10.5a8 8 0 0 1 0-11L4 16a11.3 11.3 0 0 0 0 16l13.5 13.5a8 8 0 0 1 0-11L7 24Zm34 0L30.5 34.5a8 8 0 0 1 0 11L44 32a11.3 11.3 0 0 0 0-16L30.5 2.5a8 8 0 0 1 0 11L41 24Z"/></svg></span>
+<span class="pix-info"><span class="heading">PIX · CHAVE CNPJ</span><span class="number">10.492.268/0001-41</span></span>
+</button>
+<a class="mail" href="mailto:frd.morais@hotmail.com" aria-label="Enviar e-mail para frd.morais@hotmail.com"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2.5 7 9.5 7 9.5-7"/></svg><span>frd.morais@hotmail.com</span></a>
+<div class="glowline" aria-hidden="true"></div>
+<footer><p>FR MOTORS · MANUTENÇÃO AUTOMOTIVA</p></footer>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+const pix="10492268000141";
+let timeout;
+function notice(text){const el=document.getElementById("toast");el.textContent=text;el.classList.add("show");clearTimeout(timeout);timeout=setTimeout(()=>el.classList.remove("show"),2600)}
+async function copyPix(){
+try{if(!navigator.clipboard||!navigator.clipboard.writeText)throw Error("no clipboard");await navigator.clipboard.writeText(pix);notice("Chave Pix copiada!");return}catch(e){}
+const area=document.createElement("textarea");area.value=pix;area.style.cssText="position:fixed;left:-9999px;top:0;opacity:0";document.body.appendChild(area);area.focus();area.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}area.remove();
+if(ok){notice("Chave Pix copiada!")}else{window.prompt("Copie a chave Pix CNPJ:",pix)}
+}
+document.getElementById("pixButton").addEventListener("click",copyPix);
+})();
+</script></body></html>
