@@ -2678,6 +2678,7 @@ body.printing .main{gap:6px!important;}
   }
 }
 
+@media(max-width:900px){.system-nav,.ficha-responsive-topbar .system-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -2813,7 +2814,8 @@ body.printing .main{gap:6px!important;}
             <a href="./">Ficha / O.S.</a>
             <a class="active" href="./orcamentos.html" aria-current="page">Orçamentos</a>
             <a href="./dashboard.html">Dashboard</a>
-        </nav>
+          <a href="./financeiro.html">Financeiro</a>
+    </nav>
         <div class="system-spacer"></div>
         <span id="cloudStatusOrc" class="system-status cloud-loading">Conectando...</span>
         <button id="logoutBtnOrc" class="system-logout" type="button">Sair</button>
