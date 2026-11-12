@@ -231,3 +231,11 @@ svg{flex-shrink:0}
  .installment-row input{font-size:11px;padding:8px 6px}
  .data-toolbar .search-box{width:100%}
 }
+
+/* Mensagens operacionais sem interromper a navegação */
+.toast-area{position:fixed;right:26px;bottom:24px;display:flex;flex-direction:column;align-items:flex-end;gap:9px;max-width:min(390px,calc(100vw - 30px));z-index:999}
+.toast{padding:13px 16px;border:1px solid #cfe9e1;border-left:4px solid #22947b;background:#fff;color:#315e52;border-radius:10px;box-shadow:0 14px 48px rgba(15,39,56,.15);font-size:12px;font-weight:750;line-height:1.5;max-width:100%;animation:toast-in .16s ease-out}
+.toast-error{color:#913e42;border-color:#f0cbca;border-left-color:#c84c51}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:760px){.toast-area{left:15px;right:15px;bottom:18px;max-width:none;align-items:stretch}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
