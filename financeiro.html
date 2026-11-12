@@ -3,114 +3,239 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
-<style>
-:root{color-scheme:light;--navy:#101820;--teal:#167b87;--bg:#f3f6f7;--ink:#172126;--muted:#64747c;--line:#e0e7ea;--white:#fff;--good:#176b52;--bad:#a43d3d}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.48 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
-header{background:var(--navy);color:#fff;padding:18px max(20px,calc((100vw - 1220px)/2));display:flex;justify-content:space-between;gap:15px;align-items:center}
-header a{color:#c5e9eb;text-decoration:none}header strong{font-size:19px}main{max-width:1220px;margin:auto;padding:26px 18px 60px}
-h1{font-size:27px;margin:0 0 4px}h2{font-size:17px;margin:0 0 15px}p{color:var(--muted);margin:0 0 15px}
-.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:17px 0}
-.stat,.panel{background:var(--white);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 22px #10233008}
-.stat{padding:19px}.stat small{display:block;font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:750}.stat strong{display:block;font-size:24px;margin-top:7px;font-variant-numeric:tabular-nums}
-.panel{padding:20px;margin-top:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.pill{display:inline-block;border-radius:30px;padding:4px 9px;background:#ecf5f5;color:#12616a;font-size:11px;font-weight:800}
-label{display:grid;gap:5px;font-size:12px;font-weight:750;color:#41535c}
-input,select,textarea{width:100%;padding:11px;border:1px solid #ccd8dd;border-radius:9px;font:inherit;background:#fff;color:var(--ink)}
-input:focus,select:focus,textarea:focus{outline:2px solid #92cfd3;outline-offset:1px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-button{border:0;border-radius:9px;padding:11px 17px;background:var(--navy);color:#fff;font:750 13px system-ui;cursor:pointer}button:disabled{opacity:.5;cursor:wait}
-.note{font-size:12px;color:var(--muted)}.status{font-size:13px;min-height:20px;margin:12px 0}.bad{color:var(--bad)}.ok{color:var(--good)}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{border-collapse:collapse;width:100%;min-width:550px}
-td,th{padding:11px 13px;border-bottom:1px solid var(--line);text-align:left}th{background:#f5f8f9;font-size:11px;text-transform:uppercase;color:#53636b}tr:last-child td{border:0}
-.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.empty{padding:18px;color:var(--muted)}
-.hidden{display:none!important}
-.installments{display:grid;gap:9px;margin:12px 0}.installment-row{display:grid;grid-template-columns:40px 1fr 1fr;gap:10px;align-items:center}.installment-row b{font-size:12px;color:var(--muted)}.installment-row input{min-width:0}
-@media(max-width:800px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}}
-@media(max-width:520px){header{padding:14px 16px}header strong{font-size:16px}main{padding:18px 12px 32px}.stat{padding:13px}.stat strong{font-size:19px}.fields{grid-template-columns:1fr}.panel{padding:14px}}
-.fin-nav{display:flex;gap:4px;flex-wrap:wrap;align-items:center}.fin-nav a{text-decoration:none;color:#d9e8ec;font-size:12px;font-weight:750;padding:9px 12px;border-radius:9px}.fin-nav a:hover,.fin-nav-active{background:#2e4951!important;color:white!important}
-.test-banner{background:#fff4df;border:1px solid #f0d5a2;border-radius:14px;padding:14px 17px;margin:14px 0 18px}.test-banner strong{display:block;font-size:14px;color:#704b09}.test-banner p{margin:4px 0 0;color:#705827;font-size:12px}
-.test-tools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px}.btn-warn{background:#fff;border:1px solid #c85c4b;color:#a43d3d}.btn-warn:hover{background:#fff0ee}
-@media(max-width:690px){header{padding:15px;align-items:flex-start;flex-direction:column}.fin-nav{width:100%}.fin-nav a{padding:9px;font-size:11px}}
-</style>
+<link rel="stylesheet" href="./financeiro-pro.css?v=20261112a">
 </head>
 <body>
-<header>
- <strong>FR MOTORS <span style="color:#91d3d9">/ FINANCEIRO</span></strong>
- <nav class="fin-nav" aria-label="Navegação FR Motors">
-   <a href="./">Ficha / O.S.</a><a href="./orcamentos.html">Orçamentos</a>
-   <a href="./dashboard.html">Dashboard</a><a href="./financeiro.html" aria-current="page" class="fin-nav-active">Financeiro</a>
- </nav>
-</header>
-<main>
-<h1>Financeiro</h1>
-<div class="test-banner" role="note"><strong>Ambiente de testes</strong><p>Você pode registrar compras, boletos, entradas e saídas para experimentar. Os dados ficam em tabelas exclusivas de testes no Supabase e não alteram o Fluxo de Caixa oficial, os relatórios reais nem o Excel.</p></div>
-<p>Compras, compromissos e movimentações em uma base sincronizada entre computador e celular.</p>
-
-<div id="access" class="panel" role="status">Verificando acesso à área financeira...</div>
-<div id="app" class="hidden">
- <div class="stat-grid">
-  <div class="stat"><small>Entradas confirmadas</small><strong id="k-in">R$ 0,00</strong></div>
-  <div class="stat"><small>Saídas confirmadas</small><strong id="k-out">R$ 0,00</strong></div>
-  <div class="stat"><small>Saldo do período</small><strong id="k-net">R$ 0,00</strong></div>
-  <div class="stat"><small>Parcelas em aberto</small><strong id="k-open">0</strong></div>
- </div>
- <div class="panel"><div class="fields">
-  <label>Data inicial<input id="from" type="date"></label>
-  <label>Data final<input id="to" type="date"></label>
- </div><p class="note" style="margin:9px 0 0">Os indicadores consideram os lançamentos confirmados no intervalo escolhido. As compras e parcelas não são somadas novamente às saídas.</p></div>
- <div class="grid">
-  <section class="panel"><h2>Registrar movimentação</h2>
-   <p class="note">Para quitar boletos cadastrados, use a seção <strong>Baixar boleto ou parcela</strong>, evitando lançar o mesmo pagamento duas vezes.</p>
-   <form id="move-form" class="fields">
-    <label>Tipo<select name="tipo" required><option value="saida">Saída</option><option value="entrada">Entrada</option></select></label>
-    <label>Data<input name="data_movimento" type="date" required></label>
-    <label style="grid-column:1/-1">Descrição<input name="descricao" required maxlength="250" placeholder="Ex.: Quitação de boleto"></label>
-    <label>Valor (R$)<input name="valor" type="number" step="0.01" min="0.01" required></label>
-    <label>Categoria<input name="categoria" placeholder="Ex.: Autopeças" maxlength="100"></label>
-    <label>Fornecedor<select name="fornecedor_id" id="supplier-select"><option value="">Não se aplica</option></select></label>
-    <label>Meio<select name="meio_pagamento"><option value="">Não informado</option><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="cartao_credito">Cartão de crédito</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option></select></label>
-    <div style="grid-column:1/-1"><button id="save-move" type="submit">Salvar lançamento</button><div id="move-status" class="status" role="status"></div></div>
-   </form>
-  </section>
-  <section class="panel"><h2>Registrar compra e parcelas</h2>
-   <form id="purchase-form" class="fields">
-    <label>Fornecedor<select name="fornecedor_id" id="purchase-supplier" required><option value="">Selecione</option></select></label>
-    <label>Data da compra<input name="data_compra" type="date" required></label>
-    <label style="grid-column:1/-1">Descrição<input name="descricao" maxlength="250" placeholder="Ex.: Peças para manutenção"></label>
-    <label>Valor total (R$)<input name="valor_total" type="number" min="0.01" step="0.01" required></label>
-    <label>Forma<select name="forma_pagamento" required><option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
-    <label>Parcelas<select name="quantidade" id="installment-count" required><option value="1">1 parcela</option><option value="2">2 parcelas</option><option value="3">3 parcelas (30/60/90)</option><option value="4">4 parcelas</option><option value="6">6 parcelas</option><option value="10">10 parcelas</option><option value="12">12 parcelas</option></select></label>
-    <label>Primeiro vencimento<input name="vencimento" id="purchase-due" type="date" required></label>
-    <div style="grid-column:1/-1">
-     <p class="note">Os próximos vencimentos são sugeridos com intervalos de 30 dias. Confira e edite os valores e datas das parcelas antes de salvar.</p>
-     <div id="installments" class="installments"></div>
-     <p class="note" id="installment-check" role="status"></p>
-     <button id="save-purchase" type="submit">Salvar compra e parcelas</button>
-     <div id="purchase-status" class="status" role="status"></div>
+<div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+<aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+  <div class="sidebar-brand">
+    <span class="brand-mark">FR</span>
+    <div><div class="brand-name">FR Motors</div><span class="brand-subtitle">Gestão empresarial</span></div>
+  </div>
+  <div class="sidebar-workspace"><span class="online-dot"></span> Área Financeira <span class="env-chip">TESTE</span></div>
+  <div class="sidebar-section-label">Painel de controle</div>
+  <nav class="sidebar-links" aria-label="Seções do financeiro">
+    <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
+    <button type="button" data-view="movements"><span class="icon" data-icon="activity"></span> Movimentações</button>
+    <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
+    <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras e parcelas</button>
+    <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section-label">Sistema FR Motors</div>
+  <nav class="sidebar-links" aria-label="Outros módulos da FR Motors">
+    <a href="./"><span class="icon" data-icon="wallet"></span> Ficha / O.S.</a>
+    <a href="./orcamentos.html"><span class="icon" data-icon="file"></span> Orçamentos</a>
+    <a href="./dashboard.html"><span class="icon" data-icon="chart"></span> Dashboard da oficina</a>
+  </nav>
+  <div class="sidebar-footer">
+    <strong>Financeiro · versão de testes</strong>
+    <p>Ambiente isolado. Os dados desta área não afetam o caixa oficial da empresa.</p>
+  </div>
+</aside>
+<div class="main-shell">
+  <header class="topbar">
+    <div class="crumb">
+      <button type="button" id="menu-toggle" class="menu-toggle" aria-label="Abrir menu" aria-expanded="false"><span class="icon" data-icon="menu"></span></button>
+      <span class="hide-mobile">FR Motors</span><span class="icon icon-sm" data-icon="chevron"></span>
+      <span class="crumb-current" id="crumb-page">Visão geral</span>
     </div>
-   </form>
-  </section>
- </div>
- <section class="panel"><h2>Baixar boleto ou parcela</h2>
-  <p>Use este formulário para registrar um pagamento de fornecedor e atualizar a parcela sem duplicar a despesa.</p>
-  <form id="pay-form" class="fields">
-   <label style="grid-column:1/-1">Parcela em aberto<select id="pay-installment" required><option value="">Selecione um boleto</option></select></label>
-   <label>Data do pagamento<input id="pay-date" type="date" required></label>
-   <label>Valor cheio (R$)<input id="pay-full" type="text" readonly></label>
-   <label>Desconto aplicado (R$)<input id="pay-discount" type="number" min="0" step="0.01" value="0" required></label>
-   <label>Juros e multas (R$)<input id="pay-fees" type="number" min="0" step="0.01" value="0" required></label>
-   <label>Valor efetivamente pago (R$)<input id="pay-amount" type="number" min="0.01" step="0.01" required></label>
-   <label>Meio<select id="pay-method" required><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
-   <div style="grid-column:1/-1"><p class="note" id="pay-hint">Valores sugeridos para boletos novos. Confira sempre o valor realmente pago, conforme seu comprovante.</p><button id="save-payment" type="submit">Confirmar pagamento e baixar parcela</button><div id="pay-status" class="status" role="status"></div></div>
-  </form>
- </section>
- <section class="panel"><h2>Movimentações do período <span class="pill">Supabase</span></h2><div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Fornecedor</th><th class="money">Valor</th></tr></thead><tbody id="rows"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody></table></div></section>
- <section class="panel"><h2>Próximos vencimentos</h2><div class="table-wrap"><table><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Status</th></tr></thead><tbody id="due"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody></table></div></section>
- <section class="panel">
-  <div class="test-tools"><div><h2 style="margin:0 0 4px">Limpar ambiente de testes</h2><p style="margin:0">Remove apenas compras, parcelas e movimentações criadas nesta página. O financeiro oficial não será afetado.</p></div><button id="reset-test" type="button" class="btn-warn">Limpar dados de teste</button></div>
-  <div id="reset-status" class="status" role="status"></div>
- </section>
- <p class="note" style="margin-top:16px">Página de testes. Não representa o saldo real da empresa. O histórico validado permanece nas planilhas e na área financeira anterior.</p>
+    <div class="topbar-actions">
+      <span class="top-status">Ambiente de testes</span>
+      <button type="button" id="refresh-data" class="btn btn-icon" aria-label="Atualizar informações" title="Atualizar informações"><span class="icon" data-icon="refresh"></span></button>
+      <span class="account-avatar" aria-label="FR Motors">FR</span>
+    </div>
+  </header>
+  <main class="content" id="main-content">
+    <div id="access" class="loading-text" role="status">Verificando sessão e autorização financeira...</div>
+    <div id="app" class="hidden">
+      <section class="view" data-view-panel="overview" aria-label="Visão geral financeira">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Inteligência financeira</p>
+            <h1 class="page-heading">Visão geral</h1>
+            <p class="page-description">Acompanhe o desempenho do caixa, compromissos e operações em um único lugar.</p>
+          </div>
+          <div class="header-buttons">
+            <button type="button" class="btn" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
+            <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Nova compra</button>
+            <button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button>
+          </div>
+        </div>
+        <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
+          <div><strong>Você está no ambiente de demonstração.</strong>
+          <p>Todos os valores abaixo são gerados pelos seus lançamentos de teste. A planilha oficial, o caixa real e os demais módulos permanecem inalterados.</p></div>
+        </div>
+        <div class="section-tools">
+          <div class="preset-actions" role="group" aria-label="Período">
+            <button type="button" class="preset" data-period="month">Este mês</button>
+            <button type="button" class="preset" data-period="quarter">Últimos 3 meses</button>
+            <button type="button" class="preset active" data-period="year">Este ano</button>
+          </div>
+          <div class="date-toolbar">
+            <div class="date-field"><label for="from">De</label><input id="from" type="date"></div>
+            <div class="date-field"><label for="to">Até</label><input id="to" type="date"></div>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <article class="kpi kpi-positive">
+            <div class="kpi-head"><span class="kpi-label">Entradas confirmadas</span><span class="kpi-icon icon" data-icon="arrowdown"></span></div>
+            <strong class="kpi-value" id="k-in">R$ 0,00</strong><span class="kpi-foot"><span class="dot"></span> No período selecionado</span>
+          </article>
+          <article class="kpi kpi-negative">
+            <div class="kpi-head"><span class="kpi-label">Saídas confirmadas</span><span class="kpi-icon icon" data-icon="arrowup"></span></div>
+            <strong class="kpi-value" id="k-out">R$ 0,00</strong><span class="kpi-foot"><span class="dot"></span> No período selecionado</span>
+          </article>
+          <article class="kpi">
+            <div class="kpi-head"><span class="kpi-label">Resultado do período</span><span class="kpi-icon icon" data-icon="wallet"></span></div>
+            <strong class="kpi-value" id="k-net">R$ 0,00</strong><span class="kpi-foot"><span class="dot"></span> Entradas menos saídas</span>
+          </article>
+          <article class="kpi kpi-neutral">
+            <div class="kpi-head"><span class="kpi-label">Parcelas em aberto</span><span class="kpi-icon icon" data-icon="calendar"></span></div>
+            <strong class="kpi-value" id="k-open">0</strong><span class="kpi-foot"><span class="dot"></span> <span id="due-kpi-foot">Nenhum atraso registrado</span></span>
+          </article>
+        </div>
+        <div class="content-grid">
+          <section class="card">
+            <div class="card-head"><div><h2>Evolução do fluxo de caixa</h2><p>Entradas e saídas confirmadas nos últimos seis meses da seleção</p></div>
+              <div class="chart-legend"><span><i class="legend-key"></i> Entradas</span><span><i class="legend-key out"></i> Saídas</span></div>
+            </div>
+            <div class="card-body"><div class="chart-frame" id="cash-chart"><div class="chart-plot-empty">Aguardando movimentações...</div></div></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h2>Próximos vencimentos</h2><p>Compromissos financeiros em aberto</p></div><button type="button" class="card-link" data-view="payables">Ver todos <span class="icon icon-sm" data-icon="chevron"></span></button></div>
+            <div class="card-body"><div id="upcoming-list" class="upcoming-list"></div></div>
+          </section>
+        </div>
+        <section class="card" style="margin-top:18px">
+          <div class="card-head"><div><h2>Movimentações recentes</h2><p id="recent-count">Lançamentos do período</p></div>
+            <button type="button" class="card-link" data-view="movements">Ver histórico <span class="icon icon-sm" data-icon="chevron"></span></button></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Fornecedor</th><th class="money">Valor</th></tr></thead><tbody id="recent-rows"><tr><td colspan="5" class="empty">Aguardando dados...</td></tr></tbody></table></div>
+          <div class="table-footer"><span id="last-refresh">Sincronizando com o Supabase</span></div>
+        </section>
+      </section>
+
+      <section class="view" data-view-panel="movements" hidden aria-label="Movimentações financeiras">
+        <div class="section-header">
+          <div><p class="eyebrow">Registros financeiros</p><h1 class="page-heading">Movimentações</h1><p class="page-description">Entradas e saídas confirmadas, vinculadas à base de testes. Consulte e exporte os lançamentos por período.</p></div>
+          <div class="header-buttons"><button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button></div>
+        </div>
+        <section class="card">
+          <div class="card-head"><div><h2>Histórico de lançamentos</h2><p>Período definido na Visão geral</p></div>
+            <button type="button" id="export-moves" class="btn"><span class="icon icon-sm" data-icon="download"></span> Exportar CSV</button></div>
+          <div class="data-toolbar">
+            <label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-moves" placeholder="Buscar por descrição, fornecedor ou data..." aria-label="Buscar movimentações"></label>
+            <select id="type-filter" class="filter-select" aria-label="Filtrar tipo"><option value="all">Todos os tipos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
+          </div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Fornecedor</th><th class="money">Valor</th></tr></thead><tbody id="rows"><tr><td colspan="5" class="empty">Aguardando dados...</td></tr></tbody></table></div>
+          <div class="table-footer" id="moves-count">0 lançamento(s)</div>
+        </section>
+        <p class="info-note">Importante: uma compra a prazo cria parcelas, mas somente o pagamento efetivo entra nas saídas do caixa.</p>
+      </section>
+
+      <section class="view" data-view-panel="payables" hidden aria-label="Contas a pagar">
+        <div class="section-header">
+          <div><p class="eyebrow">Compromissos da empresa</p><h1 class="page-heading">Contas a pagar</h1><p class="page-description">Acompanhe parcelas, vencimentos, atrasos e registre baixas com descontos ou juros.</p></div>
+          <div class="header-buttons"><button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button>
+          <button type="button" class="btn btn-primary" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button></div>
+        </div>
+        <div class="section-card-list">
+          <article class="insight-card"><span>Valor cheio em aberto</span><strong id="pending-value">R$ 0,00</strong><small>Antes de descontos e encargos</small></article>
+          <article class="insight-card"><span>Valor cheio vencido</span><strong id="overdue-value">R$ 0,00</strong><small>Parcelas com vencimento anterior a hoje</small></article>
+          <article class="insight-card"><span>Vencem nos próximos sete dias</span><strong id="soon-count">0</strong><small>Contagem de parcelas</small></article>
+        </div>
+        <section class="card">
+          <div class="card-head"><div><h2>Boletos e parcelas</h2><p>Valores e vencimentos da base de testes</p></div></div>
+          <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-dues" type="search" placeholder="Buscar fornecedor ou vencimento..." aria-label="Buscar contas a pagar"></label></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Situação</th><th></th></tr></thead><tbody id="due"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
+          <div class="table-footer" id="dues-count">0 parcela(s)</div>
+        </section>
+      </section>
+
+      <section class="view" data-view-panel="purchases" hidden aria-label="Compras e parcelas">
+        <div class="section-header"><div><p class="eyebrow">Gestão de fornecedores</p><h1 class="page-heading">Compras e parcelas</h1><p class="page-description">Compras com número de parcelas, datas e valores personalizados. O pagamento é registrado separadamente.</p></div>
+        <div class="header-buttons"><button type="button" class="btn btn-primary" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button></div></div>
+        <section class="card">
+          <div class="card-head"><div><h2>Compras cadastradas</h2><p>Histórico isolado do ambiente de testes</p></div></div>
+          <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-purchases" type="search" placeholder="Buscar descrição, fornecedor ou data..." aria-label="Buscar compras"></label></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Data da compra</th><th>Descrição</th><th>Fornecedor</th><th class="money">Valor total</th><th>Situação</th></tr></thead><tbody id="purchases-rows"><tr><td colspan="5" class="empty">Aguardando dados...</td></tr></tbody></table></div>
+          <div class="table-footer" id="purchase-count">0 compra(s)</div>
+        </section>
+      </section>
+
+      <section class="view" data-view-panel="settings" hidden aria-label="Configurações de testes">
+        <div class="section-header"><div><p class="eyebrow">Administração</p><h1 class="page-heading">Configurações</h1><p class="page-description">Gerencie o ambiente de testes do módulo financeiro sem interferir nos dados reais da oficina.</p></div></div>
+        <div class="section-card-list">
+          <div class="insight-card"><span>Ambiente em uso</span><strong style="font-size:20px">Sandbox financeiro</strong><small>Banco Supabase · tabelas fin_teste_*</small></div>
+          <div class="insight-card"><span>Última sincronização</span><strong style="font-size:20px">Automática</strong><small id="last-record">Base isolada</small></div>
+        </div>
+        <section class="card">
+          <div class="card-head"><div><h2>Proteção de dados</h2><p>Separação entre testes e operação real</p></div><span class="icon" data-icon="shield"></span></div>
+          <div class="card-body">
+            <div class="test-status">Os lançamentos desta página são restritos à área de testes. O Fluxo de Caixa oficial, a planilha integrada e os indicadores reais não são alterados.</div>
+            <div class="admin-warning"><strong>Excluir lançamentos de teste</strong><p>A limpeza remove apenas compras, parcelas, vínculos e movimentações cadastrados neste ambiente. Essa operação não pode ser desfeita.</p></div>
+            <button type="button" class="btn btn-danger" id="reset-test"><span class="icon icon-sm" data-icon="alert"></span> Limpar dados de teste</button>
+            <div class="status" id="reset-status" role="status"></div>
+          </div>
+        </section>
+      </section>
+
+      <dialog id="modal-move" class="fin-dialog" aria-labelledby="move-title">
+        <div class="dialog-head"><div><h2 id="move-title">Novo lançamento</h2><p>Registre uma entrada ou saída efetiva de caixa.</p></div><button type="button" class="dialog-close" data-close-modal="move" aria-label="Fechar"><span class="icon" data-icon="close"></span></button></div>
+        <div class="dialog-body">
+          <form id="move-form" class="fields">
+            <label>Tipo de lançamento<select name="tipo" required><option value="saida">Saída</option><option value="entrada">Entrada</option></select></label>
+            <label>Data<input name="data_movimento" type="date" required></label>
+            <label style="grid-column:1/-1">Descrição<input name="descricao" required maxlength="250" placeholder="Ex.: Pagamento de despesas operacionais"></label>
+            <label>Valor (R$)<input name="valor" type="number" step="0.01" min="0.01" required placeholder="0,00"></label>
+            <label>Categoria<input name="categoria" placeholder="Ex.: Autopeças" maxlength="100"></label>
+            <label>Fornecedor<select name="fornecedor_id" id="supplier-select"><option value="">Não se aplica</option></select></label>
+            <label>Meio<select name="meio_pagamento"><option value="">Não informado</option><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="cartao_credito">Cartão de crédito</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option></select></label>
+            <div style="grid-column:1/-1"><p class="form-note">Para quitar um boleto cadastrado, use <b>Dar baixa</b>. Assim, o pagamento não será registrado duas vezes.</p><div class="form-actions"><button type="button" class="btn" data-close-modal="move">Cancelar</button><button class="btn btn-primary" id="save-move" type="submit">Salvar lançamento</button></div><div id="move-status" class="status" role="status"></div></div>
+          </form>
+        </div>
+      </dialog>
+
+      <dialog id="modal-purchase" class="fin-dialog" aria-labelledby="purchase-title">
+        <div class="dialog-head"><div><h2 id="purchase-title">Nova compra</h2><p>Cadastre a compra e seus vencimentos em uma operação.</p></div><button type="button" class="dialog-close" data-close-modal="purchase" aria-label="Fechar"><span class="icon" data-icon="close"></span></button></div>
+        <div class="dialog-body">
+          <form id="purchase-form" class="fields">
+            <label>Fornecedor<select name="fornecedor_id" id="purchase-supplier" required><option value="">Selecione</option></select></label>
+            <label>Data da compra<input name="data_compra" type="date" required></label>
+            <label style="grid-column:1/-1">Descrição<input name="descricao" maxlength="250" placeholder="Ex.: Compra de peças e acessórios"></label>
+            <label>Valor total (R$)<input name="valor_total" type="number" min="0.01" step="0.01" required placeholder="0,00"></label>
+            <label>Forma de pagamento<select name="forma_pagamento" required><option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
+            <label>Parcelas<select name="quantidade" id="installment-count" required><option value="1">1 parcela</option><option value="2">2 parcelas</option><option value="3">3 parcelas (30/60/90)</option><option value="4">4 parcelas</option><option value="6">6 parcelas</option><option value="10">10 parcelas</option><option value="12">12 parcelas</option></select></label>
+            <label>Primeiro vencimento<input name="vencimento" id="purchase-due" type="date" required></label>
+            <div style="grid-column:1/-1"><p class="form-note">Os vencimentos são sugeridos com intervalos de 30 dias. Revise as datas e os valores de cada parcela antes de salvar.</p><div id="installments" class="installments"></div><p class="info-note" id="installment-check" role="status"></p>
+              <div class="form-actions"><button type="button" class="btn" data-close-modal="purchase">Cancelar</button><button id="save-purchase" class="btn btn-primary" type="submit">Salvar compra e parcelas</button></div><div id="purchase-status" class="status" role="status"></div>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <dialog id="modal-pay" class="fin-dialog" aria-labelledby="pay-title">
+        <div class="dialog-head"><div><h2 id="pay-title">Dar baixa em parcela</h2><p>Confirme o valor efetivamente pago, com desconto ou juros.</p></div><button type="button" class="dialog-close" data-close-modal="pay" aria-label="Fechar"><span class="icon" data-icon="close"></span></button></div>
+        <div class="dialog-body">
+          <form id="pay-form" class="fields">
+            <label style="grid-column:1/-1">Parcela em aberto<select id="pay-installment" required><option value="">Selecione um boleto</option></select></label>
+            <label>Data do pagamento<input id="pay-date" type="date" required></label>
+            <label>Valor cheio (R$)<input id="pay-full" type="text" readonly></label>
+            <label>Desconto aplicado (R$)<input id="pay-discount" type="number" min="0" step="0.01" value="0" required></label>
+            <label>Juros e multas (R$)<input id="pay-fees" type="number" min="0" step="0.01" value="0" required></label>
+            <label>Valor efetivamente pago (R$)<input id="pay-amount" type="number" min="0.01" step="0.01" required></label>
+            <label>Meio<select id="pay-method" required><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
+            <div style="grid-column:1/-1"><p class="form-note" id="pay-hint">Confira o valor efetivamente pago. Descontos sugeridos não são aplicados ao histórico automaticamente.</p>
+              <div class="form-actions"><button type="button" class="btn" data-close-modal="pay">Cancelar</button><button id="save-payment" type="submit" class="btn btn-primary">Confirmar baixa</button></div><div id="pay-status" class="status" role="status"></div>
+            </div>
+          </form>
+        </div>
+      </dialog>
+    </div>
+    <div id="toast-area" class="toast-area" aria-live="polite"></div>
+  </main>
 </div>
-</main>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 'use strict';
@@ -133,11 +258,12 @@ function fillSupplierOptions(){
 }
 async function render(){
  const from=$('from').value,to=$('to').value;
- const [moves,dues]=await Promise.all([
+ const [moves,dues,purchases]=await Promise.all([
   db.from('fin_teste_movimentos').select('id,data_movimento,tipo,descricao,valor,estado,fornecedor_id').gte('data_movimento',from).lte('data_movimento',to).order('data_movimento',{ascending:false}).limit(1000),
-  db.from('fin_teste_parcelas').select('id,vencimento,valor_cheio,numero,status,fin_teste_compras(fornecedor_id,descricao)').eq('status','aberto').order('vencimento',{ascending:true}).limit(1000)
+  db.from('fin_teste_parcelas').select('id,vencimento,valor_cheio,numero,status,fin_teste_compras(fornecedor_id,descricao)').eq('status','aberto').order('vencimento',{ascending:true}).limit(1000),
+  db.from('fin_teste_compras').select('id,data_compra,descricao,forma_pagamento,valor_total,fornecedor_id,fin_teste_parcelas(status)').order('data_compra',{ascending:false}).limit(1000)
  ]);
- if(moves.error)throw moves.error;if(dues.error)throw dues.error;
+ if(moves.error)throw moves.error;if(dues.error)throw dues.error;if(purchases.error)throw purchases.error;
  const rows=moves.data||[];
  let ins=0,outs=0;
  rows.forEach(x=>{if(x.estado==='confirmado'){if(x.tipo==='entrada')ins+=Number(x.valor);else outs+=Number(x.valor);}});
@@ -149,6 +275,7 @@ async function render(){
  $('rows').innerHTML=rows.length?rows.map(x=>'<tr><td>'+dateFmt(x.data_movimento)+'</td><td>'+safe(x.descricao)+'</td><td>'+safe(x.tipo)+'</td><td>'+safe(name(x.fornecedor_id))+'</td><td class="money">'+fmt.format(Number(x.valor))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhum lançamento neste período. A importação histórica ainda não foi executada.</td></tr>';
  const d=dues.data||[];
  $('due').innerHTML=d.length?d.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_teste_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhuma parcela cadastrada nesta base nova.</td></tr>';
+ window.frFinanceUI?.sync({moves:rows,dues:d,purchases:purchases.data||[],suppliers});
 }
 function selectedPaymentParcel(){return openInstallments.find(x=>x.id===$('pay-installment').value);}
 function updatePaymentOptions(){
@@ -195,7 +322,7 @@ async function savePayment(e){
    p_chave:ref
   });
   if(error)throw error;if(!data)throw Error('Servidor não confirmou a baixa.');
-  msg('pay-status','Pagamento registrado e parcela baixada.');await render();
+  msg('pay-status','Pagamento registrado e parcela baixada.');await render();window.frFinanceUI?.afterSaved('pay');
  }catch(err){msg('pay-status','Não foi possível registrar a baixa: '+err.message,true)}finally{btn.disabled=false}
 }
 async function saveMove(e){
@@ -205,7 +332,7 @@ async function saveMove(e){
   const cents=Math.round(Number(d.valor)*100);if(!Number.isSafeInteger(cents)||cents<1)throw Error('Informe um valor válido.');
   const payload={data_movimento:d.data_movimento,tipo:d.tipo,descricao:d.descricao.trim(),valor:cents/100,categoria:d.categoria.trim()||null,fornecedor_id:d.fornecedor_id||null,meio_pagamento:d.meio_pagamento||null,estado:'confirmado'};
   const {error}=await db.from('fin_teste_movimentos').insert(payload);if(error)throw error;
-  msg('move-status','Lançamento salvo no Supabase.');f.reset();f.elements.data_movimento.value=todayLocal();await render();
+  msg('move-status','Lançamento salvo no Supabase.');f.reset();f.elements.data_movimento.value=todayLocal();await render();window.frFinanceUI?.afterSaved('move');
  }catch(err){msg('move-status','Não foi possível salvar: '+err.message,true)}finally{b.disabled=false}
 }
 function addDaysLocal(iso,days){
@@ -263,7 +390,7 @@ async function savePurchase(e){
   if(err)throw err;
   if(!purchaseId)throw Error('O servidor não confirmou a compra.');
   msg('purchase-status','Compra e '+items.length+' parcela(s) gravadas. Baixas serão registradas separadamente.');
-  f.reset();updateInstallments();await render();
+  f.reset();updateInstallments();await render();window.frFinanceUI?.afterSaved('purchase');
  }catch(err){msg('purchase-status','Não foi possível concluir: '+err.message,true)}finally{b.disabled=false}
 }
 async function init(){
@@ -307,4 +434,5 @@ async function init(){
 }
 init();
 </script>
+<script src="./financeiro-pro-ui.js?v=20261112a"></script>
 </body></html>
