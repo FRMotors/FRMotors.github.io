@@ -124,10 +124,12 @@ async function savePurchase(e){
  try{
   const d=Object.fromEntries(new FormData(f));const cents=Math.round(Number(d.valor_total)*100);
   if(!Number.isSafeInteger(cents)||cents<1)throw Error('Informe um valor válido.');
-  const {data:purchase,error:err}=await db.from('fin_compras').insert({fornecedor_id:d.fornecedor_id,data_compra:d.data_compra,descricao:d.descricao.trim()||null,forma_pagamento:d.forma_pagamento,valor_total:cents/100,origem:'app'}).select('id').single();
+  const {data:purchaseId,error:err}=await db.rpc('fin_criar_compra_parcela',{
+   p_fornecedor:d.fornecedor_id,p_data:d.data_compra,p_descricao:d.descricao.trim(),p_forma:d.forma_pagamento,
+   p_valor:cents/100,p_vencimento:d.vencimento
+  });
   if(err)throw err;
-  const {error:e2}=await db.from('fin_parcelas').insert({compra_id:purchase.id,numero:1,vencimento:d.vencimento,valor_cheio:cents/100,origem:'app'});
-  if(e2)throw Error('Compra '+purchase.id+' criada, mas a parcela falhou. Não repita o cadastro: '+e2.message);
+  if(!purchaseId)throw Error('O servidor não confirmou a compra.');
   msg('purchase-status','Compra e parcela gravadas. Pagamento permanece em aberto até ser vinculado.');f.reset();await render();
  }catch(err){msg('purchase-status','Não foi possível concluir: '+err.message,true)}finally{b.disabled=false}
 }
