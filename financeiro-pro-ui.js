@@ -154,11 +154,16 @@ function updateDue(){
 }
 function purchasesHTML(rows){
  if(!rows.length)return '<tr><td colspan="5">'+emptyMessage('Nenhuma compra cadastrada','Registre uma compra para acompanhar fornecedores e parcelas.','receipt')+'</td></tr>';
- return rows.map(x=>'<tr><td><span class="row-main">'+escapeHTML(dateBR(x.data_compra))+'</span></td>'+
+ return rows.map(x=>{
+ const parts=x.fin_teste_parcelas||[];
+ const allPaid=parts.length>0&&parts.every(p=>p.status==='pago');
+ const anyPaid=parts.some(p=>p.status==='pago');
+ const badge=allPaid?statusChip('pago'):anyPaid?'<span class="state open">Parcial</span>':statusChip('aberto');
+ return '<tr><td><span class="row-main">'+escapeHTML(dateBR(x.data_compra))+'</span></td>'+
  '<td><span class="row-main">'+escapeHTML(x.descricao||'Compra sem descrição')+'</span><span class="row-sub">'+escapeHTML(x.forma_pagamento||'')+'</span></td>'+
  '<td>'+escapeHTML(supplierName(x.fornecedor_id))+'</td>'+
  '<td class="money">'+currency(x.valor_total)+'</td>'+
- '<td>'+statusChip('aberto')+'</td></tr>').join('');
+ '<td>'+badge+'</td></tr>'; }).join('');
 }
 function updatePurchases(){
  const q=(byId('search-purchases')?.value||'').trim().toLocaleLowerCase('pt-BR');
@@ -178,6 +183,8 @@ function exportMovements(){
 function sync(payload){
  state.moves=payload.moves||[];state.dues=payload.dues||[];state.purchases=payload.purchases||[];state.suppliers=payload.suppliers||[];
  updateChart();updateMoves();updateDue();updatePurchases();
+ const net=state.moves.reduce((v,x)=>v+(x.estado==='confirmado'?(x.tipo==='entrada'?Number(x.valor):-Number(x.valor)):0),0);
+ if(byId('k-net'))byId('k-net').style.color=net<0?'var(--bad)':net>0?'var(--good)':'var(--ink)';
  if(byId('last-refresh'))byId('last-refresh').textContent='Atualizado '+new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(new Date());
  const card=byId('last-record');if(card)card.textContent='Base isolada • '+(state.moves.length+state.purchases.length)+' registros recentes';
 }
