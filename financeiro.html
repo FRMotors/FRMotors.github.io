@@ -256,26 +256,44 @@ function fillSupplierOptions(){
   sel.innerHTML='<option value="">'+initial+'</option>'+suppliers.filter(x=>x.ativo).map(x=>'<option value="'+safe(x.id)+'">'+safe(x.nome)+'</option>').join('');
  }
 }
+async function fetchAllPages(makeQuery){
+ const out=[],pageSize=750,maxRows=15000;
+ for(let offset=0;offset<maxRows;offset+=pageSize){
+  const {data,error}=await makeQuery().range(offset,offset+pageSize-1);
+  if(error)throw error;
+  const batch=data||[];out.push(...batch);
+  if(batch.length<pageSize)return out;
+ }
+ throw Error('Mais de 15.000 registros encontrados. Reduza o período ou aplique filtros adicionais para não exibir totais incompletos.');
+}
+let latestRender=0;
 async function render(){
+ const requestId=++latestRender;
  const from=$('from').value,to=$('to').value;
- const [moves,dues,purchases]=await Promise.all([
-  db.from('fin_teste_movimentos').select('id,data_movimento,tipo,descricao,valor,estado,fornecedor_id').gte('data_movimento',from).lte('data_movimento',to).order('data_movimento',{ascending:false}).limit(1000),
-  db.from('fin_teste_parcelas').select('id,vencimento,valor_cheio,numero,status,fin_teste_compras(fornecedor_id,descricao)').eq('status','aberto').order('vencimento',{ascending:true}).limit(1000),
-  db.from('fin_teste_compras').select('id,data_compra,descricao,forma_pagamento,valor_total,fornecedor_id,fin_teste_parcelas(status)').order('data_compra',{ascending:false}).limit(1000)
+ if(!from||!to||from>to)throw Error('Selecione um período válido para consultar as movimentações.');
+ const [rows,open,purchases]=await Promise.all([
+  fetchAllPages(()=>db.from('fin_teste_movimentos')
+   .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,estado,fornecedor_id')
+   .gte('data_movimento',from).lte('data_movimento',to)
+   .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
+  fetchAllPages(()=>db.from('fin_teste_parcelas')
+   .select('id,vencimento,valor_cheio,numero,status,fin_teste_compras(fornecedor_id,descricao)')
+   .eq('status','aberto').order('vencimento',{ascending:true}).order('id',{ascending:true})),
+  fetchAllPages(()=>db.from('fin_teste_compras')
+   .select('id,data_compra,descricao,forma_pagamento,valor_total,fornecedor_id,fin_teste_parcelas(status)')
+   .order('data_compra',{ascending:false}).order('id',{ascending:false}))
  ]);
- if(moves.error)throw moves.error;if(dues.error)throw dues.error;if(purchases.error)throw purchases.error;
- const rows=moves.data||[];
+ if(requestId!==latestRender)return;
  let ins=0,outs=0;
  rows.forEach(x=>{if(x.estado==='confirmado'){if(x.tipo==='entrada')ins+=Number(x.valor);else outs+=Number(x.valor);}});
  $('k-in').textContent=fmt.format(ins);$('k-out').textContent=fmt.format(outs);$('k-net').textContent=fmt.format(ins-outs);
- openInstallments=dues.data||[];
- $('k-open').textContent=String(openInstallments.length)+(openInstallments.length===1000?'+':'');
+ openInstallments=open;
+ $('k-open').textContent=String(openInstallments.length);
  updatePaymentOptions();
  const name=id=>suppliers.find(x=>x.id===id)?.nome||'—';
- $('rows').innerHTML=rows.length?rows.map(x=>'<tr><td>'+dateFmt(x.data_movimento)+'</td><td>'+safe(x.descricao)+'</td><td>'+safe(x.tipo)+'</td><td>'+safe(name(x.fornecedor_id))+'</td><td class="money">'+fmt.format(Number(x.valor))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhum lançamento neste período. A importação histórica ainda não foi executada.</td></tr>';
- const d=dues.data||[];
- $('due').innerHTML=d.length?d.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_teste_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhuma parcela cadastrada nesta base nova.</td></tr>';
- window.frFinanceUI?.sync({moves:rows,dues:d,purchases:purchases.data||[],suppliers});
+ $('rows').innerHTML=rows.length?rows.map(x=>'<tr><td>'+dateFmt(x.data_movimento)+'</td><td>'+safe(x.descricao)+'</td><td>'+safe(x.tipo)+'</td><td>'+safe(name(x.fornecedor_id))+'</td><td class="money">'+fmt.format(Number(x.valor))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhum lançamento no período.</td></tr>';
+ $('due').innerHTML=open.length?open.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_teste_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Nenhuma parcela em aberto.</td></tr>';
+ window.frFinanceUI?.sync({moves:rows,dues:open,purchases,suppliers});
 }
 function selectedPaymentParcel(){return openInstallments.find(x=>x.id===$('pay-installment').value);}
 function updatePaymentOptions(){
@@ -405,8 +423,8 @@ async function init(){
   $('move-form').elements.data_movimento.value=today;$('purchase-form').elements.data_compra.value=today;
   $('access').classList.add('hidden');$('app').classList.remove('hidden');
   await render();
-  $('from').addEventListener('change',()=>render().catch(e=>msg('move-status',e.message,true)));
-  $('to').addEventListener('change',()=>render().catch(e=>msg('move-status',e.message,true)));
+  $('from').addEventListener('change',()=>render().catch(e=>window.frFinanceUI?.showToast(e.message,true)));
+  $('to').addEventListener('change',()=>render().catch(e=>window.frFinanceUI?.showToast(e.message,true)));
   $('pay-date').value=todayLocal();
   $('pay-installment').addEventListener('change',refreshPaymentSuggestion);
   $('pay-date').addEventListener('change',refreshPaymentSuggestion);
