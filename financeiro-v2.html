@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
+<style>
+:root{color-scheme:light;--navy:#101820;--teal:#167b87;--bg:#f3f6f7;--ink:#172126;--muted:#64747c;--line:#e0e7ea;--white:#fff;--good:#176b52;--bad:#a43d3d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.48 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{background:var(--navy);color:#fff;padding:18px max(20px,calc((100vw - 1220px)/2));display:flex;justify-content:space-between;gap:15px;align-items:center}
+header a{color:#c5e9eb;text-decoration:none}header strong{font-size:19px}main{max-width:1220px;margin:auto;padding:26px 18px 60px}
+h1{font-size:27px;margin:0 0 4px}h2{font-size:17px;margin:0 0 15px}p{color:var(--muted);margin:0 0 15px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:17px 0}
+.stat,.panel{background:var(--white);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 22px #10233008}
+.stat{padding:19px}.stat small{display:block;font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:750}.stat strong{display:block;font-size:24px;margin-top:7px;font-variant-numeric:tabular-nums}
+.panel{padding:20px;margin-top:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.pill{display:inline-block;border-radius:30px;padding:4px 9px;background:#ecf5f5;color:#12616a;font-size:11px;font-weight:800}
+label{display:grid;gap:5px;font-size:12px;font-weight:750;color:#41535c}
+input,select,textarea{width:100%;padding:11px;border:1px solid #ccd8dd;border-radius:9px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:2px solid #92cfd3;outline-offset:1px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+button{border:0;border-radius:9px;padding:11px 17px;background:var(--navy);color:#fff;font:750 13px system-ui;cursor:pointer}button:disabled{opacity:.5;cursor:wait}
+.note{font-size:12px;color:var(--muted)}.status{font-size:13px;min-height:20px;margin:12px 0}.bad{color:var(--bad)}.ok{color:var(--good)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{border-collapse:collapse;width:100%;min-width:550px}
+td,th{padding:11px 13px;border-bottom:1px solid var(--line);text-align:left}th{background:#f5f8f9;font-size:11px;text-transform:uppercase;color:#53636b}tr:last-child td{border:0}
+.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.empty{padding:18px;color:var(--muted)}
+.hidden{display:none!important}
+@media(max-width:800px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}}
+@media(max-width:520px){header{padding:14px 16px}header strong{font-size:16px}main{padding:18px 12px 32px}.stat{padding:13px}.stat strong{font-size:19px}.fields{grid-template-columns:1fr}.panel{padding:14px}}
+</style>
+</head>
+<body>
+<header><strong>FR MOTORS <span style="color:#91d3d9">/ FINANCEIRO</span></strong><a href="dashboard.html">Voltar ao Dashboard</a></header>
+<main>
+<h1>Controle financeiro</h1>
+<p>Compras, compromissos e movimentações em uma base sincronizada entre computador e celular.</p>
+<div id="access" class="panel" role="status">Verificando acesso à área financeira...</div>
+<div id="app" class="hidden">
+ <div class="stat-grid">
+  <div class="stat"><small>Entradas confirmadas</small><strong id="k-in">R$ 0,00</strong></div>
+  <div class="stat"><small>Saídas confirmadas</small><strong id="k-out">R$ 0,00</strong></div>
+  <div class="stat"><small>Saldo do período</small><strong id="k-net">R$ 0,00</strong></div>
+  <div class="stat"><small>Parcelas em aberto</small><strong id="k-open">0</strong></div>
+ </div>
+ <div class="panel"><div class="fields">
+  <label>Data inicial<input id="from" type="date"></label>
+  <label>Data final<input id="to" type="date"></label>
+ </div><p class="note" style="margin:9px 0 0">Os indicadores consideram os lançamentos confirmados no intervalo escolhido. As compras e parcelas não são somadas novamente às saídas.</p></div>
+ <div class="grid">
+  <section class="panel"><h2>Registrar movimentação</h2>
+   <form id="move-form" class="fields">
+    <label>Tipo<select name="tipo" required><option value="saida">Saída</option><option value="entrada">Entrada</option></select></label>
+    <label>Data<input name="data_movimento" type="date" required></label>
+    <label style="grid-column:1/-1">Descrição<input name="descricao" required maxlength="250" placeholder="Ex.: Quitação de boleto"></label>
+    <label>Valor (R$)<input name="valor" type="number" step="0.01" min="0.01" required></label>
+    <label>Categoria<input name="categoria" placeholder="Ex.: Autopeças" maxlength="100"></label>
+    <label>Fornecedor<select name="fornecedor_id" id="supplier-select"><option value="">Não se aplica</option></select></label>
+    <label>Meio<select name="meio_pagamento"><option value="">Não informado</option><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="cartao_credito">Cartão de crédito</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option></select></label>
+    <div style="grid-column:1/-1"><button id="save-move" type="submit">Salvar lançamento</button><div id="move-status" class="status" role="status"></div></div>
+   </form>
+  </section>
+  <section class="panel"><h2>Registrar compra e parcela</h2>
+   <form id="purchase-form" class="fields">
+    <label>Fornecedor<select name="fornecedor_id" id="purchase-supplier" required><option value="">Selecione</option></select></label>
+    <label>Data da compra<input name="data_compra" type="date" required></label>
+    <label style="grid-column:1/-1">Descrição<input name="descricao" maxlength="250" placeholder="Ex.: Peças para manutenção"></label>
+    <label>Valor cheio (R$)<input name="valor_total" type="number" min="0.01" step="0.01" required></label>
+    <label>Vencimento<input name="vencimento" type="date" required></label>
+    <label>Pagamento<select name="forma_pagamento" required><option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
+    <label>Parcela<select name="numero" required><option value="1">1ª de 1 (compra à vista ou parcela única)</option></select></label>
+    <div style="grid-column:1/-1"><p class="note">Nesta primeira etapa, cadastre uma parcela por compra. O parcelamento múltiplo com gravação transacional será habilitado antes da importação histórica.</p><button id="save-purchase" type="submit">Salvar compra</button><div id="purchase-status" class="status" role="status"></div></div>
+   </form>
+  </section>
+ </div>
+ <section class="panel"><h2>Movimentações do período <span class="pill">Supabase</span></h2><div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Fornecedor</th><th class="money">Valor</th></tr></thead><tbody id="rows"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody></table></div></section>
+ <section class="panel"><h2>Próximos vencimentos</h2><div class="table-wrap"><table><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Status</th></tr></thead><tbody id="due"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody></table></div></section>
+ <p class="note" style="margin-top:16px">Módulo inicial. O Fluxo de Caixa antigo e as planilhas originais não foram substituídos. A migração histórica será feita após validar este módulo.</p>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const fmt=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const dateFmt=d=>{if(!d)return '';const [y,m,day]=d.slice(0,10).split('-');return day+'/'+m+'/'+y;};
+const safe=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const db=window.supabase?.createClient('https://rtdndffvbxhrhftqstwx.supabase.co','sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip');
+let suppliers=[];
+function msg(id,text,isError=false){$(id).className='status '+(isError?'bad':'ok');$(id).textContent=text;}
+async function query(table,fields){const {data,error}=await db.from(table).select(fields);if(error)throw error;return data||[];}
+function currentYear(){return new Date().getFullYear();}
+function fillSupplierOptions(){
+ for(const id of ['supplier-select','purchase-supplier']){
+  const sel=$(id),initial=id==='purchase-supplier'?'Selecione':'Não se aplica';
+  sel.innerHTML='<option value="">'+initial+'</option>'+suppliers.filter(x=>x.ativo).map(x=>'<option value="'+safe(x.id)+'">'+safe(x.nome)+'</option>').join('');
+ }
+}
+async function render(){
+ const from=$('from').value,to=$('to').value;
+ const [moves,dues]=await Promise.all([
+  db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,valor,estado,fornecedor_id').gte('data_movimento',from).lte('data_movimento',to).order('data_movimento',{ascending:false}).limit(1000),
+  db.from('fin_parcelas').select('id,vencimento,valor_cheio,numero,status,fin_compras(fornecedor_id)').eq('status','aberto').order('vencimento',{ascending:true}).limit(100)
+ ]);
+ if(moves.error)throw moves.error;if(dues.error)throw dues.error;
+ const rows=moves.data||[];
+ let ins=0,outs=0;
+ rows.forEach(x=>{if(x.estado==='confirmado'){if(x.tipo==='entrada')ins+=Number(x.valor);else outs+=Number(x.valor);}});
+ $('k-in').textContent=fmt.format(ins);$('k-out').textContent=fmt.format(outs);$('k-net').textContent=fmt.format(ins-outs);
+ $('k-open').textContent=String((dues.data||[]).length)+(dues.data?.length===100?'+':'');
+ const name=id=>suppliers.find(x=>x.id===id)?.nome||'—';
+ $('rows').innerHTML=rows.length?rows.map(x=>'<tr><td>'+dateFmt(x.data_movimento)+'</td><td>'+safe(x.descricao)+'</td><td>'+safe(x.tipo)+'</td><td>'+safe(name(x.fornecedor_id))+'</td><td class="money">'+fmt.format(Number(x.valor))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhum lançamento neste período. A importação histórica ainda não foi executada.</td></tr>';
+ const d=dues.data||[];
+ $('due').innerHTML=d.length?d.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhuma parcela cadastrada nesta base nova.</td></tr>';
+}
+async function saveMove(e){
+ e.preventDefault();const f=e.target;const b=$('save-move');b.disabled=true;
+ try{
+  const d=Object.fromEntries(new FormData(f));
+  const cents=Math.round(Number(d.valor)*100);if(!Number.isSafeInteger(cents)||cents<1)throw Error('Informe um valor válido.');
+  const payload={data_movimento:d.data_movimento,tipo:d.tipo,descricao:d.descricao.trim(),valor:cents/100,categoria:d.categoria.trim()||null,fornecedor_id:d.fornecedor_id||null,meio_pagamento:d.meio_pagamento||null,estado:'confirmado',origem:'app'};
+  const {error}=await db.from('fin_movimentos').insert(payload);if(error)throw error;
+  msg('move-status','Lançamento salvo no Supabase.');f.reset();f.elements.data_movimento.value=new Date().toISOString().slice(0,10);await render();
+ }catch(err){msg('move-status','Não foi possível salvar: '+err.message,true)}finally{b.disabled=false}
+}
+async function savePurchase(e){
+ e.preventDefault();const f=e.target;const b=$('save-purchase');b.disabled=true;
+ try{
+  const d=Object.fromEntries(new FormData(f));const cents=Math.round(Number(d.valor_total)*100);
+  if(!Number.isSafeInteger(cents)||cents<1)throw Error('Informe um valor válido.');
+  const {data:purchase,error:err}=await db.from('fin_compras').insert({fornecedor_id:d.fornecedor_id,data_compra:d.data_compra,descricao:d.descricao.trim()||null,forma_pagamento:d.forma_pagamento,valor_total:cents/100,origem:'app'}).select('id').single();
+  if(err)throw err;
+  const {error:e2}=await db.from('fin_parcelas').insert({compra_id:purchase.id,numero:1,vencimento:d.vencimento,valor_cheio:cents/100,origem:'app'});
+  if(e2)throw Error('Compra '+purchase.id+' criada, mas a parcela falhou. Não repita o cadastro: '+e2.message);
+  msg('purchase-status','Compra e parcela gravadas. Pagamento permanece em aberto até ser vinculado.');f.reset();await render();
+ }catch(err){msg('purchase-status','Não foi possível concluir: '+err.message,true)}finally{b.disabled=false}
+}
+async function init(){
+ if(!db){$('access').textContent='Não foi possível carregar a conexão. Confira sua internet.';return;}
+ try{
+  const {data:{user},error:authError}=await db.auth.getUser();if(authError||!user)throw Error('Faça login pelo Dashboard para acessar o financeiro.');
+  const {data:allowed,error:allowError}=await db.rpc('fluxo_caixa_autorizado');
+  if(allowError||allowed!==true)throw Error('Sua conta não tem permissão financeira.');
+  suppliers=await query('fin_fornecedores','id,nome,ativo');
+  fillSupplierOptions();
+  const today=new Date().toISOString().slice(0,10);$('from').value=currentYear()+'-01-01';$('to').value=today;
+  $('move-form').elements.data_movimento.value=today;$('purchase-form').elements.data_compra.value=today;
+  $('access').classList.add('hidden');$('app').classList.remove('hidden');
+  await render();
+  $('from').addEventListener('change',()=>render().catch(e=>msg('move-status',e.message,true)));
+  $('to').addEventListener('change',()=>render().catch(e=>msg('move-status',e.message,true)));
+  $('move-form').addEventListener('submit',saveMove);$('purchase-form').addEventListener('submit',savePurchase);
+ }catch(e){$('access').textContent=e.message||'Falha ao carregar módulo financeiro.';}
+}
+init();
+</script>
+</body></html>
