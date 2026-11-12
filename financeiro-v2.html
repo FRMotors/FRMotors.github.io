@@ -46,6 +46,7 @@ td,th{padding:11px 13px;border-bottom:1px solid var(--line);text-align:left}th{b
  </div><p class="note" style="margin:9px 0 0">Os indicadores consideram os lançamentos confirmados no intervalo escolhido. As compras e parcelas não são somadas novamente às saídas.</p></div>
  <div class="grid">
   <section class="panel"><h2>Registrar movimentação</h2>
+   <p class="note">Para quitar boletos cadastrados, use a seção <strong>Baixar boleto ou parcela</strong>, evitando lançar o mesmo pagamento duas vezes.</p>
    <form id="move-form" class="fields">
     <label>Tipo<select name="tipo" required><option value="saida">Saída</option><option value="entrada">Entrada</option></select></label>
     <label>Data<input name="data_movimento" type="date" required></label>
@@ -76,6 +77,19 @@ td,th{padding:11px 13px;border-bottom:1px solid var(--line);text-align:left}th{b
    </form>
   </section>
  </div>
+ <section class="panel"><h2>Baixar boleto ou parcela</h2>
+  <p>Use este formulário para registrar um pagamento de fornecedor e atualizar a parcela sem duplicar a despesa.</p>
+  <form id="pay-form" class="fields">
+   <label style="grid-column:1/-1">Parcela em aberto<select id="pay-installment" required><option value="">Selecione um boleto</option></select></label>
+   <label>Data do pagamento<input id="pay-date" type="date" required></label>
+   <label>Valor cheio (R$)<input id="pay-full" type="text" readonly></label>
+   <label>Desconto aplicado (R$)<input id="pay-discount" type="number" min="0" step="0.01" value="0" required></label>
+   <label>Juros e multas (R$)<input id="pay-fees" type="number" min="0" step="0.01" value="0" required></label>
+   <label>Valor efetivamente pago (R$)<input id="pay-amount" type="number" min="0.01" step="0.01" required></label>
+   <label>Meio<select id="pay-method" required><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
+   <div style="grid-column:1/-1"><p class="note" id="pay-hint">Valores sugeridos para boletos novos. Confira sempre o valor realmente pago, conforme seu comprovante.</p><button id="save-payment" type="submit">Confirmar pagamento e baixar parcela</button><div id="pay-status" class="status" role="status"></div></div>
+  </form>
+ </section>
  <section class="panel"><h2>Movimentações do período <span class="pill">Supabase</span></h2><div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Fornecedor</th><th class="money">Valor</th></tr></thead><tbody id="rows"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody></table></div></section>
  <section class="panel"><h2>Próximos vencimentos</h2><div class="table-wrap"><table><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Status</th></tr></thead><tbody id="due"><tr><td colspan="5" class="empty">Carregando...</td></tr></tbody></table></div></section>
  <p class="note" style="margin-top:16px">Módulo inicial. O Fluxo de Caixa antigo e as planilhas originais não foram substituídos. A migração histórica será feita após validar este módulo.</p>
@@ -90,6 +104,8 @@ const dateFmt=d=>{if(!d)return '';const [y,m,day]=d.slice(0,10).split('-');retur
 const safe=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const db=window.supabase?.createClient('https://rtdndffvbxhrhftqstwx.supabase.co','sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip');
 let suppliers=[];
+let openInstallments=[];
+const todayLocal=()=>{const d=new Date();const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10)};
 function msg(id,text,isError=false){$(id).className='status '+(isError?'bad':'ok');$(id).textContent=text;}
 async function query(table,fields){const {data,error}=await db.from(table).select(fields);if(error)throw error;return data||[];}
 function currentYear(){return new Date().getFullYear();}
@@ -103,18 +119,68 @@ async function render(){
  const from=$('from').value,to=$('to').value;
  const [moves,dues]=await Promise.all([
   db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,valor,estado,fornecedor_id').gte('data_movimento',from).lte('data_movimento',to).order('data_movimento',{ascending:false}).limit(1000),
-  db.from('fin_parcelas').select('id,vencimento,valor_cheio,numero,status,fin_compras(fornecedor_id)').eq('status','aberto').order('vencimento',{ascending:true}).limit(100)
+  db.from('fin_parcelas').select('id,vencimento,valor_cheio,numero,status,fin_compras(fornecedor_id,descricao)').eq('status','aberto').order('vencimento',{ascending:true}).limit(1000)
  ]);
  if(moves.error)throw moves.error;if(dues.error)throw dues.error;
  const rows=moves.data||[];
  let ins=0,outs=0;
  rows.forEach(x=>{if(x.estado==='confirmado'){if(x.tipo==='entrada')ins+=Number(x.valor);else outs+=Number(x.valor);}});
  $('k-in').textContent=fmt.format(ins);$('k-out').textContent=fmt.format(outs);$('k-net').textContent=fmt.format(ins-outs);
- $('k-open').textContent=String((dues.data||[]).length)+(dues.data?.length===100?'+':'');
+ openInstallments=dues.data||[];
+ $('k-open').textContent=String(openInstallments.length)+(openInstallments.length===1000?'+':'');
+ updatePaymentOptions();
  const name=id=>suppliers.find(x=>x.id===id)?.nome||'—';
  $('rows').innerHTML=rows.length?rows.map(x=>'<tr><td>'+dateFmt(x.data_movimento)+'</td><td>'+safe(x.descricao)+'</td><td>'+safe(x.tipo)+'</td><td>'+safe(name(x.fornecedor_id))+'</td><td class="money">'+fmt.format(Number(x.valor))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhum lançamento neste período. A importação histórica ainda não foi executada.</td></tr>';
  const d=dues.data||[];
  $('due').innerHTML=d.length?d.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhuma parcela cadastrada nesta base nova.</td></tr>';
+}
+function selectedPaymentParcel(){return openInstallments.find(x=>x.id===$('pay-installment').value);}
+function updatePaymentOptions(){
+ const field=$('pay-installment'),selected=field.value;
+ const opts=openInstallments.map(x=>{
+  const supplier=suppliers.find(s=>s.id===x.fin_compras?.fornecedor_id)?.nome||'Fornecedor';
+  return '<option value="'+safe(x.id)+'">'+safe(supplier)+' · '+dateFmt(x.vencimento)+' · '+fmt.format(Number(x.valor_cheio))+' · #'+x.numero+'</option>';
+ });
+ field.innerHTML='<option value="">Selecione um boleto</option>'+opts.join('');
+ if(openInstallments.some(x=>x.id===selected))field.value=selected;
+ refreshPaymentSuggestion();
+}
+function refreshPaymentSuggestion(){
+ const x=selectedPaymentParcel();
+ if(!x){$('pay-full').value='';$('pay-hint').textContent='Selecione uma parcela para conferir valor e desconto.';return;}
+ const full=Math.round(Number(x.valor_cheio)*100);
+ const supplier=suppliers.find(s=>s.id===x.fin_compras?.fornecedor_id);
+ const isDue=$('pay-date').value&&$('pay-date').value<=x.vencimento;
+ const rate=(supplier?.desconto_ate_vencimento&&isDue)?Number(supplier.desconto_atual_pct||0):0;
+ const discount=Math.round(full*rate/100);
+ $('pay-full').value=fmt.format(full/100);
+ $('pay-discount').value=(discount/100).toFixed(2);
+ $('pay-fees').value='0.00';
+ calculatePaymentTotal();
+ $('pay-hint').textContent=rate?'Sugestão de '+rate+'% para pagamento até o vencimento. Confirme pelo boleto atual.':'Sem desconto automático. Em atraso, informe encargos reais antes de baixar.';
+}
+function calculatePaymentTotal(){
+ const x=selectedPaymentParcel();if(!x)return;
+ const cents=Math.round(Number(x.valor_cheio)*100),discount=Math.round(Number($('pay-discount').value)*100),fees=Math.round(Number($('pay-fees').value)*100);
+ if(!Number.isSafeInteger(discount)||!Number.isSafeInteger(fees)||discount<0||fees<0||discount>cents)return;
+ $('pay-amount').value=((cents-discount+fees)/100).toFixed(2);
+}
+async function savePayment(e){
+ e.preventDefault();
+ const x=selectedPaymentParcel(),btn=$('save-payment');btn.disabled=true;
+ try{
+  if(!x)throw Error('Selecione um boleto em aberto.');
+  const full=Math.round(Number(x.valor_cheio)*100),amount=Math.round(Number($('pay-amount').value)*100);
+  const discount=Math.round(Number($('pay-discount').value)*100),fees=Math.round(Number($('pay-fees').value)*100);
+  if(![amount,discount,fees].every(Number.isSafeInteger)||amount<=0||discount<0||fees<0||discount>full||amount!==full-discount+fees)throw Error('Valor pago deve ser igual ao valor cheio menos desconto mais juros.');
+  const ref='baixa-manual-'+crypto.randomUUID();
+  const {data,error}=await db.rpc('fin_baixar_parcela',{
+   p_parcela_id:x.id,p_pago_em:$('pay-date').value,p_valor_pago:amount/100,p_desconto:discount/100,p_juros:fees/100,p_meio:$('pay-method').value,
+   p_conta_id:null,p_referencia_client:ref
+  });
+  if(error)throw error;if(!data)throw Error('Servidor não confirmou a baixa.');
+  msg('pay-status','Pagamento registrado e parcela baixada.');await render();
+ }catch(err){msg('pay-status','Não foi possível registrar a baixa: '+err.message,true)}finally{btn.disabled=false}
 }
 async function saveMove(e){
  e.preventDefault();const f=e.target;const b=$('save-move');b.disabled=true;
@@ -123,7 +189,7 @@ async function saveMove(e){
   const cents=Math.round(Number(d.valor)*100);if(!Number.isSafeInteger(cents)||cents<1)throw Error('Informe um valor válido.');
   const payload={data_movimento:d.data_movimento,tipo:d.tipo,descricao:d.descricao.trim(),valor:cents/100,categoria:d.categoria.trim()||null,fornecedor_id:d.fornecedor_id||null,meio_pagamento:d.meio_pagamento||null,estado:'confirmado',origem:'app'};
   const {error}=await db.from('fin_movimentos').insert(payload);if(error)throw error;
-  msg('move-status','Lançamento salvo no Supabase.');f.reset();f.elements.data_movimento.value=new Date().toISOString().slice(0,10);await render();
+  msg('move-status','Lançamento salvo no Supabase.');f.reset();f.elements.data_movimento.value=todayLocal();await render();
  }catch(err){msg('move-status','Não foi possível salvar: '+err.message,true)}finally{b.disabled=false}
 }
 function addDaysLocal(iso,days){
@@ -190,14 +256,20 @@ async function init(){
   const {data:{user},error:authError}=await db.auth.getUser();if(authError||!user)throw Error('Faça login pelo Dashboard para acessar o financeiro.');
   const {data:allowed,error:allowError}=await db.rpc('fluxo_caixa_autorizado');
   if(allowError||allowed!==true)throw Error('Sua conta não tem permissão financeira.');
-  suppliers=await query('fin_fornecedores','id,nome,ativo');
+  suppliers=await query('fin_fornecedores','id,nome,ativo,desconto_atual_pct,desconto_ate_vencimento');
   fillSupplierOptions();
-  const today=new Date().toISOString().slice(0,10);$('from').value=currentYear()+'-01-01';$('to').value=today;
+  const today=todayLocal();$('from').value=currentYear()+'-01-01';$('to').value=today;
   $('move-form').elements.data_movimento.value=today;$('purchase-form').elements.data_compra.value=today;
   $('access').classList.add('hidden');$('app').classList.remove('hidden');
   await render();
   $('from').addEventListener('change',()=>render().catch(e=>msg('move-status',e.message,true)));
   $('to').addEventListener('change',()=>render().catch(e=>msg('move-status',e.message,true)));
+  $('pay-date').value=todayLocal();
+  $('pay-installment').addEventListener('change',refreshPaymentSuggestion);
+  $('pay-date').addEventListener('change',refreshPaymentSuggestion);
+  $('pay-discount').addEventListener('input',calculatePaymentTotal);
+  $('pay-fees').addEventListener('input',calculatePaymentTotal);
+  $('pay-form').addEventListener('submit',savePayment);
   $('installment-count').addEventListener('change',()=>{$('installments').innerHTML='';updateInstallments()});
   $('purchase-due').addEventListener('change',()=>{$('installments').innerHTML='';updateInstallments()});
   $('purchase-form').elements.valor_total.addEventListener('input',()=>{$('installments').innerHTML='';updateInstallments()});
