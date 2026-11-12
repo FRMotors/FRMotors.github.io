@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101820"><title>FR Motors · Migração do histórico</title>
+<style>
+*{box-sizing:border-box}body{font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;color:#172126;background:#f4f6f7;margin:0}
+header{background:#101820;color:white;padding:18px max(18px,calc((100vw - 1000px)/2));font-size:17px;font-weight:800}header a{color:#a6e6e8;float:right;font-size:13px}
+main{max-width:1000px;margin:auto;padding:24px 18px 60px}h1{font-size:25px;margin:0 0 6px}h2{font-size:17px}p{color:#64747c;margin:5px 0 14px}
+.panel{background:white;border:1px solid #dfe5e8;border-radius:14px;padding:20px;margin:15px 0;box-shadow:0 8px 22px #1023300a}
+input[type=file]{display:block;border:1px dashed #9caeb5;border-radius:10px;padding:18px;width:100%;margin:15px 0}
+button{background:#101820;border:0;border-radius:9px;color:white;padding:12px 20px;font-size:13px;font-weight:800;cursor:pointer}button:disabled{opacity:.45}
+table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid #e8edef;text-align:left}th{font-size:11px;text-transform:uppercase;color:#65767f}td:last-child{text-align:right}
+.good{color:#176b52}.warn{color:#a43d3d}.status{margin-top:14px;white-space:pre-line;font-size:13px}
+.counts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.count{background:#f4f7f8;border-radius:10px;padding:14px}.count strong{display:block;font-size:21px}.count span{font-size:12px;color:#68777f}
+progress{width:100%;height:14px;accent-color:#167b87}.hidden{display:none}
+@media(max-width:600px){header a{float:none;display:block;margin-top:7px}.counts{grid-template-columns:1fr 1fr}main{padding:18px 12px}.panel{padding:14px}}
+</style></head>
+<body><header>FR MOTORS · IMPORTAÇÃO HISTÓRICA <a href="financeiro-v2.html">Voltar ao financeiro</a></header><main>
+<h1>Preparar histórico financeiro</h1>
+<p>Importe o pacote de migração gerado após a conciliação. Esta etapa guarda os registros em uma área de revisão do Supabase: não cria compras, não dá baixa em boletos e não altera saldos.</p>
+<div id="access" class="panel">Verificando permissão financeira...</div>
+<div id="content" class="hidden">
+ <section class="panel">
+  <h2>1. Selecione o pacote de histórico</h2>
+  <input id="file" type="file" accept=".json,application/json">
+  <div id="summary" class="hidden">
+   <div class="counts">
+    <div class="count"><strong id="total">0</strong><span>Total de registros</span></div>
+    <div class="count"><strong id="review">0</strong><span>Revisão necessária</span></div>
+    <div class="count"><strong id="ignored">0</strong><span>Excluídos dos indicadores</span></div>
+   </div>
+   <p id="source" style="margin-top:12px"></p>
+   <div style="overflow:auto"><table><thead><tr><th>Origem</th><th>Registros</th></tr></thead><tbody id="groups"></tbody></table></div>
+  </div>
+ </section>
+ <section class="panel">
+  <h2>2. Guardar registros para revisão</h2>
+  <p>Se repetir a importação, os mesmos identificadores serão ignorados. Nenhum pagamento será duplicado. O conteúdo não é enviado ao GitHub.</p>
+  <button id="import" disabled>Importar para área de revisão</button>
+  <div style="margin-top:14px"><progress id="progress" max="100" value="0"></progress></div>
+  <div id="status" class="status" role="status"></div>
+ </section>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const db=window.supabase?.createClient('https://rtdndffvbxhrhftqstwx.supabase.co','sb_publishable_GNEnPdYBORFFfjBpBCzwxw_ELB234Ip');
+const allowedSources=['autopecas','cartoes','saidas_fluxo','entradas_fluxo','abertos_fluxo','baixas_conciliadas'];
+const allowedSituations=['aguarda_migracao','revisar','ignorar'];
+let manifest=null,busy=false;
+function status(t,error){$('status').textContent=t;$('status').className='status '+(error?'warn':'good')}
+function validPackage(o){
+ if(!o||o.formato!=='fr-motors-migracao-historica-v1'||!Array.isArray(o.registros)||!Number.isInteger(o.total)||o.total!==o.registros.length||o.total>100000)throw Error('Pacote inválido ou incompatível.');
+ const seen=new Set();
+ for(const r of o.registros){
+  if(!allowedSources.includes(r.origem)||!allowedSituations.includes(r.situacao)||typeof r.referencia!=='string'||!r.referencia||r.referencia.length>200||!r.dados||typeof r.dados!=='object'||Array.isArray(r.dados))throw Error('Pacote contém registro inválido.');
+  const key=r.origem+'|'+r.referencia;if(seen.has(key))throw Error('Identificador repetido no pacote: '+key);seen.add(key);
+ }
+ return true;
+}
+$('file').addEventListener('change',async()=>{
+ manifest=null;$('import').disabled=true;$('summary').classList.add('hidden');$('progress').value=0;
+ const f=$('file').files?.[0];if(!f)return;
+ try{
+  if(f.size>10*1024*1024)throw Error('Arquivo ultrapassa 10 MB.');
+  const parsed=JSON.parse(await f.text());validPackage(parsed);manifest=parsed;
+  $('total').textContent=parsed.total.toLocaleString('pt-BR');
+  $('review').textContent=parsed.registros.filter(x=>x.situacao==='revisar').length;
+  $('ignored').textContent=parsed.registros.filter(x=>x.situacao==='ignorar').length;
+  $('source').textContent='Fonte: '+parsed.arquivo_origem+' · SHA-256 da origem: '+parsed.sha256_origem;
+  const bySource={};parsed.registros.forEach(r=>bySource[r.origem]=(bySource[r.origem]||0)+1);
+  $('groups').replaceChildren(...Object.entries(bySource).map(([key,count])=>{
+   const tr=document.createElement('tr'),a=document.createElement('td'),b=document.createElement('td');
+   a.textContent=key;b.textContent=count.toLocaleString('pt-BR');tr.append(a,b);return tr;
+  }));
+  $('summary').classList.remove('hidden');$('import').disabled=false;status('Pacote validado. Confirme a importação quando desejar.');
+ }catch(e){status('Não foi possível ler o pacote: '+e.message,true)}
+});
+$('import').addEventListener('click',async()=>{
+ if(busy||!manifest)return;busy=true;$('import').disabled=true;$('file').disabled=true;
+ const records=manifest.registros,block=75;let completed=0;
+ try{
+  for(let i=0;i<records.length;i+=block){
+   const batch=records.slice(i,i+block).map(r=>({origem:r.origem,referencia:r.referencia,situacao:r.situacao,dados:r.dados,anotacoes:r.anotacoes||null}));
+   const {error}=await db.from('fin_legacy_registros').upsert(batch,{onConflict:'origem,referencia',ignoreDuplicates:true});
+   if(error)throw Error('Lote '+(Math.floor(i/block)+1)+': '+error.message);
+   completed+=batch.length;$('progress').value=Math.round(completed/records.length*100);
+   status('Processando '+completed+' de '+records.length+' registros...');
+  }
+  status('Importação concluída: '+completed+' registros analisados. Os identificadores já existentes foram preservados. Histórico guardado para migração, sem alteração de pagamentos ou saldos.');
+ }catch(e){status('Importação interrompida após '+completed+' registros: '+e.message+'. Você pode repetir o mesmo arquivo; registros já existentes não serão duplicados.',true)}
+ finally{busy=false;$('file').disabled=false;if(manifest)$('import').disabled=false;}
+});
+(async()=>{
+ try{
+  if(!db)throw Error('Biblioteca de conexão indisponível.');
+  const {data,error}=await db.auth.getUser();if(error||!data.user)throw Error('Faça login pelo Dashboard.');
+  const r=await db.rpc('fluxo_caixa_autorizado');if(r.error||r.data!==true)throw Error('Seu usuário não possui autorização financeira.');
+  $('access').classList.add('hidden');$('content').classList.remove('hidden');
+ }catch(e){$('access').textContent=e.message;}
+})();
+</script></body></html>
