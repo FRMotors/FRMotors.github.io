@@ -40,3 +40,8 @@
  .import-bottom-bar button{width:100%}
 }
 @media(max-width:460px){.import-source-picker{grid-template-columns:1fr}.import-summary strong{font-size:15px}}
+
+.import-edit-value{width:126px;max-width:100%;padding:7px 9px;border:1px solid #cedbe2;background:#fff;color:#294656;border-radius:8px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+.import-edit-value:focus{outline:2px solid #82cace;outline-offset:1px}
+.import-edit-value.import-invalid-value{border-color:#c54a54;background:#fff4f4}
+.review-badge{background:#fff3e1;color:#945a22;font-weight:800;padding:3px 7px;border-radius:6px;font-size:10px}
