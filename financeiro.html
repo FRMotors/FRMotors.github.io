@@ -59,6 +59,7 @@
             <p class="page-description">Acompanhe o desempenho do caixa, compromissos e operações em um único lugar.</p>
           </div>
           <div class="header-buttons">
+            <button type="button" class="btn btn-teal" data-view="imports"><span class="icon icon-sm" data-icon="download"></span> Importar arquivo</button>
             <button type="button" class="btn" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
             <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Nova compra</button>
             <button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button>
@@ -267,6 +268,12 @@
       </div>
     </section>
   </div>
+  <section class="card" style="margin-top:17px">
+    <div class="card-head"><div><h2>Histórico de arquivos importados</h2><p>Controle dos extratos e faturas recebidos no ambiente de testes, com identificação por arquivo.</p></div></div>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>Importado em</th><th>Arquivo</th><th>Origem</th><th>Conta / cartão</th><th class="money">Selecionados</th></tr></thead>
+    <tbody id="import-history-rows"><tr><td colspan="5" class="empty">Nenhum arquivo importado.</td></tr></tbody></table></div>
+    <div class="table-footer" id="import-history-count">Sem importações registradas.</div>
+  </section>
   <dialog class="fin-dialog" id="modal-import-card" aria-labelledby="card-edit-title">
     <div class="dialog-head">
       <div><h2 id="card-edit-title">Editar gasto importado</h2><p>Corrija os dados da fatura com segurança.</p></div>
@@ -655,5 +662,5 @@ init();
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
-<script src="./financeiro-import.js?v=20261113imp3" defer></script>
+<script src="./financeiro-import.js?v=20261113imp4" defer></script>
 </body></html>
