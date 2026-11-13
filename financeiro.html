@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
+<link rel="stylesheet" href="./financeiro-historico.css?v=20261113hist1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -25,6 +26,12 @@
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras e parcelas</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
     <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section-label">Histórico homologado</div>
+  <nav class="sidebar-links" aria-label="Visões separadas do histórico financeiro">
+    <button type="button" data-view="itau"><span class="icon" data-icon="bank"></span> Itaú · Fluxo de Caixa</button>
+    <button type="button" data-view="history"><span class="icon" data-icon="chart"></span> Outras fontes</button>
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-section-label">Sistema FR Motors</div>
@@ -174,6 +181,134 @@
           <div class="table-wrap"><table class="data-table"><thead><tr><th>Data da compra</th><th>Descrição</th><th>Fornecedor</th><th class="money">Valor total</th><th>Situação</th><th class="edit-column">Ações</th></tr></thead><tbody id="purchases-rows"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
           <div class="table-footer" id="purchase-count">0 compra(s)</div>
         </section>
+      </section>
+
+
+      <!-- Análise do Itaú isolada dos lançamentos operacionais do Financeiro -->
+      <section class="view" data-view-panel="itau" hidden aria-label="Análise exclusiva do Fluxo de Caixa Itaú">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Histórico homologado / Itaú</p>
+            <h1 class="page-heading">Itaú · Fluxo de Caixa</h1>
+            <p class="page-description">Entradas, saídas, resultado e evolução mensal do histórico do Itaú, sem compras de cartão ou boletos somados em duplicidade.</p>
+          </div>
+          <div class="header-buttons">
+            <button type="button" class="btn" id="hist-itau-export"><span class="icon icon-sm" data-icon="download"></span> Exportar CSV</button>
+            <button type="button" class="btn" id="hist-itau-reload"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
+          </div>
+        </div>
+        <div class="callout hist-note">
+          <span class="icon" data-icon="shield"></span>
+          <div><strong>Leitura somente do histórico do Itaú.</strong>
+            <p>Os saldos apresentados são cálculos sobre o Excel importado, não saldos certificados pelo banco. O saldo inicial é separado das receitas. As três conciliações PIX já realizadas reaproveitam saídas existentes no Fluxo de Caixa, sem gerar despesa adicional.</p>
+          </div>
+        </div>
+        <div class="card hist-filter-card">
+          <div class="card-body hist-period">
+            <label>De
+              <input type="month" id="hist-itau-from" aria-label="Mês inicial do histórico Itaú">
+            </label>
+            <label>Até
+              <input type="month" id="hist-itau-to" aria-label="Mês final do histórico Itaú">
+            </label>
+            <span id="hist-itau-period-note">Período do Excel homologado</span>
+          </div>
+        </div>
+        <div id="hist-itau-status" class="status" role="status"></div>
+        <div class="hist-kpis" id="hist-itau-kpis" aria-label="Indicadores do Itaú"></div>
+        <div class="hist-two-col">
+          <section class="card">
+            <div class="card-head"><div><h2>Entradas e saídas por mês</h2><p>Movimentações efetivas registradas no Fluxo de Caixa Itaú</p></div>
+              <div class="chart-legend"><span><i class="legend-key"></i> Entradas</span><span><i class="legend-key out"></i> Saídas</span></div>
+            </div>
+            <div class="card-body"><div class="hist-chart" id="hist-itau-chart" role="img" aria-label="Gráfico comparativo de entradas e saídas por mês"></div></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><div><h2>Principais saídas</h2><p>Classificações do histórico, sem somar outras fontes</p></div></div>
+            <div class="card-body"><div id="hist-itau-categories" class="hist-category-list"></div></div>
+          </section>
+        </div>
+        <section class="card hist-table-card">
+          <div class="card-head"><div><h2>Resumo mensal do Itaú</h2><p>O saldo calculado utiliza o saldo de abertura informado no Excel</p></div></div>
+          <div class="table-wrap"><table class="data-table hist-table">
+            <thead><tr><th>Mês</th><th class="money">Entradas operacionais</th><th class="money">Saídas</th><th class="money">Resultado</th><th class="money">Saldo calculado</th></tr></thead>
+            <tbody id="hist-itau-monthly"></tbody>
+          </table></div>
+        </section>
+        <section class="card hist-table-card">
+          <div class="card-head"><div><h2>Últimas movimentações do período</h2><p>Detalhamento consultado diretamente no histórico de entradas e saídas do Itaú</p></div></div>
+          <div class="table-wrap"><table class="data-table hist-table">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria / Meio</th><th class="money">Valor</th></tr></thead>
+            <tbody id="hist-itau-transactions"></tbody>
+          </table></div>
+        </section>
+      </section>
+
+      <!-- Fontes não bancárias e compromissos separados do caixa Itaú -->
+      <section class="view" data-view-panel="history" hidden aria-label="Histórico financeiro separado por fonte">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Histórico homologado / Outras fontes</p>
+            <h1 class="page-heading">Visões separadas</h1>
+            <p class="page-description">Cartões, autopeças, pagamentos feitos por outros bancos e contas em aberto, apresentados sem somar esses valores ao caixa do Itaú.</p>
+          </div>
+          <div class="header-buttons"><button type="button" class="btn" id="hist-other-reload"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button></div>
+        </div>
+        <div class="callout hist-note">
+          <span class="icon" data-icon="shield"></span>
+          <div><strong>Fontes independentes, sem dupla contagem.</strong><p>Compras de cartão são compromissos, PIX/Débito são pagamentos à vista, e as baixas já estão incluídas no Fluxo. Registros marcados “NÃO incluir” permanecem visíveis, mas fora dos totais elegíveis. Nenhum desses valores será adicionado automaticamente ao caixa do Itaú.</p></div>
+        </div>
+        <div id="hist-other-status" class="status" role="status"></div>
+        <div class="hist-subnav" role="tablist" aria-label="Escolha uma fonte do histórico">
+          <button type="button" class="hist-subtab active" data-hist-tab="cards" role="tab" aria-selected="true">Cartões</button>
+          <button type="button" class="hist-subtab" data-hist-tab="parts" role="tab" aria-selected="false">Autopeças</button>
+          <button type="button" class="hist-subtab" data-hist-tab="banks" role="tab" aria-selected="false">Outros bancos</button>
+          <button type="button" class="hist-subtab" data-hist-tab="open" role="tab" aria-selected="false">Contas em aberto</button>
+        </div>
+        <div class="hist-pane" data-hist-pane="cards" role="tabpanel">
+          <div class="hist-kpis" id="hist-cards-kpis"></div>
+          <section class="card hist-table-card">
+            <div class="card-head"><div><h2>Cartões por instituição</h2><p>Bradesco Prime consolidado com a grafia antiga “Brad. Prime”; Itaú, Sicoob e demais cartões separados</p></div></div>
+            <div class="table-wrap"><table class="data-table hist-table">
+              <thead><tr><th>Fonte</th><th class="money">Registros</th><th class="money">Valor incluído</th><th class="money">Não incluir</th><th>Observações</th></tr></thead>
+              <tbody id="hist-cards-rows"></tbody>
+            </table></div>
+          </section>
+          <p class="hist-footnote">PIX e Débito serão mostrados como pagamentos à vista, não como compras de crédito. As faturas pagas não entram novamente nas saídas bancárias.</p>
+        </div>
+        <div class="hist-pane" data-hist-pane="parts" role="tabpanel" hidden>
+          <div class="hist-kpis" id="hist-parts-kpis"></div>
+          <section class="card hist-table-card">
+            <div class="card-head"><div><h2>Compras de autopeças por fornecedor</h2><p>Valores cheios, incluídos no controle, excluídos e pagamentos já identificados</p></div></div>
+            <div class="table-wrap"><table class="data-table hist-table">
+              <thead><tr><th>Fornecedor</th><th class="money">Registros</th><th class="money">Valor incluído</th><th class="money">Não incluir</th><th class="money">Pago identificado</th></tr></thead>
+              <tbody id="hist-parts-rows"></tbody>
+            </table></div>
+          </section>
+          <p class="hist-footnote">Compras e pagamentos são diferentes. O total das compras não é adicionado ao total de saídas do Itaú. Os 102 pagamentos com ID conciliado já constam no Fluxo.</p>
+        </div>
+        <div class="hist-pane" data-hist-pane="banks" role="tabpanel" hidden>
+          <div class="hist-kpis" id="hist-banks-kpis"></div>
+          <section class="card hist-table-card">
+            <div class="card-head"><div><h2>PIX e Débito fora do caixa Itaú</h2><p>Classificações autorizadas, lançamentos anteriores a junho e registros sem data</p></div></div>
+            <div class="table-wrap"><table class="data-table hist-table">
+              <thead><tr><th>Data</th><th>Descrição</th><th>Meio</th><th>Situação</th><th class="money">Valor</th></tr></thead>
+              <tbody id="hist-banks-rows"></tbody>
+            </table></div>
+          </section>
+          <p class="hist-footnote">Os 25 lançamentos anteriores a junho pertencem ao período de outros bancos. Os três classificados como “outro banco” desde junho não tiveram correspondência com o Itaú. Três PIX sem data ficam pendentes, sem banco atribuído.</p>
+        </div>
+        <div class="hist-pane" data-hist-pane="open" role="tabpanel" hidden>
+          <div class="hist-kpis" id="hist-open-kpis"></div>
+          <section class="card hist-table-card">
+            <div class="card-head"><div><h2>Vencimentos em aberto</h2><p>Compromissos por mês de vencimento, inclusive os de 2027</p></div></div>
+            <div class="table-wrap"><table class="data-table hist-table">
+              <thead><tr><th>Mês de vencimento</th><th class="money">Registros</th><th class="money">Total previsto</th></tr></thead>
+              <tbody id="hist-open-rows"></tbody>
+            </table></div>
+          </section>
+          <p class="hist-footnote">As contas em aberto são compromissos futuros ou pendentes. Não são saídas realizadas do caixa até existir baixa comprovada. Vencimentos sem data exata aparecem separadamente.</p>
+        </div>
       </section>
 
       <section class="view" data-view-panel="imports" hidden aria-label="Importar extratos e faturas">
@@ -815,11 +950,12 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261113cpf3"></script>
+<script src="./financeiro-pro-ui.js?v=20261113history1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import.js?v=20261113paid3" defer></script>
 <script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
 <script src="./financeiro-unificado.js?v=20261113conciliado2" defer></script>
+<script src="./financeiro-historico.js?v=20261113hist1" defer></script>
 </body></html>
