@@ -341,3 +341,14 @@
   .ficha-responsive-topbar .ficha-header-actions .ficha-options-trigger{
     padding:7px 7px!important;font-size:11px!important}
 }
+
+/* A antiga regra de logout no topo não deve esconder Sair no dropdown. */
+@media screen {
+  .ficha-responsive-topbar .ficha-options-popover #logoutBtn{
+    display:flex !important;
+    width:100% !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+  }
+  body.ficha-os-page #mobileLogoutTopBtn {display:none!important}
+}
