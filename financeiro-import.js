@@ -133,7 +133,7 @@ function pdfLineRows(lines){
  }
  return {rows:out,meta};
 }
-async function parsePDF(buffer){
+async function parsePDF(buffer,kind){
  const pdfjs=await import(pdfModule);
  pdfjs.GlobalWorkerOptions.workerSrc=pdfWorker;
  const pdf=await pdfjs.getDocument({
@@ -141,6 +141,10 @@ async function parsePDF(buffer){
   isEvalSupported:false
  }).promise;
  if(pdf.numPages>50)throw Error('PDF com mais de 50 páginas. Use CSV ou exporte um período menor.');
+ if(window.frSicoobParser){
+  const specialized=await window.frSicoobParser.parse(pdf,kind);
+  if(specialized)return specialized;
+ }
  const lines=[];
  for(let p=1;p<=pdf.numPages;p++){
   const page=await pdf.getPage(p),content=await page.getTextContent();
@@ -232,7 +236,14 @@ async function readFile(){
    current.rows=parsed.rows;current.meta=parsed.meta;current.special=true;
   }else if(ext==='pdf'){
    notice('import-read-status','Extraindo as linhas de texto do PDF...');
-   const parsed=await parsePDF(buffer);current.rows=parsed.rows;current.meta=parsed.meta;current.special=true;
+   const parsed=await parsePDF(buffer,selectedKind());
+   current.rows=parsed.rows;current.meta=parsed.meta;current.special=true;
+   current.sicoob=parsed.sicoob||null;
+   if(current.sicoob){
+     current.year=parsed.year;
+     if($('import-year'))$('import-year').value=String(parsed.year);
+     if(!$('import-account').value.trim())$('import-account').value='Sicoob Visa Platinum';
+   }
   }else{
    if(!window.XLSX)throw Error('Leitor Excel indisponível. Verifique sua conexão ou exporte para CSV.');
    current.workbook=window.XLSX.read(buffer,{type:'array',cellDates:false});
@@ -244,7 +255,13 @@ async function readFile(){
   $('import-header-wrap').classList.toggle('hidden',current.special);
   setRows(current.rows,current.meta);
   notice('import-read-status',file.name+' lido: '+(current.rows.length-1)+' linha(s) candidatas. Configure as colunas e gere a prévia.');
-  if(ext==='pdf')$('import-map-tip').textContent='PDF experimental: confira atentamente datas, ano e valores, principalmente quando o extrato mostrar uma coluna de saldo.';
+  if(ext==='pdf'&&current.sicoob){
+    const v=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((n||0)/100);
+    const s=current.sicoob;
+    $('import-map-tip').textContent='Sicoob Visa Platinum identificado: '+s.compras+' compras ('+v(s.comprasCentavos)+') e '+
+      s.encargos+' encargos ('+v(s.encargosCentavos)+'). Subtotal de compras conferido com a fatura. '+
+      'Pagamentos de fatura anterior ('+v(Math.abs(s.pagamentosAnterioresCentavos))+') não entram como estornos; saldo total impresso: '+v(s.totalFaturaCentavos)+'.';
+  }else if(ext==='pdf')$('import-map-tip').textContent='PDF experimental: confira atentamente datas, ano e valores, principalmente quando o extrato mostrar uma coluna de saldo.';
   else $('import-map-tip').textContent='Confira o formato da data e as colunas. Valores individuais, não saldos ou totais de fatura.';
  }catch(e){
   current=null;$('import-map').classList.add('hidden');$('import-map-empty').classList.remove('hidden');
@@ -305,7 +322,7 @@ function buildPreview(){
    const base=[selectedKind(),$('import-account').value.trim().toUpperCase(),
       current.hash,'linha:'+(i+offset)].join('|');
    const n=seen.get(base)||0;seen.set(base,n+1);
-   preview.push({...result,base,occurrence:n,selected:result.defaultInclude,
+   preview.push({...result,base,occurrence:n,selected:current.meta[i]?.defaultInclude??result.defaultInclude,
       originalValue:result.valor,rawAmount:result.valor.toFixed(2).replace('.',','),
       index:i+offset});
   }
