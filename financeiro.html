@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
-<link rel="stylesheet" href="./financeiro-historico.css?v=20261113hist1">
+<link rel="stylesheet" href="./financeiro-historico.css?v=20261113hist2">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -78,6 +78,16 @@
         <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
           <div><strong>Você está no ambiente de demonstração.</strong>
           <p>Todos os valores abaixo são gerados pelos seus lançamentos de teste. A planilha oficial, o caixa real e os demais módulos permanecem inalterados.</p></div>
+        </div>
+        <div class="hist-quicklink" role="note">
+          <div>
+            <strong>Histórico homologado disponível</strong>
+            <p>Os dados importados do Excel têm visualizações próprias e não aparecem nos indicadores operacionais de teste abaixo. Consulte o Itaú ou as outras fontes sem misturar movimentações.</p>
+          </div>
+          <div class="hist-quick-actions">
+            <button type="button" class="btn btn-primary" data-view="itau"><span class="icon icon-sm" data-icon="bank"></span> Abrir painel Itaú</button>
+            <button type="button" class="btn" data-view="history"><span class="icon icon-sm" data-icon="chart"></span> Outras fontes</button>
+          </div>
         </div>
         <div class="section-tools">
           <div class="preset-actions" role="group" aria-label="Período">
@@ -957,5 +967,5 @@ init();
 <script src="./financeiro-import.js?v=20261113paid3" defer></script>
 <script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
 <script src="./financeiro-unificado.js?v=20261113conciliado2" defer></script>
-<script src="./financeiro-historico.js?v=20261113hist1" defer></script>
+<script src="./financeiro-historico.js?v=20261113hist2" defer></script>
 </body></html>
