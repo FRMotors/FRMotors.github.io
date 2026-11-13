@@ -133,6 +133,11 @@ async function parse(pdf,kind){
  const result=parseTablePage(found.items,width,pageHeight,invoiceYear,dueMonth);
  // 'PAGAMENTO-BOLETO' e débito automático de fatura anterior reduzem o saldo
  // da conta do cartão. Não são estornos de compras nem novas despesas.
+ const documentedPayments=result.account.filter(x=>x.amount<0&&
+   /(PAGAMENTO|PAGTO|PGTO|PAG\.?\s*FATURA|PAG\.?\s*BOLETO|DEB(?:ITO)?\s+AUT)/.test(norm(x.desc)))
+   .map((r,i)=>({indice:i,data:r.date,descricao:r.desc,valor:Math.abs(r.amount)/100}));
+ const otherCredits=result.account.filter(x=>x.amount<0&&
+   !/(PAGAMENTO|PAGTO|PGTO|PAG\.?\s*FATURA|PAG\.?\s*BOLETO|DEB(?:ITO)?\s+AUT)/.test(norm(x.desc)));
  const rows=[['Data','Descrição','Valor']],meta=[];
  for(const r of result.purchases){
   rows.push([r.date,r.desc,(r.amount/100).toFixed(2).replace('.',',')]);
@@ -150,6 +155,8 @@ async function parse(pdf,kind){
    encargos:result.account.filter(x=>x.amount>0).length,
    encargosCentavos:result.feeSum,
    pagamentosAnterioresCentavos:result.payments,
+   pagamentosDocumentados:documentedPayments,
+   outrosCreditosCentavos:otherCredits.reduce((sum,r)=>sum+r.amount,0),
    saldoAnteriorCentavos:result.balance,
    totalFaturaCentavos:result.total,
    subtotalValidado:true
