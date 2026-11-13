@@ -241,7 +241,7 @@
     </div>
     <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
     <div class="import-bottom-bar">
-      <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação.</span>
+      <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação. Em lançamentos idênticos no mesmo dia, confira se são operações distintas.</span>
       <button type="button" id="import-confirm" class="btn btn-primary" disabled>Importar lançamentos selecionados</button>
     </div>
     <div id="import-save-status" class="status" role="status" style="padding:0 22px 18px"></div>
@@ -368,7 +368,7 @@
             <label>Juros e multas (R$)<input id="pay-fees" type="number" min="0" step="0.01" value="0" required></label>
             <label>Valor efetivamente pago (R$)<input id="pay-amount" type="number" min="0.01" step="0.01" required></label>
             <label>Meio<select id="pay-method" required><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
-            <div style="grid-column:1/-1"><p class="form-note" id="pay-hint">Confira o valor efetivamente pago. Descontos sugeridos não são aplicados ao histórico automaticamente.</p>
+            <div style="grid-column:1/-1"><p class="form-note" id="pay-hint">Confira o valor efetivamente pago. Descontos sugeridos não são aplicados ao histórico automaticamente.</p><p class="form-note" style="margin-top:9px">Se você já importou esse pagamento pelo extrato, não crie outra saída. Acesse <strong>Importações → Conciliar boleto com saída bancária</strong>.</p>
               <div class="form-actions"><button type="button" class="btn" data-close-modal="pay">Cancelar</button><button id="save-payment" type="submit" class="btn btn-primary">Confirmar baixa</button></div><div id="pay-status" class="status" role="status"></div>
             </div>
           </form>
@@ -661,5 +661,5 @@ init();
 <script src="./financeiro-pro-ui.js?v=20261113imp1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="./financeiro-import.js?v=20261113imp5" defer></script>
+<script src="./financeiro-import.js?v=20261113imp6" defer></script>
 </body></html>
