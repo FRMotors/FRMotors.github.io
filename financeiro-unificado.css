@@ -53,3 +53,22 @@
 .fin-unificado-itau-status{max-width:265px;color:#637e8a}
 @media(max-width:1020px){.fin-unificado-itau-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.fin-unificado-itau-metrics{grid-template-columns:1fr}}
+
+/* Homologação aprovada: conciliação Itaú e pagamento em outro banco. */
+.fin-unificado-itau-table .fin-unificado-tag.success{
+  background:#eaf6ef;
+  color:#176d43;
+  border:1px solid #cce8d8;
+}
+.fin-unificado-itau-table .fin-unificado-tag.muted{
+  background:#f0f3f5;
+  color:#526775;
+  border:1px solid #dce4e9;
+}
+#fin-unificado-itau-aviso{
+  padding:10px 12px;
+  border-radius:9px;
+  background:#f5f9fb;
+  border:1px solid #dde9ed;
+  color:#54717e;
+}
