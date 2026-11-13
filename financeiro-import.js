@@ -207,12 +207,60 @@ function mapColumns(){
  $('import-map-empty').classList.add('hidden');$('import-map').classList.remove('hidden');
 }
 function selectedKind(){return document.querySelector('input[name="import-kind"]:checked')?.value||'banco'}
+function showSicoobPayments(){
+ const payments=current?.sicoob?.pagamentosDocumentados||[];
+ const card=$('sicoob-payments-panel');
+ if(!card)return;
+ card.classList.toggle('hidden',payments.length===0||selectedKind()!=='cartao');
+ $('sicoob-payments-list').replaceChildren();
+ if(!payments.length)return;
+ for(const item of payments){
+  const line=document.createElement('div');line.className='sicoob-payment-item';
+  const date=document.createElement('span');date.textContent=item.data.split('-').reverse().join('/');
+  const label=document.createElement('span');label.textContent=item.descricao;
+  const amount=document.createElement('strong');amount.textContent=cash(item.valor);
+  line.append(date,label,amount);$('sicoob-payments-list').append(line);
+ }
+ notice('sicoob-payments-status','Valores identificados no PDF. Para usá-los na conciliação, guarde as referências; nenhuma saída será registrada no caixa.');
+}
+async function saveSicoobPayments(accountOverride=null){
+ const docs=current?.sicoob?.pagamentosDocumentados||[];
+ if(!docs.length)throw Error('Nenhum pagamento anterior reconhecido neste arquivo.');
+ if(typeof db==='undefined'||!db)throw Error('Entre no Financeiro para guardar as referências.');
+ const {data:imports,error:lookupError}=await db.from('fin_teste_importacoes')
+  .select('id,conta_nome').eq('tipo','cartao').eq('arquivo_hash',current.hash).limit(30);
+ if(lookupError)throw lookupError;
+ if(!imports?.length)throw Error('Importe primeiro as compras da fatura. Depois será possível guardar os pagamentos que aparecem no PDF.');
+ const desired=(accountOverride||$('import-account').value||'').trim().toLowerCase();
+ const matched=imports.find(r=>r.conta_nome.trim().toLowerCase()===desired);
+ const imp=matched||(imports.length===1?imports[0]:null);
+ if(!imp)throw Error('O mesmo PDF está vinculado a várias contas. Informe o nome da conta usada na importação original.');
+ const {data,error}=await db.rpc('fin_teste_guardar_pagamentos_fatura',{
+  p_tipo:'cartao',p_conta:imp.conta_nome,p_hash:current.hash,
+  p_itens:docs.map((p,i)=>({indice:i,data:p.data,descricao:p.descricao,valor:p.valor}))
+ });
+ if(error)throw error;
+ notice('sicoob-payments-status',
+  'Referências guardadas: '+data.novos+' nova(s), '+data.ja_existentes+' existente(s). '+
+  'Consulte Faturas de cartão e pagamentos para escolher a fatura anterior correspondente.');
+ await window.frFaturasUI?.refresh?.();
+ return data;
+}
+async function saveSicoobPaymentsFromButton(){
+ if(working)return;
+ working=true;
+ $('sicoob-save-payments').disabled=true;
+ try{await saveSicoobPayments()}
+ catch(e){notice('sicoob-payments-status','Não foi possível guardar: '+e.message,true)}
+ finally{working=false;$('sicoob-save-payments').disabled=false}
+}
 function updateKind(){
  const kind=selectedKind();
  $('import-sign-bank').classList.toggle('hidden',kind!=='banco');
  $('import-sign-card').classList.toggle('hidden',kind!=='cartao');
  $('import-preview-card').hidden=true;
  preview=[];
+ showSicoobPayments();
  notice('import-read-status','Confira os lançamentos antes de importar. Arquivos não são enviados integralmente ao banco.');
 }
 async function readFile(){
@@ -251,6 +299,7 @@ async function readFile(){
    current.rows=window.XLSX.utils.sheet_to_json(current.workbook.Sheets[current.workbook.SheetNames[0]],{header:1,raw:false,defval:''});
   }
   if(current.rows.length<2)throw Error('O arquivo não contém transações reconhecíveis.');
+  showSicoobPayments();
   $('import-sheet-wrap').classList.toggle('hidden',!current.workbook);
   $('import-header-wrap').classList.toggle('hidden',current.special);
   setRows(current.rows,current.meta);
@@ -264,7 +313,7 @@ async function readFile(){
   }else if(ext==='pdf')$('import-map-tip').textContent='PDF experimental: confira atentamente datas, ano e valores, principalmente quando o extrato mostrar uma coluna de saldo.';
   else $('import-map-tip').textContent='Confira o formato da data e as colunas. Valores individuais, não saldos ou totais de fatura.';
  }catch(e){
-  current=null;$('import-map').classList.add('hidden');$('import-map-empty').classList.remove('hidden');
+  current=null;showSicoobPayments();$('import-map').classList.add('hidden');$('import-map-empty').classList.remove('hidden');
   $('import-preview-card').hidden=true;
   notice('import-read-status','Não foi possível ler: '+e.message,true);
  }finally{working=false}
@@ -381,7 +430,17 @@ async function saveImport(){
    p_hash:current.hash,p_linhas:payload
   });
   if(error)throw error;
-  notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Duplicados ignorados: '+data.duplicadas+'.');
+  let evidenceMessage='';
+  if(current?.sicoob?.pagamentosDocumentados?.length){
+    try{
+      const saved=await saveSicoobPayments(account);
+      evidenceMessage=' Referências de pagamentos anteriores guardadas: '+(saved.novos+saved.ja_existentes)+'.';
+    }catch(e){
+      evidenceMessage=' Atenção: referências dos pagamentos não foram guardadas: '+e.message;
+      notice('sicoob-payments-status',evidenceMessage,true);
+    }
+  }
+  notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Duplicados ignorados: '+data.duplicadas+'.'+evidenceMessage);
   window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+data.duplicadas+' repetidos ignorados.');
   await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve()]);
  }catch(e){notice('import-save-status','Importação não concluída: '+e.message,true)}
@@ -579,6 +638,7 @@ function init(){
  $('import-header').addEventListener('change',mapColumns);
  $('import-preview-button').addEventListener('click',buildPreview);
  $('import-confirm').addEventListener('click',saveImport);
+ $('sicoob-save-payments').addEventListener('click',saveSicoobPaymentsFromButton);
  $('import-preview-body').addEventListener('change',event=>{
   const check=event.target.closest('[data-import-check]'),nature=event.target.closest('[data-import-nature]');
   const amount=event.target.closest('[data-import-value]');
