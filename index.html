@@ -1451,14 +1451,13 @@
               <button class="ficha-options-action shoficina-btn" id="shoficinaImportBtn" type="button" disabled title="Integração com o SHOficina em preparação">Importar SHOficina</button>
               <button class="ficha-options-action" id="refreshBtn" type="button">Atualizar</button>
               <button class="ficha-options-action" id="backupBtn" type="button">Backup</button>
-              <label class="ficha-options-action" for="restoreInput" role="button" tabindex="0">Importar backup</label>
+              <button class="ficha-options-action" id="restoreTrigger" type="button">Importar backup</button>
               <input id="restoreInput" type="file" accept=".json,application/json" hidden />
               <button class="ficha-options-action ficha-signout" id="logoutBtn" type="button">Sair</button>
             </div>
           </details>
     </div>
     <div class="system-spacer"></div>
-    <button id="mobileSystemLogoutBtn" class="system-logout" type="button">Sair</button>
   </div>
 </div>
 
@@ -1469,7 +1468,6 @@
         <div class="brand-mark">FR</div>
         <div><h1>FR Motors</h1><p>Gestão da oficina</p></div>
       </div>
-      <button class="btn mobile-top-logout" id="mobileLogoutTopBtn" type="button">Sair</button>
       <nav class="module-nav" aria-label="Módulos FR Motors">
         <a class="active" href="./" aria-current="page">Ficha / O.S.</a>
         <a href="./orcamentos.html">Orçamentos</a>
@@ -2643,8 +2641,7 @@ $('#whatsappBtn').onclick=whatsapp;
 $('#backupBtn').onclick=backup;
 $('#refreshBtn').onclick=async()=>{if(await guardUnsaved())await loadDB(true);};
 $('#logoutBtn').onclick=logout;
-$('#mobileLogoutTopBtn').onclick=logout;
-$('#mobileSystemLogoutBtn').onclick=logout;
+$('#restoreTrigger').onclick=()=>$('#restoreInput').click();
 $('#restoreInput').onchange=e=>e.target.files[0]&&restore(e.target.files[0]);
 $('#searchInput').oninput=renderList;
 $('#loginBtn').onclick=signIn;
@@ -3135,15 +3132,7 @@ document.addEventListener('mousedown', e => {
       if(action.disabled)return;
       setTimeout(function(){details.open=false;},0);
     });
-    if(action.tagName==='LABEL'){
-      action.addEventListener('keydown',function(event){
-        if(event.key==='Enter'||event.key===' '){
-          event.preventDefault();
-          document.getElementById('restoreInput')?.click();
-          details.open=false;
-        }
-      });
-    }
+
   });
 })();
 </script>
