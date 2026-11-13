@@ -182,6 +182,56 @@ async function history(){
     review.acrescimos+' acréscimos e '+review.reducoes+' reduções')+
   k('Datas originais desconhecidas',Number(review.sem_data).toLocaleString('pt-BR'),
     review.sem_data_cartao+' de Cartões e '+review.sem_data_abertos+' de Contas em Aberto');
+ await carregarConferenciaItau(data[0].id);
+}
+async function carregarConferenciaItau(loteId){
+ const summary=$('fin-unificado-itau-resumo');
+ const tbody=$('fin-unificado-itau-linhas');
+ if(!summary||!tbody||!loteId)return;
+ const {data,error}=await db.from('fin_teste_excel_pix_debito_itau')
+   .select('linha_excel,descricao,data_evento,mes_referencia,valor,meio_pagamento,situacao_analise,quantidade_candidatos,linha_fluxo_candidata,data_fluxo_candidata,diferenca_dias')
+   .eq('lote_id',loteId).order('linha_excel',{ascending:true});
+ if(error){
+   summary.textContent='Não foi possível consultar o recorte do Itaú: '+error.message;
+   tbody.innerHTML='<tr><td colspan="5">Conferência indisponível.</td></tr>';
+   return;
+ }
+ const rows=data||[];
+ const inScope=rows.filter(r=>r.data_evento&&r.data_evento>='2026-06-01');
+ const outside=rows.filter(r=>r.situacao_analise==='fora_recorte');
+ const undated=rows.filter(r=>r.situacao_analise==='sem_data_exata');
+ const candidates=inScope.filter(r=>r.situacao_analise==='candidato_nao_confirmado');
+ const notFound=inScope.filter(r=>r.situacao_analise==='sem_correspondencia');
+ const total=arr=>arr.reduce((sum,r)=>sum+Math.round(Number(r.valor)*100),0)/100;
+ const metric=(title,number,description)=>
+  '<div class="fin-unificado-metric"><small>'+esc(title)+'</small><strong>'+esc(number)+'</strong>'+
+  '<span class="fin-unificado-review-detail">'+esc(description)+'</span></div>';
+ summary.className='fin-unificado-metrics fin-unificado-itau-metrics';
+ summary.innerHTML=
+   metric('Analisados desde junho',String(inScope.length),currency(total(inScope)))+
+   metric('Candidatos a conciliar',String(candidates.length),'Valor e data próximos, ainda sem confirmação')+
+   metric('Fora do período',String(outside.length),currency(total(outside))+' · outros bancos')+
+   metric('Sem data exata',String(undated.length),currency(total(undated))+' · aguardando conferência');
+ const mayReview=undated.filter(r=>r.mes_referencia&&r.mes_referencia>='2026-06-01');
+ const toShow=[...inScope,...mayReview].sort((a,b)=>
+  (a.data_evento||a.mes_referencia||'').localeCompare(b.data_evento||b.mes_referencia||'')||a.linha_excel-b.linha_excel);
+ tbody.innerHTML=toShow.length?toShow.map(r=>{
+  const good=r.situacao_analise==='candidato_nao_confirmado';
+  const pending=r.situacao_analise==='sem_data_exata';
+  const status=good?
+    'Possível saída no fluxo: '+dateBR(r.data_fluxo_candidata)+' (linha '+r.linha_fluxo_candidata+
+    ', '+(r.diferenca_dias===0?'mesmo dia':Math.abs(r.diferenca_dias)+' dia(s) de diferença')+'). Confirmar antes de vincular.':
+    pending?'Data exata ausente: não conciliar automaticamente.':
+    'Nenhuma saída de mesmo valor e meio em até três dias.';
+  return '<tr><td><strong>'+esc(r.descricao)+'</strong><small class="fin-unificado-itau-id">Excel: linha '+
+    esc(r.linha_excel)+'</small></td><td>'+
+    (r.data_evento?esc(dateBR(r.data_evento)):'Sem data (mês '+esc(r.mes_referencia?.slice(0,7)||'desconhecido')+')')+
+    '</td><td>'+esc(r.meio_pagamento)+'</td><td class="money">'+currency(r.valor)+
+    '</td><td><span class="fin-unificado-tag '+(good?'warn':pending?'warn':'')+'">'+
+    (good?'Candidato':pending?'Pendente':'Não encontrado')+'</span>'+
+    '<small class="fin-unificado-itau-status">'+esc(status)+'</small></td></tr>';
+ }).join(''):
+ '<tr><td colspan="5">Nenhum PIX ou débito com data desde 01/06/2026.</td></tr>';
 }
 function cmpServer(r){
  for(const [grupo,local] of Object.entries(staged.data.groups)){
