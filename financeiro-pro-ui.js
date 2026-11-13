@@ -105,13 +105,14 @@ function filteredMoves(){
  });
 }
 function movementsHTML(rows,showAll=false){
- if(!rows.length)return '<tr><td colspan="5">'+emptyMessage('Nenhum lançamento encontrado','Experimente alterar os filtros ou cadastrar uma movimentação.','activity')+'</td></tr>';
+ if(!rows.length)return '<tr><td colspan="6">'+emptyMessage('Nenhum lançamento encontrado','Experimente alterar os filtros ou cadastrar uma movimentação.','activity')+'</td></tr>';
  return rows.map(r=>'<tr>'+
   '<td><span class="row-main">'+escapeHTML(dateBR(r.data_movimento))+'</span><span class="row-sub">'+escapeHTML(r.meio_pagamento||r.categoria||'Lançamento')+'</span></td>'+
   '<td><span class="row-main">'+escapeHTML(r.descricao)+'</span><span class="row-sub">'+escapeHTML(r.categoria||'Sem categoria')+'</span></td>'+
   '<td>'+statusChip(r.tipo)+'</td>'+
   '<td>'+escapeHTML(supplierName(r.fornecedor_id))+'</td>'+
   '<td class="money" style="color:'+(r.tipo==='entrada'?'#188369':'#344c5b')+'">'+(r.tipo==='entrada'?'+ ':'− ')+currency(r.valor)+'</td>'+
+ '<td class="edit-cell"><button type="button" class="row-edit-button" data-edit-record="movimento" data-edit-id="'+escapeHTML(r.id)+'">Editar</button></td>'+
  '</tr>').join('');
 }
 function updateMoves(){
@@ -131,7 +132,7 @@ function updateDue(){
    '<td><span class="row-main">'+escapeHTML(supplier)+'</span><span class="row-sub">'+escapeHTML(x.fin_teste_compras?.descricao||'Compra de autopeças')+'</span></td>'+
    '<td>Parcela '+escapeHTML(x.numero)+'</td><td class="money">'+currency(x.valor_cheio)+'</td>'+
    '<td>'+statusChip(x.status,x.vencimento)+'</td>'+
-   '<td style="text-align:right"><button type="button" class="muted-action" data-pay-id="'+escapeHTML(x.id)+'">Baixar</button></td></tr>';
+   '<td style="text-align:right"><div class="table-actions"><button type="button" class="row-edit-button" data-edit-record="compra" data-edit-id="'+escapeHTML(x.fin_teste_compras?.id||'')+'">Editar</button><button type="button" class="muted-action" data-pay-id="'+escapeHTML(x.id)+'">Baixar</button></div></td></tr>';
  }).join(''):'<tr><td colspan="6">'+emptyMessage('Nenhuma parcela em aberto','Cadastre uma compra para criar os próximos compromissos.','calendar')+'</td></tr>';
  const upcoming=state.dues.slice(0,5);
  if(byId('upcoming-list'))byId('upcoming-list').innerHTML=upcoming.length?upcoming.map(x=>{
@@ -153,7 +154,7 @@ function updateDue(){
  if(byId('due-kpi-foot'))byId('due-kpi-foot').textContent=overdue.length?overdue.length+' parcela(s) vencida(s)':'Nenhum atraso registrado';
 }
 function purchasesHTML(rows){
- if(!rows.length)return '<tr><td colspan="5">'+emptyMessage('Nenhuma compra cadastrada','Registre uma compra para acompanhar fornecedores e parcelas.','receipt')+'</td></tr>';
+ if(!rows.length)return '<tr><td colspan="6">'+emptyMessage('Nenhuma compra cadastrada','Registre uma compra para acompanhar fornecedores e parcelas.','receipt')+'</td></tr>';
  return rows.map(x=>{
  const parts=x.fin_teste_parcelas||[];
  const allPaid=parts.length>0&&parts.every(p=>p.status==='pago');
@@ -163,7 +164,7 @@ function purchasesHTML(rows){
  '<td><span class="row-main">'+escapeHTML(x.descricao||'Compra sem descrição')+'</span><span class="row-sub">'+escapeHTML(x.forma_pagamento||'')+'</span></td>'+
  '<td>'+escapeHTML(supplierName(x.fornecedor_id))+'</td>'+
  '<td class="money">'+currency(x.valor_total)+'</td>'+
- '<td>'+badge+'</td></tr>'; }).join('');
+ '<td>'+badge+'</td><td class="edit-cell"><button type="button" class="row-edit-button" data-edit-record="compra" data-edit-id="'+escapeHTML(x.id)+'">Editar</button></td></tr>'; }).join('');
 }
 function updatePurchases(){
  const q=(byId('search-purchases')?.value||'').trim().toLocaleLowerCase('pt-BR');
@@ -224,6 +225,6 @@ function setup(){
  });
  selectView('overview');
 }
-window.frFinanceUI={sync,afterSaved,showToast,selectView,openModal,closeModal,applyIcons};
+window.frFinanceUI={sync,afterSaved,showToast,selectView,openModal,closeModal,applyIcons,getSnapshot:()=>({moves:state.moves,purchases:state.purchases,dues:state.dues,suppliers:state.suppliers})};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();
