@@ -8,7 +8,8 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const monthNames={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};
 let current=null,preview=[],invalid=0,working=false,bankImported=[],linkedBank=new Set();
 let cardRows=[],selectedCard=null;
-const pdfWorker='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const pdfModule='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+const pdfWorker='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 function notice(id,message,bad=false){const el=$(id);if(!el)return;el.textContent=message;el.className='status '+(bad?'bad':'ok')}
 function numMoney(value){
  let s=String(value??'').trim();
@@ -118,9 +119,12 @@ function pdfLineRows(lines){
  return {rows:out,meta};
 }
 async function parsePDF(buffer){
- if(!window.pdfjsLib)throw Error('Leitor PDF indisponível. Tente OFX, CSV ou Excel.');
- window.pdfjsLib.GlobalWorkerOptions.workerSrc=pdfWorker;
- const pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(buffer.slice(0))}).promise;
+ const pdfjs=await import(pdfModule);
+ pdfjs.GlobalWorkerOptions.workerSrc=pdfWorker;
+ const pdf=await pdfjs.getDocument({
+  data:new Uint8Array(buffer.slice(0)),
+  isEvalSupported:false
+ }).promise;
  if(pdf.numPages>50)throw Error('PDF com mais de 50 páginas. Use CSV ou exporte um período menor.');
  const lines=[];
  for(let p=1;p<=pdf.numPages;p++){
