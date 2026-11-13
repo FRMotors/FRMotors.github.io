@@ -74,7 +74,7 @@ function parseFile(buffer){
  if(missing.length)throw Error('Não encontrei as abas obrigatórias: '+missing.join(', ')+'. Selecione o Financeiro Unificado, não uma fatura comum.');
  const items=[],groups={},samples=[],alerts=[],expected=expectedFromWorkbook(book);
  for(const def of cfg){
-  const raw=window.XLSX.utils.sheet_to_json(book.Sheets[def.sheet],{header:1,raw:true,defval:'',blankrows:false});
+  const raw=window.XLSX.utils.sheet_to_json(book.Sheets[def.sheet],{header:1,range:0,raw:true,defval:'',blankrows:true});
   const head=raw[def.head]||[];
   for(const [col,pattern] of def.checks){
    if(!pattern.test(String(head[col]||'').trim()))throw Error('A estrutura da aba '+def.sheet+' não corresponde ao modelo esperado. Verifique o cabeçalho na linha '+(def.head+1)+'.');
