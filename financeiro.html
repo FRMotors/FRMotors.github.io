@@ -219,6 +219,7 @@
             <label id="import-sign-bank">Interpretação dos sinais<select id="import-sign"><option value="negative-out">Negativo = saída</option><option value="positive-out">Positivo = saída</option></select></label>
             <label id="import-sign-card" class="hidden">Interpretação dos valores do cartão<select id="import-card-sign"><option value="positive-purchase">Positivo = compra</option><option value="negative-purchase">Negativo = compra</option></select></label>
             <label>Formato da data<select id="import-date-format"><option value="dmy">Dia / mês / ano</option><option value="mdy">Mês / dia / ano</option></select></label>
+            <label>Ano para datas sem ano<input id="import-year" type="number" min="1990" max="2100" step="1" value="2026"></label>
           </div>
           <p class="info-note" id="import-map-tip">Confira as colunas antes de confirmar a importação.</p>
           <button type="button" class="btn btn-teal" id="import-preview-button">Gerar prévia dos lançamentos</button>
@@ -612,7 +613,7 @@ async function init(){
    try{
     const {data,error}=await db.rpc('fin_teste_zerar',{p_confirmacao:confirmation});
     if(error)throw error;
-    msg('reset-status','Dados de teste limpos. Compras removidas: '+data.compras_excluidas+'; movimentações removidas: '+data.movimentos_excluidos+'.');
+    msg('reset-status','Dados de teste limpos. Compras: '+data.compras_excluidas+'; movimentações: '+data.movimentos_excluidos+'; despesas de cartão: '+data.cartoes_excluidos+'; linhas importadas: '+data.importacoes_excluidas+'.');
     await render();
    }catch(e){msg('reset-status','Não foi possível limpar os testes: '+e.message,true)}finally{btn.disabled=false}
   });
@@ -624,5 +625,5 @@ init();
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
-<script src="./financeiro-import.js?v=20261113imp1" defer></script>
+<script src="./financeiro-import.js?v=20261113imp2" defer></script>
 </body></html>
