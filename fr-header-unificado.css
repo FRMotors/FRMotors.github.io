@@ -130,12 +130,12 @@
   }
 
   /* Evitar duplicar a marca e a navegação no cabeçalho da ficha. */
-  #app {
+  body.ficha-os-page #app {
     max-width:1280px !important;
     margin:78px auto 0 !important;
     padding:0 20px 18px !important;
   }
-  #app > .topbar {
+  body.ficha-os-page #app > .topbar {
     position:static !important;
     top:auto !important;
     height:auto !important;
@@ -146,12 +146,12 @@
     border:0 !important;
     box-shadow:none !important;
   }
-  #app > .topbar .brand,
-  #app > .topbar .module-nav,
-  #app > .topbar .mobile-top-logout {
+  body.ficha-os-page #app > .topbar .brand,
+  body.ficha-os-page #app > .topbar .module-nav,
+  body.ficha-os-page #app > .topbar .mobile-top-logout {
     display:none !important;
   }
-  #app > .topbar .brand-row {
+  body.ficha-os-page #app > .topbar .brand-row {
     display:flex !important;
     align-items:center !important;
     justify-content:flex-end !important;
@@ -159,7 +159,7 @@
     height:auto !important;
     gap:10px !important;
   }
-  #app > .topbar .top-actions {
+  body.ficha-os-page #app > .topbar .top-actions {
     width:auto !important;
     max-width:100% !important;
     height:auto !important;
@@ -168,7 +168,7 @@
     margin:0 !important;
     align-items:flex-end !important;
   }
-  #app > .topbar .top-commands {
+  body.ficha-os-page #app > .topbar .top-commands {
     display:flex !important;
     flex-wrap:wrap !important;
     align-items:center !important;
@@ -176,7 +176,7 @@
     gap:8px !important;
     width:auto !important;
   }
-  #app > .topbar .top-status {
+  body.ficha-os-page #app > .topbar .top-status {
     display:flex !important;
     flex-wrap:wrap !important;
     align-items:center !important;
@@ -242,27 +242,27 @@
     justify-content:flex-end !important;
     flex-wrap:nowrap !important;
   }
-  #app {
+  body.ficha-os-page #app {
     margin-top:68px !important;
   }
-  #app > .topbar {
+  body.ficha-os-page #app > .topbar {
     padding:7px 0 4px !important;
   }
-  #app > .topbar .brand-row {
+  body.ficha-os-page #app > .topbar .brand-row {
     min-height:22px !important;
   }
-  #app > .topbar .top-actions {
+  body.ficha-os-page #app > .topbar .top-actions {
     height:auto !important;
     justify-content:center !important;
   }
-  #app > .topbar .top-status {
+  body.ficha-os-page #app > .topbar .top-status {
     min-height:24px !important;
   }
 }
 @media screen and (max-width:900px) {
   /* Cabeçalho em fluxo normal: sua altura acompanha a navegação e as três ações.
      Não sobrepõe a ficha, independentemente do tamanho do celular. */
-  body {padding-top:0 !important;}
+  body.ficha-os-page {padding-top:0 !important;}
   .ficha-responsive-topbar {
     position:sticky !important;
     top:0 !important;
@@ -318,8 +318,8 @@
     grid-column:auto !important;
     width:100% !important;
   }
-  #app > .topbar {padding:6px 0 5px !important;}
-  #app > .topbar .brand-row {min-height:0 !important;}
+  body.ficha-os-page #app > .topbar {padding:6px 0 5px !important;}
+  body.ficha-os-page #app > .topbar .brand-row {min-height:0 !important;}
 }
 @media screen and (max-width:360px) {
   .ficha-responsive-topbar .ficha-header-actions > .btn,
@@ -327,4 +327,17 @@
     font-size:11px !important;
     padding:6px 4px !important;
   }
+}
+
+/* Em telas menores de notebook, reduzir as folgas sem quebrar a barra. */
+@media screen and (min-width:901px) and (max-width:1080px) {
+  .ficha-responsive-topbar .system-topbar-inner{gap:7px!important;padding:8px 12px!important}
+  .ficha-responsive-topbar .system-brand{gap:8px!important}
+  .ficha-responsive-topbar .system-brand-copy span{display:none!important}
+  .ficha-responsive-topbar .system-nav{gap:3px!important;padding:4px!important}
+  .ficha-responsive-topbar .system-nav a{font-size:11px!important;padding:8px 8px!important}
+  .ficha-responsive-topbar .ficha-header-actions{gap:5px!important}
+  .ficha-responsive-topbar .ficha-header-actions > .btn,
+  .ficha-responsive-topbar .ficha-header-actions .ficha-options-trigger{
+    padding:7px 7px!important;font-size:11px!important}
 }
