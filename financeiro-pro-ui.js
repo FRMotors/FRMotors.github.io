@@ -107,7 +107,7 @@ function filteredMoves(){
 }
 function potentialCpfValueError(r){
  return Boolean(r.referencia_cliente?.startsWith('extrato:') &&
-   r.valor>=10000 && /\\d{3}\\.\\d{3}\\.\\d{3}[-\\u2212\\u2013]\\s*$/.test(r.descricao));
+   r.valor>=10000 && /\d{3}\.\d{3}\.\d{3}[-\u2212\u2013]\s*$/.test(r.descricao));
 }
 function movementsHTML(rows,showAll=false){
  if(!rows.length)return '<tr><td colspan="6">'+emptyMessage('Nenhum lançamento encontrado','Experimente alterar os filtros ou cadastrar uma movimentação.','activity')+'</td></tr>';
