@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
-<link rel="stylesheet" href="./financeiro-pro.css?v=20261113edit2">
+<link rel="stylesheet" href="./financeiro-pro.css?v=20261113imp1">
+<link rel="stylesheet" href="./financeiro-import.css?v=20261113imp1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -19,6 +20,7 @@
     <button type="button" data-view="movements"><span class="icon" data-icon="activity"></span> Movimentações</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras e parcelas</button>
+    <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
     <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
   </nav>
   <div class="sidebar-divider"></div>
@@ -162,6 +164,109 @@
           <div class="table-footer" id="purchase-count">0 compra(s)</div>
         </section>
       </section>
+
+      <section class="view" data-view-panel="imports" hidden aria-label="Importar extratos e faturas">
+  <div class="section-header">
+    <div>
+      <p class="eyebrow">Automação financeira</p>
+      <h1 class="page-heading">Importações</h1>
+      <p class="page-description">Envie arquivos de extrato bancário e faturas de cartões, confira os lançamentos e importe todos de uma só vez.</p>
+    </div>
+    <div class="header-buttons">
+      <button type="button" class="btn" id="import-reload"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar listas</button>
+    </div>
+  </div>
+  <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
+    <div><strong>Modo de testes, com conferência antes de salvar.</strong>
+      <p>Compras do cartão ficam separadas das movimentações bancárias. Pagamentos de faturas que constam no extrato não serão duplicados como gastos do cartão no caixa.</p>
+    </div>
+  </div>
+  <div class="import-layout">
+    <section class="card">
+      <div class="card-head"><div><h2>1. Selecionar origem e arquivo</h2><p>As informações são lidas localmente e somente os lançamentos confirmados são enviados ao Supabase.</p></div></div>
+      <div class="card-body">
+        <div class="import-source-picker" role="group" aria-label="Tipo de arquivo">
+          <label class="import-source-option"><input type="radio" name="import-kind" value="banco" checked><span class="icon" data-icon="bank"></span><strong>Extrato bancário</strong><small>Entradas e saídas do caixa</small></label>
+          <label class="import-source-option"><input type="radio" name="import-kind" value="cartao"><span class="icon" data-icon="credit"></span><strong>Fatura de cartão</strong><small>Compras e estornos, fora do caixa</small></label>
+        </div>
+        <div class="fields" style="margin-top:19px">
+          <label style="grid-column:1/-1">Nome para identificar a conta ou cartão
+            <input id="import-account" type="text" maxlength="120" placeholder="Ex.: Banco principal ou Cartão corporativo" autocomplete="off">
+          </label>
+          <label style="grid-column:1/-1">Arquivo para importar
+            <input id="import-file" type="file" accept=".csv,.ofx,.qfx,.xlsx,.xls,.pdf,text/csv,application/pdf">
+          </label>
+        </div>
+        <p class="info-note">Formatos: OFX/QFX, CSV, XLS/XLSX e PDF com texto selecionável. PDFs de imagem ou formatos bancários incomuns podem exigir exportação em CSV ou OFX.</p>
+        <div id="import-read-status" class="status" role="status"></div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>2. Conferir a leitura</h2><p>Escolha as colunas corretas quando necessário.</p></div></div>
+      <div class="card-body">
+        <div id="import-map-empty" class="empty-state" style="padding:28px 10px">
+          <span class="icon" data-icon="file"></span><strong>Pronto para receber um arquivo</strong><p>Selecione o tipo e o arquivo à esquerda.</p>
+        </div>
+        <div id="import-map" class="hidden">
+          <div class="fields">
+            <label style="grid-column:1/-1" id="import-sheet-wrap" class="hidden">Aba do Excel<select id="import-sheet"></select></label>
+            <label style="grid-column:1/-1" id="import-header-wrap" class="hidden">Linha de cabeçalho<select id="import-header"></select></label>
+            <label>Data<select id="import-col-date"></select></label>
+            <label>Descrição<select id="import-col-desc"></select></label>
+            <label>Valor da movimentação<select id="import-col-amount"></select></label>
+            <label>Coluna de débitos (opcional)<select id="import-col-debit"></select></label>
+            <label>Coluna de créditos (opcional)<select id="import-col-credit"></select></label>
+            <label id="import-sign-bank">Interpretação dos sinais<select id="import-sign"><option value="negative-out">Negativo = saída</option><option value="positive-out">Positivo = saída</option></select></label>
+            <label id="import-sign-card" class="hidden">Interpretação dos valores do cartão<select id="import-card-sign"><option value="positive-purchase">Positivo = compra</option><option value="negative-purchase">Negativo = compra</option></select></label>
+            <label>Formato da data<select id="import-date-format"><option value="dmy">Dia / mês / ano</option><option value="mdy">Mês / dia / ano</option></select></label>
+          </div>
+          <p class="info-note" id="import-map-tip">Confira as colunas antes de confirmar a importação.</p>
+          <button type="button" class="btn btn-teal" id="import-preview-button">Gerar prévia dos lançamentos</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <section class="card" style="margin-top:16px" id="import-preview-card" hidden>
+    <div class="card-head">
+      <div><h2>3. Revisar e confirmar os lançamentos</h2><p>Desmarque saldos, totais de fatura e qualquer linha que não represente uma transação individual.</p></div>
+      <div class="import-header-actions"><span id="import-preview-count" class="state">0 selecionados</span><button id="import-toggle-all" type="button" class="btn">Marcar / desmarcar todos</button></div>
+    </div>
+    <div class="import-summary">
+      <div><span>Identificados</span><strong id="import-count-all">0</strong></div>
+      <div><span>Selecionados</span><strong id="import-count-selected">0</strong></div>
+      <div><span>Ignorados / inválidos</span><strong id="import-count-skipped">0</strong></div>
+      <div><span>Total líquido selecionado</span><strong id="import-total-selected">R$ 0,00</strong></div>
+    </div>
+    <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
+    <div class="import-bottom-bar">
+      <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação.</span>
+      <button type="button" id="import-confirm" class="btn btn-primary" disabled>Importar lançamentos selecionados</button>
+    </div>
+    <div id="import-save-status" class="status" role="status" style="padding:0 22px 18px"></div>
+  </section>
+  <div class="content-grid" style="margin-top:17px">
+    <section class="card">
+      <div class="card-head"><div><h2>Despesas importadas dos cartões</h2><p>Compras e estornos para conferência. Estes valores não são somados automaticamente às saídas bancárias.</p></div>
+        <span id="import-card-count" class="state">0 lançamento(s)</span></div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Cartão</th><th>Natureza</th><th class="money">Valor</th></tr></thead><tbody id="import-card-rows"><tr><td colspan="5" class="empty">Nenhuma fatura importada.</td></tr></tbody></table></div>
+      <div class="table-footer" id="import-card-summary">Importe uma fatura para começar.</div>
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>Conciliar boleto com saída bancária</h2><p>Vincule uma saída importada a uma parcela já cadastrada, sem gerar outra movimentação.</p></div></div>
+      <div class="card-body">
+        <div class="fields">
+          <label style="grid-column:1/-1">Saída bancária importada<select id="reconcile-move"><option value="">Selecione uma saída do extrato</option></select></label>
+          <label style="grid-column:1/-1">Boleto em aberto<select id="reconcile-parcel"><option value="">Selecione uma parcela</option></select></label>
+          <label>Desconto efetivo (R$)<input id="reconcile-discount" type="number" min="0" step="0.01" value="0.00"></label>
+          <label>Juros efetivos (R$)<input id="reconcile-fees" type="number" min="0" step="0.01" value="0.00"></label>
+        </div>
+        <p id="reconcile-check" class="info-note">Selecione os dois registros. O valor da parcela, menos desconto e mais juros, precisa coincidir com a saída do banco.</p>
+        <button type="button" class="btn btn-teal" id="reconcile-submit" disabled>Vincular sem duplicar pagamento</button>
+        <div id="reconcile-status" class="status" role="status"></div>
+      </div>
+    </section>
+  </div>
+</section>
 
       <section class="view" data-view-panel="settings" hidden aria-label="Configurações de testes">
         <div class="section-header"><div><p class="eyebrow">Administração</p><h1 class="page-heading">Configurações</h1><p class="page-description">Gerencie o ambiente de testes do módulo financeiro sem interferir nos dados reais da oficina.</p></div></div>
@@ -515,6 +620,9 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261113edit2"></script>
+<script src="./financeiro-pro-ui.js?v=20261113imp1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+<script src="./financeiro-import.js?v=20261113imp1" defer></script>
 </body></html>
