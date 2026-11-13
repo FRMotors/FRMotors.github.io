@@ -1219,6 +1219,43 @@
 /* V4.4.41 · RESTAURA SOMENTE ITEM EXCLUÍDO */
 /* O histórico armazena dados completos somente de peças/serviços excluídos. */
 /* V4.4.47 · ORIGEM SHOFICINA PRESERVADA */
+
+    /* FR Motors: ações secundárias concentradas em Opções */
+    .ficha-options{position:relative;display:block;flex:0 0 auto;min-width:0;isolation:isolate}
+    .ficha-options > summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:8px 14px;white-space:nowrap;cursor:pointer;user-select:none}
+    .ficha-options > summary::-webkit-details-marker{display:none}
+    .ficha-options > summary:focus-visible{outline:3px solid #78bdc5;outline-offset:2px}
+    .ficha-options[open] .ficha-options-trigger{background:#eaf4f5;box-shadow:0 0 0 1px #97bec3;color:#145c67}
+    .options-chevron{font-size:13px;transition:transform .15s ease}
+    .ficha-options[open] .options-chevron{transform:rotate(180deg)}
+    .ficha-options-popover{position:absolute;top:calc(100% + 9px);right:0;z-index:90;width:min(245px,calc(100vw - 28px));padding:8px;background:#fff;border:1px solid #d7e2e7;border-radius:13px;box-shadow:0 14px 44px rgba(16,24,32,.17);display:grid;gap:3px}
+    .ficha-options-heading{padding:7px 11px 6px;color:#899ba4;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.09em}
+    .ficha-options-action{display:flex;align-items:center;justify-content:flex-start;gap:8px;text-align:left;width:100%;min-height:42px;padding:10px 11px;border:0;border-radius:8px;background:transparent;color:#2d4552;box-shadow:none;font-size:12px;font-weight:750;text-decoration:none;cursor:pointer}
+    .ficha-options-action:not(:disabled):hover,.ficha-options-action:focus-visible{background:#eff6f7;color:#126b76;transform:none;outline:none}
+    .ficha-options-action:disabled{cursor:not-allowed;opacity:.6}
+    .ficha-options .shoficina-btn[disabled]{display:flex!important;background:#f6f8f8!important;border:0!important;box-shadow:none!important}
+    @media(min-width:901px){
+      .brand-row{grid-template-columns:auto minmax(0,1fr) auto;column-gap:12px}
+      .module-nav{justify-self:center;min-width:0;gap:4px}
+      .module-nav a{padding:8px 11px;font-size:12px}
+      .top-commands{gap:7px}
+      .top-commands #newBtn{white-space:nowrap}
+      .top-commands #logoutBtn{display:none}
+    }
+    @media(max-width:900px){
+      .top-commands{grid-template-columns:minmax(0,.76fr) minmax(0,1.42fr) minmax(0,.9fr)!important;align-items:stretch}
+      .top-commands #toggleSidebarBtn,.top-commands #newBtn{grid-column:auto!important;min-width:0!important;width:100%!important}
+      .top-commands .ficha-options{grid-column:auto!important;display:block!important;width:100%;min-width:0}
+      .top-commands .ficha-options-trigger{display:flex!important;width:100%!important;min-height:46px!important;height:46px!important;padding:8px 9px!important;font-size:12px}
+      .ficha-options-popover{right:0}
+      .ficha-options .ficha-options-action{display:flex!important}
+    }
+    @media(max-width:370px){
+      .top-commands #toggleSidebarBtn,.top-commands #newBtn{font-size:11px!important;padding:8px 5px!important}
+      .ficha-options > summary{gap:3px}
+    }
+    @media print{.ficha-options{display:none!important}}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="./fr-header.css">
@@ -1420,16 +1457,23 @@
         <a class="active" href="./" aria-current="page">Ficha / O.S.</a>
         <a href="./orcamentos.html">Orçamentos</a>
         <a href="./dashboard.html">Dashboard</a>
+        <a href="./financeiro.html">Financeiro</a>
       </nav>
       <div class="top-actions">
         <div class="top-commands">
           <button class="btn" id="toggleSidebarBtn" type="button" aria-expanded="true" title="Recolher ordens de serviço">☰ O.S.</button>
           <button class="btn primary" id="newBtn">+ Nova ficha</button>
-          <button class="btn optional shoficina-btn" id="shoficinaImportBtn" type="button" disabled title="Integração com o SHOficina em preparação">Importar SHOficina</button>
-          <button class="btn optional" id="refreshBtn">Atualizar</button>
-          <button class="btn optional" id="backupBtn">Backup</button>
-          <label class="btn optional" for="restoreInput">Importar</label>
-          <input id="restoreInput" type="file" accept=".json,application/json" hidden />
+          <details id="fichaOptions" class="ficha-options">
+            <summary class="btn ficha-options-trigger" aria-label="Abrir opções da Ficha e O.S.">Opções <span aria-hidden="true" class="options-chevron">▾</span></summary>
+            <div class="ficha-options-popover" aria-label="Ações da Ficha e O.S.">
+              <div class="ficha-options-heading">Ferramentas</div>
+              <button class="ficha-options-action shoficina-btn" id="shoficinaImportBtn" type="button" disabled title="Integração com o SHOficina em preparação">Importar SHOficina</button>
+              <button class="ficha-options-action" id="refreshBtn" type="button">Atualizar</button>
+              <button class="ficha-options-action" id="backupBtn" type="button">Backup</button>
+              <label class="ficha-options-action" for="restoreInput" role="button" tabindex="0">Importar backup</label>
+              <input id="restoreInput" type="file" accept=".json,application/json" hidden />
+            </div>
+          </details>
           <button class="btn optional" id="logoutBtn">Sair</button>
         </div>
         <div class="top-status">
@@ -3070,5 +3114,38 @@ document.addEventListener('mousedown', e => {
 <!-- V4.4.78 · Técnicos no painel de Manutenções -->
 <!-- V4.4.79 · Resolve nomes dos técnicos sincronizados -->
 <!-- V4.5.13 · Corrige sobreposicao dos botoes de pecas no celular -->
+
+<script>
+/* Menu de ações secundárias: não altera os handlers originais dos botões. */
+(function(){
+  const details=document.getElementById('fichaOptions');
+  if(!details)return;
+  document.addEventListener('pointerdown',function(event){
+    if(details.open&&!details.contains(event.target))details.open=false;
+  });
+  document.addEventListener('keydown',function(event){
+    if(event.key==='Escape'&&details.open){
+      details.open=false;
+      details.querySelector('summary')?.focus();
+    }
+  });
+  details.querySelectorAll('.ficha-options-action').forEach(function(action){
+    action.addEventListener('click',function(){
+      if(action.disabled)return;
+      setTimeout(function(){details.open=false;},0);
+    });
+    if(action.tagName==='LABEL'){
+      action.addEventListener('keydown',function(event){
+        if(event.key==='Enter'||event.key===' '){
+          event.preventDefault();
+          document.getElementById('restoreInput')?.click();
+          details.open=false;
+        }
+      });
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
