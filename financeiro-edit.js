@@ -88,6 +88,7 @@ async function open(kind,id){
  if(!record){window.frFinanceUI?.showToast('Registro não encontrado. Atualize a página.',true);return}
  selected={kind,id,linked:false,locked:false};
  $('edit-feedback').textContent='';
+ $('edit-linked-notice').textContent='Este lançamento está vinculado à baixa de um boleto. É possível corrigir descrição, data e meio de pagamento. Para alterar valor, tipo ou fornecedor, exclua a baixa e registre o pagamento novamente.';
  $('edit-linked-notice').classList.add('hidden');
  resetDeleteConfirm();
  toggleFields(kind);
@@ -121,8 +122,6 @@ async function open(kind,id){
   if(selected.locked){
     $('edit-linked-notice').textContent='Esta compra possui parcelas pagas. Para corrigir ou excluir a compra, primeiro abra Movimentações e exclua as baixas correspondentes. Os boletos serão reabertos automaticamente.';
     $('edit-linked-notice').classList.remove('hidden');
-  }else{
-    $('edit-linked-notice').textContent='Este lançamento está vinculado à baixa de um boleto. É possível corrigir descrição, data e meio de pagamento. Para alterar valor, tipo ou fornecedor, exclua a baixa e registre o pagamento novamente.';
   }
   $('edit-save').disabled=selected.locked;
   $('edit-delete-start').disabled=selected.locked;
