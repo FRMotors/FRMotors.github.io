@@ -354,6 +354,21 @@ async function fetchAll(makeQuery,max=6000){
  }
  throw Error('Mais de '+max+' registros. Utilize intervalos menores.');
 }
+async function refreshHistory(){
+ const {data,error}=await db.from('fin_teste_importacoes')
+  .select('id,tipo,conta_nome,arquivo_nome,linhas_selecionadas,criado_em')
+  .order('criado_em',{ascending:false}).limit(50);
+ if(error)throw error;
+ const rows=data||[];
+ $('import-history-rows').innerHTML=rows.length?rows.map(r=>
+  '<tr><td>'+esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(r.criado_em)))+'</td>'+
+  '<td><span class="row-main">'+esc(r.arquivo_nome)+'</span></td>'+
+  '<td>'+esc(r.tipo==='banco'?'Extrato bancário':'Fatura do cartão')+'</td>'+
+  '<td>'+esc(r.conta_nome)+'</td>'+
+  '<td class="money">'+esc(r.linhas_selecionadas)+'</td></tr>').join(''):
+  '<tr><td colspan="5" class="empty">Ainda não há arquivos importados.</td></tr>';
+ $('import-history-count').textContent=rows.length+' arquivo(s) recente(s) · A mesma conta e o mesmo arquivo não geram lotes adicionais.';
+}
 async function refreshCards(){
  const all=await fetchAll(()=>db.from('fin_teste_cartao_lancamentos')
  .select('id,cartao_nome,data_lancamento,descricao,natureza,valor')
@@ -500,7 +515,7 @@ let pendingRefresh=null;
 async function refresh(){
  if(typeof db==='undefined'||!db)return;
  if(pendingRefresh)return pendingRefresh;
- pendingRefresh=Promise.allSettled([refreshCards(),refreshReconcile()])
+ pendingRefresh=Promise.allSettled([refreshCards(),refreshReconcile(),refreshHistory()])
   .then(results=>{
     const errors=results.filter(r=>r.status==='rejected').map(r=>r.reason?.message||'Erro de conexão');
     if(errors.length)notice('reconcile-status','Atualização parcial: '+errors.join('; '),true);
