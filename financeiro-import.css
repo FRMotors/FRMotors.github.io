@@ -1,0 +1,42 @@
+/* Importação financeira · ambiente corporativo FR Motors */
+.import-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.96fr);gap:17px;align-items:stretch}
+.import-source-picker{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.import-source-option{position:relative;display:grid;grid-template-columns:21px 1fr;column-gap:10px;row-gap:2px;align-content:start;align-items:center;min-height:86px;border:1px solid #dfe8ee;border-radius:11px;background:#fafcfd;padding:15px 13px;cursor:pointer}
+.import-source-option:hover{border-color:#9cbec6;background:#f6fcfc}
+.import-source-option:has(input:checked){border-color:#54abb1;box-shadow:0 0 0 2px #cdeceb;background:#f0fafa}
+.import-source-option input{position:absolute;top:11px;right:11px;accent-color:#0d838e;width:15px;height:15px}
+.import-source-option .icon{grid-row:1/span 2;color:#51808c;align-self:start;margin-top:2px}
+.import-source-option strong{color:#34495c;font-size:11.5px;padding-right:12px}
+.import-source-option small{grid-column:2;font-size:10px;color:#8899a5;line-height:1.5}
+.import-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:1px solid #eaf0f3;border-bottom:1px solid #eaf0f3}
+.import-summary>div{padding:15px 22px;border-right:1px solid #eaf0f3}
+.import-summary>div:last-child{border-right:0}
+.import-summary span{display:block;color:#8799a6;font-size:10px;font-weight:800;margin-bottom:5px}
+.import-summary strong{display:block;font-size:17px;color:#304b5d;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.import-preview-table{max-height:430px;overflow:auto}
+.import-preview-table .data-table{min-width:780px}
+.import-preview-table th{position:sticky;top:0;z-index:1}
+.import-preview-table input[type="checkbox"]{accent-color:#0d838e;width:16px;height:16px}
+.import-preview-table select{min-width:108px;border:1px solid #dde8ec;border-radius:7px;background:white;padding:6px;font-size:11px;color:#405264}
+.import-preview-table td{padding:10px 17px}
+.import-preview-table tr[data-excluded="true"]{opacity:.52;background:#f8f9fa}
+.import-bottom-bar{display:flex;align-items:center;justify-content:space-between;gap:17px;padding:17px 22px}
+.import-bottom-bar .info-note{margin:0;max-width:600px}
+.import-header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#import-file{padding:13px;border:1px dashed #c3d2db;border-radius:10px;background:#f8fbfc}
+#import-map-tip{margin:12px 0}
+#import-import-status{min-height:22px}
+#import-confirm{white-space:normal}
+.reconcile-valid{color:#16836d!important}
+.reconcile-invalid{color:#bd4d50!important}
+@media(max-width:1150px){.import-layout{grid-template-columns:1fr}}
+@media(max-width:760px){
+ .import-source-picker{grid-template-columns:1fr 1fr}
+ .import-summary{grid-template-columns:repeat(2,1fr)}
+ .import-summary>div{border-bottom:1px solid #edf2f4}
+ .import-summary>div:nth-child(2){border-right:0}
+ .import-summary>div:nth-child(3),.import-summary>div:nth-child(4){border-bottom:0}
+ .import-bottom-bar{align-items:stretch;flex-direction:column}
+ .import-bottom-bar button{width:100%}
+}
+@media(max-width:460px){.import-source-picker{grid-template-columns:1fr}.import-summary strong{font-size:15px}}
