@@ -143,18 +143,43 @@ async function fetchTransactions(from,to){
    .select('grupo,data_evento,descricao,valor,dados')
    .eq('lote_id',state.lote.id).eq('grupo',grupo)
    .gte('data_evento',from+'-01').lte('data_evento',lastDay(to))
-   .order('data_evento',{ascending:false}).limit(32);
+   .order('data_evento',{ascending:false}).limit(40);
   if(error)throw error;return data||[];
  };
- const [received,paid]=await Promise.all([fetch('entradas_fluxo'),fetch('saidas_fluxo')]);
+ const fetchExtra=async()=>{
+  const {data,error}=await db.from('fin_teste_excel_recebimentos_complementares')
+   .select('data_recebimento,descricao,cliente,categoria,conta,valor,linha_origem,aba_origem')
+   .eq('lote_id',state.lote.id)
+   .gte('data_recebimento',from+'-01').lte('data_recebimento',lastDay(to))
+   .order('data_recebimento',{ascending:false}).limit(40);
+  if(error)throw error;
+  return (data||[]).map(item=>({
+   grupo:'entradas_fluxo',data_evento:item.data_recebimento,
+   descricao:item.descricao,valor:item.valor,
+   fonte:'Contas a Receber',linha_origem:item.linha_origem,
+   dados:{categoria:item.categoria||'VENDAS',meio:'Boleto recebido · Itaú',saldo_inicial:false},
+   cliente:item.cliente
+  }));
+ };
+ const [received,paid,supplement]=await Promise.all([
+  fetch('entradas_fluxo'),fetch('saidas_fluxo'),fetchExtra()
+ ]);
  if(request!==transactionSerial)return;
- const records=[...received,...paid].sort((a,b)=>b.data_evento.localeCompare(a.data_evento)).slice(0,32);
+ const records=[...received,...paid,...supplement]
+  .sort((a,b)=>b.data_evento.localeCompare(a.data_evento)).slice(0,40);
  tbody.innerHTML=records.length?records.map(r=>{
   const isIn=r.grupo==='entradas_fluxo',isOpening=Boolean(r.dados?.saldo_inicial);
-  return '<tr><td>'+dateBR(r.data_evento)+'</td><td><strong>'+safe(r.descricao)+'</strong></td>'+
-   '<td><span class="hist-kind '+(isIn?'in':'out')+'">'+(isOpening?'Saldo de abertura':isIn?'Entrada':'Saída')+'</span></td>'+
-   '<td>'+safe(r.dados?.categoria||'Sem categoria')+'<small class="hist-subline">'+safe(r.dados?.meio||'Meio não indicado')+'</small></td>'+
-   '<td class="money '+(isIn?'hist-money-positive':'hist-money-negative')+'">'+(isIn?'+ ':'− ')+money(r.valor)+'</td></tr>';
+  const origin=r.fonte==='Contas a Receber'
+   ?'<small class="hist-subline">Contas a Receber · linha '+safe(r.linha_origem)+
+    ' · '+safe(r.cliente||'')+'</small>':'';
+  return '<tr><td>'+dateBR(r.data_evento)+'</td>'+
+   '<td><strong>'+safe(r.descricao)+'</strong>'+origin+'</td>'+
+   '<td><span class="hist-kind '+(isIn?'in':'out')+'">'+
+    (isOpening?'Saldo de abertura':isIn?'Entrada':'Saída')+'</span></td>'+
+   '<td>'+safe(r.dados?.categoria||'Sem categoria')+
+   '<small class="hist-subline">'+safe(r.dados?.meio||'Meio não indicado')+'</small></td>'+
+   '<td class="money '+(isIn?'hist-money-positive':'hist-money-negative')+'">'+
+   (isIn?'+ ':'− ')+money(r.valor)+'</td></tr>';
  }).join(''):'<tr><td colspan="5" class="hist-empty">Nenhuma movimentação neste período.</td></tr>';
 }
 function renderOther(){
