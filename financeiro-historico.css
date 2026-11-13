@@ -1,0 +1,56 @@
+
+/* FR Motors · Painéis financeiros de histórico isolado (Itaú e demais origens) */
+.hist-note{margin-bottom:18px}
+.hist-note p{line-height:1.6}
+.hist-filter-card{margin-bottom:17px}
+.hist-period{display:flex;align-items:flex-end;flex-wrap:wrap;gap:15px 20px}
+.hist-period label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:#617985;font-weight:750}
+.hist-period input[type=month]{border:1px solid #dbe6eb;border-radius:9px;background:#fff;padding:10px 13px;min-height:41px;color:#24475a;font-size:12px;min-width:165px}
+#hist-itau-period-note{color:#8196a1;font-size:11px;flex:1 1 190px;padding-bottom:9px}
+.hist-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0 18px}
+.hist-kpi{background:#fff;border:1px solid #e3eaef;border-radius:14px;padding:18px 18px 16px;min-width:0;box-shadow:0 3px 15px rgba(27,48,59,.025)}
+.hist-kpi-label{font-size:11px;letter-spacing:.012em;font-weight:760;color:#738894;display:block;margin-bottom:11px}
+.hist-kpi-value{display:block;white-space:nowrap;font-size:clamp(17px,1.6vw,26px);letter-spacing:-.045em;font-weight:850;color:#183c4a;line-height:1.2;font-variant-numeric:tabular-nums}
+.hist-kpi-value.negative{color:#b24d52}
+.hist-kpi-value.positive{color:#177a67}
+.hist-kpi-caption{font-size:10px;color:#8ba1aa;display:block;margin-top:9px;line-height:1.48}
+.hist-two-col{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;margin-bottom:18px}
+.hist-two-col .card{min-width:0}
+.hist-chart{min-height:240px;display:flex;align-items:stretch;padding:6px 0 0}
+.hist-chart-plot{display:flex;gap:10px;align-items:flex-end;width:100%;min-width:0;padding:12px 2px 0;border-bottom:1px solid #dfe9ee;height:228px}
+.hist-chart-month{display:flex;flex:1 1 0;min-width:0;align-items:center;flex-direction:column;justify-content:flex-end;height:100%;gap:7px}
+.hist-chart-bars{display:flex;flex:1 1 auto;align-items:flex-end;justify-content:center;gap:5px;width:100%;min-height:155px}
+.hist-bar{width:min(43%,30px);min-height:2px;border-radius:6px 6px 0 0;background:#188871;transition:height .16s ease;position:relative}
+.hist-bar.out{background:#c56d63}
+.hist-chart-label{font-size:10px;color:#738894;text-align:center;margin:0 0 7px;font-weight:650}
+.hist-category-list{display:flex;flex-direction:column;gap:11px}
+.hist-category-item{display:grid;gap:5px}
+.hist-category-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:#536a76}
+.hist-category-top strong{color:#274b5b;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hist-category-track{width:100%;height:7px;border-radius:999px;background:#edf1f3;overflow:hidden}
+.hist-category-fill{height:100%;border-radius:999px;background:#739fac}
+.hist-category-hint{font-size:10px;color:#8a9da6}
+.hist-table-card{margin-bottom:17px}
+.hist-table{width:100%;min-width:680px}
+.hist-table th{font-size:10px;white-space:nowrap}
+.hist-table td{font-size:11px;vertical-align:middle}
+.hist-table td.money{white-space:nowrap;font-variant-numeric:tabular-nums}
+.hist-table .hist-subline{display:block;margin-top:4px;font-size:10px;color:#93a3ab}
+.hist-table .hist-kind{display:inline-block;font-size:10px;color:#667d89;background:#eef3f5;border-radius:6px;padding:5px 8px;white-space:nowrap}
+.hist-table .hist-kind.in{background:#e5f5ef;color:#18816a}
+.hist-table .hist-kind.out{background:#fff1ee;color:#a95a54}
+.hist-money-positive{color:#16816b!important}
+.hist-money-negative{color:#a9494b!important}
+.hist-subnav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 19px;padding:6px;background:#eaf0f3;border:1px solid #dfe8ed;border-radius:13px;width:fit-content;max-width:100%}
+.hist-subtab{appearance:none;border:0;background:transparent;color:#516a79;font:750 12px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:38px;padding:9px 15px;border-radius:9px;cursor:pointer;transition:background .15s}
+.hist-subtab:hover{background:#dce8ed}
+.hist-subtab.active{background:#fff;color:#192f3e;box-shadow:0 2px 10px rgba(13,38,52,.08)}
+.hist-subtab:focus-visible,.hist-period input:focus-visible{outline:2px solid #4c97ab;outline-offset:2px}
+.hist-pane{min-width:0}
+.hist-pane[hidden],.view[hidden]{display:none!important}
+.hist-footnote{font-size:11px;color:#728794;line-height:1.6;margin:10px 0 22px;padding:12px 14px;border-radius:9px;background:#f4f8fa;border:1px solid #e1ebef}
+.hist-empty{padding:26px 12px;text-align:center;color:#8698a1;font-size:12px}
+.hist-note-strong{font-weight:850}
+@media(max-width:1220px){.hist-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.hist-two-col{grid-template-columns:1fr}}
+@media(max-width:720px){.hist-subnav{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.hist-subtab{padding:8px 6px}.hist-period input[type=month]{min-width:0;width:100%}.hist-period label{flex:1 1 130px}.hist-table{min-width:620px}.hist-chart-plot{gap:4px}.hist-chart-bars{gap:3px}}
+@media(max-width:440px){.hist-kpis{gap:8px}.hist-kpi{padding:14px 11px}.hist-kpi-value{font-size:17px}.hist-kpi-caption{font-size:9px}.hist-chart-label{font-size:9px}.hist-table{min-width:570px}}
