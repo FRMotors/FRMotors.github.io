@@ -196,3 +196,135 @@
 @media print {
   .ficha-responsive-topbar {display:none !important;}
 }
+
+/* V4.4.55 · Ações da Ficha/O.S. no próprio cabeçalho, acima do divisor */
+@media screen {
+  .ficha-responsive-topbar .system-spacer,
+  .ficha-responsive-topbar #mobileSystemLogoutBtn {
+    display:none !important; /* Sair está em Opções, sem duplicar o comando */
+  }
+  .ficha-responsive-topbar .ficha-header-actions {
+    margin:0 !important;
+    min-width:0;
+    align-items:center !important;
+    gap:8px !important;
+  }
+  .ficha-responsive-topbar .ficha-header-actions > .btn,
+  .ficha-responsive-topbar .ficha-header-actions .ficha-options-trigger {
+    min-height:38px !important;
+    height:38px !important;
+    padding:8px 11px !important;
+    display:inline-flex !important;
+    justify-content:center;
+    align-items:center;
+    white-space:nowrap;
+    font-size:12px;
+  }
+  .ficha-responsive-topbar .ficha-options-popover .ficha-signout {
+    border-top:1px solid #e3ebee;
+    border-radius:0 0 8px 8px;
+    margin-top:4px;
+    color:#944547;
+  }
+  .ficha-responsive-topbar .ficha-options-popover .ficha-signout:hover {
+    color:#a13d44;
+    background:#fff1f1;
+  }
+}
+@media screen and (min-width:901px) {
+  .ficha-responsive-topbar .system-topbar-inner {
+    gap:12px !important;
+  }
+  .ficha-responsive-topbar .ficha-header-actions {
+    display:flex !important;
+    flex:0 0 auto !important;
+    margin-left:auto !important;
+    justify-content:flex-end !important;
+    flex-wrap:nowrap !important;
+  }
+  #app {
+    margin-top:68px !important;
+  }
+  #app > .topbar {
+    padding:7px 0 4px !important;
+  }
+  #app > .topbar .brand-row {
+    min-height:22px !important;
+  }
+  #app > .topbar .top-actions {
+    height:auto !important;
+    justify-content:center !important;
+  }
+  #app > .topbar .top-status {
+    min-height:24px !important;
+  }
+}
+@media screen and (max-width:900px) {
+  /* Cabeçalho em fluxo normal: sua altura acompanha a navegação e as três ações.
+     Não sobrepõe a ficha, independentemente do tamanho do celular. */
+  body {padding-top:0 !important;}
+  .ficha-responsive-topbar {
+    position:sticky !important;
+    top:0 !important;
+    left:auto !important;
+    right:auto !important;
+    min-height:0 !important;
+    height:auto !important;
+    width:100% !important;
+  }
+  .ficha-responsive-topbar .system-topbar-inner {
+    min-height:0 !important;
+    height:auto !important;
+    padding:9px 12px !important;
+    align-items:center !important;
+    gap:8px !important;
+  }
+  .ficha-responsive-topbar .system-brand {
+    order:1 !important;
+    flex:1 1 100% !important;
+    min-width:0 !important;
+  }
+  .ficha-responsive-topbar .system-nav {
+    order:2 !important;
+    width:100% !important;
+    flex:1 1 100% !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:6px !important;
+    margin:0 !important;
+  }
+  .ficha-responsive-topbar .ficha-header-actions {
+    order:3 !important;
+    display:grid !important;
+    grid-template-columns:minmax(0,.85fr) minmax(0,1.3fr) minmax(0,.9fr) !important;
+    width:100% !important;
+    flex:1 1 100% !important;
+    gap:7px !important;
+    justify-content:stretch !important;
+    flex-wrap:nowrap !important;
+  }
+  .ficha-responsive-topbar .ficha-header-actions > .btn,
+  .ficha-responsive-topbar .ficha-header-actions .ficha-options-trigger {
+    display:flex !important;
+    min-width:0 !important;
+    width:100% !important;
+    min-height:42px !important;
+    height:42px !important;
+    padding:7px 8px !important;
+    font-size:12px !important;
+  }
+  .ficha-responsive-topbar .ficha-header-actions .ficha-options {
+    display:block !important;
+    min-width:0 !important;
+    grid-column:auto !important;
+    width:100% !important;
+  }
+  #app > .topbar {padding:6px 0 5px !important;}
+  #app > .topbar .brand-row {min-height:0 !important;}
+}
+@media screen and (max-width:360px) {
+  .ficha-responsive-topbar .ficha-header-actions > .btn,
+  .ficha-responsive-topbar .ficha-header-actions .ficha-options-trigger {
+    font-size:11px !important;
+    padding:6px 4px !important;
+  }
+}
