@@ -205,7 +205,7 @@
             <input id="import-file" type="file" accept=".csv,.ofx,.qfx,.xlsx,.xls,.pdf,text/csv,application/pdf">
           </label>
         </div>
-        <p class="info-note">Formatos: OFX/QFX, CSV, XLS/XLSX e PDF com texto selecionável. No extrato bancário, valores negativos são saídas e positivos são entradas, salvo se você inverter a configuração. PDFs de imagem ou formatos bancários incomuns podem exigir exportação em CSV ou OFX.</p>
+        <p class="info-note">Formatos: OFX/QFX, CSV, XLS/XLSX e PDF com texto selecionável, incluindo faturas Sicoob Visa Platinum com duas colunas. No extrato bancário, valores negativos são saídas e positivos são entradas, salvo se você inverter a configuração. PDFs de imagem ou formatos bancários incomuns podem exigir exportação em CSV ou OFX.</p>
         <div id="import-read-status" class="status" role="status"></div>
       </div>
     </section>
@@ -248,7 +248,7 @@
     </div>
     <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor (editável)</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
     <div class="import-bottom-bar">
-      <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação. Em lançamentos idênticos no mesmo dia, confira se são operações distintas.</span>
+      <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação. Em lançamentos idênticos no mesmo dia, confira se são operações distintas. Para o Sicoob, o subtotal de compras será comparado com o valor impresso na fatura antes de liberar a prévia.</span>
       <button type="button" id="import-confirm" class="btn btn-primary" disabled>Importar lançamentos selecionados</button>
     </div>
     <div id="import-save-status" class="status" role="status" style="padding:0 22px 18px"></div>
@@ -668,5 +668,6 @@ init();
 <script src="./financeiro-pro-ui.js?v=20261113cpf3"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="./financeiro-import.js?v=20261113cpf3" defer></script>
+<script src="./financeiro-sicoob.js?v=20261113sicoob1" defer></script>
+<script src="./financeiro-import.js?v=20261113sicoob1" defer></script>
 </body></html>
