@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261113imp1">
-<link rel="stylesheet" href="./financeiro-import.css?v=20261113cpf3">
-<link rel="stylesheet" href="./financeiro-faturas.css?v=20261113faturas4">
+<link rel="stylesheet" href="./financeiro-import.css?v=20261113payment2">
+<link rel="stylesheet" href="./financeiro-faturas.css?v=20261113payment2">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 </head>
 <body>
@@ -232,6 +232,13 @@
             <label>Ano para datas sem ano<input id="import-year" type="number" min="1990" max="2100" step="1" value="2026"></label>
           </div>
           <p class="info-note" id="import-map-tip">Confira as colunas antes de confirmar a importação.</p>
+          <div id="sicoob-payments-panel" class="sicoob-payments-panel hidden" aria-label="Pagamentos anteriores detectados no Sicoob">
+            <strong>Pagamentos identificados na própria fatura</strong>
+            <p>São créditos referentes a pagamentos anteriores, não estornos de compras. Salve essas referências para facilitar a conciliação com a fatura anterior, sem lançar outra saída no caixa.</p>
+            <div id="sicoob-payments-list" class="sicoob-payments-list"></div>
+            <button type="button" id="sicoob-save-payments" class="btn btn-teal">Guardar referências de pagamento</button>
+            <div id="sicoob-payments-status" class="status" role="status"></div>
+          </div>
           <button type="button" class="btn btn-teal" id="import-preview-button">Gerar prévia dos lançamentos</button>
         </div>
       </div>
@@ -307,6 +314,13 @@
               </label>
             </div>
             <button type="button" id="invoice-save-total" class="btn btn-teal" style="margin-top:12px">Confirmar total da fatura</button>
+            <div class="invoice-divider"></div>
+            <div class="invoice-document-evidence">
+              <label class="invoice-field-label" for="invoice-document-payment">Pagamento identificado na fatura do cartão</label>
+              <select id="invoice-document-payment"><option value="">Selecione um pagamento identificado no PDF</option></select>
+              <p id="invoice-document-hint" class="info-note">Esses pagamentos geralmente se referem à fatura anterior, não à fatura onde aparecem. Ao selecionar, preencheremos os dados para conferência, sem criar uma nova saída automaticamente.</p>
+              <button type="button" id="invoice-use-document" class="btn" disabled>Usar como referência de pagamento</button>
+            </div>
             <div class="invoice-divider"></div>
             <label class="invoice-field-label" for="invoice-bank-move">Selecionar uma saída do extrato bancário</label>
             <select id="invoice-bank-move"><option value="">Selecione um pagamento</option></select>
@@ -737,7 +751,7 @@ init();
 <script src="./financeiro-pro-ui.js?v=20261113cpf3"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="./financeiro-sicoob.js?v=20261113sicoob1" defer></script>
-<script src="./financeiro-import.js?v=20261113faturas3" defer></script>
-<script src="./financeiro-faturas.js?v=20261113faturas4" defer></script>
+<script src="./financeiro-sicoob.js?v=20261113sicoob2" defer></script>
+<script src="./financeiro-import.js?v=20261113payment2" defer></script>
+<script src="./financeiro-faturas.js?v=20261113payment2" defer></script>
 </body></html>
