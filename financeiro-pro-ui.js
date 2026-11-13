@@ -36,7 +36,7 @@ function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
 function selectView(next){
- if(!['overview','movements','payables','purchases','settings'].includes(next))next='overview';
+ if(!['overview','movements','payables','purchases','imports','settings'].includes(next))next='overview';
  view=next;
  document.querySelectorAll('[data-view-panel]').forEach(n=>{n.hidden=n.getAttribute('data-view-panel')!==next});
  document.querySelectorAll('[data-view]').forEach(n=>{
@@ -44,10 +44,11 @@ function selectView(next){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',payables:'Contas a pagar',purchases:'Compras',settings:'Configurações'};
+ const names={overview:'Visão geral',movements:'Movimentações',payables:'Contas a pagar',purchases:'Compras',imports:'Importações',settings:'Configurações'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
+ if(next==='imports')window.frImportUI?.refresh?.();
  window.scrollTo({top:0,behavior:'auto'});
 }
 function closeSidebar(){document.body.classList.remove('sidebar-open');byId('sidebar-overlay')?.setAttribute('hidden','');byId('menu-toggle')?.setAttribute('aria-expanded','false')}
