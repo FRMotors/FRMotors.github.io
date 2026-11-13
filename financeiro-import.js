@@ -13,7 +13,8 @@ function notice(id,message,bad=false){const el=$(id);if(!el)return;el.textConten
 function numMoney(value){
  let s=String(value??'').trim();
  if(!s)return null;
- const negative=/^-|\(.*\)|\bD(?:R|EBITO)?\b/i.test(s)||/-\s*$/.test(s);
+ const signCandidate=s.replace(/R\$/gi,'').trim();
+ const negative=/^-|\(.*\)|\bD(?:R|EBITO)?\b/i.test(signCandidate)||/-\s*$/.test(signCandidate);
  s=s.replace(/R\$|\s|\u00a0|[A-Za-z()]/g,'').replace(/[+\-]/g,'');
  if(!/^[0-9.,]+$/.test(s))return null;
  const comma=s.lastIndexOf(','),dot=s.lastIndexOf('.');
