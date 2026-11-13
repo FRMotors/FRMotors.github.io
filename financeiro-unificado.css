@@ -40,3 +40,16 @@
 .fin-unificado-review-detail{display:block;margin-top:7px;font-size:11px;line-height:1.45;color:#738892}
 .fin-unificado-validacoes>.info-note{font-size:11px;line-height:1.6}
 @media(max-width:600px){.fin-unificado-review-metrics{grid-template-columns:1fr!important}}
+
+/* Conciliação do Itaú limitada a PIX e débito de junho/2026 em diante. */
+.fin-unificado-itau{margin-top:18px;padding-top:16px;border-top:1px solid #e3ebee}
+.fin-unificado-itau h3{margin:0 0 9px;font-size:12px;font-weight:850;color:#365668}
+.fin-unificado-itau>.info-note{font-size:11px;line-height:1.6;margin:7px 0 12px}
+.fin-unificado-itau-metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin:12px 0 16px}
+.fin-unificado-itau-table{min-width:750px!important}
+.fin-unificado-itau-table td{font-size:11px;vertical-align:top}
+.fin-unificado-itau-table td strong{color:#2e4b5a}
+.fin-unificado-itau-id,.fin-unificado-itau-status{display:block;margin-top:5px;color:#81949c;font-size:10px;line-height:1.5}
+.fin-unificado-itau-status{max-width:265px;color:#637e8a}
+@media(max-width:1020px){.fin-unificado-itau-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.fin-unificado-itau-metrics{grid-template-columns:1fr}}
