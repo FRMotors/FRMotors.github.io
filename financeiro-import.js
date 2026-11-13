@@ -300,11 +300,14 @@ function buildPreview(){
   for(let i=0;i<rows.length;i++){
    const r=rows[i],result=formatChoice(r);
    if(result.error){invalid++;continue;}
-   const sourceId=current.special?current.meta[i]?.externalId:null;
+   // Identificador estável por arquivo e linha, não pelo valor interpretado.
+   // Corrigir R$ 50.000 para R$ 500 na prévia não cria uma nova identidade.
    const base=[selectedKind(),$('import-account').value.trim().toUpperCase(),
-      sourceId?'id:'+sourceId:['row',result.date,result.desc.toUpperCase(),Math.round(result.valor*100),result.nature].join('|')].join('|');
+      current.hash,'linha:'+(i+offset)].join('|');
    const n=seen.get(base)||0;seen.set(base,n+1);
-   preview.push({...result,base,occurrence:n,selected:result.defaultInclude,index:i+offset});
+   preview.push({...result,base,occurrence:n,selected:result.defaultInclude,
+      originalValue:result.valor,rawAmount:result.valor.toFixed(2).replace('.',','),
+      index:i+offset});
   }
   if(!preview.length)throw Error('Nenhuma transação válida. Revise as colunas e o formato das datas.');
   if(preview.length>1500)throw Error('Foram identificadas mais de 1.500 transações; selecione um período menor.');
@@ -321,21 +324,24 @@ function drawPreview(){
   '<td>'+esc(r.date.split('-').reverse().join('/'))+'</td><td><span class="row-main">'+esc(r.desc)+'</span><span class="row-sub">Linha '+r.index+'</span></td>'+
   '<td><select data-import-nature="'+i+'" aria-label="Natureza linha '+r.index+'">'+opts.map(([value,label])=>
     '<option value="'+value+'"'+(r.nature===value?' selected':'')+'>'+label+'</option>').join('')+'</select></td>'+
-  '<td class="money">'+cash(r.valor)+'</td></tr>').join('');
+  '<td class="money"><input class="import-edit-value" type="text" inputmode="decimal" data-import-value="'+i+'" aria-label="Valor em reais da linha '+r.index+'" value="'+esc(r.rawAmount)+'" title="Corrija o valor antes de importar" /></td></tr>').join('');
  updateCounts();
 }
 function updateCounts(){
  const rows=preview.filter(x=>x.selected);
- const net=rows.reduce((v,r)=>v+(['entrada','estorno'].includes(r.nature)?1:-1)*r.valor,0);
+ const amountInvalid=rows.filter(r=>r.valor===null||!Number.isFinite(r.valor)||r.valor<=0);
+ const net=rows.reduce((v,r)=>v+(['entrada','estorno'].includes(r.nature)?1:-1)*(r.valor||0),0);
  $('import-preview-count').textContent=rows.length+' selecionados';
  $('import-count-all').textContent=String(preview.length);
  $('import-count-selected').textContent=String(rows.length);
  $('import-count-skipped').textContent=String(invalid+preview.length-rows.length);
  $('import-total-selected').textContent=cash(selectedKind()==='banco'?net:-net);
- $('import-confirm').disabled=working||rows.length===0||rows.length>1500;
+ $('import-confirm').disabled=working||rows.length===0||rows.length>1500||amountInvalid.length>0;
  $('import-select-all').checked=preview.length>0&&rows.length===preview.length;
- $('import-preview-warning').textContent=rows.length?
-  'Somente estas '+rows.length+' transações serão gravadas; repetir o arquivo não recria os mesmos lançamentos.':
+ $('import-preview-warning').textContent=amountInvalid.length?
+  amountInvalid.length+' linha(s) com valor inválido. Corrija o valor antes de importar.':
+  rows.length?
+  'Confira cada valor. Para corrigir um PDF já importado, use Editar; reimportar o mesmo arquivo não substitui lançamentos anteriores.':
   'Selecione ao menos uma transação para importar.';
 }
 async function saveImport(){
@@ -343,6 +349,7 @@ async function saveImport(){
  try{
   const account=validateSource(),selected=preview.filter(x=>x.selected);
   if(!selected.length)throw Error('Selecione pelo menos uma transação.');
+  if(selected.some(r=>r.valor===null||!Number.isFinite(r.valor)||r.valor<=0))throw Error('Corrija os valores inválidos antes de importar.');
   working=true;$('import-confirm').disabled=true;
   notice('import-save-status','Calculando identificadores e conferindo duplicidades...');
   const payload=[];
@@ -556,8 +563,18 @@ function init(){
  $('import-confirm').addEventListener('click',saveImport);
  $('import-preview-body').addEventListener('change',event=>{
   const check=event.target.closest('[data-import-check]'),nature=event.target.closest('[data-import-nature]');
+  const amount=event.target.closest('[data-import-value]');
   if(check){const i=Number(check.dataset.importCheck);if(preview[i])preview[i].selected=check.checked;check.closest('tr').dataset.excluded=String(!check.checked)}
   if(nature){const i=Number(nature.dataset.importNature);if(preview[i])preview[i].nature=nature.value}
+  if(amount){
+    const i=Number(amount.dataset.importValue);
+    const n=numMoney(amount.value);
+    if(preview[i]){
+      preview[i].rawAmount=amount.value;
+      preview[i].valor=(n!==null&&n>0)?Math.abs(n):null;
+    }
+    amount.classList.toggle('import-invalid-value',n===null||n<=0);
+  }
   updateCounts();
  });
  $('import-select-all').addEventListener('change',e=>{
