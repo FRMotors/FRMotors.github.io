@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261113imp1">
-<link rel="stylesheet" href="./financeiro-import.css?v=20261113imp1">
+<link rel="stylesheet" href="./financeiro-import.css?v=20261113cpf3">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -237,7 +237,7 @@
   </div>
   <section class="card" style="margin-top:16px" id="import-preview-card" hidden>
     <div class="card-head">
-      <div><h2>3. Revisar e confirmar os lançamentos</h2><p>Desmarque saldos, totais de fatura e qualquer linha que não represente uma transação individual.</p></div>
+      <div><h2>3. Revisar e confirmar os lançamentos</h2><p>Desmarque saldos, totais de fatura e qualquer linha que não represente uma transação individual. Você também pode corrigir o valor de uma linha antes de importar, conferindo o documento original.</p></div>
       <div class="import-header-actions"><span id="import-preview-count" class="state">0 selecionados</span><button id="import-toggle-all" type="button" class="btn">Marcar / desmarcar todos</button></div>
     </div>
     <div class="import-summary">
@@ -246,7 +246,7 @@
       <div><span>Ignorados / inválidos</span><strong id="import-count-skipped">0</strong></div>
       <div><span>Total líquido selecionado</span><strong id="import-total-selected">R$ 0,00</strong></div>
     </div>
-    <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
+    <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor (editável)</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
     <div class="import-bottom-bar">
       <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação. Em lançamentos idênticos no mesmo dia, confira se são operações distintas.</span>
       <button type="button" id="import-confirm" class="btn btn-primary" disabled>Importar lançamentos selecionados</button>
@@ -665,8 +665,8 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261113imp1"></script>
+<script src="./financeiro-pro-ui.js?v=20261113cpf3"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="./financeiro-import.js?v=20261113imp8" defer></script>
+<script src="./financeiro-import.js?v=20261113cpf3" defer></script>
 </body></html>
