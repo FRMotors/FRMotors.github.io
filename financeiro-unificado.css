@@ -33,3 +33,10 @@
 .fin-unificado-bottom{flex-direction:column;align-items:stretch}
 .fin-unificado-bottom button{width:100%}
 }
+
+.fin-unificado-validacoes{margin-top:16px;border-top:1px solid #e4ebee;padding-top:17px}
+.fin-unificado-validacoes h3{margin:0 0 9px;font-weight:850;font-size:12px;color:#365668}
+.fin-unificado-review-metrics{margin:10px 0!important}
+.fin-unificado-review-detail{display:block;margin-top:7px;font-size:11px;line-height:1.45;color:#738892}
+.fin-unificado-validacoes>.info-note{font-size:11px;line-height:1.6}
+@media(max-width:600px){.fin-unificado-review-metrics{grid-template-columns:1fr!important}}
