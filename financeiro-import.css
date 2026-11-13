@@ -45,3 +45,12 @@
 .import-edit-value:focus{outline:2px solid #82cace;outline-offset:1px}
 .import-edit-value.import-invalid-value{border-color:#c54a54;background:#fff4f4}
 .review-badge{background:#fff3e1;color:#945a22;font-weight:800;padding:3px 7px;border-radius:6px;font-size:10px}
+
+.sicoob-payments-panel{margin:13px 0;padding:15px;border:1px solid #cfe4e8;background:#f4fafb;border-radius:10px;color:#34556a}
+.sicoob-payments-panel>strong{display:block;font-size:12px;margin-bottom:7px}
+.sicoob-payments-panel>p{font-size:11px;line-height:1.55;color:#54717e;margin:0 0 9px}
+.sicoob-payments-list{display:grid;gap:6px;margin:10px 0}
+.sicoob-payment-item{display:grid;grid-template-columns:95px minmax(0,1fr) 106px;gap:10px;align-items:center;padding:9px 11px;border:1px solid #deedf0;background:#fff;border-radius:7px;font-size:10.5px}
+.sicoob-payment-item span:nth-child(2){overflow-wrap:anywhere}
+.sicoob-payment-item strong{text-align:right;white-space:nowrap}
+@media(max-width:520px){.sicoob-payment-item{grid-template-columns:75px minmax(0,1fr);gap:5px}.sicoob-payment-item strong{grid-column:2;justify-self:start;text-align:left}}
