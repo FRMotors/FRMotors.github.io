@@ -32,6 +32,14 @@ function dateISO(value,format='dmy',yearHint=new Date().getFullYear()){
  if(value instanceof Date&&!Number.isNaN(value.valueOf()))return new Date(Date.UTC(value.getFullYear(),value.getMonth(),value.getDate())).toISOString().slice(0,10);
  let s=String(value??'').trim();
  if(!s)return null;
+ // Datas seriais de planilhas Excel no sistema de datas de 1900.
+ if(/^\\d{5}(?:\\.\\d+)?$/.test(s)){
+  const serial=Math.floor(Number(s));
+  if(serial>=20000&&serial<=90000){
+   const d=new Date(Date.UTC(1899,11,30)+serial*86400000);
+   return d.toISOString().slice(0,10);
+  }
+ }
  let y,m,d;
  if(/^\d{4}-\d{2}-\d{2}/.test(s)){[y,m,d]=s.slice(0,10).split('-').map(Number)}
  else if(/^\d{8}(?:\d|$)/.test(s)&&Number(s.slice(0,4))>=1990&&Number(s.slice(0,4))<=2100){
