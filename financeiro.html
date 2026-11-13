@@ -210,7 +210,7 @@
         <div class="callout hist-note">
           <span class="icon" data-icon="shield"></span>
           <div><strong>Leitura somente do histórico do Itaú.</strong>
-            <p>Os saldos apresentados são cálculos sobre o Excel importado, não saldos certificados pelo banco. O saldo inicial é separado das receitas. As três conciliações PIX já realizadas reaproveitam saídas existentes no Fluxo de Caixa, sem gerar despesa adicional.</p>
+            <p>Os saldos apresentados reproduzem o cálculo do Excel, mas não são comprovantes de saldo bancário. As entradas agora incluem Lançamentos e 11 boletos TOPLINE recebidos na aba Contas a Receber (R$ 11.345,70), antes omitidos no arquivo unificado. O saldo inicial é separado das receitas. As três conciliações PIX reaproveitam saídas existentes, sem duplicar pagamentos.</p>
           </div>
         </div>
         <div class="card hist-filter-card">
@@ -246,7 +246,7 @@
           </table></div>
         </section>
         <section class="card hist-table-card">
-          <div class="card-head"><div><h2>Últimas movimentações do período</h2><p>Detalhamento consultado diretamente no histórico de entradas e saídas do Itaú</p></div></div>
+          <div class="card-head"><div><h2>Últimas movimentações do período</h2><p>Lançamentos, pagamentos e recebimentos da aba Contas a Receber (TOPLINE)</p></div></div>
           <div class="table-wrap"><table class="data-table hist-table">
             <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria / Meio</th><th class="money">Valor</th></tr></thead>
             <tbody id="hist-itau-transactions"></tbody>
@@ -967,5 +967,5 @@ init();
 <script src="./financeiro-import.js?v=20261113paid3" defer></script>
 <script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
 <script src="./financeiro-unificado.js?v=20261113conciliado2" defer></script>
-<script src="./financeiro-historico.js?v=20261113hist2" defer></script>
+<script src="./financeiro-historico.js?v=20261113receber1" defer></script>
 </body></html>
