@@ -5,6 +5,7 @@
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261113imp1">
 <link rel="stylesheet" href="./financeiro-import.css?v=20261113cpf3">
+<link rel="stylesheet" href="./financeiro-faturas.css?v=20261113faturas1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -275,6 +276,48 @@
       </div>
     </section>
   </div>
+  <section class="card" id="invoice-settlement-panel" style="margin-top:17px" aria-labelledby="invoice-settlement-title">
+    <div class="card-head">
+      <div>
+        <h2 id="invoice-settlement-title">Faturas de cartão e pagamentos</h2>
+        <p>Controle o valor total da fatura e vincule uma saída bancária à quitação, sem criar um estorno ou uma despesa adicional.</p>
+      </div>
+      <span class="state">Conciliação</span>
+    </div>
+    <div class="card-body">
+      <div class="invoice-grid">
+        <div>
+          <h3 class="invoice-subheading">Faturas importadas</h3>
+          <div class="invoice-list" id="invoice-list"><p class="info-note">Abra Importações para consultar as faturas.</p></div>
+          <p class="info-note">O valor das compras importadas pode ser diferente do total da fatura por causa de juros, saldos anteriores e créditos. Confirme o total no documento.</p>
+        </div>
+        <div class="invoice-editor">
+          <h3 class="invoice-subheading">Conciliação da fatura selecionada</h3>
+          <div id="invoice-empty" class="info-note">Selecione uma fatura à esquerda para configurar o total e vincular pagamentos.</div>
+          <div id="invoice-detail" class="hidden">
+            <strong id="invoice-name" class="row-main">Fatura selecionada</strong>
+            <div id="invoice-value-status" class="invoice-value-status"></div>
+            <div class="fields">
+              <label>Valor total da fatura (R$)
+                <input id="invoice-total" type="number" min="0.01" step="0.01" placeholder="Confirme no PDF" required>
+              </label>
+              <label>Data de vencimento
+                <input id="invoice-due-date" type="date">
+              </label>
+            </div>
+            <button type="button" id="invoice-save-total" class="btn btn-teal" style="margin-top:12px">Confirmar total da fatura</button>
+            <div class="invoice-divider"></div>
+            <label class="invoice-field-label" for="invoice-bank-move">Saída bancária importada (sem vínculo anterior)</label>
+            <select id="invoice-bank-move"><option value="">Selecione um pagamento</option></select>
+            <button type="button" id="invoice-apply-bank" class="btn btn-primary" style="margin-top:12px" disabled>Vincular pagamento da fatura</button>
+            <div class="invoice-payments" id="invoice-payments"></div>
+            <p class="info-note">Só entram aqui saídas do extrato bancário. Compras do cartão continuam separadas e não são lançadas outra vez no caixa.</p>
+            <div class="status" id="invoice-message" role="status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
   <section class="card" style="margin-top:17px">
     <div class="card-head"><div><h2>Histórico de arquivos importados</h2><p>Controle dos extratos e faturas recebidos no ambiente de testes, com identificação por arquivo.</p></div></div>
     <div class="table-wrap"><table class="data-table"><thead><tr><th>Importado em</th><th>Arquivo</th><th>Origem</th><th>Conta / cartão</th><th class="money">Selecionados</th></tr></thead>
@@ -670,4 +713,5 @@ init();
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113sicoob1" defer></script>
 <script src="./financeiro-import.js?v=20261113sicoob1" defer></script>
+<script src="./financeiro-faturas.js?v=20261113faturas1" defer></script>
 </body></html>
