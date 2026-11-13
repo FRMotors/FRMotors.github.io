@@ -5,8 +5,8 @@ const $=id=>document.getElementById(id);
 const format=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateBR=s=>s?String(s).slice(0,10).split('-').reverse().join('/'):'Não informado';
-let rows={imports:[],faturas:[],payments:[],cardMoves:[],bank:[],boletoLinks:[]};
-let selected=null,busy=false,refreshing=null,manualRequestKey=null;
+let rows={imports:[],faturas:[],payments:[],cardMoves:[],bank:[],boletoLinks:[],documents:[]};
+let selected=null,busy=false,refreshing=null,manualRequestKey=null,documentUsed=null;
 function say(text,bad=false){
  const el=$('invoice-message');if(!el)return;
  el.textContent=text;el.className='status '+(bad?'bad':'ok');
@@ -65,6 +65,15 @@ function detail(){
  $('invoice-value-status').innerHTML=badge(s)+
   (s.i?'<span>Total confirmado: <b>'+format(s.total)+'</b> · Pago: <b>'+format(s.paid)+'</b> · Restante: <b>'+format(Math.max(0,s.remaining))+'</b></span>':
     '<span>Confirme o valor total da fatura antes de conciliar pagamentos. Compras do cartão não correspondem necessariamente ao total devido.</span>');
+ const docSelect=$('invoice-document-payment'),oldDoc=docSelect.value;
+ docSelect.replaceChildren(new Option('Selecione o valor que aparece na fatura',''),
+  ...rows.documents.map(doc=>{
+   const origin=rows.imports.find(i=>i.id===doc.importacao_id);
+   return new Option(dateBR(doc.data_pagamento)+' · '+format(doc.valor)+' · '+
+    (origin?.conta_nome||'Cartão')+' · '+doc.descricao.slice(0,42),doc.id);
+  }));
+ if(rows.documents.some(d=>d.id===oldDoc))docSelect.value=oldDoc;
+ updateDocumentButton();
  const bankRoot=$('invoice-bank-move'),prev=bankRoot.value;
  const unavailable=new Set([...rows.boletoLinks.map(x=>x.movimento_id),...rows.payments.map(x=>x.movimento_id)]);
  const candidates=rows.bank.filter(x=>!unavailable.has(x.id));
@@ -101,12 +110,48 @@ function detail(){
  }
  updateButton();
 }
+function updateDocumentButton(){
+ const source=rows.documents.find(x=>x.id===$('invoice-document-payment').value);
+ const target=rows.imports.find(x=>x.id===selected);
+ const sourceInvoice=source?rows.imports.find(x=>x.id===source.importacao_id):null;
+ const sameInvoice=Boolean(source&&source.importacao_id===selected);
+ const otherCard=Boolean(source&&target&&sourceInvoice&&
+  sourceInvoice.conta_nome.trim().toLowerCase()!==target.conta_nome.trim().toLowerCase());
+ const button=$('invoice-use-document');
+ button.disabled=busy||!source||!invoiceFor(selected)||sameInvoice||otherCard;
+ const hint=$('invoice-document-hint');
+ if(!source){
+  hint.textContent='Selecione um crédito identificado na fatura do cartão. Pagamentos exibidos em uma fatura geralmente correspondem à anterior; não criaremos uma saída automaticamente.';
+ }else if(sameInvoice){
+  hint.textContent='Atenção: este pagamento aparece NESTA fatura e normalmente quitou a ANTERIOR. Selecione a fatura anterior correspondente para aproveitá-lo. Não é um estorno nem um pagamento da fatura atual.';
+ }else if(otherCard){
+  hint.textContent='A referência pertence a outro cartão. Selecione uma fatura anterior do mesmo cartão.';
+ }else if(!invoiceFor(selected)){
+  hint.textContent='Confirme o valor total da fatura de destino antes de aproveitar esta referência.';
+ }else{
+  hint.textContent='Referência de '+format(source.valor)+' em '+dateBR(source.data_pagamento)+
+   '. Clique em Usar como referência e confirme o pagamento realizado. Ainda não foi registrada uma saída bancária.';
+ }
+}
+function useDocumentReference(){
+ const source=rows.documents.find(x=>x.id===$('invoice-document-payment').value);
+ if(!source||$('invoice-use-document').disabled)return;
+ $('invoice-manual-date').value=source.data_pagamento;
+ $('invoice-manual-amount').value=Number(source.valor).toFixed(2);
+ $('invoice-manual-method').value='boleto';
+ documentUsed=source.id;
+ manualRequestKey=source.id; // idempotência entre seleções e tentativas repetidas
+ updateButton();
+ say('Dados de pagamento preenchidos a partir do PDF. Confira se realmente quitou esta fatura anterior e confirme abaixo. Nenhum lançamento foi criado ainda.');
+ $('invoice-register-manual').scrollIntoView({block:'nearest',behavior:'smooth'});
+}
 function updateButton(){
  if(!$('invoice-apply-bank'))return;
  const s=selected?stats(selected):null;
  const move=rows.bank.find(b=>b.id===$('invoice-bank-move').value);
  const enough=Boolean(s?.i&&move&&s.remaining>0.005&&Math.round(Number(move.valor)*100)<=Math.round(s.remaining*100));
  $('invoice-apply-bank').disabled=busy||!enough;
+ updateDocumentButton();
  const manualAmount=Number($('invoice-manual-amount')?.value);
  const manualCents=Math.round(manualAmount*100);
  const manualValid=Boolean(s?.i&&$('invoice-manual-date').value&&
@@ -122,7 +167,7 @@ async function refresh(){
  if(typeof db==='undefined'||!db||!$('invoice-list'))return;
  if(refreshing)return refreshing;
  refreshing=(async()=>{
-  const [imports,faturas,payments,cardMoves,allBankMoves,boletoLinks]=await Promise.all([
+  const [imports,faturas,payments,cardMoves,allBankMoves,boletoLinks,documents]=await Promise.all([
    getRows(()=>db.from('fin_teste_importacoes').select('id,conta_nome,arquivo_nome,criado_em')
     .eq('tipo','cartao').order('criado_em',{ascending:false}).order('id',{ascending:false})),
    getRows(()=>db.from('fin_teste_faturas').select('id,importacao_id,valor_total,vencimento').order('criado_em',{ascending:false})),
@@ -131,11 +176,14 @@ async function refresh(){
    getRows(()=>db.from('fin_teste_movimentos').select('id,descricao,valor,data_movimento,referencia_cliente,tipo,estado')
     .eq('tipo','saida').eq('estado','confirmado')
     .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
-   getRows(()=>db.from('fin_teste_vinculos').select('movimento_id').order('id',{ascending:false}))
+   getRows(()=>db.from('fin_teste_vinculos').select('movimento_id').order('id',{ascending:false})),
+   getRows(()=>db.from('fin_teste_pagamentos_informados_cartao')
+    .select('id,importacao_id,data_pagamento,descricao,valor')
+    .order('data_pagamento',{ascending:false}).order('id',{ascending:false}))
   ]);
   const bank=allBankMoves.filter(m=>m.referencia_cliente?.startsWith('extrato:')||
     m.referencia_cliente?.startsWith('fatura_manual:'));
-  rows={imports,faturas,payments,cardMoves,bank,boletoLinks};
+  rows={imports,faturas,payments,cardMoves,bank,boletoLinks,documents};
   if(selected&&!imports.some(x=>x.id===selected))selected=null;
   if(!selected&&imports.length)selected=imports[0].id;
   detail();
@@ -156,6 +204,14 @@ async function registerManualPayment(){
   say('Confira a data e o valor pago. Ele não pode superar o saldo restante da fatura.',true);
   return;
  }
+ if(documentUsed){
+  const source=rows.documents.find(x=>x.id===documentUsed);
+  if(!source||source.importacao_id===selected||
+    Math.round(Number(source.valor)*100)!==cents||source.data_pagamento!==date){
+   say('A referência do PDF foi modificada ou pertence à própria fatura. Selecione novamente o pagamento correto.',true);
+   return;
+  }
+ }
  if(!window.confirm('Confirma que este pagamento de '+format(amount)+
    ' já foi realizado? Isso registrará uma saída no caixa de TESTES e vinculará à fatura.'))return;
  if(!manualRequestKey)manualRequestKey=crypto.randomUUID();
@@ -170,6 +226,7 @@ async function registerManualPayment(){
   });
   if(error)throw error;
   manualRequestKey=null;
+  documentUsed=null;
   await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve()]);
   say(data?.status==='paga'?
     'Fatura quitada com pagamento manual. A saída foi registrada uma única vez no caixa de testes.':
@@ -228,14 +285,25 @@ function init(){
  $('invoice-list').addEventListener('click',e=>{
   const t=e.target.closest('[data-select-invoice]');
   if(!t)return;
-  if(selected!==t.dataset.selectInvoice)manualRequestKey=null;
+  if(selected!==t.dataset.selectInvoice){manualRequestKey=null;documentUsed=null;}
   selected=t.dataset.selectInvoice;detail();say('');
  });
  $('invoice-save-total').addEventListener('click',saveTotal);
+ $('invoice-document-payment').addEventListener('change',()=>{documentUsed=null;manualRequestKey=null;updateDocumentButton()});
+ $('invoice-use-document').addEventListener('click',useDocumentReference);
  $('invoice-apply-bank').addEventListener('click',settle);
  $('invoice-register-manual').addEventListener('click',registerManualPayment);
  ['invoice-manual-amount','invoice-manual-date','invoice-manual-method'].forEach(id=>{
-  $(id).addEventListener(id==='invoice-manual-amount'?'input':'change',updateButton);
+  $(id).addEventListener(id==='invoice-manual-amount'?'input':'change',()=>{
+   if(documentUsed){
+    const source=rows.documents.find(x=>x.id===documentUsed);
+    if(source&&(Number($('invoice-manual-amount').value)!==Number(source.valor)||
+       $('invoice-manual-date').value!==source.data_pagamento)){
+      documentUsed=null;manualRequestKey=null;
+    }
+   }
+   updateButton();
+  });
  });
  $('invoice-go-import').addEventListener('click',()=>{
   const radio=document.querySelector('input[name="import-kind"][value="banco"]');
