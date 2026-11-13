@@ -6,7 +6,7 @@ const format=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'})
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateBR=s=>s?String(s).slice(0,10).split('-').reverse().join('/'):'Não informado';
 let rows={imports:[],faturas:[],payments:[],cardMoves:[],bank:[],boletoLinks:[]};
-let selected=null,busy=false,refreshing=null;
+let selected=null,busy=false,refreshing=null,manualRequestKey=null;
 function say(text,bad=false){
  const el=$('invoice-message');if(!el)return;
  el.textContent=text;el.className='status '+(bad?'bad':'ok');
@@ -68,6 +68,11 @@ function detail(){
  const bankRoot=$('invoice-bank-move'),prev=bankRoot.value;
  const unavailable=new Set([...rows.boletoLinks.map(x=>x.movimento_id),...rows.payments.map(x=>x.movimento_id)]);
  const candidates=rows.bank.filter(x=>!unavailable.has(x.id));
+ bankRoot.disabled=!candidates.length;
+ $('invoice-bank-empty').hidden=candidates.length>0;
+ $('invoice-bank-empty').textContent=candidates.length?
+  '':
+  'Nenhuma saída bancária disponível. Importe um extrato bancário ou registre abaixo um pagamento já realizado. Pagamentos vinculados a outros compromissos não aparecem nesta lista.';
  bankRoot.replaceChildren(new Option('Selecione uma saída do extrato',''),
   ...candidates.map(m=>new Option(dateBR(m.data_movimento)+' · '+m.descricao.slice(0,45)+' · '+format(m.valor),m.id)));
  if(candidates.some(m=>m.id===prev))bankRoot.value=prev;
@@ -88,6 +93,12 @@ function detail(){
    line.append(label,button);payRoot.append(line);
   }
  }
+ const amount=$('invoice-manual-amount');
+ if(document.activeElement!==amount)amount.value=s.i&&s.remaining>0?Number(s.remaining).toFixed(2):'';
+ if(!$('invoice-manual-date').value){
+  const d=new Date();
+  $('invoice-manual-date').value=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ }
  updateButton();
 }
 function updateButton(){
@@ -96,6 +107,13 @@ function updateButton(){
  const move=rows.bank.find(b=>b.id===$('invoice-bank-move').value);
  const enough=Boolean(s?.i&&move&&s.remaining>0.005&&Math.round(Number(move.valor)*100)<=Math.round(s.remaining*100));
  $('invoice-apply-bank').disabled=busy||!enough;
+ const manualAmount=Number($('invoice-manual-amount')?.value);
+ const manualCents=Math.round(manualAmount*100);
+ const manualValid=Boolean(s?.i&&$('invoice-manual-date').value&&
+  Number.isSafeInteger(manualCents)&&manualCents>0&&
+  Math.abs(manualAmount*100-manualCents)<0.00001&&
+  s.remaining>0.005&&manualCents<=Math.round(s.remaining*100));
+ $('invoice-register-manual').disabled=busy||!manualValid;
  if(!busy&&s?.i&&move&&!enough&&Math.round(Number(move.valor)*100)>Math.round(s.remaining*100)){
   say('A saída escolhida supera o saldo da fatura. Confira se o valor total do PDF está correto.',true);
  }
@@ -104,17 +122,19 @@ async function refresh(){
  if(typeof db==='undefined'||!db||!$('invoice-list'))return;
  if(refreshing)return refreshing;
  refreshing=(async()=>{
-  const [imports,faturas,payments,cardMoves,bank,boletoLinks]=await Promise.all([
+  const [imports,faturas,payments,cardMoves,allBankMoves,boletoLinks]=await Promise.all([
    getRows(()=>db.from('fin_teste_importacoes').select('id,conta_nome,arquivo_nome,criado_em')
     .eq('tipo','cartao').order('criado_em',{ascending:false}).order('id',{ascending:false})),
    getRows(()=>db.from('fin_teste_faturas').select('id,importacao_id,valor_total,vencimento').order('criado_em',{ascending:false})),
    getRows(()=>db.from('fin_teste_fatura_pagamentos').select('id,fatura_id,movimento_id,valor_aplicado').order('criado_em',{ascending:false})),
    getRows(()=>db.from('fin_teste_cartao_lancamentos').select('importacao_id,natureza,valor').order('id',{ascending:false})),
    getRows(()=>db.from('fin_teste_movimentos').select('id,descricao,valor,data_movimento,referencia_cliente,tipo,estado')
-    .eq('tipo','saida').eq('estado','confirmado').like('referencia_cliente','extrato:%')
+    .eq('tipo','saida').eq('estado','confirmado')
     .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
    getRows(()=>db.from('fin_teste_vinculos').select('movimento_id').order('id',{ascending:false}))
   ]);
+  const bank=allBankMoves.filter(m=>m.referencia_cliente?.startsWith('extrato:')||
+    m.referencia_cliente?.startsWith('fatura_manual:'));
   rows={imports,faturas,payments,cardMoves,bank,boletoLinks};
   if(selected&&!imports.some(x=>x.id===selected))selected=null;
   if(!selected&&imports.length)selected=imports[0].id;
@@ -122,6 +142,42 @@ async function refresh(){
  })().catch(e=>{say('Não foi possível atualizar faturas: '+e.message,true);throw e})
  .finally(()=>{refreshing=null});
  return refreshing;
+}
+async function registerManualPayment(){
+ if(busy||!selected)return;
+ const s=stats(selected);
+ if(!s.i){say('Confirme primeiro o valor total da fatura.',true);return;}
+ const amount=Number($('invoice-manual-amount').value);
+ const cents=Math.round(amount*100);
+ const date=$('invoice-manual-date').value;
+ const method=$('invoice-manual-method').value;
+ if(!date||!Number.isSafeInteger(cents)||cents<=0||
+    Math.abs(amount*100-cents)>0.00001||cents>Math.round(s.remaining*100)){
+  say('Confira a data e o valor pago. Ele não pode superar o saldo restante da fatura.',true);
+  return;
+ }
+ if(!window.confirm('Confirma que este pagamento de '+format(amount)+
+   ' já foi realizado? Isso registrará uma saída no caixa de TESTES e vinculará à fatura.'))return;
+ if(!manualRequestKey)manualRequestKey=crypto.randomUUID();
+ busy=true;updateButton();
+ try{
+  const {data,error}=await db.rpc('fin_teste_registrar_pagamento_fatura',{
+   p_fatura:s.i.id,
+   p_data:date,
+   p_valor:cents/100,
+   p_meio:method,
+   p_chave:manualRequestKey
+  });
+  if(error)throw error;
+  manualRequestKey=null;
+  await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve()]);
+  say(data?.status==='paga'?
+    'Fatura quitada com pagamento manual. A saída foi registrada uma única vez no caixa de testes.':
+    'Pagamento manual vinculado. Falta pagar '+format(data?.saldo_restante)+'.');
+  window.frFinanceUI?.showToast('Pagamento registrado e conciliado.');
+ }catch(e){
+  say('Não foi possível registrar o pagamento: '+e.message,true);
+ }finally{busy=false;updateButton()}
 }
 async function saveTotal(){
  if(!selected||busy)return;
@@ -172,10 +228,22 @@ function init(){
  $('invoice-list').addEventListener('click',e=>{
   const t=e.target.closest('[data-select-invoice]');
   if(!t)return;
+  if(selected!==t.dataset.selectInvoice)manualRequestKey=null;
   selected=t.dataset.selectInvoice;detail();say('');
  });
  $('invoice-save-total').addEventListener('click',saveTotal);
  $('invoice-apply-bank').addEventListener('click',settle);
+ $('invoice-register-manual').addEventListener('click',registerManualPayment);
+ ['invoice-manual-amount','invoice-manual-date','invoice-manual-method'].forEach(id=>{
+  $(id).addEventListener(id==='invoice-manual-amount'?'input':'change',updateButton);
+ });
+ $('invoice-go-import').addEventListener('click',()=>{
+  const radio=document.querySelector('input[name="import-kind"][value="banco"]');
+  if(radio&&!radio.checked){radio.checked=true;radio.dispatchEvent(new Event('change',{bubbles:true}));}
+  const file=$('import-file');
+  file?.scrollIntoView({behavior:'smooth',block:'center'});
+  file?.click();
+ });
  $('invoice-bank-move').addEventListener('change',updateButton);
  $('invoice-payments').addEventListener('click',e=>{
   const t=e.target.closest('[data-unlink-move]');
