@@ -189,7 +189,7 @@ async function carregarConferenciaItau(loteId){
  const tbody=$('fin-unificado-itau-linhas');
  if(!summary||!tbody||!loteId)return;
  const {data,error}=await db.from('fin_teste_excel_pix_debito_itau')
-   .select('linha_excel,descricao,data_evento,mes_referencia,valor,meio_pagamento,situacao_analise,quantidade_candidatos,linha_fluxo_candidata,data_fluxo_candidata,diferenca_dias')
+   .select('linha_excel,descricao,data_evento,mes_referencia,valor,meio_pagamento,situacao_analise,quantidade_candidatos,linha_fluxo_candidata,data_fluxo_candidata,diferenca_dias,linha_fluxo_conciliada,data_fluxo_conciliada,criterio_conciliacao')
    .eq('lote_id',loteId).order('linha_excel',{ascending:true});
  if(error){
    summary.textContent='Não foi possível consultar o recorte do Itaú: '+error.message;
@@ -197,9 +197,12 @@ async function carregarConferenciaItau(loteId){
    return;
  }
  const rows=data||[];
+
  const inScope=rows.filter(r=>r.data_evento&&r.data_evento>='2026-06-01');
  const outside=rows.filter(r=>r.situacao_analise==='fora_recorte');
  const undated=rows.filter(r=>r.situacao_analise==='sem_data_exata');
+ const reconciled=inScope.filter(r=>r.situacao_analise==='conciliado_itau');
+ const otherBank=inScope.filter(r=>r.situacao_analise==='outro_banco');
  const candidates=inScope.filter(r=>r.situacao_analise==='candidato_nao_confirmado');
  const notFound=inScope.filter(r=>r.situacao_analise==='sem_correspondencia');
  const total=arr=>arr.reduce((sum,r)=>sum+Math.round(Number(r.valor)*100),0)/100;
@@ -208,30 +211,48 @@ async function carregarConferenciaItau(loteId){
   '<span class="fin-unificado-review-detail">'+esc(description)+'</span></div>';
  summary.className='fin-unificado-metrics fin-unificado-itau-metrics';
  summary.innerHTML=
-   metric('Analisados desde junho',String(inScope.length),currency(total(inScope)))+
-   metric('Candidatos a conciliar',String(candidates.length),'Valor e data próximos, ainda sem confirmação')+
-   metric('Fora do período',String(outside.length),currency(total(outside))+' · outros bancos')+
-   metric('Sem data exata',String(undated.length),currency(total(undated))+' · aguardando conferência');
+   metric('Conciliados com o Itaú',String(reconciled.length),currency(total(reconciled))+' · saídas existentes, sem duplicação')+
+   metric('Pagos em outro banco',String(otherBank.length),currency(total(otherBank))+' · não entram no caixa Itaú')+
+   metric('Anteriores a junho',String(outside.length),currency(total(outside))+' · fora desta conciliação')+
+   metric('Sem data exata',String(undated.length),currency(total(undated))+' · pendentes');
  const mayReview=undated.filter(r=>r.mes_referencia&&r.mes_referencia>='2026-06-01');
  const toShow=[...inScope,...mayReview].sort((a,b)=>
   (a.data_evento||a.mes_referencia||'').localeCompare(b.data_evento||b.mes_referencia||'')||a.linha_excel-b.linha_excel);
  tbody.innerHTML=toShow.length?toShow.map(r=>{
-  const good=r.situacao_analise==='candidato_nao_confirmado';
+  const matched=r.situacao_analise==='conciliado_itau';
+  const another=r.situacao_analise==='outro_banco';
+  const candidate=r.situacao_analise==='candidato_nao_confirmado';
   const pending=r.situacao_analise==='sem_data_exata';
-  const status=good?
-    'Possível saída no fluxo: '+dateBR(r.data_fluxo_candidata)+' (linha '+r.linha_fluxo_candidata+
-    ', '+(r.diferenca_dias===0?'mesmo dia':Math.abs(r.diferenca_dias)+' dia(s) de diferença')+'). Confirmar antes de vincular.':
-    pending?'Data exata ausente: não conciliar automaticamente.':
-    'Nenhuma saída de mesmo valor e meio em até três dias.';
+  const status=matched?
+   'Vinculado à saída já registrada no Fluxo Itaú: '+dateBR(r.data_fluxo_conciliada)+
+   ' (linha '+r.linha_fluxo_conciliada+'). Valor igual; confirmado pelo usuário. Nenhum pagamento duplicado.':
+   another?'Classificado pelo usuário como pagamento em outro banco. Banco específico não identificado. Sem lançamento no Fluxo Itaú.':
+   candidate?'Possível saída no fluxo: '+dateBR(r.data_fluxo_candidata)+
+    ' (linha '+r.linha_fluxo_candidata+'). Ainda não confirmada.':
+   pending?'Data exata desconhecida. O valor foi preservado e nenhum banco foi atribuído.':
+   'Não foi encontrada saída de mesmo valor e meio em até três dias. Verificação pendente.';
+  const label=matched?'Conciliado Itaú':
+   another?'Outro banco':
+   candidate?'Candidato':
+   pending?'Sem data':'Sem correspondência';
+  const color=matched?'success':another?'muted':'warn';
   return '<tr><td><strong>'+esc(r.descricao)+'</strong><small class="fin-unificado-itau-id">Excel: linha '+
     esc(r.linha_excel)+'</small></td><td>'+
     (r.data_evento?esc(dateBR(r.data_evento)):'Sem data (mês '+esc(r.mes_referencia?.slice(0,7)||'desconhecido')+')')+
     '</td><td>'+esc(r.meio_pagamento)+'</td><td class="money">'+currency(r.valor)+
-    '</td><td><span class="fin-unificado-tag '+(good?'warn':pending?'warn':'')+'">'+
-    (good?'Candidato':pending?'Pendente':'Não encontrado')+'</span>'+
+    '</td><td><span class="fin-unificado-tag '+color+'">'+esc(label)+'</span>'+
     '<small class="fin-unificado-itau-status">'+esc(status)+'</small></td></tr>';
  }).join(''):
  '<tr><td colspan="5">Nenhum PIX ou débito com data desde 01/06/2026.</td></tr>';
+ if(candidates.length||notFound.length){
+  const note='Existem '+candidates.length+' possíveis correspondências e '+
+   notFound.length+' saídas não localizadas que ainda exigem revisão.';
+  const notice=$('fin-unificado-itau-aviso');
+  if(notice)notice.textContent=note;
+ }else{
+  const notice=$('fin-unificado-itau-aviso');
+  if(notice)notice.textContent='Vínculos aprovados pelo usuário em homologação, por valor e data com tolerância de até três dias. O Fluxo de Caixa permanece como única fonte de pagamentos efetivos, sem lançamentos duplicados.';
+ }
 }
 function cmpServer(r){
  for(const [grupo,local] of Object.entries(staged.data.groups)){
