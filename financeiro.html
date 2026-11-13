@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="./financeiro-import.css?v=20261113paid3">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
-<link rel="stylesheet" href="./financeiro-unificado.css?v=20261113review1">
+<link rel="stylesheet" href="./financeiro-unificado.css?v=20261113itau1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -242,6 +242,18 @@
         <h3>Conferências confirmadas do histórico</h3>
         <div id="fin-unificado-validacoes-resumo" class="info-note" role="status">As confirmações aparecerão aqui após a homologação.</div>
         <p class="info-note">Os métodos PIX e Débito são preservados como pagamentos à vista, não como faturas de crédito. As diferenças de valor foram conferidas, mas não classificadas automaticamente como juros. Datas perdidas permanecem em branco e seus valores são mantidos.</p>
+      </div>
+      <div class="fin-unificado-itau" id="fin-unificado-itau">
+        <h3>Conferência PIX / Débito com o Itaú</h3>
+        <p class="info-note">Recorte definido: <strong>a partir de 01/06/2026</strong>. O Fluxo de Caixa desta homologação representa o Itaú. Movimentações anteriores pertencem a outros bancos e não serão conciliadas com ele. Sem data exata, o registro fica pendente.</p>
+        <div id="fin-unificado-itau-resumo" class="fin-unificado-metrics" role="status">Aguardando a leitura da homologação.</div>
+        <div class="table-wrap">
+          <table class="data-table fin-unificado-itau-table">
+            <thead><tr><th>Compra / lançamento</th><th>Data</th><th>Meio</th><th class="money">Valor</th><th>Conferência no Itaú</th></tr></thead>
+            <tbody id="fin-unificado-itau-linhas"><tr><td colspan="5" class="info-note">Nenhuma conferência carregada.</td></tr></tbody>
+          </table>
+        </div>
+        <p class="info-note">Candidatos identificados apenas por valor, meio e proximidade de até três dias. Nenhuma baixa ou vínculo será confirmado automaticamente.</p>
       </div>
     </div>
   </section>
@@ -809,5 +821,5 @@ init();
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import.js?v=20261113paid3" defer></script>
 <script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
-<script src="./financeiro-unificado.js?v=20261113review1" defer></script>
+<script src="./financeiro-unificado.js?v=20261113itau1" defer></script>
 </body></html>
