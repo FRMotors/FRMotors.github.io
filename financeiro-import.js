@@ -33,7 +33,7 @@ function dateISO(value,format='dmy',yearHint=new Date().getFullYear()){
  let s=String(value??'').trim();
  if(!s)return null;
  // Datas seriais de planilhas Excel no sistema de datas de 1900.
- if(/^\\d{5}(?:\\.\\d+)?$/.test(s)){
+ if(/^\d{5}(?:\.\d+)?$/.test(s)){
   const serial=Math.floor(Number(s));
   if(serial>=20000&&serial<=90000){
    const d=new Date(Date.UTC(1899,11,30)+serial*86400000);
