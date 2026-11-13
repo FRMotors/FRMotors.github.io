@@ -272,7 +272,7 @@ async function readFile(){
 function looksLikeSummary(desc,kind){
  const s=String(desc).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
  if(/^(saldo|total|limite disponivel|limite total|encerramento|vencimento|valor total)\b/.test(s))return true;
- if(kind==='cartao' && /(^pagamento\b|pagamento.*fatura|creditos? de pagamento|total da fatura|saldo anterior|saldo credor|fatura anterior)/.test(s))return true;
+ if(kind==='cartao' && /(^pagamento\b|(^|\b)(pagto|pgto|pagamento|pag\.)\b.*(fatura|cartao|boleto)|deb(?:ito)?\s+aut.*(cartao|fatura)|creditos? de pagamento|total da fatura|saldo anterior|saldo credor|fatura anterior|liquidacao.*fatura)/.test(s))return true;
  return false;
 }
 function formatChoice(row){
