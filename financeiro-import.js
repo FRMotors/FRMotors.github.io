@@ -7,6 +7,7 @@ const cash=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).f
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const monthNames={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};
 let current=null,preview=[],invalid=0,working=false,bankImported=[],linkedBank=new Set();
+let cardRows=[],selectedCard=null;
 const pdfWorker='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 function notice(id,message,bad=false){const el=$(id);if(!el)return;el.textContent=message;el.className='status '+(bad?'bad':'ok')}
 function numMoney(value){
@@ -356,16 +357,82 @@ async function refreshCards(){
  const all=await fetchAll(()=>db.from('fin_teste_cartao_lancamentos')
  .select('id,cartao_nome,data_lancamento,descricao,natureza,valor')
  .order('data_lancamento',{ascending:false}).order('id',{ascending:false}));
+ cardRows=all;
  const body=$('import-card-rows');
  body.innerHTML=all.length?all.slice(0,100).map(r=>'<tr><td>'+esc(r.data_lancamento.split('-').reverse().join('/'))+'</td>'+
   '<td><span class="row-main">'+esc(r.descricao)+'</span></td><td>'+esc(r.cartao_nome)+'</td>'+
   '<td><span class="state '+(r.nature==='estorno'?'in':'out')+'">'+(r.nature==='estorno'?'Estorno':'Compra')+'</span></td>'+
-  '<td class="money">'+(r.nature==='estorno'?'− ':'')+cash(r.valor)+'</td></tr>').join(''):
-  '<tr><td colspan="5" class="empty">Nenhuma compra de cartão importada neste ambiente.</td></tr>';
+  '<td class="money">'+(r.nature==='estorno'?'− ':'')+cash(r.valor)+'</td>'+
+  '<td class="edit-cell"><button type="button" class="row-edit-button" data-card-edit="'+esc(r.id)+'">Editar</button></td></tr>').join(''):
+  '<tr><td colspan="6" class="empty">Nenhuma compra de cartão importada neste ambiente.</td></tr>';
  const purchases=all.filter(r=>r.nature==='compra').reduce((s,r)=>s+Number(r.valor),0);
  const refunds=all.filter(r=>r.nature==='estorno').reduce((s,r)=>s+Number(r.valor),0);
  $('import-card-count').textContent=all.length+' lançamento(s)';
  $('import-card-summary').textContent='Compras: '+cash(purchases)+' · Estornos: '+cash(refunds)+' · Líquido: '+cash(purchases-refunds)+' · Últimos 100 registros exibidos.';
+}
+function cardStatus(message,bad=false){notice('card-edit-status',message,bad)}
+function toggleCardBusy(state){
+ working=state;
+ for(const id of ['card-edit-save','card-edit-delete','card-delete-confirm-button'])
+  if($(id))$(id).disabled=state;
+}
+function closeCardEditor(){
+ if(working)return;
+ const dlg=$('modal-import-card');if(dlg?.open)dlg.close();
+}
+function editCard(id){
+ if(working)return;
+ const row=cardRows.find(x=>x.id===id);
+ if(!row){window.frFinanceUI?.showToast('Lançamento não encontrado. Atualize a lista.',true);return}
+ selectedCard=id;
+ $('card-edit-date').value=row.data_lancamento;
+ $('card-edit-value').value=Number(row.valor).toFixed(2);
+ $('card-edit-description').value=row.descricao;
+ $('card-edit-nature').value=row.natureza;
+ $('card-delete-confirm').classList.add('hidden');
+ $('card-edit-form').classList.remove('hidden');
+ cardStatus('');
+ $('modal-import-card').showModal();
+}
+async function saveCard(e){
+ e.preventDefault();
+ if(!selectedCard||working)return;
+ const value=numMoney($('card-edit-value').value);
+ if(value===null||value<=0)return cardStatus('Valor inválido.',true);
+ if(!$('card-edit-date').value||!$('card-edit-description').value.trim())return cardStatus('Data e descrição são obrigatórias.',true);
+ try{
+  toggleCardBusy(true);
+  const {error}=await db.rpc('fin_teste_ajustar_cartao',{
+   p_id:selectedCard,p_acao:'editar',p_data:$('card-edit-date').value,
+   p_descricao:$('card-edit-description').value.trim(),p_valor:value,
+   p_natureza:$('card-edit-nature').value
+  });
+  if(error)throw error;
+  $('modal-import-card').close();
+  window.frFinanceUI?.showToast('Gasto importado atualizado.');
+  await refreshCards();
+ }catch(e){cardStatus('Erro ao editar cartão: '+e.message,true)}
+ finally{toggleCardBusy(false)}
+}
+function startDeleteCard(){
+ if(!selectedCard||working)return;
+ $('card-delete-confirm').classList.remove('hidden');
+ $('card-edit-form').classList.add('hidden');
+ $('card-delete-confirm-button').focus();
+}
+async function deleteCard(){
+ if(!selectedCard||working)return;
+ try{
+  toggleCardBusy(true);
+  const {error}=await db.rpc('fin_teste_ajustar_cartao',{
+   p_id:selectedCard,p_acao:'excluir'
+  });
+  if(error)throw error;
+  $('modal-import-card').close();
+  window.frFinanceUI?.showToast('Lançamento de cartão excluído dos testes, com auditoria.');
+  await refreshCards();
+ }catch(e){cardStatus('Erro ao excluir cartão: '+e.message,true)}
+ finally{toggleCardBusy(false)}
 }
 async function refreshReconcile(){
  const [moves,links,dues]=await Promise.all([
@@ -463,6 +530,25 @@ function init(){
  });
  $('import-toggle-all').addEventListener('click',()=>{
   const target=preview.some(x=>!x.selected);preview.forEach(r=>r.selected=target);drawPreview();
+ });
+ $('import-card-rows').addEventListener('click',event=>{
+  const btn=event.target.closest('[data-card-edit]');
+  if(btn)editCard(btn.dataset.cardEdit);
+ });
+ $('card-edit-form').addEventListener('submit',saveCard);
+ $('card-edit-close').addEventListener('click',closeCardEditor);
+ $('card-edit-cancel').addEventListener('click',closeCardEditor);
+ $('card-edit-delete').addEventListener('click',startDeleteCard);
+ $('card-delete-cancel').addEventListener('click',()=>{
+  $('card-delete-confirm').classList.add('hidden');
+  $('card-edit-form').classList.remove('hidden');
+  $('card-edit-delete').focus();
+ });
+ $('card-delete-confirm-button').addEventListener('click',deleteCard);
+ $('modal-import-card').addEventListener('close',()=>{
+  selectedCard=null;
+  $('card-delete-confirm').classList.add('hidden');
+  $('card-edit-form').classList.remove('hidden');
  });
  $('import-reload').addEventListener('click',refresh);
  ['reconcile-move','reconcile-parcel','reconcile-discount','reconcile-fees'].forEach(id=>
