@@ -164,6 +164,24 @@ async function history(){
   '<span class="fin-unificado-tag '+(r.status==='conferido'?'':'warn')+'">'+
   (r.status==='conferido'?'Conferido':'Importação em andamento')+'</span></div>').join(''):
   'Nenhuma cópia importada para homologação.';
+ const target=$('fin-unificado-validacoes-resumo');
+ if(!target)return;
+ if(!data?.length){target.textContent='Nenhuma homologação disponível.';return;}
+ const {data:review,error:reviewError}=await db.from('fin_teste_excel_validacoes_resumo')
+  .select('pix,debito,valor_a_vista,variacoes,acrescimos,reducoes,sem_data,sem_data_cartao,sem_data_abertos,registros_revisados')
+  .eq('lote_id',data[0].id).maybeSingle();
+ if(reviewError){target.textContent='Não foi possível carregar as confirmações: '+reviewError.message;return;}
+ if(!review){target.textContent='Ainda não há confirmações registradas para este arquivo.';return;}
+ const k=(label,number,description)=>'<div class="fin-unificado-metric">'+
+   '<small>'+esc(label)+'</small><strong>'+esc(number)+'</strong>'+
+   '<span class="fin-unificado-review-detail">'+esc(description)+'</span></div>';
+ target.className='fin-unificado-metrics fin-unificado-review-metrics';
+ target.innerHTML=k('PIX / Débito',(Number(review.pix)+Number(review.debito)).toLocaleString('pt-BR'),
+  review.pix+' PIX e '+review.debito+' Débito · '+currency(review.valor_a_vista))+
+  k('Variações de valores conferidas',Number(review.variacoes).toLocaleString('pt-BR'),
+    review.acrescimos+' acréscimos e '+review.reducoes+' reduções')+
+  k('Datas originais desconhecidas',Number(review.sem_data).toLocaleString('pt-BR'),
+    review.sem_data_cartao+' de Cartões e '+review.sem_data_abertos+' de Contas em Aberto');
 }
 function cmpServer(r){
  for(const [grupo,local] of Object.entries(staged.data.groups)){
