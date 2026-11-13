@@ -1441,6 +1441,22 @@
       <a href="./dashboard.html">Dashboard</a>
       <a href="./financeiro.html">Financeiro</a>
     </nav>
+    <div class="top-commands ficha-header-actions">
+          <button class="btn" id="toggleSidebarBtn" type="button" aria-expanded="true" title="Recolher ordens de serviço">☰ O.S.</button>
+          <button class="btn primary" id="newBtn">+ Nova ficha</button>
+          <details id="fichaOptions" class="ficha-options">
+            <summary class="btn ficha-options-trigger" aria-label="Abrir opções da Ficha e O.S.">Opções <span aria-hidden="true" class="options-chevron">▾</span></summary>
+            <div class="ficha-options-popover" aria-label="Ações da Ficha e O.S.">
+              <div class="ficha-options-heading">Ferramentas</div>
+              <button class="ficha-options-action shoficina-btn" id="shoficinaImportBtn" type="button" disabled title="Integração com o SHOficina em preparação">Importar SHOficina</button>
+              <button class="ficha-options-action" id="refreshBtn" type="button">Atualizar</button>
+              <button class="ficha-options-action" id="backupBtn" type="button">Backup</button>
+              <label class="ficha-options-action" for="restoreInput" role="button" tabindex="0">Importar backup</label>
+              <input id="restoreInput" type="file" accept=".json,application/json" hidden />
+              <button class="ficha-options-action ficha-signout" id="logoutBtn" type="button">Sair</button>
+            </div>
+          </details>
+    </div>
     <div class="system-spacer"></div>
     <button id="mobileSystemLogoutBtn" class="system-logout" type="button">Sair</button>
   </div>
@@ -1461,22 +1477,6 @@
         <a href="./financeiro.html">Financeiro</a>
       </nav>
       <div class="top-actions">
-        <div class="top-commands">
-          <button class="btn" id="toggleSidebarBtn" type="button" aria-expanded="true" title="Recolher ordens de serviço">☰ O.S.</button>
-          <button class="btn primary" id="newBtn">+ Nova ficha</button>
-          <details id="fichaOptions" class="ficha-options">
-            <summary class="btn ficha-options-trigger" aria-label="Abrir opções da Ficha e O.S.">Opções <span aria-hidden="true" class="options-chevron">▾</span></summary>
-            <div class="ficha-options-popover" aria-label="Ações da Ficha e O.S.">
-              <div class="ficha-options-heading">Ferramentas</div>
-              <button class="ficha-options-action shoficina-btn" id="shoficinaImportBtn" type="button" disabled title="Integração com o SHOficina em preparação">Importar SHOficina</button>
-              <button class="ficha-options-action" id="refreshBtn" type="button">Atualizar</button>
-              <button class="ficha-options-action" id="backupBtn" type="button">Backup</button>
-              <label class="ficha-options-action" for="restoreInput" role="button" tabindex="0">Importar backup</label>
-              <input id="restoreInput" type="file" accept=".json,application/json" hidden />
-            </div>
-          </details>
-          <button class="btn optional" id="logoutBtn">Sair</button>
-        </div>
         <div class="top-status">
           <span id="cloudStatus" class="btn" style="cursor:default" title="Status da conexão">Conectando...</span>
           <span id="saveState" class="btn save-state saved">Tudo salvo</span>
