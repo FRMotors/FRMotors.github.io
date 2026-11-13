@@ -33,3 +33,8 @@
 .invoice-duplicate-note{margin-top:12px;padding:10px 12px;border:1px solid #eddcb5;background:#fff9ea;border-radius:9px;color:#8b6834;line-height:1.55}
 #invoice-register-manual:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:540px){.invoice-manual-fields{display:grid;grid-template-columns:1fr}.invoice-import-button,#invoice-register-manual{width:100%}}
+
+.invoice-document-evidence{margin:14px 0;padding:13px;border:1px solid #cee0e8;border-radius:10px;background:#f4f9fb}
+.invoice-document-evidence select{width:100%;min-width:0;min-height:42px;background:#fff;border:1px solid #d5e2e7;border-radius:8px;padding:9px 11px;color:#29495a;font-size:11px}
+#invoice-document-hint{line-height:1.6;margin:10px 0}
+#invoice-use-document{min-height:38px;max-width:100%}
