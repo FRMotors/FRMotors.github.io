@@ -1,0 +1,35 @@
+
+.fin-unificado-card{margin-bottom:17px}
+.fin-unificado-start{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center}
+.fin-unificado-label{display:block;font-weight:800;font-size:12px;color:#455a66;margin-bottom:9px}
+#fin-unificado-file{display:block;width:100%;max-width:680px;min-height:46px;background:#f8fbfc;border:1px dashed #b7ced8;border-radius:9px;padding:11px 12px;cursor:pointer;font-size:12px;color:#536b76}
+.fin-unificado-start-actions{display:flex;align-self:center}
+.fin-unificado-start .info-note{font-size:11px;max-width:820px;line-height:1.6;margin:10px 0 0}
+.fin-unificado-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}
+.fin-unificado-metric{padding:15px;background:#f7fafb;border:1px solid #e4eef1;border-radius:10px}
+.fin-unificado-metric small{display:block;color:#7d939f;font-size:10px;font-weight:800;margin-bottom:6px}
+.fin-unificado-metric strong{font-size:19px;color:#234757;display:block}
+.fin-unificado-card .table-wrap{max-width:100%;overflow-x:auto}
+.fin-unificado-card .data-table{min-width:590px}
+.fin-unificado-tag{display:inline-block;padding:4px 8px;border-radius:7px;background:#eff7f4;color:#11725d;font-size:10px;font-weight:850}
+.fin-unificado-tag.warn{background:#fff5e5;color:#9a6720}
+.fin-unificado-tag.error{background:#fdecee;color:#a23742}
+.fin-unificado-samples{margin-top:18px}
+.fin-unificado-samples h3,.fin-unificado-history h3{font-size:12px;color:#365668;margin:0 0 11px;font-weight:850}
+.fin-unificado-warning{font-size:11px;line-height:1.65;padding:12px 14px;background:#fff9ed;border:1px solid #f0dfbc;border-radius:9px;color:#896b3a;margin:16px 0}
+.fin-unificado-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.fin-unificado-bottom span{font-size:11px;color:#667c87}
+.fin-unificado-history{border-top:1px solid #e4ebee;margin-top:20px;padding-top:18px}
+.fin-unificado-history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #e0e9ed;border-radius:8px;margin:7px 0;padding:10px 12px;font-size:11px;color:#4a6673}
+.fin-unificado-history-row strong{font-weight:800}
+.fin-unificado-history-row small{display:block;color:#8297a2;margin-top:3px}
+.fin-unificado-history-row .fin-unificado-tag{flex-shrink:0}
+.fin-unificado-card .money{text-align:right}
+#fin-unificado-mensagem{white-space:pre-wrap}
+@media(max-width:760px){
+.fin-unificado-start{grid-template-columns:1fr}
+.fin-unificado-start-actions button{width:100%}
+.fin-unificado-metrics{grid-template-columns:1fr 1fr}
+.fin-unificado-bottom{flex-direction:column;align-items:stretch}
+.fin-unificado-bottom button{width:100%}
+}
