@@ -249,7 +249,7 @@
     <section class="card">
       <div class="card-head"><div><h2>Despesas importadas dos cartões</h2><p>Compras e estornos para conferência. Estes valores não são somados automaticamente às saídas bancárias.</p></div>
         <span id="import-card-count" class="state">0 lançamento(s)</span></div>
-      <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Cartão</th><th>Natureza</th><th class="money">Valor</th></tr></thead><tbody id="import-card-rows"><tr><td colspan="5" class="empty">Nenhuma fatura importada.</td></tr></tbody></table></div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Cartão</th><th>Natureza</th><th class="money">Valor</th><th class="edit-column">Ações</th></tr></thead><tbody id="import-card-rows"><tr><td colspan="6" class="empty">Nenhuma fatura importada.</td></tr></tbody></table></div>
       <div class="table-footer" id="import-card-summary">Importe uma fatura para começar.</div>
     </section>
     <section class="card">
@@ -267,6 +267,36 @@
       </div>
     </section>
   </div>
+  <dialog class="fin-dialog" id="modal-import-card" aria-labelledby="card-edit-title">
+    <div class="dialog-head">
+      <div><h2 id="card-edit-title">Editar gasto importado</h2><p>Corrija os dados da fatura com segurança.</p></div>
+      <button type="button" id="card-edit-close" class="dialog-close" aria-label="Fechar edição do cartão"><span class="icon" data-icon="close"></span></button>
+    </div>
+    <div class="dialog-body">
+      <form id="card-edit-form" class="fields">
+        <label>Data do lançamento<input id="card-edit-date" type="date" required></label>
+        <label>Valor (R$)<input id="card-edit-value" type="number" min="0.01" step="0.01" required></label>
+        <label style="grid-column:1/-1">Descrição<input id="card-edit-description" type="text" maxlength="400" required></label>
+        <label>Natureza<select id="card-edit-nature"><option value="compra">Compra</option><option value="estorno">Estorno</option></select></label>
+        <div style="grid-column:1/-1">
+          <p class="form-note">A alteração será registrada no histórico de auditoria. O lançamento continuará separado do caixa bancário.</p>
+          <div id="card-edit-status" class="status" role="status"></div>
+          <div class="edit-actions">
+            <button type="button" id="card-edit-delete" class="btn btn-danger">Excluir lançamento</button>
+            <div class="edit-actions-right"><button type="button" class="btn" id="card-edit-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="card-edit-save">Salvar correção</button></div>
+          </div>
+        </div>
+      </form>
+      <div id="card-delete-confirm" class="edit-confirm hidden" role="alert">
+        <strong>Excluir este gasto de cartão?</strong>
+        <p>O lançamento deixará de aparecer na fatura importada. A exclusão ficará registrada no histórico.</p>
+        <div class="edit-actions-right">
+          <button type="button" class="btn" id="card-delete-cancel">Manter lançamento</button>
+          <button type="button" class="btn btn-danger" id="card-delete-confirm-button">Sim, excluir</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 </section>
 
       <section class="view" data-view-panel="settings" hidden aria-label="Configurações de testes">
@@ -625,5 +655,5 @@ init();
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
-<script src="./financeiro-import.js?v=20261113imp2" defer></script>
+<script src="./financeiro-import.js?v=20261113imp3" defer></script>
 </body></html>
