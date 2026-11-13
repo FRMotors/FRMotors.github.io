@@ -44,6 +44,7 @@ function toggleBusy(on){
 function resetDeleteConfirm(){
  $('edit-confirm').classList.add('hidden');
  $('edit-delete-start').classList.remove('hidden');
+ if($('edit-save'))$('edit-save').disabled=busy||Boolean(selected?.locked);
 }
 function fillParts(parts){
  const root=$('edit-installments');
@@ -169,6 +170,8 @@ function beginDelete(){
  if(!selected||busy||selected.locked)return;
  $('edit-confirm').classList.remove('hidden');
  $('edit-delete-start').classList.add('hidden');
+ $('edit-save').disabled=true;
+ $('edit-delete-confirm').focus();
  const linked=selected.kind==='movimento'&&selected.linked;
  $('edit-confirm-description').textContent=linked?
   'Esta baixa será excluída e o boleto correspondente voltará para Em aberto. A operação fica no histórico de auditoria.':
@@ -200,7 +203,7 @@ function init(){
  });
  $('edit-form').addEventListener('submit',save);
  $('edit-delete-start').addEventListener('click',beginDelete);
- $('edit-delete-cancel').addEventListener('click',resetDeleteConfirm);
+ $('edit-delete-cancel').addEventListener('click',()=>{resetDeleteConfirm();$('edit-delete-start').focus()});
  $('edit-delete-confirm').addEventListener('click',remove);
  $('edit-purchase-amount').addEventListener('input',checkPurchaseTotal);
  $('edit-installments').addEventListener('input',checkPurchaseTotal);
