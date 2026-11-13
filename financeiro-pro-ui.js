@@ -105,11 +105,15 @@ function filteredMoves(){
   return text.includes(query);
  });
 }
+function potentialCpfValueError(r){
+ return Boolean(r.referencia_cliente?.startsWith('extrato:') &&
+   r.valor>=10000 && /\\d{3}\\.\\d{3}\\.\\d{3}[-\\u2212\\u2013]\\s*$/.test(r.descricao));
+}
 function movementsHTML(rows,showAll=false){
  if(!rows.length)return '<tr><td colspan="6">'+emptyMessage('Nenhum lançamento encontrado','Experimente alterar os filtros ou cadastrar uma movimentação.','activity')+'</td></tr>';
  return rows.map(r=>'<tr>'+
   '<td><span class="row-main">'+escapeHTML(dateBR(r.data_movimento))+'</span><span class="row-sub">'+escapeHTML(r.meio_pagamento||r.categoria||'Lançamento')+'</span></td>'+
-  '<td><span class="row-main">'+escapeHTML(r.descricao)+'</span><span class="row-sub">'+escapeHTML(r.categoria||'Sem categoria')+'</span></td>'+
+  '<td><span class="row-main">'+escapeHTML(r.descricao)+'</span><span class="row-sub">'+escapeHTML(r.categoria||'Sem categoria')+(potentialCpfValueError(r)?' · <span class="review-badge">Revisar valor / CPF</span>':'')+'</span></td>'+
   '<td>'+statusChip(r.tipo)+'</td>'+
   '<td>'+escapeHTML(supplierName(r.fornecedor_id))+'</td>'+
   '<td class="money" style="color:'+(r.tipo==='entrada'?'#188369':'#344c5b')+'">'+(r.tipo==='entrada'?'+ ':'− ')+currency(r.valor)+'</td>'+
@@ -117,6 +121,11 @@ function movementsHTML(rows,showAll=false){
  '</tr>').join('');
 }
 function updateMoves(){
+ const totalSuspicious=state.moves.filter(potentialCpfValueError).length;
+ if(byId('financial-review-banner')){
+  byId('financial-review-banner').classList.toggle('hidden',!totalSuspicious);
+  byId('financial-review-count').textContent=totalSuspicious+' lançamento(s) com valor suspeito após CPF';
+ }
  const rows=filteredMoves();
  if(byId('rows'))byId('rows').innerHTML=movementsHTML(rows);
  if(byId('recent-rows'))byId('recent-rows').innerHTML=movementsHTML(state.moves.slice(0,6));
