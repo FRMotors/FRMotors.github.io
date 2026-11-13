@@ -116,14 +116,15 @@ function pdfLineRows(lines){
   const match=line.match(/^(\d{2}[\/\-.]\d{2}(?:[\/\-.]\d{2,4})?|\d{4}-\d{2}-\d{2})\s+(.+)$/);
   if(!match)continue;
   const body=match[2].trim();
-  // Preserva sinais de débito/crédito: -50,00, +50,00, R$ -50,00,
-  // − 50,00 (menos Unicode), (50,00) e 50,00-.
-  // O sinal pertence ao valor, não à descrição.
-  const moneyRx=/(?<![\d.,])(?:\(\s*)?(?:R\$\s*)?[+\-\u2212\u2013]?\s*(?:R\$\s*)?\d+(?:[. ]\d{3})*(?:[.,]\d{2})(?:\s*[\-\u2212\u2013]|\s*\))?(?![\d.,])/g;
+  // Somente um número com DUAS casas decimais é candidato a valor.
+  // Não juntar agrupamentos de milhares separados por espaços: "CPF ...-32 500,00"
+  // significa CPF terminado em -32, seguido de PIX de R$ 500,00.
+  // Milhares no padrão BR permanecem válidos: 1.234,56 ou 50.000,00.
+  const moneyRx=/(?<![\d.,])(?:\(\s*)?(?:R\$\s*)?[+\-\u2212\u2013]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})+|\d+)[.,]\d{2}(?:\s*[\-\u2212\u2013]|\s*\))?(?![\d.,])/g;
   const amounts=[...body.matchAll(moneyRx)];
   if(!amounts.length)continue;
-  // Mantém a seleção da última coluna de valor já usada nesta versão.
-  // Alguns extratos exibem saldo após o valor; revisar a prévia nesses casos.
+  // Última quantia continua sendo assumida como valor da operação.
+  // Extratos com coluna de saldo devem ser conferidos na prévia.
   const amount=amounts[amounts.length-1];
   const desc=body.slice(0,amount.index).trim();
   if(!desc||/^(SALDO|TOTAL|LIMITE)/i.test(desc))continue;
