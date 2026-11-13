@@ -36,7 +36,7 @@ function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
 function selectView(next){
- if(!['overview','movements','payables','purchases','imports','settings'].includes(next))next='overview';
+ if(!['overview','movements','payables','purchases','imports','settings','itau','history'].includes(next))next='overview';
  view=next;
  document.querySelectorAll('[data-view-panel]').forEach(n=>{n.hidden=n.getAttribute('data-view-panel')!==next});
  document.querySelectorAll('[data-view]').forEach(n=>{
@@ -44,11 +44,12 @@ function selectView(next){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',payables:'Contas a pagar',purchases:'Compras',imports:'Importações',settings:'Configurações'};
+ const names={overview:'Visão geral',movements:'Movimentações',payables:'Contas a pagar',purchases:'Compras',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
  if(next==='imports')window.frImportUI?.refresh?.();
+ if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
  window.scrollTo({top:0,behavior:'auto'});
 }
 function closeSidebar(){document.body.classList.remove('sidebar-open');byId('sidebar-overlay')?.setAttribute('hidden','');byId('menu-toggle')?.setAttribute('aria-expanded','false')}
@@ -228,7 +229,11 @@ function setup(){
  byId('search-dues')?.addEventListener('input',updateDue);
  byId('search-purchases')?.addEventListener('input',updatePurchases);
  byId('export-moves')?.addEventListener('click',exportMovements);
- byId('refresh-data')?.addEventListener('click',()=>{if(typeof render==='function')render().then(()=>showToast('Dados atualizados.')).catch(e=>showToast('Erro ao atualizar: '+e.message,true))});
+ byId('refresh-data')?.addEventListener('click',()=>{
+  if(view==='itau'||view==='history'){
+    window.frHistoryUI?.refresh?.().then(()=>showToast('Histórico atualizado.')).catch(e=>showToast('Erro ao atualizar histórico: '+e.message,true));
+  }else if(typeof render==='function')render().then(()=>showToast('Dados atualizados.')).catch(e=>showToast('Erro ao atualizar: '+e.message,true));
+ });
  document.addEventListener('click',e=>{
   const p=e.target.closest('[data-pay-id]');
   if(p){selectView('payables');openModal('pay');if(byId('pay-installment'))byId('pay-installment').value=p.dataset.payId;if(typeof refreshPaymentSuggestion==='function')refreshPaymentSuggestion()}
