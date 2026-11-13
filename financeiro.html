@@ -119,6 +119,13 @@
       </section>
 
       <section class="view" data-view-panel="movements" hidden aria-label="Movimentações financeiras">
+        <div id="financial-review-banner" class="callout hidden" role="alert">
+          <span class="icon" data-icon="alert"></span>
+          <div>
+            <strong id="financial-review-count">Lançamentos para revisão</strong>
+            <p>Alguns PIX importados anteriormente parecem ter incorporado dígitos do CPF ao valor. Confira o PDF e use Editar na linha correspondente antes de considerar os totais.</p>
+          </div>
+        </div>
         <div class="section-header">
           <div><p class="eyebrow">Registros financeiros</p><h1 class="page-heading">Movimentações</h1><p class="page-description">Entradas e saídas confirmadas, vinculadas à base de testes. Consulte e exporte os lançamentos por período.</p></div>
           <div class="header-buttons"><button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button></div>
@@ -479,7 +486,7 @@ async function render(){
  if(!from||!to||from>to)throw Error('Selecione um período válido para consultar as movimentações.');
  const [rows,open,purchases]=await Promise.all([
   fetchAllPages(()=>db.from('fin_teste_movimentos')
-   .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,estado,fornecedor_id')
+   .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,estado,fornecedor_id,referencia_cliente')
    .gte('data_movimento',from).lte('data_movimento',to)
    .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
   fetchAllPages(()=>db.from('fin_teste_parcelas')
