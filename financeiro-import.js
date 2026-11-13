@@ -469,7 +469,7 @@ async function saveCard(e){
   if(error)throw error;
   $('modal-import-card').close();
   window.frFinanceUI?.showToast('Gasto importado atualizado.');
-  await refreshCards();
+  await Promise.allSettled([refreshCards(),window.frFaturasUI?.refresh?.()||Promise.resolve()]);
  }catch(e){cardStatus('Erro ao editar cartão: '+e.message,true)}
  finally{toggleCardBusy(false)}
 }
@@ -489,12 +489,12 @@ async function deleteCard(){
   if(error)throw error;
   $('modal-import-card').close();
   window.frFinanceUI?.showToast('Lançamento de cartão excluído dos testes, com auditoria.');
-  await refreshCards();
+  await Promise.allSettled([refreshCards(),window.frFaturasUI?.refresh?.()||Promise.resolve()]);
  }catch(e){cardStatus('Erro ao excluir cartão: '+e.message,true)}
  finally{toggleCardBusy(false)}
 }
 async function refreshReconcile(){
- const [moves,links,dues]=await Promise.all([
+ const [moves,links,dues,cardLinks]=await Promise.all([
   fetchAll(()=>db.from('fin_teste_movimentos')
    .select('id,descricao,valor,data_movimento,referencia_cliente')
    .eq('tipo','saida').like('referencia_cliente','extrato:%')
@@ -502,9 +502,10 @@ async function refreshReconcile(){
   fetchAll(()=>db.from('fin_teste_vinculos').select('movimento_id').order('id',{ascending:true})),
   fetchAll(()=>db.from('fin_teste_parcelas')
    .select('id,vencimento,valor_cheio,status,fin_teste_compras(fornecedor_id,descricao)')
-   .eq('status','aberto').order('vencimento',{ascending:true}).order('id',{ascending:true}))
+   .eq('status','aberto').order('vencimento',{ascending:true}).order('id',{ascending:true})),
+  fetchAll(()=>db.from('fin_teste_fatura_pagamentos').select('movimento_id').order('id',{ascending:false}))
  ]);
- linkedBank=new Set(links.map(x=>x.movimento_id));
+ linkedBank=new Set([...links.map(x=>x.movimento_id),...cardLinks.map(x=>x.movimento_id)]);
  bankImported=moves.filter(x=>!linkedBank.has(x.id));
  const beforeMove=$('reconcile-move').value,beforePar=$('reconcile-parcel').value;
  $('reconcile-move').replaceChildren(new Option('Selecione uma saída do extrato',''),
@@ -558,7 +559,7 @@ let pendingRefresh=null;
 async function refresh(){
  if(typeof db==='undefined'||!db)return;
  if(pendingRefresh)return pendingRefresh;
- pendingRefresh=Promise.allSettled([refreshCards(),refreshReconcile(),refreshHistory()])
+ pendingRefresh=Promise.allSettled([refreshCards(),refreshReconcile(),refreshHistory(),window.frFaturasUI?.refresh?.()||Promise.resolve()])
   .then(results=>{
     const errors=results.filter(r=>r.status==='rejected').map(r=>r.reason?.message||'Erro de conexão');
     if(errors.length)notice('reconcile-status','Atualização parcial: '+errors.join('; '),true);
