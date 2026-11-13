@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261113imp1">
 <link rel="stylesheet" href="./financeiro-import.css?v=20261113cpf3">
-<link rel="stylesheet" href="./financeiro-faturas.css?v=20261113faturas1">
+<link rel="stylesheet" href="./financeiro-faturas.css?v=20261113faturas4">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 </head>
 <body>
@@ -308,11 +308,36 @@
             </div>
             <button type="button" id="invoice-save-total" class="btn btn-teal" style="margin-top:12px">Confirmar total da fatura</button>
             <div class="invoice-divider"></div>
-            <label class="invoice-field-label" for="invoice-bank-move">Saída bancária importada (sem vínculo anterior)</label>
+            <label class="invoice-field-label" for="invoice-bank-move">Selecionar uma saída do extrato bancário</label>
             <select id="invoice-bank-move"><option value="">Selecione um pagamento</option></select>
+            <p id="invoice-bank-empty" class="info-note invoice-bank-empty" role="status" hidden>Nenhuma saída bancária importada está disponível. Importe o extrato ou registre um pagamento já realizado abaixo.</p>
+            <button type="button" id="invoice-go-import" class="btn invoice-import-button">Importar extrato bancário</button>
             <button type="button" id="invoice-apply-bank" class="btn btn-primary" style="margin-top:12px" disabled>Vincular pagamento da fatura</button>
             <div class="invoice-payments" id="invoice-payments"></div>
-            <p class="info-note">Só entram aqui saídas do extrato bancário. Compras do cartão continuam separadas e não são lançadas outra vez no caixa.</p>
+            <p class="info-note">A conciliação não cria um segundo pagamento. Compras do cartão não entram novamente como saídas bancárias.</p>
+            <div class="invoice-divider"></div>
+            <h4 class="invoice-subheading">Pagamento já realizado, mas sem extrato?</h4>
+            <p class="info-note">Registre aqui somente pagamentos realmente efetuados. O sistema cria uma saída bancária de teste e vincula à fatura em uma única operação.</p>
+            <div class="fields invoice-manual-fields">
+              <label>Data do pagamento
+                <input id="invoice-manual-date" type="date" required>
+              </label>
+              <label>Valor pago (R$)
+                <input id="invoice-manual-amount" type="number" min="0.01" step="0.01" placeholder="0,00" required>
+              </label>
+              <label>Forma de pagamento
+                <select id="invoice-manual-method">
+                  <option value="boleto">Boleto</option>
+                  <option value="pix">Pix</option>
+                  <option value="transferencia">Transferência</option>
+                  <option value="debito">Débito</option>
+                  <option value="dinheiro">Dinheiro</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </label>
+            </div>
+            <button type="button" id="invoice-register-manual" class="btn btn-teal" disabled>Registrar pagamento e vincular</button>
+            <p class="info-note invoice-duplicate-note">Atenção: ao importar o extrato bancário posteriormente, não selecione novamente o pagamento já lançado manualmente. Isso duplicaria a saída.</p>
             <div class="status" id="invoice-message" role="status"></div>
           </div>
         </div>
@@ -714,5 +739,5 @@ init();
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113sicoob1" defer></script>
 <script src="./financeiro-import.js?v=20261113faturas3" defer></script>
-<script src="./financeiro-faturas.js?v=20261113faturas1" defer></script>
+<script src="./financeiro-faturas.js?v=20261113faturas4" defer></script>
 </body></html>
