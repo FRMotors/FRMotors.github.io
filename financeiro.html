@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
-<link rel="stylesheet" href="./financeiro-pro.css?v=20261113edit1">
+<link rel="stylesheet" href="./financeiro-pro.css?v=20261113edit2">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -340,7 +340,7 @@ async function render(){
    .gte('data_movimento',from).lte('data_movimento',to)
    .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
   fetchAllPages(()=>db.from('fin_teste_parcelas')
-   .select('id,vencimento,valor_cheio,numero,status,fin_teste_compras(fornecedor_id,descricao)')
+   .select('id,vencimento,valor_cheio,numero,status,fin_teste_compras(id,fornecedor_id,descricao)')
    .eq('status','aberto').order('vencimento',{ascending:true}).order('id',{ascending:true})),
   fetchAllPages(()=>db.from('fin_teste_compras')
    .select('id,data_compra,descricao,forma_pagamento,valor_total,fornecedor_id,fin_teste_parcelas(status)')
@@ -515,6 +515,6 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261113edit1"></script>
-<script src="./financeiro-edit.js?v=20261113edit1"></script>
+<script src="./financeiro-pro-ui.js?v=20261113edit2"></script>
+<script src="./financeiro-edit.js?v=20261113edit2"></script>
 </body></html>
