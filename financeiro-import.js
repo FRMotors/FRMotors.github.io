@@ -202,6 +202,7 @@ async function readFile(){
   if(!['csv','ofx','qfx','xlsx','xls','pdf'].includes(ext))throw Error('Use CSV, OFX, QFX, XLS, XLSX ou PDF.');
   const hash=await hashHex(buffer);
   current={file,buffer,hash,ext,year:guessYear(file),rows:[],meta:[],workbook:null,special:false};
+  if($('import-year'))$('import-year').value=String(current.year);
   $('import-preview-card').hidden=true;preview=[];invalid=0;
   if(ext==='csv'){
    current.rows=parseCSV(decodeBuffer(bytes));
@@ -222,7 +223,7 @@ async function readFile(){
   $('import-header-wrap').classList.toggle('hidden',current.special);
   setRows(current.rows,current.meta);
   notice('import-read-status',file.name+' lido: '+(current.rows.length-1)+' linha(s) candidatas. Configure as colunas e gere a prévia.');
-  if(ext==='pdf')$('import-map-tip').textContent='PDF experimental: confira atentamente datas e valores, principalmente quando o extrato mostrar uma coluna de saldo.';
+  if(ext==='pdf')$('import-map-tip').textContent='PDF experimental: confira atentamente datas, ano e valores, principalmente quando o extrato mostrar uma coluna de saldo.';
   else $('import-map-tip').textContent='Confira o formato da data e as colunas. Valores individuais, não saldos ou totais de fatura.';
  }catch(e){
   current=null;$('import-map').classList.add('hidden');$('import-map-empty').classList.remove('hidden');
@@ -238,7 +239,7 @@ function looksLikeSummary(desc,kind){
 }
 function formatChoice(row){
  const val=id=>{const idx=$(id).value;return idx===''?null:row[Number(idx)]};
- const date=dateISO(val('import-col-date'),$('import-date-format').value,current.year);
+ const date=dateISO(val('import-col-date'),$('import-date-format').value,Number($('import-year')?.value)||current.year);
  const desc=String(val('import-col-desc')??'').replace(/\s+/g,' ').trim().slice(0,400);
  const debit=numMoney(val('import-col-debit')),credit=numMoney(val('import-col-credit'));
  const hasSplit=($('import-col-debit').value!==''||$('import-col-credit').value!=='');
@@ -429,7 +430,7 @@ async function reconcile(){
 }
 let pendingRefresh=null;
 async function refresh(){
- if(!window.db)return;
+ if(typeof db==='undefined'||!db)return;
  if(pendingRefresh)return pendingRefresh;
  pendingRefresh=Promise.allSettled([refreshCards(),refreshReconcile()])
   .then(results=>{
