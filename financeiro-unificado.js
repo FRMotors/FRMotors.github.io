@@ -225,6 +225,14 @@ function init(){
  });
  $('fin-unificado-analisar').addEventListener('click',analyze);
  $('fin-unificado-confirmar').addEventListener('click',importNow);
+ document.addEventListener('click',event=>{
+   if(event.target.closest('[data-view="imports"]')||event.target.closest('#import-reload')){
+     history().catch(e=>text('fin-unificado-mensagem','Não foi possível atualizar o histórico: '+e.message,true));
+   }
+ });
+ if(!document.querySelector('[data-view-panel="imports"]')?.hidden){
+   history().catch(()=>{});
+ }
 }
 window.finUnificadoUI={history,parseFile,dateISO,numeric};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
