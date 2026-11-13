@@ -12,7 +12,7 @@ const pdfModule='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.m
 const pdfWorker='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 function notice(id,message,bad=false){const el=$(id);if(!el)return;el.textContent=message;el.className='status '+(bad?'bad':'ok')}
 function numMoney(value){
- let s=String(value??'').trim();
+ let s=String(value??'').trim().replace(/[\u2212\u2013\u2014]/g,'-');
  if(!s)return null;
  const signCandidate=s.replace(/R\$/gi,'').trim();
  const negative=/^-|\(.*\)|\bD(?:R|EBITO)?\b/i.test(signCandidate)||/-\s*$/.test(signCandidate);
@@ -116,10 +116,16 @@ function pdfLineRows(lines){
   const match=line.match(/^(\d{2}[\/\-.]\d{2}(?:[\/\-.]\d{2,4})?|\d{4}-\d{2}-\d{2})\s+(.+)$/);
   if(!match)continue;
   const body=match[2].trim();
-  const amountMatches=[...body.matchAll(/(?:\(?-?\s*R\$?\s*)?\b\d{1,3}(?:[.,]\d{3})*[.,]\d{2}\)?|(?<!\d)\b\d+[.,]\d{2}\b/g)];
-  if(!amountMatches.length)continue;
-  // PDFs com coluna "saldo" precisam de conferência: a última quantia pode ser o saldo, não o valor.
-  const amount=amountMatches[amountMatches.length-1],desc=body.slice(0,amount.index).trim();
+  // Preserva sinais de débito/crédito: -50,00, +50,00, R$ -50,00,
+  // − 50,00 (menos Unicode), (50,00) e 50,00-.
+  // O sinal pertence ao valor, não à descrição.
+  const moneyRx=/(?<![\d.,])(?:\(\s*)?(?:R\$\s*)?[+\-\u2212\u2013]?\s*(?:R\$\s*)?\d+(?:[. ]\d{3})*(?:[.,]\d{2})(?:\s*[\-\u2212\u2013]|\s*\))?(?![\d.,])/g;
+  const amounts=[...body.matchAll(moneyRx)];
+  if(!amounts.length)continue;
+  // Mantém a seleção da última coluna de valor já usada nesta versão.
+  // Alguns extratos exibem saldo após o valor; revisar a prévia nesses casos.
+  const amount=amounts[amounts.length-1];
+  const desc=body.slice(0,amount.index).trim();
   if(!desc||/^(SALDO|TOTAL|LIMITE)/i.test(desc))continue;
   out.push([match[1],desc,amount[0].trim()]);
   meta.push({pdf:true});
