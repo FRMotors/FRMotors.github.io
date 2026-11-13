@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="./financeiro-import.css?v=20261113paid3">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
+<link rel="stylesheet" href="./financeiro-unificado.css?v=20261113hom1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -191,6 +192,55 @@
       <p>Compras do cartão ficam separadas das movimentações bancárias. Pagamentos de faturas que constam no extrato não serão duplicados como gastos do cartão no caixa.</p>
     </div>
   </div>
+  
+  <section class="card fin-unificado-card" id="fin-unificado-card" aria-labelledby="fin-unificado-title">
+    <div class="card-head">
+      <div>
+        <h2 id="fin-unificado-title">Importar Financeiro Unificado</h2>
+        <p>Homologação da planilha completa, com conferência de totais e sem afetar a operação financeira.</p>
+      </div>
+      <span class="env-chip">TESTE ISOLADO</span>
+    </div>
+    <div class="card-body">
+      <div class="fin-unificado-start">
+        <div>
+          <label for="fin-unificado-file" class="fin-unificado-label">Planilha Financeiro Unificado (.xlsx)</label>
+          <input id="fin-unificado-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <p class="info-note">Use a cópia de homologação do Financeiro Unificado. O sistema reconhecerá AUTOPEÇAS, CARTÕES, SAÍDAS FLUXO, ENTRADAS FLUXO, ABERTOS FLUXO e BAIXAS CONCILIADAS.</p>
+        </div>
+        <div class="fin-unificado-start-actions">
+          <button type="button" id="fin-unificado-analisar" class="btn btn-teal" disabled>Analisar planilha</button>
+        </div>
+      </div>
+      <div id="fin-unificado-mensagem" class="status" role="status"></div>
+      <div id="fin-unificado-previa" class="hidden">
+        <div class="fin-unificado-metrics" id="fin-unificado-metrics"></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Origem</th><th class="money">Registros</th><th class="money">Soma da origem</th><th>Conferência</th></tr></thead>
+            <tbody id="fin-unificado-resumo"></tbody>
+          </table>
+        </div>
+        <div class="fin-unificado-samples">
+          <h3>Amostra de registros reconhecidos</h3>
+          <div class="table-wrap"><table class="data-table">
+            <thead><tr><th>Aba / Linha</th><th>Descrição</th><th>Data</th><th class="money">Valor</th></tr></thead>
+            <tbody id="fin-unificado-amostras"></tbody>
+          </table></div>
+        </div>
+        <p class="fin-unificado-warning">Compras de autopeças, despesas de cartões e pagamentos do Fluxo são conceitos diferentes. A importação guarda o histórico para conferência, mas não o adiciona automaticamente ao Dashboard nem gera novos pagamentos.</p>
+        <div class="fin-unificado-bottom">
+          <span id="fin-unificado-count">Nenhuma planilha analisada.</span>
+          <button type="button" id="fin-unificado-confirmar" class="btn btn-primary" disabled>Importar cópia para homologação</button>
+        </div>
+      </div>
+      <div class="fin-unificado-history">
+        <h3>Cópias recebidas para homologação</h3>
+        <div id="fin-unificado-historico" class="info-note">Nenhuma cópia enviada.</div>
+      </div>
+    </div>
+  </section>
+
   <div class="import-layout">
     <section class="card">
       <div class="card-head"><div><h2>1. Selecionar origem e arquivo</h2><p>As informações são lidas localmente e somente os lançamentos confirmados são enviados ao Supabase.</p></div></div>
@@ -754,4 +804,5 @@ init();
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import.js?v=20261113paid3" defer></script>
 <script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
+<script src="./financeiro-unificado.js?v=20261113hom1" defer></script>
 </body></html>
