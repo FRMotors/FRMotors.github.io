@@ -319,6 +319,7 @@ async function importNow(){
   }
   window.frFinanceUI?.showToast('Financeiro Unificado conferido na base de homologação.');
   await history();
+  if(window.frHistoryUI?.refresh)await window.frHistoryUI.refresh().catch(()=>{});
  }catch(e){text('fin-unificado-mensagem','Importação não concluída: '+e.message+
   '. Se parte dos registros tiver sido enviada, você pode selecionar a mesma cópia e tentar novamente sem repetir as linhas.',true);}
  finally{busy=false;$('fin-unificado-analisar').disabled=!$('fin-unificado-file').files?.length;
