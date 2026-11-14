@@ -162,7 +162,7 @@ async function history(){
   '<div class="fin-unificado-history-row"><div><strong>'+esc(r.arquivo_nome)+'</strong>'+
   '<small>'+Number(r.esperado_linhas)+' registros · '+esc(new Date(r.criado_em).toLocaleDateString('pt-BR'))+'</small></div>'+
   '<span class="fin-unificado-tag '+(r.status==='conferido'?'':'warn')+'">'+
-  (r.status==='conferido'?'Conferido':'Importação em andamento')+'</span></div>').join(''):
+  (r.status==='conferido'?'Conferido e ativo':r.status==='substituido'?'Arquivado · substituído':'Importação em andamento')+'</span></div>').join(''):
   'Nenhuma cópia importada para homologação.';
  const target=$('fin-unificado-validacoes-resumo');
  if(!target)return;
@@ -278,6 +278,9 @@ async function importNow(){
     p_total:staged.data.items.length,p_resumo:summary
   });
   if(initError)throw initError;
+  if(init.status==='substituido'){
+   throw new Error('Esta planilha já foi substituída por uma versão corrigida. Utilize o arquivo CORRIGIDO_TOPLINE em vez do antigo.');
+  }
   const lote=init.lote_id;
   if(init.status!=='conferido'){
    const chunks=staged.data.items;
@@ -294,9 +297,26 @@ async function importNow(){
   if(finishError)throw finishError;
   const different=cmpServer(report);
   if(different)throw Error(different);
-  text('fin-unificado-mensagem',
-   'Homologação concluída! '+report.linhas+' registros conferidos com o Supabase, sem diferenças nas somas das seis abas. '+
-   'Nenhum pagamento ou compra operacional foi duplicado.');
+  const isToplineCorrection=/^FR_Motors_Financeiro_Unificado_CORRIGIDO_TOPLINE_.*\.xlsx$/i.test(staged.file.name);
+  if(isToplineCorrection){
+   if(staged.data.items.length!==3234 || staged.data.groups?.entradas_fluxo?.quantidade!==278 ||
+      Math.abs(Math.round(staged.data.groups?.entradas_fluxo?.soma*100)-58053489)>1){
+    throw new Error('A cópia TOPLINE corrigida não tem os 3.234 registros e R$ 580.534,89 de entradas esperados; a versão anterior permanece preservada.');
+   }
+   text('fin-unificado-mensagem','Dados importados. Transferindo 69 validações e 6 conciliações PIX/Débito, e arquivando o lote anterior com segurança...');
+   const {data:promotion,error:promotionError}=await db.rpc('fin_teste_excel_ativar_correcao_topline',{p_lote:lote});
+   if(promotionError)throw new Error('Os dados chegaram, mas a ativação da versão corrigida não foi concluída: '+promotionError.message);
+   if(Number(promotion.validacoes_preservadas)!==69||Number(promotion.conciliacoes_preservadas)!==6){
+    throw new Error('A ativação não confirmou todas as validações e conciliações anteriores. Revise antes de continuar.');
+   }
+   text('fin-unificado-mensagem','Versão TOPLINE corrigida ativada com sucesso. '+report.linhas+
+    ' registros, 11 novos recebimentos (R$ 11.345,70), 69 validações e 6 conciliações preservadas. '+
+    'A versão antiga ficou arquivada para auditoria. Nenhum lançamento foi duplicado no caixa Itaú.');
+  }else{
+   text('fin-unificado-mensagem',
+    'Homologação concluída! '+report.linhas+' registros conferidos com o Supabase, sem diferenças nas somas das seis abas. '+
+    'Nenhum pagamento ou compra operacional foi duplicado.');
+  }
   window.frFinanceUI?.showToast('Financeiro Unificado conferido na base de homologação.');
   await history();
  }catch(e){text('fin-unificado-mensagem','Importação não concluída: '+e.message+
