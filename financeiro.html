@@ -351,7 +351,8 @@
         <div>
           <label for="fin-unificado-file" class="fin-unificado-label">Planilha Financeiro Unificado (.xlsx)</label>
           <input id="fin-unificado-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-          <p class="info-note">Use a cópia de homologação do Financeiro Unificado. O sistema reconhecerá AUTOPEÇAS, CARTÕES, SAÍDAS FLUXO, ENTRADAS FLUXO, ABERTOS FLUXO e BAIXAS CONCILIADAS.</p>
+          <p class="info-note">Use o Financeiro Unificado (.xlsx). A importação reconhece AUTOPEÇAS, CARTÕES, SAÍDAS FLUXO, ENTRADAS FLUXO, ABERTOS FLUXO e BAIXAS CONCILIADAS.</p>
+          <p class="info-note"><strong>Versão CORRIGIDO_TOPLINE:</strong> o sistema identifica os 11 novos recebimentos, transfere automaticamente as 69 validações e 6 conciliações já aprovadas e arquiva a versão anterior sem apagar o histórico. Não utilize “Limpar testes” para atualizar a planilha.</p>
         </div>
         <div class="fin-unificado-start-actions">
           <button type="button" id="fin-unificado-analisar" class="btn btn-teal" disabled>Analisar planilha</button>
@@ -966,6 +967,6 @@ init();
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import.js?v=20261113paid3" defer></script>
 <script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
-<script src="./financeiro-unificado.js?v=20261113conciliado2" defer></script>
+<script src="./financeiro-unificado.js?v=20261114replace1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
 </body></html>
