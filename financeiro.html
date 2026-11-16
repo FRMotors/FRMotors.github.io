@@ -107,6 +107,14 @@
 .fin-op-pay-dialog .dialog-body{max-height:min(78dvh,690px);overflow-y:auto}
 #op-pay-list-status{padding:0;margin:0}
 @media(max-width:620px){.fin-op-base{flex-direction:column}.fin-op-fields{grid-template-columns:1fr}}
+
+.fin-op-delete-inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fin-op-delete-inline [hidden]{display:none}
+.fin-op-delete-note{font-size:12px;color:var(--muted)}
+.fin-op-delete-button{border:1px solid #b94b4b!important;color:#a63434!important;background:transparent!important}
+.fin-op-delete-button:hover:not(:disabled){background:#fff1f1!important}
+.fin-op-manual-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fin-op-delete-summary{font-weight:750;font-size:15px;overflow-wrap:anywhere;padding:12px;border-radius:9px;border:1px solid #e2caca;background:#fdf8f8}
 </style>
 </head>
 <body>
@@ -409,6 +417,10 @@
                 <label style="grid-column:1/-1">Boleto pendente
                   <select id="op-pay-select" required><option value="">Carregando contas...</option></select>
                 </label>
+                <div class="fin-op-delete-inline" style="grid-column:1/-1">
+                  <button type="button" class="btn fin-op-delete-button" id="op-pay-delete" hidden disabled>Excluir boleto selecionado</button>
+                  <span class="fin-op-delete-note" id="op-pay-delete-note"></span>
+                </div>
                 <p id="op-pay-list-status" class="info-note" style="grid-column:1/-1" role="status">Carregando boletos pendentes...</p>
                 <label style="grid-column:1/-1">Saída já confirmada no Fluxo de Caixa ou extrato importado
                   <select id="op-pay-movement" required><option value="">Selecione um boleto primeiro</option></select>
@@ -432,6 +444,24 @@
               <div class="form-actions"><button type="button" class="btn" data-op-close="op-pay-dialog">Cancelar</button>
                <button type="submit" id="op-pay-confirm" class="btn btn-primary" disabled>Confirmar baixa sem duplicação</button></div>
               <p class="info-note">A lista utiliza saídas confirmadas do Fluxo de Caixa e de extratos já importados, com a regra de até três dias entre vencimento e pagamento. Se a saída não aparecer, confirme a importação antes da baixa. A conciliação nunca inventa pagamentos.</p>
+            </div>
+          </form>
+        </dialog>
+        <dialog id="op-delete-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="op-delete-title" aria-describedby="op-delete-description">
+          <form id="op-delete-form">
+            <div class="dialog-head">
+              <div><h2 id="op-delete-title">Excluir boleto cadastrado?</h2>
+                <p>Esta ação é permitida somente para boletos adicionados manualmente que não tenham pagamentos vinculados.</p></div>
+              <button type="button" class="dialog-close" id="op-delete-cancel" aria-label="Cancelar exclusão">&times;</button>
+            </div>
+            <div class="dialog-body">
+              <p id="op-delete-description" class="fin-op-delete-summary">Confira fornecedor, valor e vencimento antes de confirmar.</p>
+              <p class="info-note">O boleto será retirado das listas, mas sua exclusão ficará registrada para auditoria. Nenhum pagamento ou boleto da planilha homologada será apagado.</p>
+              <p id="op-delete-status" class="status" role="alert"></p>
+              <div class="form-actions">
+                <button type="button" class="btn" data-op-close="op-delete-dialog">Manter boleto</button>
+                <button type="submit" class="btn fin-op-delete-button" id="op-delete-submit">Confirmar exclusão</button>
+              </div>
             </div>
           </form>
         </dialog>
@@ -1389,7 +1419,7 @@ init();
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261116fixpay1" defer></script>
-<script src="./financeiro-baixas-operacionais.js?v=20261116fixpay2" defer></script>
+<script src="./financeiro-baixas-operacionais.js?v=20261116delete1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
-<script src="./financeiro-operacional.js?v=20261116fixpay1" defer></script>
+<script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 </body></html>
