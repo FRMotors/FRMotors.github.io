@@ -34,7 +34,7 @@ function draw(){
  out('vl-auto-count',String(unmatched.length));
  out('vl-auto-confirmed-count',String(autoLinks.size));
  const q=($('vl-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
- const filter=$('vl-status')?.value||'todos';
+ const filter=$('vl-filter-status')?.value||'todos';
  const list=invoices.filter(f=>{
   if(filter==='pendentes'&&invLinks.has(f.id))return false;
   if(filter==='conferidos'&&!invLinks.has(f.id))return false;
@@ -164,7 +164,7 @@ async function refresh(force=false){
  loading=(async()=>{
   try{
    if(typeof db==='undefined'||!db)throw Error('Supabase indisponível.');
-   out('vl-status','Consultando saídas confirmadas e vínculos existentes...');
+   out('vl-load-status','Consultando saídas confirmadas e vínculos existentes...');
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
    const [allInvoices,allAutos,knownAuto,pix,linked,flow,imp,paidFlow,payParcels,paidTestParcels,paidTestExcel,paidTestFaturas,paidTestAvulsos]=await Promise.all([
@@ -203,12 +203,12 @@ async function refresh(force=false){
     ...paidTestAvulsos.map(x=>x.movimento_teste_id)].filter(Boolean));
    banks=[...flow.map(x=>({...x,source:'fluxo'})),...imp.map(x=>({...x,source:'extrato'}))];
    draw();
-   out('vl-status',invoices.length+' faturas documentais, '+
+   out('vl-load-status',invoices.length+' faturas documentais, '+
     comprovs.filter(x=>x.tipo==='fatura').length+' com saída vinculada, '+
     autos.filter(x=>!autoRefs.has(x.id)&&!byAuto().has(x.id)).length+
     ' exceções de autopeças para conferir. Nenhuma nova movimentação criada.');
   }catch(e){
-   out('vl-status','Não foi possível carregar a conferência: '+(e.message||e));
+   out('vl-load-status','Não foi possível carregar a conferência: '+(e.message||e));
    if($('vl-invoices'))$('vl-invoices').innerHTML='<tr><td colspan="6" class="empty">Erro ao carregar vínculos.</td></tr>';
   }
  })();
@@ -217,7 +217,7 @@ async function refresh(force=false){
 function init(){
  if(!$('vl-invoices'))return;
  $('vl-search')?.addEventListener('input',draw);
- $('vl-status')?.addEventListener('change',draw);
+ $('vl-filter-status')?.addEventListener('change',draw);
  $('vl-invoices')?.addEventListener('click',e=>{
   const button=e.target.closest('[data-vl-invoice]');
   if(button)open('fatura',button.dataset.vlInvoice);
