@@ -261,6 +261,54 @@
 .fin-agenda-layout{padding:0 12px 12px}.fin-agenda-status{padding:0 12px 12px}
 .fin-agenda-shortcuts{width:100%}.fin-agenda-shortcuts .btn{flex:1 1 155px}
 .fin-agenda-calendar-panel{padding:9px}.fin-agenda-calendar .ag-day{min-height:43px;padding:3px}}
+
+/* Operação real: indicadores diferenciados do ambiente de demonstração. */
+.real-dashboard{margin:0 0 20px;overflow:hidden}
+.real-dashboard>.card-head{align-items:flex-start}
+.real-dashboard>.card-head .eyebrow{margin:0 0 5px}
+.real-dashboard>.card-head h2{font-size:18px;margin:0 0 4px}
+.real-dashboard>.card-head p{font-size:12px;line-height:1.5;margin:0}
+.real-dashboard-status{margin:0;padding:0 18px 12px;font-size:12px}
+.real-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0 18px 18px}
+.real-dashboard-panel{border:1px solid var(--stroke);border-radius:12px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.real-dashboard-cash{grid-column:1/-1}
+.real-dashboard-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.real-dashboard-panel-head h3{font-size:14px;font-weight:800;margin:0 0 5px}
+.real-dashboard-panel-head p{font-size:11px;color:var(--muted);line-height:1.5;margin:0;max-width:590px}
+.real-dashboard-panel-head>.btn{padding:8px 10px}
+.real-dashboard-period{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted)}
+.real-dashboard-period select{font-size:12px;max-width:100%;min-width:195px}
+.real-dashboard-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.real-dashboard-metrics>div{display:flex;flex-direction:column;gap:5px;min-width:0;border:1px solid var(--stroke);border-radius:10px;padding:13px}
+.real-dashboard-metrics>div>span{font-size:11px;color:var(--muted)}
+.real-dashboard-metrics>div>strong{font-size:22px;line-height:1.25;overflow-wrap:anywhere;color:var(--ink)}
+.real-dashboard-metrics strong.negative{color:var(--bad)}
+.real-dashboard-fine{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
+.real-dashboard-lead{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.real-dashboard-lead strong{font-size:24px;font-weight:800;line-height:1.15;overflow-wrap:anywhere}
+.real-dashboard-lead span{font-size:12px;color:var(--muted)}
+.real-dashboard-small-metrics{display:flex;gap:8px;flex-wrap:wrap}
+.real-dashboard-small-metrics span{font-size:11px;color:var(--muted);padding:7px 9px;border:1px solid var(--stroke);border-radius:9px}
+.real-dashboard-small-metrics strong{font-size:13px;color:var(--ink)}
+.real-dashboard-details{border-top:1px solid var(--stroke);margin-top:auto;padding-top:10px}
+.real-dashboard-details summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);padding:4px 0}
+.real-dashboard-details .data-table{font-size:12px}
+.real-dashboard-details .data-table td,.real-dashboard-details .data-table th{padding:9px}
+.real-dashboard-list{list-style:none;padding:8px 0 0;margin:0}
+.real-dashboard-list li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--stroke);padding:9px 0}
+.real-dashboard-list li:last-child{border-bottom:0}
+.real-dashboard-list li>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.real-dashboard-list strong{font-size:12px}
+.real-dashboard-list small{font-size:10px;color:var(--muted)}
+.real-dashboard-list b{white-space:nowrap;font-size:12px}
+.real-dashboard-list .real-empty-line{font-size:11px;color:var(--muted)}
+@media(max-width:960px){.real-dashboard-grid{grid-template-columns:1fr}.real-dashboard-cash{grid-column:auto}}
+@media(max-width:640px){.real-dashboard-grid{padding:0 12px 12px;gap:10px}
+.real-dashboard-status{padding:0 12px 12px}.real-dashboard-panel{padding:12px;gap:10px}
+.real-dashboard-metrics{grid-template-columns:1fr;gap:6px}
+.real-dashboard-metrics>div{padding:10px}.real-dashboard-metrics>div>strong{font-size:19px}
+.real-dashboard-lead strong{font-size:20px}
+.real-dashboard-period,.real-dashboard-period select{width:100%}}
 </style>
 </head>
 <body>
@@ -323,7 +371,7 @@
           <div>
             <p class="eyebrow">Inteligência financeira</p>
             <h1 class="page-heading">Visão geral</h1>
-            <p class="page-description">Acompanhe o desempenho do caixa, compromissos e operações em um único lugar.</p>
+            <p class="page-description">Consulte primeiro os dados homologados; os controles de demonstração permanecem abaixo.</p>
           </div>
           <div class="header-buttons">
             <button type="button" class="btn btn-teal" data-view="imports"><span class="icon icon-sm" data-icon="download"></span> Importar arquivo</button>
@@ -333,9 +381,64 @@
             <button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button>
           </div>
         </div>
+        <section class="card real-dashboard" id="real-dashboard" aria-labelledby="real-dashboard-title">
+          <div class="card-head">
+            <div><p class="eyebrow">Dados homologados · somente consulta</p>
+              <h2 id="real-dashboard-title">Painel financeiro operacional</h2>
+              <p>Caixa confirmado, contas em aberto e faturas com saldo, sem contabilizar a mesma saída duas vezes.</p></div>
+            <button type="button" class="btn" id="real-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar dados</button>
+          </div>
+          <p id="real-status" class="info-note real-dashboard-status" role="status">Carregando o financeiro homologado...</p>
+          <div class="real-dashboard-grid">
+            <section class="real-dashboard-panel real-dashboard-cash">
+              <div class="real-dashboard-panel-head">
+                <div><h3>Fluxo de Caixa homologado</h3><p>Apenas movimentações confirmadas. Faturas e boletos não são lançados novamente.</p></div>
+                <label class="real-dashboard-period"><span>Período do caixa</span><select id="real-cash-month" aria-label="Período do caixa homologado">
+                  <option value="todos">Todo o histórico homologado</option></select></label>
+              </div>
+              <div class="real-dashboard-metrics">
+                <div><span>Entradas efetivas</span><strong id="real-cash-in">—</strong></div>
+                <div><span>Saídas efetivas</span><strong id="real-cash-out">—</strong></div>
+                <div><span>Resultado das movimentações</span><strong id="real-cash-net">—</strong></div>
+              </div>
+              <p class="real-dashboard-fine">O resultado não corresponde necessariamente ao saldo bancário. <span id="real-cash-count">Aguardando...</span></p>
+              <details class="real-dashboard-details"><summary>Evolução mensal do caixa homologado</summary>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>Mês</th><th class="money">Entradas</th>
+                <th class="money">Saídas</th><th class="money">Resultado</th></tr></thead>
+                <tbody id="real-month-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
+              </details>
+            </section>
+            <section class="real-dashboard-panel">
+              <div class="real-dashboard-panel-head"><div><h3>Contas a pagar</h3><p>Compromissos sem baixa. Valores de referência dos boletos.</p></div>
+                <button type="button" class="btn" data-view="payables">Ver contas</button></div>
+              <div class="real-dashboard-lead"><strong id="real-bill-value">—</strong><span id="real-bill-count">—</span><span> contas em aberto</span></div>
+              <div class="real-dashboard-small-metrics">
+                <span><strong id="real-bill-overdue">—</strong> vencidas</span>
+                <span><strong id="real-bill-soon">—</strong> vencem em 7 dias</span>
+                <span><strong id="real-bill-undated">—</strong> sem data</span>
+              </div>
+              <p class="real-dashboard-fine">Valor de referência vencido: <strong id="real-bill-overdue-value">—</strong>. Descontos possíveis não foram deduzidos.</p>
+              <details class="real-dashboard-details"><summary>Próximos compromissos registrados</summary>
+                <ul id="real-bill-list" class="real-dashboard-list"><li>Aguardando...</li></ul></details>
+            </section>
+            <section class="real-dashboard-panel">
+              <div class="real-dashboard-panel-head"><div><h3>Faturas de cartões</h3><p>Saldo documental restante, separado do total de contas a pagar.</p></div>
+                <button type="button" class="btn" data-jump-section="ag-title">Abrir faturas</button></div>
+              <div class="real-dashboard-lead"><strong id="real-card-value">—</strong><span id="real-card-count">—</span><span> faturas com saldo</span></div>
+              <div class="real-dashboard-small-metrics">
+                <span><strong id="real-card-partial">—</strong> parcialmente pagas</span>
+                <span><strong id="real-card-undated">—</strong> sem vencimento</span>
+                <span><strong id="real-card-declared">—</strong> quitadas historicamente</span>
+              </div>
+              <p class="real-dashboard-fine">Quitações declaradas não criam saídas bancárias nem datas fictícias.</p>
+              <details class="real-dashboard-details"><summary>Faturas com saldo</summary>
+                <ul id="real-card-list" class="real-dashboard-list"><li>Aguardando...</li></ul></details>
+            </section>
+          </div>
+        </section>
         <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
-          <div><strong>Você está no ambiente de demonstração.</strong>
-          <p>Todos os valores abaixo são gerados pelos seus lançamentos de teste. A planilha oficial, o caixa real e os demais módulos permanecem inalterados.</p></div>
+          <div><strong>Abaixo começa o ambiente de demonstração.</strong>
+          <p>Os indicadores, gráficos e lançamentos abaixo são somente de testes. Os valores reais homologados estão no painel acima e nos módulos operacionais.</p></div>
         </div>
         <div class="hist-quicklink" role="note">
           <div>
@@ -1891,7 +1994,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116agenda1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116real1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1908,4 +2011,5 @@ init();
 <script src="./financeiro-vinculos-faturas.js?v=20261116agenda1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261116agenda1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261116real1" defer></script>
 </body></html>
