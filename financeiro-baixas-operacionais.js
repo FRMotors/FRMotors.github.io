@@ -432,6 +432,15 @@ async function confirmPay(e){
 
 function init(){
  if(!$('op-pay-dialog'))return;
+ // Os formulários operacionais não podem ficar sob uma view [hidden].
+ // Caso contrário, clicar nos atalhos da Visão geral abre o dialog dentro
+ // de Contas a pagar, mas ele continua invisível. Manter dentro do #app
+ // preserva o controle de acesso e funciona em todas as telas.
+ const app=$('app');
+ if(app){
+  ['op-new-dialog','op-pay-dialog','op-manual-edit-dialog','op-delete-dialog']
+   .forEach(id=>{const dlg=$(id);if(dlg&&dlg.parentElement!==app)app.appendChild(dlg)});
+ }
  document.querySelectorAll('[data-ops-pay]').forEach(button=>
   button.addEventListener('click',()=>openPay().catch(e=>write('op-pay-error',String(e)))));
  document.querySelectorAll('[data-ops-new]').forEach(button=>button.addEventListener('click',openAdd));
