@@ -9,6 +9,17 @@
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
 <link rel="stylesheet" href="./financeiro-historico.css?v=20261113hist2">
+<style>
+.fin-homolog-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 20px 18px}
+.fin-homolog-kpis .insight-card{min-width:0;padding:17px}
+.fin-homolog-kpis .insight-card strong{overflow-wrap:anywhere}
+.fin-homolog-table .data-table{min-width:970px}
+.fin-homolog-note{padding:0 20px 18px;margin:0}
+.fin-homolog-status{padding:0 20px 12px;margin:0}
+.fin-homolog-manual-title{font-size:17px;margin:24px 0 12px}
+@media(max-width:900px){.fin-homolog-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:460px){.fin-homolog-kpis{margin:4px 12px 14px;gap:8px}.fin-homolog-kpis .insight-card{padding:12px}.fin-homolog-note,.fin-homolog-status{padding-left:12px;padding-right:12px}}
+</style>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -165,17 +176,41 @@
 
       <section class="view" data-view-panel="payables" hidden aria-label="Contas a pagar">
         <div class="section-header">
-          <div><p class="eyebrow">Compromissos da empresa</p><h1 class="page-heading">Contas a pagar</h1><p class="page-description">Acompanhe parcelas, vencimentos, atrasos e registre baixas com descontos ou juros.</p></div>
-          <div class="header-buttons"><button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button>
-          <button type="button" class="btn btn-primary" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button></div>
+          <div><p class="eyebrow">Compromissos da empresa</p><h1 class="page-heading">Contas a pagar</h1><p class="page-description">Confira os compromissos homologados do Fluxo de Caixa e, separadamente, as parcelas cadastradas no aplicativo.</p></div>
+          <span class="env-chip">AMBIENTE DE TESTES</span>
         </div>
+        <section class="card" id="fin-homolog-payables" aria-labelledby="fin-homolog-title">
+          <div class="card-head">
+            <div><h2 id="fin-homolog-title">Contas em aberto da planilha homologada</h2><p id="fin-homolog-source">Consultando a planilha conferida mais recente...</p></div>
+            <span class="env-chip">SOMENTE LEITURA</span>
+          </div>
+          <div class="fin-homolog-kpis">
+            <article class="insight-card"><span>Compromissos registrados</span><strong id="fin-homolog-count">—</strong><small>Aba ABERTOS FLUXO</small></article>
+            <article class="insight-card"><span>Valor previsto em aberto</span><strong id="fin-homolog-total">—</strong><small>Não equivale a pagamentos</small></article>
+            <article class="insight-card"><span>Valor vencido</span><strong id="fin-homolog-overdue">—</strong><small>Vencimento anterior a hoje</small></article>
+            <article class="insight-card"><span>Vencem em até sete dias</span><strong id="fin-homolog-soon">—</strong><small id="fin-homolog-undated">Datas ausentes em separado</small></article>
+          </div>
+          <div class="data-toolbar">
+            <label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="fin-homolog-search" type="search" placeholder="Buscar fornecedor, categoria ou vencimento..." aria-label="Buscar compromissos homologados"></label>
+            <select id="fin-homolog-filter" class="filter-select" aria-label="Filtrar compromissos homologados"><option value="todos">Todas as contas</option><option value="vencido">Vencidas</option><option value="a_vencer">A vencer</option><option value="sem_data">Sem vencimento</option></select>
+            <button type="button" class="btn" id="fin-homolog-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
+          </div>
+          <p id="fin-homolog-status" class="info-note fin-homolog-status" role="status" aria-live="polite">Aguardando consulta da homologação.</p>
+          <div class="table-wrap fin-homolog-table"><table class="data-table">
+            <thead><tr><th>Vencimento</th><th>Fornecedor / descrição</th><th>Categoria</th><th class="money">Valor cheio</th><th class="money">Desconto</th><th class="money">Valor previsto</th><th>Situação</th><th>Origem</th></tr></thead>
+            <tbody id="fin-homolog-rows"><tr><td colspan="8" class="empty">Aguardando consulta da homologação...</td></tr></tbody>
+          </table></div>
+          <div class="table-footer" id="fin-homolog-shown">Aguardando dados.</div>
+          <p class="info-note fin-homolog-note">Os compromissos são os registros expressamente marcados como EM ABERTO no Fluxo de Caixa. Nem todos são boletos de autopeças. A aba de origem informa o valor previsto, mas não o valor cheio ou desconto individual: esses campos aparecem como “—”. Nenhum pagamento, baixa ou lançamento no caixa é criado aqui.</p>
+        </section>
+        <h2 class="fin-homolog-manual-title">Parcelas cadastradas manualmente no aplicativo (teste)</h2>
         <div class="section-card-list">
           <article class="insight-card"><span>Valor cheio em aberto</span><strong id="pending-value">R$ 0,00</strong><small>Antes de descontos e encargos</small></article>
           <article class="insight-card"><span>Valor cheio vencido</span><strong id="overdue-value">R$ 0,00</strong><small>Parcelas com vencimento anterior a hoje</small></article>
           <article class="insight-card"><span>Vencem nos próximos sete dias</span><strong id="soon-count">0</strong><small>Contagem de parcelas</small></article>
         </div>
         <section class="card">
-          <div class="card-head"><div><h2>Boletos e parcelas</h2><p>Valores e vencimentos da base de testes</p></div></div>
+          <div class="card-head"><div><h2>Boletos e parcelas cadastrados no aplicativo</h2><p>Registros manuais separados da planilha homologada</p></div><div class="header-buttons"><button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button><button type="button" class="btn btn-primary" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button></div></div>
           <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-dues" type="search" placeholder="Buscar fornecedor ou vencimento..." aria-label="Buscar contas a pagar"></label></div>
           <div class="table-wrap"><table class="data-table"><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Situação</th><th></th></tr></thead><tbody id="due"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
           <div class="table-footer" id="dues-count">0 parcela(s)</div>
@@ -969,4 +1004,5 @@ init();
 <script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
 <script src="./financeiro-unificado.js?v=20261114replace1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
+ <script src="./financeiro-contas-homologadas.js?v=20261116a" defer></script>
 </body></html>
