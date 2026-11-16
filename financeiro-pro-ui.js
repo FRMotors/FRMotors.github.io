@@ -55,6 +55,7 @@ function selectView(next){
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='expenses')window.frDocsReconcileUI?.refresh?.();
   if(next==='expenses')window.frDocumentLinksUI?.refresh?.();
+  if(next==='expenses')window.frInvoicesAgendaUI?.refresh?.();
   if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
  window.scrollTo({top:0,behavior:'auto'});
@@ -222,7 +223,7 @@ function changePeriod(name){
  if(typeof render==='function')render().catch(e=>showToast(e.message,true));
 }
 function scrollToExpensesSection(id){
- if(id!=='vl-title-section')return;
+ if(!['vl-title-section','ag-title'].includes(id))return;
  const target=byId(id)?.closest('section');
  if(!target)return;
  target.setAttribute('tabindex','-1');
@@ -261,8 +262,9 @@ function setup(){
  const requestedView=params.get('view');
  const initialView=['operational','payables','expenses','purchases'].includes(requestedView)?requestedView:'overview';
  selectView(initialView);
- if(initialView==='expenses'&&params.get('section')==='payments'){
-  requestAnimationFrame(()=>scrollToExpensesSection('vl-title-section'));
+ if(initialView==='expenses'&&['payments','agenda'].includes(params.get('section'))){
+  const target=params.get('section')==='agenda'?'ag-title':'vl-title-section';
+  requestAnimationFrame(()=>scrollToExpensesSection(target));
  }
 }
 window.frFinanceUI={sync,afterSaved,showToast,selectView,openModal,closeModal,applyIcons,getSnapshot:()=>({moves:state.moves,purchases:state.purchases,dues:state.dues,suppliers:state.suppliers})};
