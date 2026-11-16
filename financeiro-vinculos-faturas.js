@@ -288,7 +288,7 @@ async function refresh(force=false){
    out('vl-load-status','Consultando saídas confirmadas e vínculos existentes...');
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-   const [allInvoices,allAutos,knownAuto,pix,linked,flow,imp,paidFlow,payParcels,paidTestParcels,paidTestExcel,paidTestFaturas,paidTestAvulsos]=await Promise.all([
+   const [allInvoices,allAutos,knownAuto,pix,linked,partRows,reviewRows,flow,imp,paidFlow,payParcels,paidTestParcels,paidTestExcel,paidTestFaturas,paidTestAvulsos]=await Promise.all([
     getAll(()=>db.from('fin_faturas_historicas')
      .select('id,cartao_nome,mes_fatura,valor_documental,quantidade_lancamentos')
      .order('mes_fatura',{ascending:false})),
@@ -301,6 +301,12 @@ async function refresh(force=false){
      .not('movimento_id','is',null).order('migrado_em',{ascending:false})),
     getAll(()=>db.from('fin_comprovacoes_documentais').select(fields)
      .order('conferido_em',{ascending:false})),
+    getAll(()=>db.from('fin_faturas_pagamentos_parciais')
+     .select('id,fatura_id,origem,movimento_fluxo_id,movimento_extrato_id,valor_pago,data_pagamento,justificativa')
+     .order('confirmado_em',{ascending:false})),
+    getAll(()=>db.from('fin_revisoes_faturas_historicas')
+     .select('id,fatura_id,origem,valor_documental,valor_movimento,diferenca,data_movimento,justificativa,situacao')
+     .order('atualizado_em',{ascending:false})),
     getAll(()=>db.from('fin_movimentos').select('id,descricao,data_movimento,valor')
      .eq('tipo','saida').eq('estado','confirmado').eq('origem','fluxo_caixa_homologado')
      .order('data_movimento',{ascending:false})),
@@ -315,22 +321,27 @@ async function refresh(force=false){
     getAll(()=>db.from('fin_teste_fatura_pagamentos').select('movimento_id').order('criado_em',{ascending:false})),
     getAll(()=>db.from('fin_baixas_extrato_avulsos').select('movimento_teste_id').order('criado_em',{ascending:false}))
    ]);
-   invoices=allInvoices;autos=allAutos;comprovs=linked;
+   invoices=allInvoices;autos=allAutos;comprovs=linked;parts=partRows;revisions=reviewRows;
    autoRefs=new Set(knownAuto.map(x=>x.documento_id));
    reservedFlow=new Set([...knownAuto.map(x=>x.movimento_id),...pix.map(x=>x.movimento_id),
-    ...linked.map(x=>x.movimento_fluxo_id),...paidFlow.map(x=>x.movimento_id),...payParcels.map(x=>x.movimento_id)].filter(Boolean));
-   reservedExt=new Set([...linked.map(x=>x.movimento_extrato_id),...paidTestParcels.map(x=>x.movimento_id),
+    ...linked.map(x=>x.movimento_fluxo_id),...partRows.map(x=>x.movimento_fluxo_id),
+    ...paidFlow.map(x=>x.movimento_id),...payParcels.map(x=>x.movimento_id)].filter(Boolean));
+   reservedExt=new Set([...linked.map(x=>x.movimento_extrato_id),...partRows.map(x=>x.movimento_extrato_id),
+    ...paidTestParcels.map(x=>x.movimento_id),
     ...paidTestExcel.map(x=>x.movimento_id),...paidTestFaturas.map(x=>x.movimento_id),
     ...paidTestAvulsos.map(x=>x.movimento_teste_id)].filter(Boolean));
    banks=[...flow.map(x=>({...x,source:'fluxo'})),...imp.map(x=>({...x,source:'extrato'}))];
    draw();
+   const fullyPaid=invoices.filter(x=>invoiceSummary(x).full).length;
+   const partiallyPaid=invoices.filter(x=>invoiceSummary(x).partial).length;
    out('vl-load-status',invoices.length+' faturas documentais, '+
-    comprovs.filter(x=>x.tipo==='fatura').length+' com saída vinculada, '+
-    autos.filter(x=>!autoRefs.has(x.id)&&!byAuto().has(x.id)).length+
-    ' exceções de autopeças para conferir. Nenhuma nova movimentação criada.');
+    fullyPaid+' quitada(s) por vínculos, '+partiallyPaid+
+    ' parcialmente paga(s), '+byReview().size+
+    ' em revisão e '+autos.filter(x=>!autoRefs.has(x.id)&&!byAuto().has(x.id)).length+
+    ' exceções de autopeças a conferir. Nenhuma movimentação adicional foi criada.');
   }catch(e){
    out('vl-load-status','Não foi possível carregar a conferência: '+(e.message||e));
-   if($('vl-invoices'))$('vl-invoices').innerHTML='<tr><td colspan="6" class="empty">Erro ao carregar vínculos.</td></tr>';
+   if($('vl-invoices'))$('vl-invoices').innerHTML='<tr><td colspan="8" class="empty">Erro ao carregar vínculos.</td></tr>';
   }
  })();
  try{await loading}finally{loading=null}
@@ -348,11 +359,18 @@ function init(){
   if(button)open('autopecas_excecao',button.dataset.vlAuto);
  });
  $('vl-source')?.addEventListener('change',()=>{if($('vl-ack'))$('vl-ack').checked=false;updateBankOptions()});
+ $('vl-mode')?.addEventListener('change',()=>{
+  if($('vl-ack'))$('vl-ack').checked=false;
+  if($('vl-reason'))$('vl-reason').value='';
+  updateBankOptions();
+ });
+ $('vl-bank-search')?.addEventListener('input',()=>updateBankOptions());
  $('vl-bank')?.addEventListener('change',()=>{if($('vl-ack'))$('vl-ack').checked=false;updateConfirm()});
  $('vl-reason')?.addEventListener('input',updateConfirm);
  $('vl-ack')?.addEventListener('change',updateConfirm);
  $('vl-form')?.addEventListener('submit',submit);
  $('vl-close')?.addEventListener('click',()=>{if(!busy&&$('vl-dialog')?.open)$('vl-dialog').close()});
+ $('vl-cancel')?.addEventListener('click',()=>{if(!busy&&$('vl-dialog')?.open)$('vl-dialog').close()});
  $('vl-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
  $('vl-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  if(!document.querySelector('[data-view-panel="expenses"]')?.hidden)refresh().catch(()=>{});
