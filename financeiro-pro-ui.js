@@ -220,9 +220,21 @@ function changePeriod(name){
  document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('active',x.dataset.period===name));
  if(typeof render==='function')render().catch(e=>showToast(e.message,true));
 }
+function scrollToExpensesSection(id){
+ if(id!=='vl-title-section')return;
+ const target=byId(id)?.closest('section');
+ if(!target)return;
+ target.setAttribute('tabindex','-1');
+ target.scrollIntoView({behavior:'smooth',block:'start'});
+ try{target.focus({preventScroll:true})}catch(_){}
+}
 function setup(){
  applyIcons();
  document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>selectView(btn.dataset.view)));
+ document.querySelectorAll('[data-jump-section]').forEach(btn=>btn.addEventListener('click',()=>{
+  selectView('expenses');
+  scrollToExpensesSection(btn.dataset.jumpSection);
+ }));
  document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openModal(btn.dataset.open)));
  document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));
  document.querySelectorAll('[data-period]').forEach(btn=>btn.addEventListener('click',()=>changePeriod(btn.dataset.period)));
@@ -244,9 +256,13 @@ function setup(){
   const p=e.target.closest('[data-pay-id]');
   if(p){selectView('payables');openModal('pay');if(byId('pay-installment'))byId('pay-installment').value=p.dataset.payId;if(typeof refreshPaymentSuggestion==='function')refreshPaymentSuggestion()}
  });
- const requestedView=new URLSearchParams(window.location.search).get('view');
+ const params=new URLSearchParams(window.location.search);
+ const requestedView=params.get('view');
  const initialView=['operational','payables','expenses'].includes(requestedView)?requestedView:'overview';
  selectView(initialView);
+ if(initialView==='expenses'&&params.get('section')==='payments'){
+  requestAnimationFrame(()=>scrollToExpensesSection('vl-title-section'));
+ }
 }
 window.frFinanceUI={sync,afterSaved,showToast,selectView,openModal,closeModal,applyIcons,getSnapshot:()=>({moves:state.moves,purchases:state.purchases,dues:state.dues,suppliers:state.suppliers})};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();

@@ -173,6 +173,14 @@
 .vl-select-label{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
 .vl-select-label select{max-width:100%;width:100%}
 .vl-card .data-table td:nth-child(4),.vl-card .data-table td:nth-child(5),.vl-card .data-table td:nth-child(6){min-width:110px}
+
+.fin-expenses-direct-access{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 18px;margin:4px 0 16px;border:1px solid var(--stroke);border-radius:12px;background:var(--card)}
+.fin-expenses-direct-access>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fin-expenses-direct-access strong{font-size:14px;color:var(--ink)}
+.fin-expenses-direct-access span{font-size:12px;color:var(--muted)}
+.fin-expenses-direct-access button span{color:inherit}
+#vl-title-section{scroll-margin-top:100px}
+@media(max-width:650px){.fin-expenses-direct-access{padding:12px;align-items:stretch}.fin-expenses-direct-access>button{width:100%;justify-content:center}}
 </style>
 </head>
 <body>
@@ -190,6 +198,7 @@
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras e parcelas</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
+    <button type="button" data-jump-section="vl-title-section"><span class="icon" data-icon="credit"></span> Faturas e pagamentos</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
     <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
     <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
@@ -573,6 +582,15 @@
   </div>
   <span class="env-chip">DOCUMENTOS · CONSULTA</span>
  </div>
+ <div class="fin-expenses-direct-access">
+  <div>
+   <strong>Faturas e pagamentos parciais</strong>
+   <span>Acompanhe o valor total, as parcelas pagas e o saldo restante.</span>
+  </div>
+  <button type="button" class="btn btn-primary" data-jump-section="vl-title-section">
+   <span class="icon icon-sm" data-icon="credit"></span> Ir para faturas e pagamentos
+  </button>
+ </div>
  <div class="fin-doc-summary">
   <section class="card fin-doc-summary-card">
    <div class="card-head"><div><h2>Autopeças</h2><p>Valor dos documentos incluídos, não pagamentos novos</p></div></div>
@@ -585,82 +603,6 @@
    <p><strong id="doc-card-count">—</strong> lançamentos incluídos</p>
   </section>
  </div>
- <section class="card fin-doc-match-card" aria-labelledby="dc-title">
-  <div class="card-head"><div>
-    <h2 id="dc-title">Conciliação documental</h2>
-    <p>Relações auditáveis entre autopeças, saídas já confirmadas e agrupamentos de cartões. Nenhuma nova baixa no caixa.</p>
-   </div>
-   <button type="button" id="dc-refresh" class="btn"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar conferência</button>
-  </div>
-  <div class="fin-doc-match-stats">
-   <article class="insight-card"><span>Autopeças localizadas no Fluxo</span><strong id="dc-matched-count">—</strong>
-    <small id="dc-matched-total">—</small></article>
-   <article class="insight-card"><span>Compras pagas para revisar</span><strong id="dc-review-count">—</strong>
-    <small>Sem correspondência individual segura</small></article>
-   <article class="insight-card"><span>Faturas documentais</span><strong id="dc-invoice-count">—</strong>
-    <small id="dc-invoice-total">—</small></article>
-   <article class="insight-card"><span>PIX / Débito já validados</span><strong id="dc-pix-count">—</strong>
-    <small>Origem e justificativa preservadas</small></article>
-  </div>
-  <p id="dc-status" class="info-note fin-doc-match-note" role="status" aria-live="polite">Aguardando consulta das correspondências.</p>
-  <p class="info-note fin-doc-match-note">As referências de autopeças usam <strong>fornecedor igual, valor efetivamente pago igual e até três dias</strong> entre vencimento e saída. As faturas são agrupamentos de lançamentos, não comprovantes de quitação. O livro-caixa não foi alterado.</p>
- </section>
- <section class="card fin-doc-match-card">
-  <div class="card-head"><div><h2>Autopeças e pagamentos existentes</h2>
-    <p>Compras marcadas como pagas no Excel, incluindo aquelas que ainda precisam ser revisadas.</p></div></div>
-  <div class="data-toolbar fin-doc-match-filters">
-   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-    <input type="search" id="dc-auto-search" placeholder="Buscar fornecedor ou código..." aria-label="Buscar compras para conciliação"></label>
-   <select id="dc-auto-filter" class="filter-select" aria-label="Situação das correspondências">
-    <option value="todos">Todas as compras pagas</option>
-    <option value="localizados">Localizadas no Fluxo</option>
-    <option value="pendentes">Precisam de revisão</option>
-   </select>
-  </div>
-  <div class="table-wrap"><table class="data-table">
-   <thead><tr><th>Código</th><th>Fornecedor</th><th>Vencimento</th>
-    <th class="money">Pago na planilha</th><th>Correspondência</th><th>Regra</th></tr></thead>
-   <tbody id="dc-auto-rows"><tr><td colspan="6" class="empty">Aguardando consulta...</td></tr></tbody>
-  </table></div>
-  <div class="table-footer fin-doc-match-paging"><span id="dc-auto-paging">Carregando...</span>
-   <div><button type="button" id="dc-auto-prev" class="btn" disabled>Anterior</button>
-    <button type="button" id="dc-auto-next" class="btn" disabled>Próxima</button></div>
-  </div>
- </section>
- <section class="card fin-doc-match-card">
-  <div class="card-head"><div><h2>Faturas documentais por cartão e mês</h2>
-    <p>Compras e ajustes negativos agrupados por nome exato do cartão, preservando as identificações da planilha.</p></div></div>
-  <div class="data-toolbar fin-doc-match-filters">
-   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-    <input type="search" id="dc-fatura-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas históricas"></label>
-  </div>
-  <div class="table-wrap"><table class="data-table"><thead><tr>
-   <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
-   <th class="money">Compras</th><th class="money">Ajustes</th><th class="money">Total documental</th><th>Ação</th>
-  </tr></thead>
-   <tbody id="dc-fatura-rows"><tr><td colspan="7" class="empty">Aguardando consulta...</td></tr></tbody></table>
-  </div>
-  <div class="table-footer fin-doc-match-paging"><span id="dc-fatura-paging">Carregando...</span>
-   <div><button type="button" class="btn" id="dc-fatura-prev" disabled>Anterior</button>
-    <button type="button" class="btn" id="dc-fatura-next" disabled>Próxima</button></div>
-  </div>
-  <div class="fin-doc-fatura-detail" id="dc-fatura-detail" hidden>
-   <div class="card-head"><div><h2 id="dc-detail-title">Lançamentos da fatura</h2>
-     <p id="dc-detail-status" role="status">Aguardando...</p></div>
-    <button type="button" id="dc-detail-close" class="btn">Fechar detalhes</button>
-   </div>
-   <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição / código</th><th class="money">Valor</th></tr></thead>
-    <tbody id="dc-detail-rows"></tbody></table>
-   </div>
-  </div>
- </section>
- <section class="card fin-doc-match-card">
-  <div class="card-head"><div><h2>PIX / Débito previamente conferidos</h2>
-   <p>Referências da planilha homologada: quando o vínculo não está no Fluxo, a classificação “Outro banco” permanece.</p></div></div>
-  <div class="table-wrap"><table class="data-table"><thead><tr>
-   <th>Código</th><th>Meio</th><th class="money">Valor</th><th>Situação</th><th>Justificativa</th>
-  </tr></thead><tbody id="dc-pix-rows"><tr><td colspan="5" class="empty">Aguardando consulta...</td></tr></tbody></table></div>
- </section>
  <section class="card vl-card" aria-labelledby="vl-title-section">
   <div class="card-head"><div><h2 id="vl-title-section">Vincular faturas e revisar exceções</h2>
    <p>Confirmação manual de pagamentos existentes. Sem criar saídas financeiras ou alterar o Fluxo de Caixa.</p></div>
@@ -766,6 +708,82 @@
    </div>
   </form>
  </dialog>
+ <section class="card fin-doc-match-card" aria-labelledby="dc-title">
+  <div class="card-head"><div>
+    <h2 id="dc-title">Conciliação documental</h2>
+    <p>Relações auditáveis entre autopeças, saídas já confirmadas e agrupamentos de cartões. Nenhuma nova baixa no caixa.</p>
+   </div>
+   <button type="button" id="dc-refresh" class="btn"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar conferência</button>
+  </div>
+  <div class="fin-doc-match-stats">
+   <article class="insight-card"><span>Autopeças localizadas no Fluxo</span><strong id="dc-matched-count">—</strong>
+    <small id="dc-matched-total">—</small></article>
+   <article class="insight-card"><span>Compras pagas para revisar</span><strong id="dc-review-count">—</strong>
+    <small>Sem correspondência individual segura</small></article>
+   <article class="insight-card"><span>Faturas documentais</span><strong id="dc-invoice-count">—</strong>
+    <small id="dc-invoice-total">—</small></article>
+   <article class="insight-card"><span>PIX / Débito já validados</span><strong id="dc-pix-count">—</strong>
+    <small>Origem e justificativa preservadas</small></article>
+  </div>
+  <p id="dc-status" class="info-note fin-doc-match-note" role="status" aria-live="polite">Aguardando consulta das correspondências.</p>
+  <p class="info-note fin-doc-match-note">As referências de autopeças usam <strong>fornecedor igual, valor efetivamente pago igual e até três dias</strong> entre vencimento e saída. As faturas são agrupamentos de lançamentos, não comprovantes de quitação. O livro-caixa não foi alterado.</p>
+ </section>
+ <section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>Autopeças e pagamentos existentes</h2>
+    <p>Compras marcadas como pagas no Excel, incluindo aquelas que ainda precisam ser revisadas.</p></div></div>
+  <div class="data-toolbar fin-doc-match-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="dc-auto-search" placeholder="Buscar fornecedor ou código..." aria-label="Buscar compras para conciliação"></label>
+   <select id="dc-auto-filter" class="filter-select" aria-label="Situação das correspondências">
+    <option value="todos">Todas as compras pagas</option>
+    <option value="localizados">Localizadas no Fluxo</option>
+    <option value="pendentes">Precisam de revisão</option>
+   </select>
+  </div>
+  <div class="table-wrap"><table class="data-table">
+   <thead><tr><th>Código</th><th>Fornecedor</th><th>Vencimento</th>
+    <th class="money">Pago na planilha</th><th>Correspondência</th><th>Regra</th></tr></thead>
+   <tbody id="dc-auto-rows"><tr><td colspan="6" class="empty">Aguardando consulta...</td></tr></tbody>
+  </table></div>
+  <div class="table-footer fin-doc-match-paging"><span id="dc-auto-paging">Carregando...</span>
+   <div><button type="button" id="dc-auto-prev" class="btn" disabled>Anterior</button>
+    <button type="button" id="dc-auto-next" class="btn" disabled>Próxima</button></div>
+  </div>
+ </section>
+ <section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>Faturas documentais por cartão e mês</h2>
+    <p>Compras e ajustes negativos agrupados por nome exato do cartão, preservando as identificações da planilha.</p></div></div>
+  <div class="data-toolbar fin-doc-match-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="dc-fatura-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas históricas"></label>
+  </div>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
+   <th class="money">Compras</th><th class="money">Ajustes</th><th class="money">Total documental</th><th>Ação</th>
+  </tr></thead>
+   <tbody id="dc-fatura-rows"><tr><td colspan="7" class="empty">Aguardando consulta...</td></tr></tbody></table>
+  </div>
+  <div class="table-footer fin-doc-match-paging"><span id="dc-fatura-paging">Carregando...</span>
+   <div><button type="button" class="btn" id="dc-fatura-prev" disabled>Anterior</button>
+    <button type="button" class="btn" id="dc-fatura-next" disabled>Próxima</button></div>
+  </div>
+  <div class="fin-doc-fatura-detail" id="dc-fatura-detail" hidden>
+   <div class="card-head"><div><h2 id="dc-detail-title">Lançamentos da fatura</h2>
+     <p id="dc-detail-status" role="status">Aguardando...</p></div>
+    <button type="button" id="dc-detail-close" class="btn">Fechar detalhes</button>
+   </div>
+   <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição / código</th><th class="money">Valor</th></tr></thead>
+    <tbody id="dc-detail-rows"></tbody></table>
+   </div>
+  </div>
+ </section>
+ <section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>PIX / Débito previamente conferidos</h2>
+   <p>Referências da planilha homologada: quando o vínculo não está no Fluxo, a classificação “Outro banco” permanece.</p></div></div>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Código</th><th>Meio</th><th class="money">Valor</th><th>Situação</th><th>Justificativa</th>
+  </tr></thead><tbody id="dc-pix-rows"><tr><td colspan="5" class="empty">Aguardando consulta...</td></tr></tbody></table></div>
+ </section>
  <section class="card">
   <div class="card-head">
    <div><h2>Conferência de documentos</h2><p>Os registros marcados como “não incluir” são mantidos apenas para auditoria.</p></div>
@@ -1648,7 +1666,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116vinculos1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116acessofaturas1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
