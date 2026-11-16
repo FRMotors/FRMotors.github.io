@@ -138,6 +138,30 @@
 .fin-doc-match-stats .insight-card{padding:12px}
 .fin-doc-match-stats strong{font-size:19px}
 .fin-doc-match-note{padding:0 12px 14px}}
+
+.vl-card{margin-bottom:16px}
+.vl-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:2px 20px 15px}
+.vl-overview .insight-card{min-width:0;padding:13px}
+.vl-overview strong{font-size:22px}
+.vl-message{padding:0 20px 15px;margin:0}
+.vl-controls{display:flex;flex-wrap:wrap;gap:10px}
+.vl-controls .search-box{flex:2 1 260px}
+.vl-controls .filter-select{flex:1 1 190px}
+.vl-card .data-table small{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.vl-card .data-table .money{white-space:nowrap}
+.vl-card .table-wrap{overflow-x:auto}
+.vl-card .data-table th,.vl-card .data-table td{min-width:95px}
+.vl-dialog{width:min(690px,calc(100vw - 20px));max-width:690px}
+.vl-dialog .dialog-body{max-height:min(74dvh,700px);overflow-y:auto}
+.vl-form-fields{display:grid;grid-template-columns:1fr;gap:12px}
+.vl-form-fields label,.vl-reason-label{display:flex;flex-direction:column;gap:7px}
+.vl-form-fields select,.vl-reason-label textarea{width:100%;max-width:100%}
+.vl-reason-label{margin-top:10px}
+.vl-reason-label textarea{resize:vertical}
+.vl-ack{display:flex;align-items:flex-start;gap:10px;margin:12px 0;font-size:13px}
+.vl-ack input{margin-top:3px;flex-shrink:0}
+@media(max-width:990px){.vl-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.vl-overview{gap:8px;padding:2px 12px 12px}.vl-message{padding:0 12px 12px}.vl-overview .insight-card{padding:12px}}
 </style>
 </head>
 <body>
@@ -626,6 +650,81 @@
    <th>Código</th><th>Meio</th><th class="money">Valor</th><th>Situação</th><th>Justificativa</th>
   </tr></thead><tbody id="dc-pix-rows"><tr><td colspan="5" class="empty">Aguardando consulta...</td></tr></tbody></table></div>
  </section>
+ <section class="card vl-card" aria-labelledby="vl-title-section">
+  <div class="card-head"><div><h2 id="vl-title-section">Vincular faturas e revisar exceções</h2>
+   <p>Confirmação manual de pagamentos existentes. Sem criar saídas financeiras ou alterar o Fluxo de Caixa.</p></div>
+   <button type="button" class="btn" id="vl-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar vínculos</button>
+  </div>
+  <div class="vl-overview">
+   <article class="insight-card"><span>Faturas sem vínculo</span><strong id="vl-open-count">—</strong></article>
+   <article class="insight-card"><span>Faturas conferidas</span><strong id="vl-confirmed-count">—</strong></article>
+   <article class="insight-card"><span>Autopeças para revisar</span><strong id="vl-auto-count">—</strong></article>
+   <article class="insight-card"><span>Exceções conferidas</span><strong id="vl-auto-confirmed-count">—</strong></article>
+  </div>
+  <p class="info-note vl-message" id="vl-load-status" role="status" aria-live="polite">Aguardando consulta dos pagamentos.</p>
+  <p class="info-note vl-message">Uma fatura somente será vinculada quando o valor do pagamento for <strong>exatamente igual</strong> ao total documental. Para autopeças pagas após o vencimento, a data do pagamento e o fornecedor também devem coincidir com o Fluxo. Em ambos os casos, você escolhe a saída e informa uma justificativa.</p>
+ </section>
+ <section class="card vl-card">
+  <div class="card-head"><div><h2>Faturas e pagamentos bancários</h2>
+   <p>Escolha uma fatura para localizar uma saída confirmada do Fluxo de Caixa ou de um extrato importado.</p></div></div>
+  <div class="data-toolbar vl-controls">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="vl-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas para vincular"></label>
+   <select id="vl-filter-status" class="filter-select" aria-label="Filtrar faturas por situação">
+    <option value="todos">Todas as faturas</option>
+    <option value="pendentes">Sem vínculo</option>
+    <option value="conferidos">Vinculadas</option>
+   </select>
+  </div>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
+   <th class="money">Valor documental</th><th>Situação do vínculo</th><th>Ação</th>
+  </tr></thead>
+   <tbody id="vl-invoices"><tr><td colspan="6" class="empty">Aguardando conferência...</td></tr></tbody>
+  </table></div>
+  <div class="table-footer" id="vl-invoice-count">Aguardando dados.</div>
+ </section>
+ <section class="card vl-card">
+  <div class="card-head"><div><h2>Exceções de autopeças pagas após o vencimento</h2>
+   <p>Conferência individual de compras marcadas como pagas, mas fora da janela automática de três dias.</p></div></div>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Compra e fornecedor</th><th>Vencimento</th><th>Pago em</th>
+   <th class="money">Valor pago informado</th><th>Situação</th><th>Ação</th>
+  </tr></thead>
+  <tbody id="vl-auto-rows"><tr><td colspan="6" class="empty">Aguardando conferência...</td></tr></tbody></table></div>
+ </section>
+ <dialog id="vl-dialog" class="fin-dialog vl-dialog" aria-labelledby="vl-title">
+  <form id="vl-form">
+   <div class="dialog-head">
+    <div><h2 id="vl-title">Vincular pagamento existente</h2>
+     <p id="vl-description">Selecione e confira o documento.</p></div>
+    <button type="button" class="dialog-close" id="vl-close" aria-label="Fechar">&times;</button>
+   </div>
+   <div class="dialog-body">
+    <div class="fields vl-form-fields">
+     <label>Origem do pagamento
+      <select id="vl-source" required>
+       <option value="fluxo">Fluxo de Caixa homologado</option>
+       <option value="extrato" id="vl-ext-option">Extrato bancário importado</option>
+      </select></label>
+     <label>Saída já confirmada (valores exatos)
+      <select id="vl-bank" required><option value="">Selecione uma saída...</option></select></label>
+    </div>
+    <p class="info-note" id="vl-bank-info" role="status">Selecione a origem.</p>
+    <p class="info-note" id="vl-match-check">O valor do pagamento precisa ser igual ao valor documental.</p>
+    <label class="vl-reason-label">Justificativa da conferência
+     <textarea id="vl-reason" rows="3" required minlength="12" maxlength="1000" placeholder="Ex.: Comprovante de pagamento conferido com a fatura e o extrato, mesma data e valor."></textarea></label>
+    <label class="vl-ack"><input type="checkbox" id="vl-ack" required>
+     Confirmo que esta saída corresponde ao documento informado. Não será criado um novo pagamento.</label>
+    <p class="status" id="vl-error" role="alert"></p>
+    <div class="form-actions">
+     <button type="button" class="btn" onclick="this.closest('dialog').close()" >Cancelar</button>
+     <button type="submit" class="btn btn-primary" id="vl-submit" disabled>Confirmar vínculo</button>
+    </div>
+    <p class="info-note">Essa conferência registra apenas uma relação entre documento e saída existente. Faturas com pagamentos parciais ou valores divergentes continuam pendentes para revisão específica.</p>
+   </div>
+  </form>
+ </dialog>
  <section class="card">
   <div class="card-head">
    <div><h2>Conferência de documentos</h2><p>Os registros marcados como “não incluir” são mantidos apenas para auditoria.</p></div>
@@ -1508,7 +1607,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116conciliacao1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116vinculos1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1521,5 +1620,6 @@ init();
 <script src="./financeiro-baixas-operacionais.js?v=20261116delete1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261116conciliacao1" defer></script>
+<script src="./financeiro-vinculos-faturas.js?v=20261116vinculos1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 </body></html>
