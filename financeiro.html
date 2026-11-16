@@ -518,11 +518,12 @@
       <div class="table-footer" id="import-card-summary">Importe uma fatura para começar.</div>
     </section>
     <section class="card">
-      <div class="card-head"><div><h2>Conciliar boleto com saída bancária</h2><p>Vincule uma saída importada a uma parcela já cadastrada, sem gerar outra movimentação.</p></div></div>
+      <div class="card-head"><div><h2>Conciliar boleto ou compromisso com saída bancária</h2><p>Vincule uma saída bancária a uma parcela do aplicativo ou a um compromisso do Excel homologado, sem criar outra movimentação.</p></div></div>
       <div class="card-body">
         <div class="fields">
           <label style="grid-column:1/-1">Saída bancária importada<select id="reconcile-move"><option value="">Selecione uma saída do extrato</option></select></label>
-          <label style="grid-column:1/-1">Boleto em aberto<select id="reconcile-parcel"><option value="">Selecione uma parcela</option></select></label>
+          <label style="grid-column:1/-1">Boleto ou compromisso em aberto<select id="reconcile-parcel"><option value="">Selecione uma parcela</option></select></label>
+          <p id="reconcile-source-note" class="info-note" style="grid-column:1/-1;margin:0" role="status">Carregando boletos do aplicativo e compromissos do Excel homologado...</p>
           <label>Desconto efetivo (R$)<input id="reconcile-discount" type="number" min="0" step="0.01" value="0.00"></label>
           <label>Juros efetivos (R$)<input id="reconcile-fees" type="number" min="0" step="0.01" value="0.00"></label>
         </div>
@@ -1000,9 +1001,9 @@ init();
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
-<script src="./financeiro-import.js?v=20261113paid3" defer></script>
-<script src="./financeiro-faturas.js?v=20261113paid3" defer></script>
-<script src="./financeiro-unificado.js?v=20261114replace1" defer></script>
+<script src="./financeiro-import.js?v=20261116abertos1" defer></script>
+<script src="./financeiro-faturas.js?v=20261116abertos1" defer></script>
+<script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116a" defer></script>
 </body></html>
