@@ -366,8 +366,10 @@ function init(){
  });
  $('op-delete-form')?.addEventListener('submit',confirmDelete);
  $('op-delete-cancel')?.addEventListener('click',()=>{
+  if(busy)return;
   deleteTarget=null;closeDialog('op-delete-dialog');
  });
+ $('op-delete-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
  $('op-delete-dialog')?.addEventListener('close',()=>{deleteTarget=null;});
  $('op-pay-movement')?.addEventListener('change',()=>{$('op-pay-ack').checked=false;movementChanged()});
  ['op-pay-discount','op-pay-fees'].forEach(id=>$(id)?.addEventListener('input',recalc));
@@ -383,7 +385,10 @@ function init(){
  $('op-pay-form')?.addEventListener('submit',confirmPay);
  $('op-new-form')?.addEventListener('submit',createManual);
  document.querySelectorAll('[data-op-close]').forEach(b=>
-  b.addEventListener('click',()=>closeDialog(b.dataset.opClose)));
+  b.addEventListener('click',()=>{
+   if(busy&&b.dataset.opClose==='op-delete-dialog')return;
+   closeDialog(b.dataset.opClose);
+  }));
  if(!document.querySelector('[data-view-panel="payables"]')?.hidden){
   load().catch(e=>write('op-manual-count','Falha ao carregar boletos: '+(e.message||e)));
  }
