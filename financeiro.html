@@ -610,14 +610,15 @@
   </div>
   <div class="vl-overview">
    <article class="insight-card"><span>Faturas sem vínculo</span><strong id="vl-open-count">—</strong></article>
-   <article class="insight-card"><span>Faturas integralmente pagas</span><strong id="vl-confirmed-count">—</strong></article>
+   <article class="insight-card"><span>Faturas quitadas</span><strong id="vl-confirmed-count">—</strong></article>
+   <article class="insight-card"><span>Quitadas por confirmação, sem banco</span><strong id="vl-declared-count">—</strong></article>
    <article class="insight-card"><span>Faturas parcialmente pagas</span><strong id="vl-partial-count">—</strong></article>
    <article class="insight-card"><span>Pagamentos possíveis em revisão</span><strong id="vl-review-count">—</strong></article>
    <article class="insight-card"><span>Autopeças para revisar</span><strong id="vl-auto-count">—</strong></article>
    <article class="insight-card"><span>Exceções conferidas</span><strong id="vl-auto-confirmed-count">—</strong></article>
   </div>
   <p class="info-note vl-message" id="vl-load-status" role="status" aria-live="polite">Aguardando consulta dos pagamentos.</p>
-  <p class="info-note vl-message">Uma fatura pode receber <strong>vários pagamentos parciais</strong>, cada um associado a uma saída bancária já confirmada. A soma nunca pode ultrapassar o valor documental. O sistema mostra total pago, saldo e histórico por parcela. Pagamentos divergentes podem ser apenas anotados para revisão, sem quitar a fatura.</p>
+  <p class="info-note vl-message"><strong>Histórico até setembro/2026:</strong> faturas quitadas por sua confirmação, sem identificar saídas bancárias. Não foram criados pagamentos ou datas fictícias. As faturas seguintes continuam disponíveis para conciliação com saídas existentes, inclusive por vários pagamentos parciais.</p>
  </section>
  <section class="card vl-card">
   <div class="card-head"><div><h2>Faturas e pagamentos bancários</h2>
@@ -635,7 +636,7 @@
   </div>
   <div class="table-wrap"><table class="data-table"><thead><tr>
    <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
-   <th class="money">Valor da fatura</th><th class="money">Total pago</th><th class="money">Saldo restante</th>
+   <th class="money">Valor da fatura</th><th class="money">Quitado informado / conciliado</th><th class="money">Saldo restante</th>
    <th>Situação</th><th>Ação</th>
   </tr></thead>
    <tbody id="vl-invoices"><tr><td colspan="8" class="empty">Aguardando conferência...</td></tr></tbody>
@@ -1678,7 +1679,7 @@ init();
 <script src="./financeiro-contas-operacionais.js?v=20261116fixpay1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261116parcelas1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
-<script src="./financeiro-conciliacao-documental.js?v=20261116conciliacao1" defer></script>
-<script src="./financeiro-vinculos-faturas.js?v=20261116parcelas1" defer></script>
+<script src="./financeiro-conciliacao-documental.js?v=20261116quitadas1" defer></script>
+<script src="./financeiro-vinculos-faturas.js?v=20261116quitadas1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 </body></html>
