@@ -494,6 +494,31 @@
 }
 #fin-cp-operacional .fin-cp-actions > button .icon{flex:0 0 auto}
 
+/* As ações de cada linha de Conta a pagar também ficam organizadas. */
+#fin-cp-operacional .fin-cp-table .cp-actions,
+[data-view-panel="payables"] .fin-op-manual-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:5px;
+  min-width:135px;
+  align-items:center;
+}
+#fin-cp-operacional .fin-cp-table .cp-actions > button,
+[data-view-panel="payables"] .fin-op-manual-actions > button{
+  width:100%;
+  min-width:0;
+  min-height:32px;
+  padding:6px 5px;
+  white-space:normal;
+  font-size:10px;
+  line-height:1.25;
+}
+#fin-cp-operacional .fin-cp-table .cp-actions > button:only-child,
+[data-view-panel="payables"] .fin-op-manual-actions > button:only-child{
+  grid-column:1 / -1;
+}
+
+
 @media(max-width:1100px){
   #main-content [data-view-panel="expenses"] .fin-expenses-direct-access{
     grid-template-columns:minmax(0,1fr);
