@@ -53,6 +53,7 @@ function selectView(next){
   if(next==='operational')window.frOperationalUI?.open?.();
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
+  if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
  window.scrollTo({top:0,behavior:'auto'});
 }
 function closeSidebar(){document.body.classList.remove('sidebar-open');byId('sidebar-overlay')?.setAttribute('hidden','');byId('menu-toggle')?.setAttribute('aria-expanded','false')}

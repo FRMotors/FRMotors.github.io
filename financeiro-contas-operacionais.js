@@ -17,17 +17,18 @@ const plusDays=(ymd,amount)=>{
 };
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text;};
 const cents=x=>Math.round(Number(x)*100);
-let all=[],suppliers=new Map(),page=0,busy=false,loading=null,editing=null;
+let all=[],suppliers=new Map(),cashLinks=new Map(),page=0,busy=false,loading=null,editing=null;
 const pageSize=25;
 function stateOf(r,now){
  if(r.situacao==='conciliado_extrato')return 'conciliado';
+ if(cashLinks.has(r.id))return 'conciliado_fluxo';
  if(!r.vencimento)return 'sem_data';
  if(r.vencimento<now)return 'vencido';
  if(r.vencimento===now)return 'hoje';
  return 'a_vencer';
 }
 function estimatedDiscount(r,now){
- if(r.situacao!=='aberto'||!r.vencimento||r.vencimento<now||!r.fornecedor_id)return null;
+ if(r.situacao!=='aberto'||cashLinks.has(r.id)||!r.vencimento||r.vencimento<now||!r.fornecedor_id)return null;
  const s=suppliers.get(r.fornecedor_id);
  if(!s||!s.desconto_ate_vencimento)return null;
  const pct=Number(s.desconto_atual_pct);
@@ -36,7 +37,7 @@ function estimatedDiscount(r,now){
  return discount>0?{pct,discount,liquido:base-discount}:null;
 }
 function statusLabel(s){
- return {conciliado:'Conciliado no extrato',vencido:'Vencido',sem_data:'Sem vencimento',
+ return {conciliado:'Conciliado no extrato',conciliado_fluxo:'Baixado no Fluxo',vencido:'Vencido',sem_data:'Sem vencimento',
   hoje:'Vence hoje',a_vencer:'A vencer'}[s]||s;
 }
 function filterRows(){
@@ -46,9 +47,9 @@ function filterRows(){
  const now=today(),next7=plusDays(now,7);
  return all.filter(r=>{
   const s=stateOf(r,now);
-  const accepted=filter==='todos'||(filter==='aberto'&&r.situacao==='aberto')||
-    (filter==='proximos7'&&r.situacao==='aberto'&&r.vencimento&&r.vencimento>=now&&r.vencimento<=next7)||
-    filter===s;
+  const accepted=filter==='todos'||(filter==='aberto'&&s!=='conciliado'&&s!=='conciliado_fluxo')||
+    (filter==='proximos7'&&s!=='conciliado'&&s!=='conciliado_fluxo'&&r.vencimento&&r.vencimento>=now&&r.vencimento<=next7)||
+    (filter==='conciliado'&&(s==='conciliado'||s==='conciliado_fluxo'))||filter===s;
   if(!accepted||(month!=='todos'&&(!r.vencimento||r.vencimento.slice(0,7)!==month)))return false;
   const haystack=[r.fornecedor_nome,r.descricao,r.categoria,r.vencimento,r.linha_original,
    r.codigo_origem,r.observacoes].join(' ').toLocaleLowerCase('pt-BR');
@@ -67,8 +68,8 @@ function updateMonths(){
 }
 function draw(){
  const now=today(),next7=plusDays(now,7);
- const open=all.filter(r=>r.situacao==='aberto');
- const reconciled=all.filter(r=>r.situacao==='conciliado_extrato');
+ const open=all.filter(r=>r.situacao==='aberto'&&!cashLinks.has(r.id));
+ const reconciled=all.filter(r=>r.situacao==='conciliado_extrato'||cashLinks.has(r.id));
  const overdue=open.filter(r=>r.vencimento&&r.vencimento<now);
  const next=open.filter(r=>r.vencimento&&r.vencimento>=now&&r.vencimento<=next7);
  const undated=open.filter(r=>!r.vencimento);
@@ -84,13 +85,14 @@ function draw(){
  const tbody=$('cp-rows');
  if(tbody){
   tbody.innerHTML=visible.length?visible.map(r=>{
-   const st=stateOf(r,now),possible=estimatedDiscount(r,now);
-   const discount=r.desconto_efetivo!==null?money(r.desconto_efetivo):
+   const st=stateOf(r,now),possible=estimatedDiscount(r,now),cashLink=cashLinks.get(r.id);
+   const discount=cashLink?money(cashLink.desconto):r.desconto_efetivo!==null?money(r.desconto_efetivo):
     (possible?'<span class="cp-possible">'+money(possible.discount/100)+' <small>possível '+possible.pct+'%</small></span>':'—');
-   const amount=r.situacao==='conciliado_extrato'?
+   const amount=cashLink?'<strong>'+money(cashLink.valor_pago)+'</strong><small>Pago em '+esc(dateBR(cashLink.data_pagamento))+'</small>':
+    r.situacao==='conciliado_extrato'?
     '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>':
     (possible?'<span class="cp-possible">'+money(possible.liquido/100)+'<small>estimativa, não pago</small></span>':'—');
-   const statusClass=st==='conciliado'?'paid':st==='vencido'?'overdue':'open';
+   const statusClass=['conciliado','conciliado_fluxo'].includes(st)?'paid':st==='vencido'?'overdue':'open';
    return '<tr>'+
     '<td><span class="row-main">'+esc(dateBR(r.vencimento))+'</span></td>'+
     '<td><span class="row-main">'+esc(r.fornecedor_nome)+'</span>'+
@@ -103,7 +105,7 @@ function draw(){
     '<td class="money cp-value">'+amount+'</td>'+
     '<td><span class="state '+statusClass+'">'+esc(statusLabel(st))+'</span></td>'+
     '<td><div class="cp-actions"><button class="row-edit-button" type="button" data-cp-edit="'+esc(r.id)+'">Editar</button>'+
-      (r.situacao==='aberto'?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Conciliar</button>':'')+
+      (r.situacao==='aberto'&&!cashLink?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Dar baixa</button>':'')+
     '</div></td></tr>';
   }).join(''):
    '<tr><td colspan="9" class="empty">Nenhum compromisso corresponde aos filtros.</td></tr>';
@@ -120,16 +122,19 @@ async function refresh(){
    if(typeof db==='undefined'||!db)throw Error('Conexão indisponível.');
    const {data:autorizado,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||autorizado!==true)throw Error('Acesso financeiro não autorizado.');
-   const [rows,suppliersRes]=await Promise.all([
+   const [rows,suppliersRes,linkedRes]=await Promise.all([
     db.from('fin_contas_pagar').select(
      'id,origem_chave,linha_origem_id,linha_excel,linha_original,codigo_origem,descricao,fornecedor_nome,fornecedor_id,categoria,vencimento,valor_referencia,valor_cheio_informado,desconto_efetivo,juros_efetivos,valor_pago,data_pagamento,situacao,observacoes'
     ).order('vencimento',{ascending:true,nullsFirst:false}).order('linha_excel',{ascending:true}).limit(500),
-    db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento')
+    db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento'),
+    db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,data_pagamento').not('conta_pagar_id','is',null)
    ]);
    if(rows.error)throw rows.error;
    if(suppliersRes.error)throw suppliersRes.error;
+   if(linkedRes.error)throw linkedRes.error;
    if((rows.data||[]).length>=500)throw Error('Carteira maior que 500 contas. Paginação do banco necessária.');
    all=rows.data||[];
+   cashLinks=new Map((linkedRes.data||[]).map(x=>[x.conta_pagar_id,x]));
    suppliers=new Map((suppliersRes.data||[]).map(x=>[x.id,x]));
    updateMonths();draw();
    set('cp-load-status','Carteira operacional ativa: '+all.length+
@@ -147,7 +152,8 @@ function openEdit(id){
  set('cp-edit-title','Editar compromisso · '+r.fornecedor_nome);
  set('cp-edit-source','Origem: ABERTOS FLUXO, linha '+r.linha_excel+
   ' · valor da planilha '+money(r.valor_referencia)+
-  (r.situacao==='conciliado_extrato'?' · conciliado no extrato por '+money(r.valor_pago):''));
+  (r.situacao==='conciliado_extrato'?' · conciliado no extrato por '+money(r.valor_pago):
+   cashLinks.has(r.id)?' · baixado no Fluxo por '+money(cashLinks.get(r.id).valor_pago):''));
  $('cp-edit-date').value=r.vencimento||'';
  $('cp-edit-full').value=r.valor_cheio_informado===null?'':Number(r.valor_cheio_informado).toFixed(2);
  $('cp-edit-category').value=r.categoria||'';
@@ -191,24 +197,15 @@ async function sync(){
  finally{busy=false;if(btn)btn.disabled=false}
 }
 async function reconcile(id){
- const record=all.find(r=>r.id===id);if(!record||record.situacao!=='aberto')return;
- if(!window.frFinanceUI?.selectView||!window.frImportUI?.refresh){
-  set('cp-load-status','A seção Importações ainda não está pronta. Atualize a página e tente novamente.');return;
+ const record=all.find(r=>r.id===id);
+ if(!record||record.situacao!=='aberto'||cashLinks.has(id))return;
+ if(!window.frBoletoUI?.openPay){
+  set('cp-load-status','Atualize a página para abrir a baixa operacional.');return;
  }
- window.frFinanceUI.selectView('imports');
- try{
-  await window.frImportUI.refresh();
-  const select=$('reconcile-parcel');
-  const value='excel:'+record.linha_origem_id;
-  if(!select||![...select.options].some(option=>option.value===value)){
-   const status=$('reconcile-status');
-   if(status)status.textContent='A conta está preservada na carteira, mas sua linha não está disponível no lote atualmente homologado. Confira o arquivo antes de conciliar.';
-   return;
-  }
-  select.value=value;select.dispatchEvent(new Event('change',{bubbles:true}));
-  select.scrollIntoView({block:'center',behavior:'smooth'});
- }catch(e){set('cp-load-status','Não foi possível abrir a conciliação: '+(e.message||e));}
+ try{await window.frBoletoUI.openPay('homologado:'+id)}
+ catch(e){set('cp-load-status','Falha ao abrir baixa: '+(e.message||e))}
 }
+
 function init(){
  if(!$('cp-rows'))return;
  $('cp-search')?.addEventListener('input',()=>{page=0;draw()});
