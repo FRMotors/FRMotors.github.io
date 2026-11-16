@@ -206,7 +206,9 @@ async function load(){
   if(due.some(x=>x.tipo+':'+x.id===previously))list.value=previously;
   updateBank();
   write('op-pay-list-status',due.length+' boletos disponíveis para baixa: '+
-   original.length+' da planilha e '+manual.length+' adicionados no aplicativo.');
+   original.length+' da planilha e '+manual.length+' adicionados no aplicativo. '+
+   movements.filter(x=>x.source==='fluxo').length+' saídas no Fluxo e '+
+   movements.filter(x=>x.source==='extrato').length+' saídas em extratos importados antes de excluir vínculos já utilizados.');
  })();
  try{await loading}finally{loading=null}
 }
