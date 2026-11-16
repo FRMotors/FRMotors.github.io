@@ -10,7 +10,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'
 const cents=x=>Math.round(Number(x)*100);
 const write=(id,t)=>{if($(id))$(id).textContent=t};
 let accounts=[],avulsos=[],links=[],importedLinks=[],movements=[],otherUsed=new Set(),testUsed=new Set(),suppliers=new Map();
-let loading=null,busy=false,deleteTarget=null;
+let loading=null,busy=false,deleteTarget=null,editingManualId=null;
 const byId=new Map();
 function validAmount(x){const n=Number(x),c=Math.round(n*100);return Number.isFinite(n)&&n>=0&&Number.isSafeInteger(c)&&Math.abs(n*100-c)<.00001?c:null}
 async function allRows(builder,max=15000){
@@ -164,6 +164,7 @@ function updateManualList(){
    '<td>'+(l?'<span class="state paid">'+(l.source==='extrato'?'Conciliado no extrato':'Conciliado no Fluxo')+'</span>':'<span class="state open">Em aberto</span>')+
    (l?'<small>Pago '+esc(dateBR(l.data_pagamento))+' · '+brl(l.valor_pago)+'</small>':'')+'</td>'+
    '<td>'+(l?'—':'<div class="fin-op-manual-actions">'+
+    '<button type="button" class="btn" data-op-edit-manual="'+esc(x.id)+'">Editar</button>'+
     '<button type="button" class="btn" data-op-pay-manual="'+esc(x.id)+'">Dar baixa</button>'+
     '<button type="button" class="btn fin-op-delete-button" data-op-delete-manual="'+esc(x.id)+'">Excluir</button>'+
    '</div>')+'</td></tr>';
@@ -178,7 +179,7 @@ async function load(){
   if(accessError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
   const [cp,extra,linked,bank,used,vendors,testBank,usedTestParcels,usedTestExcel,usedTestCards,paidImported,paidParts,paidExact,autoRefs,pixRefs]=await Promise.all([
    allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,fornecedor_id,descricao,valor_referencia,vencimento,situacao,linha_origem_id').order('vencimento',{ascending:true})),
-   allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em').is('excluido_em',null).order('criado_em',{ascending:false})),
+   allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,observacoes,criado_em').is('excluido_em',null).order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id,movimento_id,valor_pago,data_pagamento,desconto,juros').order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_movimentos').select('id,descricao,valor,data_movimento,meio_pagamento,estado,origem')
     .eq('tipo','saida').eq('estado','confirmado').eq('origem','fluxo_caixa_homologado')
@@ -278,6 +279,68 @@ async function createManual(e){
   await openPay('avulso:'+data.id);
  }catch(e){write('op-new-status','Não foi possível salvar boleto: '+(e.message||e))}
  finally{busy=false;$('op-new-submit').disabled=false}
+}
+function openEdit(id){
+ if(busy)return;
+ const doc=avulsos.find(x=>x.id===id);
+ if(!doc){
+  window.frFinanceUI?.showToast('Boleto não encontrado. Atualize a carteira.',true);return;
+ }
+ if(paidLinks().manual.has(id)){
+  window.frFinanceUI?.showToast('Boleto conciliado não pode ser editado.',true);return;
+ }
+ const form=$('op-manual-edit-form');
+ if(!form)return;
+ editingManualId=id;
+ form.elements.fornecedor.value=doc.fornecedor_nome||'';
+ form.elements.vencimento.value=doc.vencimento||'';
+ form.elements.valor.value=Number(doc.valor_referencia).toFixed(2);
+ form.elements.categoria.value=doc.categoria||'';
+ form.elements.descricao.value=doc.descricao||'';
+ form.elements.observacoes.value=doc.observacoes||'';
+ write('op-manual-edit-status','Alterações serão registradas para auditoria. Não será criado pagamento.');
+ closeDialog('op-pay-dialog');
+ openDialog('op-manual-edit-dialog');
+}
+async function saveManualEdit(e){
+ e.preventDefault();
+ if(busy||!editingManualId)return;
+ const form=$('op-manual-edit-form');
+ const value=validAmount(form.elements.valor.value);
+ if(value===null||value<=0){write('op-manual-edit-status','Informe um valor positivo com até duas casas decimais.');return;}
+ if(form.elements.fornecedor.value.trim().length<2){
+  write('op-manual-edit-status','Informe um fornecedor válido.');return;
+ }
+ const id=editingManualId;
+ busy=true;$('op-manual-edit-submit').disabled=true;
+ try{
+  const {data,error}=await db.rpc('fin_boleto_avulso_editar',{
+   p_boleto:id,
+   p_fornecedor:form.elements.fornecedor.value.trim(),
+   p_vencimento:form.elements.vencimento.value||null,
+   p_valor:value/100,
+   p_descricao:form.elements.descricao.value.trim(),
+   p_categoria:form.elements.categoria.value.trim(),
+   p_observacoes:form.elements.observacoes.value.trim()
+  });
+  if(error)throw error;
+  if(!['atualizado','sem_alteracoes'].includes(data?.resultado))throw Error('O banco não confirmou a alteração.');
+  closeDialog('op-manual-edit-dialog');
+  editingManualId=null;
+  const results=await Promise.allSettled([
+   load(),
+   window.frOperationalPayablesUI?.refresh?.()||Promise.resolve(),
+   window.frOperationalUI?.refresh?.()||Promise.resolve(),
+   window.frRealDashboard?.refresh?.()||Promise.resolve()
+  ]);
+  const failed=results.some(x=>x.status==='rejected');
+  window.frFinanceUI?.showToast(data.resultado==='sem_alteracoes'?
+   'Nenhuma informação do boleto foi alterada.':
+   failed?'Boleto atualizado. Atualize as listas para sincronizar a visualização.':
+   'Boleto atualizado com auditoria, sem alterar o caixa.',failed);
+ }catch(error){
+  write('op-manual-edit-status','Não foi possível atualizar o boleto: '+(error.message||error));
+ }finally{busy=false;$('op-manual-edit-submit').disabled=false;}
 }
 function requestDelete(id){
  const doc=avulsos.find(x=>x.id===id);
@@ -397,9 +460,11 @@ function init(){
  });
  $('op-pay-form')?.addEventListener('submit',confirmPay);
  $('op-new-form')?.addEventListener('submit',createManual);
+ $('op-manual-edit-form')?.addEventListener('submit',saveManualEdit);
+ $('op-manual-edit-dialog')?.addEventListener('close',()=>{if(!busy)editingManualId=null;});
  document.querySelectorAll('[data-op-close]').forEach(b=>
   b.addEventListener('click',()=>{
-   if(busy&&b.dataset.opClose==='op-delete-dialog')return;
+   if(busy&&(b.dataset.opClose==='op-delete-dialog'||b.dataset.opClose==='op-manual-edit-dialog'))return;
    closeDialog(b.dataset.opClose);
   }));
  if(!document.querySelector('[data-view-panel="payables"]')?.hidden){
@@ -408,10 +473,12 @@ function init(){
  $('op-manual-rows')?.addEventListener('click',e=>{
   const button=e.target.closest('[data-op-pay-manual]');
   const del=e.target.closest('[data-op-delete-manual]');
-  if(button)openPay('avulso:'+button.dataset.opPayManual).catch(()=>{});
+  const edit=e.target.closest('[data-op-edit-manual]');
+  if(edit)openEdit(edit.dataset.opEditManual);
+  else if(button)openPay('avulso:'+button.dataset.opPayManual).catch(()=>{});
   else if(del)requestDelete(del.dataset.opDeleteManual);
  });
 }
-window.frBoletoUI={openPay,openAdd,refresh:load};
+window.frBoletoUI={openPay,openAdd,openEdit,refresh:load};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
