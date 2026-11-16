@@ -1,0 +1,134 @@
+/* FR Motors Financeiro | V4.4.58
+ * Tabelas densas: mais linhas e colunas visíveis sem omitir valores,
+ * preservando rolagem horizontal onde a tela não comporta a grade.
+ * Carregar depois dos estilos dos módulos. */
+@media screen {
+  .content .table-wrap {
+    max-width:100%;
+    min-width:0;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    scrollbar-width:thin;
+  }
+  .content .data-table {
+    width:100%;
+    border-collapse:collapse;
+    table-layout:auto;
+  }
+  .content .data-table th {
+    padding:7px 8px;
+    font-size:9.4px;
+    letter-spacing:.25px;
+    line-height:1.25;
+    white-space:normal;
+    vertical-align:middle;
+  }
+  .content .data-table td {
+    padding:7px 8px;
+    font-size:10.8px;
+    line-height:1.32;
+    vertical-align:middle;
+  }
+  .content .data-table td:not(.money) { overflow-wrap:anywhere; }
+  .content .data-table .money,
+  .content .data-table td.money {font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .content .data-table .row-main {font-size:10.8px;line-height:1.25;}
+  .content .data-table .row-sub,
+  .content .data-table td small,
+  .content .data-table .hist-subline,
+  .content .data-table .cp-src {
+    font-size:9.3px;
+    line-height:1.28;
+    margin-top:2px;
+  }
+  .content .data-table .state,
+  .content .data-table .hist-kind {
+    min-height:0;
+    padding:3px 6px;
+    gap:4px;
+    font-size:9.4px;
+    line-height:1.25;
+  }
+  .content .data-table .btn,
+  .content .data-table .row-edit-button,
+  .content .data-table button:not(.filter-select) {
+    min-height:29px;
+    height:auto;
+    padding:5px 7px;
+    font-size:10px;
+    line-height:1.25;
+    white-space:normal;
+  }
+  .content .data-table .cp-actions,
+  .content .data-table .fin-op-manual-actions,
+  .content .data-table .table-actions {gap:4px;}
+  .content .data-table input:not([type="checkbox"]),
+  .content .data-table select {max-width:100%;min-height:30px;padding:5px 6px;font-size:11px;}
+  .content .data-table tbody tr:hover {background:#f6fafb;}
+}
+@media screen and (min-width:761px) {
+  /* Usar também o espaço liberado ao recolher a barra lateral. */
+  .content {
+    max-width:none;
+    padding-left:clamp(13px,1.4vw,23px);
+    padding-right:clamp(13px,1.4vw,23px);
+  }
+  .content .data-table,
+  .content .hist-table,
+  .content .fin-homolog-table .data-table,
+  .content .fin-unificado-itau-table,
+  .content .import-preview-table .data-table,
+  .content .pix-rules-audit .data-table { min-width:0 !important; }
+
+  /* Remover restrições legadas que forçavam rolagem no desktop. */
+  .content .fin-cp-table th,
+  .content .fin-cp-table td,
+  .content .fin-doc-split .data-table th,
+  .content .fin-doc-split .data-table td,
+  .content .fin-doc-match-card .data-table th,
+  .content .fin-doc-match-card .data-table td,
+  .content .vl-card .data-table th,
+  .content .vl-card .data-table td { min-width:0; }
+
+  /* Reservar espaço para campos descritivos e controles, não para células vazias. */
+  .content .fin-cp-table td:nth-child(2) { min-width:135px; }
+  .content .fin-cp-table td:last-child { min-width:96px; }
+  .content .fin-doc-table .data-table td:nth-child(3) { min-width:138px; }
+  .content .fin-doc-table .data-table td:nth-child(10) { min-width:96px; }
+  .content .fin-doc-split .data-table th:first-child,
+  .content .fin-doc-split .data-table td:first-child { min-width:105px; }
+  .content .fin-doc-table .data-table th,
+  .content .fin-doc-table .data-table td { white-space:normal; }
+  .content .fin-doc-table .data-table .money {white-space:nowrap;}
+
+  .content .fin-cp-table .cp-actions {display:flex;flex-wrap:wrap;align-items:center;}
+}
+@media screen and (max-width:760px) {
+  /* No celular, compactar sem tornar os valores/ações minúsculos.
+     Tabelas extensas permanecem navegáveis por rolagem lateral. */
+  .content .data-table {min-width:580px;}
+  .content .data-table th {padding:7px 7px;font-size:9.2px;letter-spacing:.1px;}
+  .content .data-table td {padding:8px 7px;font-size:10.5px;}
+  .content .data-table .btn,
+  .content .data-table .row-edit-button,
+  .content .data-table button:not(.filter-select) {min-height:32px;padding:6px 7px;}
+  .content .fin-cp-table .data-table {min-width:850px;}
+  .content .fin-cp-table th,
+  .content .fin-cp-table td {min-width:78px;}
+  .content .fin-cp-table td:nth-child(2){min-width:145px;}
+  .content .fin-cp-table td:last-child{min-width:98px;}
+  .content .fin-homolog-table .data-table {min-width:760px;}
+  .content .fin-doc-table .data-table {min-width:920px;}
+  .content .fin-doc-table .data-table td:nth-child(3){min-width:145px;}
+  .content .fin-doc-table .data-table td:nth-child(10){min-width:100px;}
+  .content .fin-agenda-table {min-width:780px;}
+  .content .vl-card .data-table {min-width:690px;}
+  .content .hist-table {min-width:580px;}
+  .content .fin-unificado-itau-table {min-width:650px!important;}
+  .content .import-preview-table .data-table {min-width:640px;}
+  .content .pix-rules-audit .data-table {min-width:680px;}
+}
+@media print {
+  .content .data-table th {padding:5px 6px;}
+  .content .data-table td {padding:5px 6px;}
+}
