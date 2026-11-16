@@ -424,47 +424,108 @@
 <link rel="stylesheet" href="./financeiro-densidade.css?v=20261116compact58">
 
 <style>
-/* Financeiro: pares de ações sempre lado a lado, sem romper no celular.
-   Limita-se às duas áreas solicitadas e não altera os demais cabeçalhos. */
-.pc-header-actions.header-buttons,
-.fin-agenda-shortcuts{
+/* V4.4.60 · Ajuste definitivo dos botões do Financeiro.
+   Regras com escopo e especificidade suficiente para prevalecer sobre
+   .fin-expenses-direct-access>div e .header-buttons mobile legados. */
+
+/* AUTOPEÇAS E CARTÕES: texto de contexto + botões iguais e lado a lado */
+#main-content [data-view-panel="expenses"] .fin-expenses-direct-access{
   display:grid;
-  grid-template-columns:repeat(2,max-content);
+  grid-template-columns:minmax(0,1fr) minmax(0,440px);
+  align-items:center;
+  gap:12px;
+}
+#main-content [data-view-panel="expenses"] .fin-expenses-direct-access > .fin-agenda-shortcuts{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
   align-items:stretch;
   gap:8px;
+  flex-direction:row;
+  min-width:0;
+  width:100%;
 }
-.pc-header-actions.header-buttons .btn,
-.fin-agenda-shortcuts .btn{
-  display:inline-flex;
+#main-content [data-view-panel="expenses"] .fin-expenses-direct-access > .fin-agenda-shortcuts > button{
+  display:flex;
   align-items:center;
   justify-content:center;
+  flex:none;
+  grid-column:auto;
   gap:7px;
   min-width:0;
   width:100%;
-  height:auto;
+  min-height:46px;
+  padding:9px 10px;
+  text-align:center;
+  line-height:1.25;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+#main-content .fin-agenda-shortcuts > button .icon{flex:0 0 auto}
+
+/* CONTAS A PAGAR: quatro ações alinhadas em uma grade previsível */
+#fin-cp-operacional > .card-head{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:14px;
+}
+#fin-cp-operacional > .card-head > div:first-child{min-width:0;width:100%}
+#fin-cp-operacional > .card-head > .fin-cp-actions{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;
+  align-items:stretch;
+  gap:8px;
+}
+#fin-cp-operacional > .card-head > .fin-cp-actions > button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  flex:none;
+  grid-column:auto;
+  min-width:0;
+  width:100%;
   min-height:42px;
+  padding:10px 8px;
   text-align:center;
   white-space:normal;
   line-height:1.25;
 }
-.pc-header-actions.header-buttons .btn .icon,
-.fin-agenda-shortcuts .btn .icon{flex:0 0 auto}
-@media(max-width:760px){
-  .pc-header-actions.header-buttons,
-  .fin-agenda-shortcuts{
-    grid-template-columns:repeat(2,minmax(0,1fr));
+#fin-cp-operacional .fin-cp-actions > button .icon{flex:0 0 auto}
+
+@media(max-width:1100px){
+  #main-content [data-view-panel="expenses"] .fin-expenses-direct-access{
+    grid-template-columns:minmax(0,1fr);
+    align-items:stretch;
+  }
+  #main-content [data-view-panel="expenses"] .fin-expenses-direct-access > .fin-agenda-shortcuts{
     width:100%;
   }
-  .pc-header-actions.header-buttons .btn,
-  .fin-agenda-shortcuts .btn{
-    flex:none;
-    grid-column:auto;
-    padding:9px 6px;
-    font-size:clamp(10px,2.8vw,12px);
+}
+@media(max-width:950px){
+  #fin-cp-operacional > .card-head > .fin-cp-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
-  /* Evita que a regra global para botões de cabeçalho mande
-     o primeiro botão sozinho para uma linha inteira. */
-  .pc-header-actions.header-buttons .btn:first-child{grid-column:auto}
+}
+@media(max-width:620px){
+  #main-content [data-view-panel="expenses"] .fin-expenses-direct-access{
+    padding:12px;
+  }
+  #main-content [data-view-panel="expenses"] .fin-expenses-direct-access > .fin-agenda-shortcuts > button{
+    flex-direction:column;
+    gap:4px;
+    min-height:62px;
+    padding:8px 5px;
+    font-size:11px;
+  }
+  #fin-cp-operacional > .card-head{gap:12px}
+  #fin-cp-operacional > .card-head > .fin-cp-actions > button{
+    min-height:52px;
+    padding:8px 6px;
+    font-size:11px;
+    gap:5px;
+  }
 }
 </style>
 </head>
@@ -742,7 +803,7 @@
           <div class="card-head">
             <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
               <p>Compromissos da planilha e boletos cadastrados no aplicativo, com rastreabilidade e conciliações preservadas.</p></div>
-            <div class="header-buttons">
+            <div class="header-buttons fin-cp-actions">
               <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
               <button class="btn" type="button" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
               <button class="btn" id="cp-sync" type="button"><span class="icon icon-sm" data-icon="refresh"></span> Sincronizar conciliações</button>
