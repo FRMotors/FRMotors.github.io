@@ -561,7 +561,7 @@ function excelOpenKey(item){
  return original+'|'+name+'|'+(item.data_evento||'sem-data')+'|'+Math.round(Number(item.valor)*100);
 }
 async function refreshReconcile(){
- const [moves,links,dues,cardLinks,excelLinks,latestLotResponse,supplierResponse,importedAvulsos,operCpLinks,operCp]=await Promise.all([
+ const [moves,links,dues,cardLinks,excelLinks,latestLotResponse,supplierResponse,importedAvulsos,operCpLinks,operCp,partialFaturas,exactDocuments]=await Promise.all([
   fetchAll(()=>db.from('fin_teste_movimentos')
    .select('id,descricao,valor,data_movimento,referencia_cliente,estado')
    .eq('tipo','saida').eq('estado','confirmado').like('referencia_cliente','extrato:%')
@@ -578,7 +578,11 @@ async function refreshReconcile(){
   db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento'),
   fetchAll(()=>db.from('fin_baixas_extrato_avulsos').select('movimento_teste_id').order('criado_em',{ascending:false})),
   fetchAll(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id').not('conta_pagar_id','is',null).order('criado_em',{ascending:false})),
-  fetchAll(()=>db.from('fin_contas_pagar').select('id,origem_chave').order('criado_em',{ascending:false}))
+  fetchAll(()=>db.from('fin_contas_pagar').select('id,origem_chave').order('criado_em',{ascending:false})),
+  fetchAll(()=>db.from('fin_faturas_pagamentos_parciais').select('movimento_extrato_id')
+   .not('movimento_extrato_id','is',null).order('confirmado_em',{ascending:false})),
+  fetchAll(()=>db.from('fin_comprovacoes_documentais').select('movimento_extrato_id')
+   .not('movimento_extrato_id','is',null).order('conferido_em',{ascending:false}))
  ]);
  if(latestLotResponse.error)throw latestLotResponse.error;
  if(supplierResponse.error)throw supplierResponse.error;
@@ -605,7 +609,8 @@ async function refreshReconcile(){
   !alreadyLinked.has(excelOpenKey(x)));
 
  linkedBank=new Set([...links.map(x=>x.movimento_id),...cardLinks.map(x=>x.movimento_id),
-  ...excelLinks.map(x=>x.movimento_id),...importedAvulsos.map(x=>x.movimento_teste_id)]);
+  ...excelLinks.map(x=>x.movimento_id),...importedAvulsos.map(x=>x.movimento_teste_id),
+  ...partialFaturas.map(x=>x.movimento_extrato_id),...exactDocuments.map(x=>x.movimento_extrato_id)]);
  bankImported=moves.filter(x=>!linkedBank.has(x.id));
  const beforeMove=$('reconcile-move').value,beforePar=$('reconcile-parcel').value;
  $('reconcile-move').replaceChildren(new Option('Selecione uma saída do extrato',''),
