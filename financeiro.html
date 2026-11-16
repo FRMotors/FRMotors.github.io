@@ -677,7 +677,7 @@
         <section class="card" id="fin-cp-operacional" aria-labelledby="fin-cp-title">
           <div class="card-head">
             <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
-              <p>59 compromissos migrados da aba ABERTOS FLUXO, com rastreabilidade e conciliações preservadas.</p></div>
+              <p>Compromissos da planilha e boletos cadastrados no aplicativo, com rastreabilidade e conciliações preservadas.</p></div>
             <div class="header-buttons">
               <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
               <button class="btn" type="button" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
@@ -687,11 +687,11 @@
           </div>
           <div class="fin-cp-grid">
             <article class="insight-card"><span>Contas pendentes</span><strong id="cp-count">—</strong><small>Sem pagamentos em duplicidade</small></article>
-            <article class="insight-card"><span>Valor base pendente</span><strong id="cp-total">—</strong><small>Conforme planilha homologada</small></article>
-            <article class="insight-card"><span>Total vencido</span><strong id="cp-overdue">—</strong><small>Valores base já vencidos</small></article>
+            <article class="insight-card"><span>Valor base pendente</span><strong id="cp-total">—</strong><small>Contas da planilha e boletos adicionados</small></article>
+            <article class="insight-card"><span>Total vencido</span><strong id="cp-overdue">—</strong><small>Compromissos vencidos sem baixa</small></article>
             <article class="insight-card"><span>Vencem em 7 dias</span><strong id="cp-soon">—</strong><small>Próximos vencimentos</small></article>
             <article class="insight-card"><span>Sem vencimento</span><strong id="cp-undated">—</strong><small>Não foi inventada data</small></article>
-            <article class="insight-card"><span>Conciliados no extrato</span><strong id="cp-reconciled">—</strong><small>Sem nova saída bancária</small></article>
+            <article class="insight-card"><span>Contas conciliadas</span><strong id="cp-reconciled">—</strong><small>Sem nova saída bancária</small></article>
           </div>
           <div class="data-toolbar fin-cp-toolbar">
             <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
@@ -703,7 +703,7 @@
               <option value="hoje">Vencem hoje</option>
               <option value="proximos7">Próximos 7 dias</option>
               <option value="sem_data">Sem vencimento</option>
-              <option value="conciliado">Conciliados no extrato</option>
+              <option value="conciliado">Conciliados</option>
             </select>
             <select id="cp-month-filter" class="filter-select" aria-label="Filtrar por mês">
               <option value="todos">Todos os meses</option>
@@ -712,7 +712,7 @@
           <p id="cp-load-status" class="info-note fin-cp-status" role="status" aria-live="polite">Carregando carteira operacional...</p>
           <div class="table-wrap fin-cp-table"><table class="data-table">
             <thead><tr><th>Vencimento</th><th>Fornecedor / descrição</th><th>Categoria</th>
-              <th class="money">Valor planilha</th><th class="money">Valor cheio informado</th>
+              <th class="money">Valor de referência</th><th class="money">Valor cheio informado</th>
               <th class="money">Desconto</th><th class="money">Pago / estimativa</th>
               <th>Situação</th><th>Ações</th></tr></thead>
             <tbody id="cp-rows"><tr><td colspan="9" class="empty">Aguardando consulta...</td></tr></tbody>
@@ -722,7 +722,7 @@
             <div><button class="btn" type="button" id="cp-prev" disabled>Anterior</button>
                  <button class="btn" type="button" id="cp-next" disabled>Próxima</button></div>
           </div>
-          <p class="info-note fin-cp-note">O valor da planilha não é automaticamente tratado como valor cheio. Descontos possíveis da PARQUE são apenas estimativas até o vencimento e não geram baixas. A opção <strong>Conciliar</strong> utiliza a saída bancária existente; só depois da confirmação o vínculo chega à carteira operacional.</p>
+          <p class="info-note fin-cp-note">O valor de referência não é automaticamente tratado como valor cheio. Boletos adicionados ao aplicativo também aparecem nesta carteira, sem alterar a planilha original. Descontos possíveis da PARQUE são apenas estimativas até o vencimento e não geram baixas. A opção <strong>Conciliar</strong> utiliza a saída bancária existente; só depois da confirmação o vínculo chega à carteira operacional.</p>
         </section>
 
         <section class="card fin-op-manual-card" id="op-boletos-adicionados">
@@ -2206,7 +2206,7 @@ init();
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261116fixpay1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261116avulsos1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261116parcelas1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116pages1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261116cartoesparcelas1" defer></script>
