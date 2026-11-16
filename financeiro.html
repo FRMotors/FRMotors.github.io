@@ -315,6 +315,57 @@
 .fin-cp-legacy[hidden],
 .pc-separator-note[hidden],
 [data-view-panel="purchases"] section[hidden]{display:none!important}
+
+/* Investigação dos resultados do fluxo de caixa homologado */
+.cashx-card{margin:0 0 20px;overflow:hidden}
+.cashx-card>.card-head{align-items:flex-start}
+.cashx-card>.card-head h2{font-size:18px;margin:3px 0 5px}
+.cashx-card>.card-head p{font-size:12px;line-height:1.5;margin:0}
+.cashx-card>.card-head .eyebrow{margin:0 0 4px}
+.cashx-status{padding:0 18px 12px;margin:0;font-size:12px}
+.cashx-period{padding:0 18px 12px;display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+.cashx-period label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650}
+.cashx-period select{font-size:12px;min-width:190px;max-width:100%}
+.cashx-period p{font-size:11px;color:var(--muted);margin:0 0 6px}
+.cashx-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 18px 12px}
+.cashx-kpis .insight-card{padding:14px;min-width:0}
+.cashx-kpis .insight-card strong{font-size:22px;overflow-wrap:anywhere}
+.cashx-kpis .insight-card strong.negative{color:var(--bad)}
+.cashx-card>p.cashx-note{padding:0 18px 12px;margin:0;font-size:11px;color:var(--muted);line-height:1.45}
+.cashx-layout{display:grid;grid-template-columns:minmax(270px,.75fr) minmax(0,1.6fr);gap:14px;padding:0 18px 18px;align-items:start}
+.cashx-block{border:1px solid var(--stroke);border-radius:12px;min-width:0;overflow:hidden}
+.cashx-subhead{padding:14px 14px 10px}
+.cashx-subhead h3{font-size:14px;font-weight:750;margin:0 0 6px}
+.cashx-subhead p{font-size:11px;color:var(--muted);margin:0;line-height:1.5}
+.cashx-categories{display:flex;flex-direction:column;gap:6px;padding:0 12px}
+.cashx-category-row{display:flex;flex-direction:column;gap:5px;cursor:pointer;min-width:0;
+ border:1px solid var(--stroke);background:transparent;border-radius:9px;padding:9px 10px;text-align:left;font:inherit;color:var(--ink)}
+.cashx-category-row:hover,.cashx-category-row:focus-visible{outline:2px solid var(--ink);outline-offset:0}
+.cashx-category-head,.cashx-category-foot{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.cashx-category-head strong,.cashx-category-head b{font-size:11px;overflow-wrap:anywhere}
+.cashx-category-head b{white-space:nowrap}
+.cashx-category-foot small{font-size:10px;color:var(--muted)}
+.cashx-category-bar{display:block;height:5px;background:var(--stroke);border-radius:3px;overflow:hidden}
+.cashx-category-bar>span{display:block;height:100%;background:var(--ink);border-radius:3px}
+.cashx-other,.cashx-empty,.cashx-block .cashx-note{font-size:11px;color:var(--muted);line-height:1.45;margin:0;padding:10px 14px 14px}
+.cashx-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:0 14px 12px}
+.cashx-filters label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:650;min-width:0}
+.cashx-filters input,.cashx-filters select{font-size:11px;width:100%;min-width:0;max-width:100%}
+.cashx-table{min-width:710px}
+.cashx-table th,.cashx-table td{padding:10px;font-size:11px;vertical-align:top}
+.cashx-table td:nth-child(2){min-width:180px}
+.cashx-table td.money{white-space:nowrap}
+.cashx-table td.money.negative{color:var(--bad)}
+.cashx-pager{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.cashx-pager>div{display:flex;gap:8px}
+@media(max-width:1200px){.cashx-layout{grid-template-columns:1fr}.cashx-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cashx-other{grid-column:1/-1}}
+@media(max-width:640px){.cashx-status{padding:0 12px 10px}
+.cashx-period{padding:0 12px 12px}.cashx-period label,.cashx-period select{width:100%}
+.cashx-kpis{grid-template-columns:1fr;gap:7px;padding:0 12px 12px}
+.cashx-kpis .insight-card{padding:10px}.cashx-kpis .insight-card strong{font-size:19px}
+.cashx-card>p.cashx-note{padding:0 12px 12px}
+.cashx-layout{gap:10px;padding:0 12px 12px}.cashx-categories{display:flex}
+.cashx-filters{padding:0 10px 10px}.cashx-table{min-width:710px}}
 </style>
 </head>
 <body>
