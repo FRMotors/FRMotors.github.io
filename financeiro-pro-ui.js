@@ -53,6 +53,7 @@ function selectView(next){
   if(next==='operational')window.frOperationalUI?.open?.();
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='expenses')window.frDocsReconcileUI?.refresh?.();
+  if(next==='expenses')window.frDocumentLinksUI?.refresh?.();
   if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
  window.scrollTo({top:0,behavior:'auto'});
