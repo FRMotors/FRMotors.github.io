@@ -8,7 +8,7 @@ const money=x=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).
 const cent=x=>Math.round(Number(x)*100);
 const brdate=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const out=(id,t)=>{if($(id))$(id).textContent=t};
-let invoices=[],autos=[],comprovs=[],parts=[],revisions=[],banks=[],busy=false,loading=null,current=null;
+let invoices=[],autos=[],comprovs=[],parts=[],revisions=[],declared=[],banks=[],busy=false,loading=null,current=null;
 let reservedFlow=new Set(),reservedExt=new Set(),autoRefs=new Set();
 const fields='id,tipo,fatura_id,documento_id,origem_pagamento,movimento_fluxo_id,movimento_extrato_id,valor_conferido,data_pagamento,justificativa';
 async function getAll(query,max=6000){
@@ -29,12 +29,18 @@ const byParts=()=>{
  return map;
 };
 const byReview=()=>new Map(revisions.filter(x=>x.situacao==='em_revisao').map(x=>[x.fatura_id,x]));
+const byDeclaration=()=>new Map(declared.map(x=>[x.fatura_id,x]));
 function invoiceSummary(f){
  const older=byInvoice().get(f.id);
+ const declaration=byDeclaration().get(f.id)||null;
  const list=byParts().get(f.id)||[];
  const paid=older?cent(older.valor_conferido):list.reduce((sum,x)=>sum+cent(x.valor_pago),0);
- const total=cent(f.valor_documental),balance=Math.max(0,total-paid);
- return {total,paid,balance,parts:list,full:balance===0,partial:paid>0&&balance>0};
+ const total=cent(f.valor_documental);
+ // Quitação por declaração NÃO é um pagamento bancário conciliado.
+ const displayPaid=declaration?total:paid;
+ const balance=Math.max(0,total-displayPaid);
+ return {total,paid,displayPaid,balance,parts:list,full:balance===0,
+  partial:!declaration&&paid>0&&balance>0,isDeclared:Boolean(declaration),declaration};
 }
 
 function refName(f){return f.cartao_nome+' · '+brdate(f.mes_fatura).slice(3)}
@@ -48,6 +54,7 @@ function draw(){
  const unmatched=autos.filter(x=>!autoRefs.has(x.id)&&!manualAutos.has(x.id));
  out('vl-open-count',String(pending.length));
  out('vl-confirmed-count',String(completed.length));
+ out('vl-declared-count',String(declared.length));
  out('vl-partial-count',String(partially.length));
  out('vl-review-count',String(revs.size));
  out('vl-auto-count',String(unmatched.length));
@@ -65,7 +72,8 @@ function draw(){
  }).sort((a,b)=>b.mes_fatura.localeCompare(a.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
  if($('vl-invoices'))$('vl-invoices').innerHTML=list.length?list.map(f=>{
   const x=summaries.get(f.id),rev=revs.get(f.id);
-  const status=x.full?'<span class="state paid">Quitada pelo(s) vínculo(s)</span>':
+  const status=x.isDeclared?'<span class="state paid">Quitada por confirmação</span><small>Sem conciliação bancária</small>':
+   x.full?'<span class="state paid">Quitada pelo(s) vínculo(s)</span>':
    x.partial?'<span class="state open">Parcialmente paga</span>':
    rev?'<span class="state open">Em revisão, não quitada</span>':
    '<span class="state open">Sem pagamento vinculado</span>';
@@ -73,11 +81,12 @@ function draw(){
    '<td>'+brdate(f.mes_fatura).slice(3)+'</td>'+
    '<td class="money">'+f.quantidade_lancamentos+'</td>'+
    '<td class="money"><strong>'+money(f.valor_documental)+'</strong></td>'+
-   '<td class="money">'+money(x.paid/100)+'<small>'+x.parts.length+' pagamento(s) parcial(is)</small></td>'+
+   '<td class="money">'+money(x.displayPaid/100)+'<small>'+(
+     x.isDeclared?'Valor declarado quitado; sem saída bancária':x.parts.length+' pagamento(s) parcial(is) vinculados')+'</small></td>'+
    '<td class="money"><strong>'+money(x.balance/100)+'</strong></td>'+
    '<td>'+status+(rev?'<small>Revisão registrada, não é pagamento</small>':'')+'</td>'+
    '<td><button type="button" class="btn" data-vl-invoice="'+esc(f.id)+'">'+
-    (x.full?'Ver pagamentos':x.partial?'Adicionar outro pagamento':'Adicionar pagamento')+
+    (x.isDeclared?'Ver quitação histórica':x.full?'Ver pagamentos':x.partial?'Adicionar outro pagamento':'Adicionar pagamento')+
     '</button></td></tr>';
  }).join(''):'<tr><td colspan="8" class="empty">Nenhuma fatura corresponde aos filtros.</td></tr>';
  out('vl-invoice-count',list.length+' de '+invoices.length+' faturas');
@@ -164,6 +173,19 @@ function renderHistory(){
  if(!wrapper||!body)return;
  if(!invoice){wrapper.hidden=true;return}
  const summary=invoiceSummary(f);
+ if(summary.isDeclared){
+  wrapper.hidden=false;
+  body.innerHTML='<tr><td>Hist.</td><td>Não informada</td>'+
+   '<td class="money"><strong>'+money(f.valor_documental)+'</strong></td>'+
+   '<td>Confirmação do usuário, sem saída vinculada</td>'+
+   '<td><small>'+esc(summary.declaration?.observacao||
+    'Quitação histórica informada, não conciliada ao banco.')+'</small></td></tr>';
+  out('vl-invoice-summary','Total da fatura: '+money(f.valor_documental)+
+   ' · Quitado declarado: '+money(f.valor_documental)+
+   ' · Saldo pendente: '+money(0)+
+   ' · SEM CONCILIAÇÃO BANCÁRIA E SEM DATA DE PAGAMENTO INFORMADA');
+  return;
+ }
  const old=byInvoice().get(f.id);
  const payments=summary.parts.slice().sort((a,b)=>a.data_pagamento.localeCompare(b.data_pagamento));
  if(old)payments.unshift({valor_pago:old.valor_conferido,data_pagamento:old.data_pagamento,
@@ -199,9 +221,14 @@ function updateConfirm(){
     (invoice?'Registrar pagamento de '+(item?money(item.valor):'saída selecionada'):'Confirmar correspondência');
  }
  if(invoice&&summary){
-  out('vl-invoice-summary','Total da fatura: '+money(summary.total/100)+
-   ' · Pago: '+money(summary.paid/100)+' · Saldo restante: '+money(summary.balance/100)+
-   (summary.full?' · QUITADA':summary.partial?' · PARCIAL':''));
+  out('vl-invoice-summary',summary.isDeclared?
+    'Total da fatura: '+money(summary.total/100)+
+    ' · Quitado por confirmação: '+money(summary.displayPaid/100)+
+    ' · Saldo restante: '+money(0)+
+    ' · SEM SAÍDA BANCÁRIA VINCULADA':
+    'Total da fatura: '+money(summary.total/100)+
+    ' · Pago no banco: '+money(summary.paid/100)+' · Saldo restante: '+money(summary.balance/100)+
+    (summary.full?' · QUITADA':summary.partial?' · PARCIAL':''));
  }
  out('vl-match-check',item?
   (review?'Pagamento '+money(item.valor)+' superior ao saldo '+money(expected/100)+
@@ -210,7 +237,8 @@ function updateConfirm(){
      money((expected-actual)/100)+'. '+(expected===actual?'A fatura ficará quitada.':'A fatura continuará parcialmente paga.'):
     'Valor da compra: '+money(expected/100)+' · saída confirmada: '+money(actual/100)+
     '. A exceção exige data e fornecedor idênticos no Fluxo.'):
-  invoice&&summary.full?'Esta fatura já está integralmente conciliada; consulte o histórico.':
+  invoice&&summary.isDeclared?'Esta fatura foi declarada quitada sem conciliação. Consulte a anotação histórica.':
+   invoice&&summary.full?'Esta fatura já está integralmente conciliada; consulte o histórico.':
    'Selecione uma saída existente. Para faturas, são aceitos vários pagamentos até completar o saldo.');
 }
 function open(type,id){
@@ -227,7 +255,8 @@ function open(type,id){
  if($('vl-entry-fields'))$('vl-entry-fields').hidden=Boolean(summary?.full);
  if($('vl-readonly-close'))$('vl-readonly-close').hidden=!Boolean(summary?.full);
  if($('vl-invoice-summary'))$('vl-invoice-summary').hidden=!invoice;
- out('vl-title',invoice?'Pagamentos da fatura':'Conferir pagamento da autopeça');
+ out('vl-title',invoice&&summary?.isDeclared?'Quitação histórica da fatura':
+   invoice?'Pagamentos da fatura':'Conferir pagamento da autopeça');
  out('vl-description',invoice?refName(doc)+' · '+doc.quantidade_lancamentos+' lançamentos.':
   doc.codigo_origem+' · '+doc.fornecedor_nome+' · '+money(doc.valor_pago_informado)+
   ' · vencimento '+brdate(doc.vencimento)+', pagamento informado '+brdate(doc.data_pagamento_informada)+
@@ -290,7 +319,7 @@ async function refresh(force=false){
    out('vl-load-status','Consultando saídas confirmadas e vínculos existentes...');
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-   const [allInvoices,allAutos,knownAuto,pix,linked,partRows,reviewRows,flow,imp,paidFlow,payParcels,paidTestParcels,paidTestExcel,paidTestFaturas,paidTestAvulsos]=await Promise.all([
+   const [allInvoices,allAutos,knownAuto,pix,linked,partRows,reviewRows,declaredRows,flow,imp,paidFlow,payParcels,paidTestParcels,paidTestExcel,paidTestFaturas,paidTestAvulsos]=await Promise.all([
     getAll(()=>db.from('fin_faturas_historicas')
      .select('id,cartao_nome,mes_fatura,valor_documental,quantidade_lancamentos')
      .order('mes_fatura',{ascending:false})),
@@ -309,6 +338,9 @@ async function refresh(force=false){
     getAll(()=>db.from('fin_revisoes_faturas_historicas')
      .select('id,fatura_id,origem,valor_documental,valor_movimento,diferenca,data_movimento,justificativa,situacao')
      .order('atualizado_em',{ascending:false})),
+    getAll(()=>db.from('fin_faturas_quitacoes_declaradas')
+     .select('fatura_id,valor_documental_declarado,observacao,registrado_em')
+     .order('registrado_em',{ascending:false})),
     getAll(()=>db.from('fin_movimentos').select('id,descricao,data_movimento,valor')
      .eq('tipo','saida').eq('estado','confirmado').eq('origem','fluxo_caixa_homologado')
      .order('data_movimento',{ascending:false})),
@@ -323,7 +355,7 @@ async function refresh(force=false){
     getAll(()=>db.from('fin_teste_fatura_pagamentos').select('movimento_id').order('criado_em',{ascending:false})),
     getAll(()=>db.from('fin_baixas_extrato_avulsos').select('movimento_teste_id').order('criado_em',{ascending:false}))
    ]);
-   invoices=allInvoices;autos=allAutos;comprovs=linked;parts=partRows;revisions=reviewRows;
+   invoices=allInvoices;autos=allAutos;comprovs=linked;parts=partRows;revisions=reviewRows;declared=declaredRows;
    autoRefs=new Set(knownAuto.map(x=>x.documento_id));
    reservedFlow=new Set([...knownAuto.map(x=>x.movimento_id),...pix.map(x=>x.movimento_id),
     ...linked.map(x=>x.movimento_fluxo_id),...partRows.map(x=>x.movimento_fluxo_id),
@@ -336,11 +368,12 @@ async function refresh(force=false){
    draw();
    const fullyPaid=invoices.filter(x=>invoiceSummary(x).full).length;
    const partiallyPaid=invoices.filter(x=>invoiceSummary(x).partial).length;
-   out('vl-load-status',invoices.length+' faturas documentais, '+
-    fullyPaid+' quitada(s) por vínculos, '+partiallyPaid+
-    ' parcialmente paga(s), '+byReview().size+
+   out('vl-load-status',invoices.length+' faturas, '+declared.length+
+    ' quitadas por confirmação histórica (sem saída bancária identificada), '+
+    (fullyPaid-declared.length)+' quitadas por conciliação, '+partiallyPaid+
+    ' parcialmente pagas, '+byReview().size+
     ' em revisão e '+autos.filter(x=>!autoRefs.has(x.id)&&!byAuto().has(x.id)).length+
-    ' exceções de autopeças a conferir. Nenhuma movimentação adicional foi criada.');
+    ' exceções de autopeças. Nenhuma movimentação adicional foi criada.');
   }catch(e){
    out('vl-load-status','Não foi possível carregar a conferência: '+(e.message||e));
    if($('vl-invoices'))$('vl-invoices').innerHTML='<tr><td colspan="8" class="empty">Erro ao carregar vínculos.</td></tr>';

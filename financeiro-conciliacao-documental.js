@@ -9,7 +9,7 @@ const brl=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).fo
 const date=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const set=(id,value)=>{if($(id))$(id).textContent=value;};
 const pageSize=18;
-let documents=[],autoRefs=[],pixRefs=[],faturas=[],movements=new Map();
+let documents=[],autoRefs=[],pixRefs=[],faturas=[],declaredFaturas=new Set(),movements=new Map();
 let autoPage=0,faturaPage=0,loading=null,selectedInvoice=null,detailVersion=0;
 async function fetchAll(builder,max=6000){
  const result=[],size=450;
@@ -77,7 +77,8 @@ function renderFaturas(){
    '<td class="money">'+brl(f.valor_positivo)+'</td>'+
    '<td class="money">'+brl(f.valor_ajustes)+
     (f.ajustes_negativos?'<small>'+f.ajustes_negativos+' ajustes negativos</small>':'')+'</td>'+
-   '<td class="money"><strong>'+brl(f.valor_documental)+'</strong></td>'+
+   '<td class="money"><strong>'+brl(f.valor_documental)+'</strong>'+
+   (declaredFaturas.has(f.id)?'<small>Quitada por confirmação, sem conciliação</small>':'<small>Pagamento não confirmado nesta base</small>')+'</td>'+
    '<td><button type="button" class="btn" data-dc-invoice="'+h(f.id)+'">Ver lançamentos</button></td></tr>'
  ).join(''):'<tr><td colspan="7" class="empty">Nenhuma fatura documental corresponde à pesquisa.</td></tr>';
  set('dc-fatura-paging',list.length+' agrupamento(s) · página '+(faturaPage+1)+' de '+pages);
@@ -138,7 +139,7 @@ async function refresh(){
    set('dc-status','Conferindo referências de autopeças, PIX/Débito e faturas documentais...');
    const {data:allowed,error:authorizationError}=await db.rpc('fluxo_caixa_autorizado');
    if(authorizationError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-   const [auto,pix,invoices,autoDocs]=await Promise.all([
+   const [auto,pix,invoices,autoDocs,declarations]=await Promise.all([
     fetchAll(()=>db.from('fin_conciliacoes_documentais')
      .select('id,documento_id,movimento_id,valor_conferido,diferenca_dias,criterio').order('identificado_em',{ascending:false})),
     fetchAll(()=>db.from('fin_pix_debito_referencias')
@@ -148,7 +149,9 @@ async function refresh(){
      .order('mes_fatura',{ascending:false})),
     fetchAll(()=>db.from('fin_documentos_despesas')
      .select('id,grupo,incluir,codigo_origem,linha_excel,descricao,fornecedor_nome,cartao_nome,meio,vencimento,valor_registrado,valor_pago_informado,situacao_origem')
-     .eq('grupo','autopecas').eq('incluir',true).eq('situacao_origem','Pago').order('linha_excel',{ascending:true}))
+     .eq('grupo','autopecas').eq('incluir',true).eq('situacao_origem','Pago').order('linha_excel',{ascending:true})),
+    fetchAll(()=>db.from('fin_faturas_quitacoes_declaradas')
+     .select('fatura_id').order('registrado_em',{ascending:false}))
    ]);
    const pixIds=pix.map(x=>x.documento_id);
    let pixDocs=[];
@@ -167,7 +170,9 @@ async function refresh(){
     found=data||[];
    }
    documents=[...autoDocs,...pixDocs];
-   autoRefs=auto;pixRefs=pix;faturas=invoices;movements=new Map(found.map(x=>[x.id,x]));
+   autoRefs=auto;pixRefs=pix;faturas=invoices;
+   declaredFaturas=new Set(declarations.map(x=>x.fatura_id));
+   movements=new Map(found.map(x=>[x.id,x]));
    if(auto.some(x=>!movements.has(x.movimento_id)))throw Error('Há referências sem saída no Fluxo. Confira a base.');
    const remaining=paidAuto().filter(x=>!new Set(auto.map(a=>a.documento_id)).has(x.id));
    set('dc-matched-count',String(auto.length));
@@ -178,7 +183,8 @@ async function refresh(){
    set('dc-pix-count',String(pix.length));
    renderAuto();renderFaturas();renderPix();
    set('dc-status',auto.length+' referências únicas às saídas existentes · '+remaining.length+
-    ' compras pagas sem correspondência única · '+invoices.length+' faturas documentais · '+
+    ' compras pagas sem correspondência única · '+invoices.length+
+    ' faturas documentais ('+declaredFaturas.size+' quitadas por confirmação, sem conciliação) · '+
     pix.length+' validações PIX/Débito. Nenhum novo pagamento lançado.');
    if(selectedInvoice)await showInvoice(selectedInvoice);
   }catch(e){
