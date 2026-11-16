@@ -200,7 +200,10 @@
 @media screen and (max-width:900px){
   :root{--fr-mobile-system-header-height:162px;}
 
-  body:not(.ficha-os-page){
+  /* O CRM ainda mostra uma tela de autorização sem cabeçalho.
+     Não empurrar essa tela para baixo antes do login. */
+  body:has(> .system-topbar:not(.ficha-responsive-topbar)),
+  body.crm-authorized{
     padding-top:var(--fr-mobile-system-header-height) !important;
   }
   .system-topbar:not(.ficha-responsive-topbar){
