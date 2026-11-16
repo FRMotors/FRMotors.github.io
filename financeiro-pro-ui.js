@@ -35,12 +35,57 @@ function svg(name){return '<svg aria-hidden="true" viewBox="0 0 24 24">'+(iconPa
 function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(n=>{const name=n.getAttribute('data-icon');if(name in iconPaths)n.innerHTML=svg(name)})}
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
-function selectView(next){
+const NAV_VIEWS=['overview','payables','purchases','imports','itau','history','operational','expenses'];
+const SECTION_SLUGS={'vl-title-section':'payments','ag-title':'agenda'};
+const VIEWPORT_KEY='fr-financeiro-viewport-atual';
+function syncNavigationUrl(next,section){
+ try{
+  const url=new URL(window.location.href);
+  url.searchParams.set('view',next);
+  if(next==='expenses'&&section)url.searchParams.set('section',section);
+  else url.searchParams.delete('section');
+  window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash);
+ }catch(_){
+  // A navegação interna continua funcionando mesmo se o navegador bloquear a alteração do URL.
+ }
+}
+function rememberViewport(){
+ try{
+  window.sessionStorage.setItem(VIEWPORT_KEY,JSON.stringify({
+   url:window.location.pathname+window.location.search+window.location.hash,
+   x:window.scrollX,y:window.scrollY
+  }));
+ }catch(_){}
+}
+function restoreViewportOnReload(){
+ const nav=window.performance?.getEntriesByType?.('navigation')?.[0];
+ const reload=nav?.type==='reload'||window.performance?.navigation?.type===1;
+ if(!reload)return false;
+ try{
+  const saved=JSON.parse(window.sessionStorage.getItem(VIEWPORT_KEY)||'null');
+  const current=window.location.pathname+window.location.search+window.location.hash;
+  if(!saved||saved.url!==current||!Number.isFinite(saved.y)||saved.y<0)return false;
+  const app=byId('app');
+  const restore=()=>{
+   const apply=()=>window.scrollTo({left:Number(saved.x)||0,top:saved.y,behavior:'instant'});
+   window.requestAnimationFrame(()=>window.requestAnimationFrame(apply));
+  };
+  if(app?.classList.contains('hidden')){
+   const observer=new MutationObserver(()=>{
+    if(!app.classList.contains('hidden')){observer.disconnect();restore()}
+   });
+   observer.observe(app,{attributes:true,attributeFilter:['class']});
+  }else restore();
+  return true;
+ }catch(_){return false}
+}
+function selectView(next,options={}){
  // Páginas legadas de demonstração não devem aparecer como financeiras operacionais.
  if(next==='movements')next='operational';
  if(next==='settings')next='overview';
- if(!['overview','payables','purchases','imports','itau','history','operational','expenses'].includes(next))next='overview';
+ if(!NAV_VIEWS.includes(next))next='overview';
  view=next;
+ if(options.syncUrl!==false)syncNavigationUrl(next);
  document.querySelectorAll('[data-view-panel]').forEach(n=>{n.hidden=n.getAttribute('data-view-panel')!==next});
  document.querySelectorAll('[data-view]').forEach(n=>{
   const active=n.getAttribute('data-view')===next;
@@ -62,7 +107,7 @@ function selectView(next){
   if(next==='expenses')window.frInvoicesAgendaUI?.refresh?.();
   if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
- window.scrollTo({top:0,behavior:'auto'});
+ if(!options.preserveScroll)window.scrollTo({top:0,behavior:'auto'});
 }
 function closeSidebar(){document.body.classList.remove('sidebar-open');byId('sidebar-overlay')?.setAttribute('hidden','');byId('menu-toggle')?.setAttribute('aria-expanded','false')}
 function openSidebar(){document.body.classList.add('sidebar-open');byId('sidebar-overlay')?.removeAttribute('hidden');byId('menu-toggle')?.setAttribute('aria-expanded','true')}
@@ -239,7 +284,9 @@ function setup(){
  document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>selectView(btn.dataset.view)));
  document.querySelectorAll('[data-jump-section]').forEach(btn=>btn.addEventListener('click',()=>{
   selectView('expenses');
-  scrollToExpensesSection(btn.dataset.jumpSection);
+  const id=btn.dataset.jumpSection;
+  syncNavigationUrl('expenses',SECTION_SLUGS[id]);
+  scrollToExpensesSection(id);
  }));
  document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openModal(btn.dataset.open)));
  document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));
@@ -262,11 +309,17 @@ function setup(){
   const p=e.target.closest('[data-pay-id]');
   if(p){selectView('payables');openModal('pay');if(byId('pay-installment'))byId('pay-installment').value=p.dataset.payId;if(typeof refreshPaymentSuggestion==='function')refreshPaymentSuggestion()}
  });
+ window.addEventListener('pagehide',rememberViewport);
  const params=new URLSearchParams(window.location.search);
  const requestedView=params.get('view');
- const initialView=['operational','payables','expenses','purchases'].includes(requestedView)?requestedView:'overview';
- selectView(initialView);
- if(initialView==='expenses'&&['payments','agenda'].includes(params.get('section'))){
+ const initialView=requestedView==='movements'?'operational':
+  requestedView==='settings'?'overview':
+  NAV_VIEWS.includes(requestedView)?requestedView:'overview';
+ // Ao carregar, respeitar a aba do URL e não forçar a página de volta para o topo.
+ selectView(initialView,{syncUrl:false,preserveScroll:true});
+ if(requestedView!==initialView)syncNavigationUrl(initialView);
+ const restored=restoreViewportOnReload();
+ if(!restored&&initialView==='expenses'&&['payments','agenda'].includes(params.get('section'))){
   const target=params.get('section')==='agenda'?'ag-title':'vl-title-section';
   requestAnimationFrame(()=>scrollToExpensesSection(target));
  }
