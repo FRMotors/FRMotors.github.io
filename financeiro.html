@@ -30,6 +30,39 @@
 .fin-ops-footer>div{display:flex;gap:8px}
 @media(max-width:960px){.fin-ops-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fin-ops-foot{grid-template-columns:1fr}}
 @media(max-width:480px){.fin-ops-grid{padding:4px 12px 14px}.fin-ops-grid .insight-card{padding:12px}.fin-ops-foot{padding:0 12px 14px}.fin-ops-status{padding:0 12px 14px}}
+
+.fin-cp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:3px 20px 18px}
+.fin-cp-grid .insight-card{min-width:0;padding:16px}
+.fin-cp-grid strong{font-size:22px;overflow-wrap:anywhere}
+.fin-cp-toolbar{flex-wrap:wrap}
+.fin-cp-toolbar .search-box{min-width:min(100%,285px);flex:2 1 320px}
+.fin-cp-toolbar .filter-select{flex:1 1 170px}
+.fin-cp-status,.fin-cp-note{margin:0;padding:0 20px 18px}
+.fin-cp-note{padding-top:16px}
+.fin-cp-table{overflow-x:auto}
+.fin-cp-table th,.fin-cp-table td{min-width:110px}
+.fin-cp-table td:nth-child(2){min-width:180px}
+.fin-cp-table td:nth-child(9){min-width:146px}
+.fin-cp-table .money{white-space:nowrap}
+.fin-cp-table small,.fin-cp-table .cp-src{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.cp-possible{color:#497f82;font-weight:700}
+.cp-possible small{font-weight:500}
+.cp-actions{display:flex;flex-wrap:wrap;gap:6px}
+.fin-cp-footer{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}
+.fin-cp-footer>div{display:flex;gap:8px}
+.fin-cp-legacy{margin-top:18px}
+.fin-cp-legacy>summary{cursor:pointer;color:#405465;font-weight:700;padding:16px;background:#fff;border:1px solid var(--stroke);border-radius:11px}
+.fin-cp-legacy[open]>summary{margin-bottom:12px}
+.fin-cp-dialog{max-width:640px;width:min(640px,calc(100vw - 20px))}
+.fin-cp-dialog .fin-cp-form{padding:0 18px}
+.fin-cp-dialog textarea{resize:vertical}
+.fin-cp-dialog .form-actions{padding:0 18px 18px}
+.fin-cp-dialog .info-note{padding:8px 18px}
+@media(max-width:760px){.fin-cp-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:3px 12px 16px;gap:8px}
+.fin-cp-grid .insight-card{padding:12px}
+.fin-cp-grid strong{font-size:19px}
+.fin-cp-status,.fin-cp-note{padding:0 12px 14px}
+.fin-cp-toolbar .search-box{flex-basis:100%}}
 </style>
 </head>
 <body>
@@ -189,9 +222,60 @@
 
       <section class="view" data-view-panel="payables" hidden aria-label="Contas a pagar">
         <div class="section-header">
-          <div><p class="eyebrow">Compromissos da empresa</p><h1 class="page-heading">Contas a pagar</h1><p class="page-description">Confira os compromissos homologados do Fluxo de Caixa e, separadamente, as parcelas cadastradas no aplicativo.</p></div>
-          <span class="env-chip">AMBIENTE DE TESTES</span>
+          <div><p class="eyebrow">Compromissos da empresa</p><h1 class="page-heading">Contas a pagar</h1><p class="page-description">Gerencie os compromissos migrados, suas datas, descontos e conciliações, mantendo a planilha original protegida.</p></div>
+          <span class="env-chip">OPERAÇÃO · 2026</span>
         </div>
+        <section class="card" id="fin-cp-operacional" aria-labelledby="fin-cp-title">
+          <div class="card-head">
+            <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
+              <p>59 compromissos migrados da aba ABERTOS FLUXO, com rastreabilidade e conciliações preservadas.</p></div>
+            <div class="header-buttons">
+              <button class="btn" id="cp-sync" type="button"><span class="icon icon-sm" data-icon="refresh"></span> Sincronizar conciliações</button>
+              <button class="btn" id="cp-refresh" type="button">Atualizar</button>
+            </div>
+          </div>
+          <div class="fin-cp-grid">
+            <article class="insight-card"><span>Contas pendentes</span><strong id="cp-count">—</strong><small>Sem pagamentos em duplicidade</small></article>
+            <article class="insight-card"><span>Valor base pendente</span><strong id="cp-total">—</strong><small>Conforme planilha homologada</small></article>
+            <article class="insight-card"><span>Total vencido</span><strong id="cp-overdue">—</strong><small>Valores base já vencidos</small></article>
+            <article class="insight-card"><span>Vencem em 7 dias</span><strong id="cp-soon">—</strong><small>Próximos vencimentos</small></article>
+            <article class="insight-card"><span>Sem vencimento</span><strong id="cp-undated">—</strong><small>Não foi inventada data</small></article>
+            <article class="insight-card"><span>Conciliados no extrato</span><strong id="cp-reconciled">—</strong><small>Sem nova saída bancária</small></article>
+          </div>
+          <div class="data-toolbar fin-cp-toolbar">
+            <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+              <input id="cp-search" type="search" placeholder="Pesquisar fornecedor, categoria, data ou código" aria-label="Buscar contas a pagar operacionais"></label>
+            <select id="cp-status-filter" class="filter-select" aria-label="Filtrar situação da conta">
+              <option value="todos">Todas as contas</option>
+              <option value="aberto">Pendentes</option>
+              <option value="vencido">Vencidas</option>
+              <option value="hoje">Vencem hoje</option>
+              <option value="proximos7">Próximos 7 dias</option>
+              <option value="sem_data">Sem vencimento</option>
+              <option value="conciliado">Conciliados no extrato</option>
+            </select>
+            <select id="cp-month-filter" class="filter-select" aria-label="Filtrar por mês">
+              <option value="todos">Todos os meses</option>
+            </select>
+          </div>
+          <p id="cp-load-status" class="info-note fin-cp-status" role="status" aria-live="polite">Carregando carteira operacional...</p>
+          <div class="table-wrap fin-cp-table"><table class="data-table">
+            <thead><tr><th>Vencimento</th><th>Fornecedor / descrição</th><th>Categoria</th>
+              <th class="money">Valor planilha</th><th class="money">Valor cheio informado</th>
+              <th class="money">Desconto</th><th class="money">Pago / estimativa</th>
+              <th>Situação</th><th>Ações</th></tr></thead>
+            <tbody id="cp-rows"><tr><td colspan="9" class="empty">Aguardando consulta...</td></tr></tbody>
+          </table></div>
+          <div class="table-footer fin-cp-footer">
+            <span id="cp-shown">Aguardando registros...</span>
+            <div><button class="btn" type="button" id="cp-prev" disabled>Anterior</button>
+                 <button class="btn" type="button" id="cp-next" disabled>Próxima</button></div>
+          </div>
+          <p class="info-note fin-cp-note">O valor da planilha não é automaticamente tratado como valor cheio. Descontos possíveis da PARQUE são apenas estimativas até o vencimento e não geram baixas. A opção <strong>Conciliar</strong> utiliza a saída bancária existente; só depois da confirmação o vínculo chega à carteira operacional.</p>
+        </section>
+
+        <details class="fin-cp-legacy">
+          <summary>Consultar os 59 registros originais da planilha homologada (histórico)</summary>
         <section class="card" id="fin-homolog-payables" aria-labelledby="fin-homolog-title">
           <div class="card-head">
             <div><h2 id="fin-homolog-title">Contas em aberto da planilha homologada</h2><p id="fin-homolog-source">Consultando a planilha conferida mais recente...</p></div>
@@ -216,6 +300,9 @@
           <div class="table-footer" id="fin-homolog-shown">Aguardando dados.</div>
           <p class="info-note fin-homolog-note">Os compromissos são os registros expressamente marcados como EM ABERTO no Fluxo de Caixa. Nem todos são boletos de autopeças. A aba de origem informa o valor previsto, mas não o valor cheio ou desconto individual: esses campos aparecem como “—”. O vínculo de conciliação é exibido separadamente e não altera a planilha nem cria pagamentos.</p>
         </section>
+        </details>
+        <details class="fin-cp-legacy">
+          <summary>Mostrar parcelas cadastradas manualmente no ambiente de testes</summary>
         <h2 class="fin-homolog-manual-title">Parcelas cadastradas manualmente no aplicativo (teste)</h2>
         <div class="section-card-list">
           <article class="insight-card"><span>Valor cheio em aberto</span><strong id="pending-value">R$ 0,00</strong><small>Antes de descontos e encargos</small></article>
@@ -228,6 +315,33 @@
           <div class="table-wrap"><table class="data-table"><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Situação</th><th></th></tr></thead><tbody id="due"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
           <div class="table-footer" id="dues-count">0 parcela(s)</div>
         </section>
+        </details>
+        <dialog id="cp-edit-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="cp-edit-title">
+          <form id="cp-edit-form">
+            <div class="card-head"><div>
+              <h2 id="cp-edit-title">Editar compromisso operacional</h2>
+              <p id="cp-edit-source">Origem homologada</p></div>
+              <button type="button" class="btn" id="cp-edit-cancel">Fechar</button>
+            </div>
+            <div class="fields fin-cp-form">
+              <label>Vencimento (pode ficar vazio)
+                <input id="cp-edit-date" type="date">
+              </label>
+              <label>Valor cheio confirmado (R$), se conhecido
+                <input id="cp-edit-full" type="number" min="0.01" step="0.01" placeholder="Não informado">
+              </label>
+              <label>Categoria
+                <input id="cp-edit-category" type="text" maxlength="120" placeholder="Ex.: FORNECEDORES">
+              </label>
+              <label>Observações / justificativa
+                <textarea id="cp-edit-notes" rows="3" maxlength="2000" placeholder="Registre a origem da alteração, sem inventar dados."></textarea>
+              </label>
+            </div>
+            <p class="info-note">O valor original do Excel, a referência de origem e os pagamentos já conciliados não podem ser alterados aqui. Todas as alterações são auditadas.</p>
+            <p class="info-note" id="cp-edit-message" role="alert"></p>
+            <div class="form-actions"><button type="submit" class="btn btn-primary" id="cp-save">Salvar alterações</button></div>
+          </form>
+        </dialog>
       </section>
 
       <section class="view" data-view-panel="purchases" hidden aria-label="Compras e parcelas">
@@ -676,7 +790,7 @@
    <article class="insight-card"><span>Resultado das movimentações</span><strong id="ops-result">—</strong><small>Não é o saldo bancário</small></article>
   </div>
   <div class="fin-ops-foot">
-   <div><strong id="ops-open">—</strong><span>Compromissos em aberto preservados</span></div>
+   <div><strong id="ops-open">—</strong><span>Contas operacionais pendentes</span></div>
    <div><strong id="ops-ignored">—</strong><span>Registros excluídos dos indicadores</span></div>
    <div><strong id="ops-links">—</strong><span>Boletos conciliados no teste</span></div>
   </div>
@@ -1054,14 +1168,15 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116atalho2"></script>
+<script src="./financeiro-pro-ui.js?v=20261116cp2"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
-<script src="./financeiro-import.js?v=20261116valores1" defer></script>
+<script src="./financeiro-import.js?v=20261116cp1" defer></script>
 <script src="./financeiro-faturas.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-operacional.js?v=20261116base1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261116cp1" defer></script>
+<script src="./financeiro-operacional.js?v=20261116cp1" defer></script>
 </body></html>
