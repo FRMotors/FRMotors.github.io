@@ -51,7 +51,7 @@ async function load(){
    setText('ops-status','Carregando a base financeira migrada...');
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso ao histórico financeiro não autorizado.');
-   const [moves,importResp,abertosResp,ignoradosResp,linksResp,manualResp,operLinksResp]=await Promise.all([
+   const [moves,importResp,abertosResp,ignoradosResp,linksResp,manualResp,operLinksResp,importedManualResp]=await Promise.all([
     fetchAll(()=>db.from('fin_movimentos')
      .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,origem,referencia_origem')
      .eq('origem','fluxo_caixa_homologado')
@@ -64,9 +64,10 @@ async function load(){
     db.from('fin_teste_excel_abertos_vinculos').select('id',{count:'exact',head:true}),
     db.from('fin_boletos_avulsos').select('id',{count:'exact',head:true}),
     fetchAll(()=>db.from('fin_baixas_operacionais')
-      .select('conta_pagar_id,boleto_avulso_id').order('criado_em',{ascending:false}))
+      .select('conta_pagar_id,boleto_avulso_id').order('criado_em',{ascending:false})),
+    db.from('fin_baixas_extrato_avulsos').select('id',{count:'exact',head:true})
    ]);
-   for(const response of [importResp,abertosResp,ignoradosResp,linksResp,manualResp])
+   for(const response of [importResp,abertosResp,ignoradosResp,linksResp,manualResp,importedManualResp])
     if(response.error)throw response.error;
    const imported=importResp.data;
    if(!imported||imported.estado!=='concluida')throw Error('Nenhuma migração financeira concluída encontrada.');
@@ -81,7 +82,7 @@ async function load(){
    const paidCP=operLinksResp.filter(x=>x.conta_pagar_id).length;
    const paidManual=operLinksResp.filter(x=>x.boleto_avulso_id).length;
    setText('ops-open',String(Math.max(0,(abertosResp.count??0)-paidCP)+
-    Math.max(0,(manualResp.count??0)-paidManual)));
+    Math.max(0,(manualResp.count??0)-paidManual-(importedManualResp.count??0))));
    setText('ops-ignored',String(ignoradosResp.count??0));
    setText('ops-links',String(linksResp.count??0));
    setText('ops-source',imported.nome_arquivo+' · '+imported.linhas_importadas+' registros arquivados');
