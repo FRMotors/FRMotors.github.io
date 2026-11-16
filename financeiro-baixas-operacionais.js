@@ -10,7 +10,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'
 const cents=x=>Math.round(Number(x)*100);
 const write=(id,t)=>{if($(id))$(id).textContent=t};
 let accounts=[],avulsos=[],links=[],importedLinks=[],movements=[],otherUsed=new Set(),testUsed=new Set(),suppliers=new Map();
-let loading=null,busy=false;
+let loading=null,busy=false,deleteTarget=null;
 const byId=new Map();
 function validAmount(x){const n=Number(x),c=Math.round(n*100);return Number.isFinite(n)&&n>=0&&Number.isSafeInteger(c)&&Math.abs(n*100-c)<.00001?c:null}
 async function allRows(builder,max=15000){
@@ -94,8 +94,18 @@ function availableBank(doc){
   return score(b)-score(a)||b.data_movimento.localeCompare(a.data_movimento)||a.descricao.localeCompare(b.descricao);
  });
 }
+function updateDeleteButton(){
+ const doc=chosen();
+ const canDelete=Boolean(doc&&doc.tipo==='avulso'&&!paidLinks().manual.has(doc.id));
+ const button=$('op-pay-delete');
+ if(button){button.hidden=!canDelete;button.disabled=busy||!canDelete;}
+ write('op-pay-delete-note',canDelete?
+  'Este boleto foi cadastrado no aplicativo e ainda não tem baixa. Você pode excluí-lo.':
+  doc?.tipo==='homologado'?'Boletos da planilha homologada são protegidos contra exclusão.':'');
+}
 function updateBank(){
  const doc=chosen();
+ updateDeleteButton();
  const previous=$('op-pay-movement').value;
  const candidates=availableBank(doc);
  const opts=candidates.map(x=>new Option(brl(x.valor)+' · '+dateBR(x.data_movimento)+' · '+x.descricao.slice(0,45)+
@@ -153,7 +163,10 @@ function updateManualList(){
    '<td class="money">'+brl(x.valor_referencia)+'</td>'+
    '<td>'+(l?'<span class="state paid">'+(l.source==='extrato'?'Conciliado no extrato':'Conciliado no Fluxo')+'</span>':'<span class="state open">Em aberto</span>')+
    (l?'<small>Pago '+esc(dateBR(l.data_pagamento))+' · '+brl(l.valor_pago)+'</small>':'')+'</td>'+
-   '<td>'+(l?'—':'<button type="button" class="btn" data-op-pay-manual="'+esc(x.id)+'">Dar baixa</button>')+'</td></tr>';
+   '<td>'+(l?'—':'<div class="fin-op-manual-actions">'+
+    '<button type="button" class="btn" data-op-pay-manual="'+esc(x.id)+'">Dar baixa</button>'+
+    '<button type="button" class="btn fin-op-delete-button" data-op-delete-manual="'+esc(x.id)+'">Excluir</button>'+
+   '</div>')+'</td></tr>';
  }).join(''):'<tr><td colspan="5" class="empty">Nenhum boleto adicional registrado aqui. Use “Novo boleto” para incluir um compromisso esquecido.</td></tr>';
  write('op-manual-count',String(avulsos.filter(x=>!linked.has(x.id)).length)+' pendente(s) · '+avulsos.length+' cadastrado(s)');
 }
@@ -165,7 +178,7 @@ async function load(){
   if(accessError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
   const [cp,extra,linked,bank,used,vendors,testBank,usedTestParcels,usedTestExcel,usedTestCards,paidImported]=await Promise.all([
    allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,fornecedor_id,descricao,valor_referencia,vencimento,situacao,linha_origem_id').order('vencimento',{ascending:true})),
-   allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em').order('criado_em',{ascending:false})),
+   allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em').is('excluido_em',null).order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id,movimento_id,valor_pago,data_pagamento,desconto,juros').order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_movimentos').select('id,descricao,valor,data_movimento,meio_pagamento,estado,origem')
     .eq('tipo','saida').eq('estado','confirmado').eq('origem','fluxo_caixa_homologado')
@@ -253,6 +266,53 @@ async function createManual(e){
  }catch(e){write('op-new-status','Não foi possível salvar boleto: '+(e.message||e))}
  finally{busy=false;$('op-new-submit').disabled=false}
 }
+function requestDelete(id){
+ const doc=avulsos.find(x=>x.id===id);
+ if(!doc){
+  write('op-pay-error','Boleto não encontrado. Atualize a lista antes de excluir.');
+  return;
+ }
+ if(paidLinks().manual.has(id)){
+  write('op-pay-error','Um boleto já conciliado não pode ser excluído.');
+  return;
+ }
+ deleteTarget={id:doc.id,fornecedor:doc.fornecedor_nome,valor:doc.valor_referencia,vencimento:doc.vencimento};
+ write('op-delete-description',
+  doc.fornecedor_nome+' · '+brl(doc.valor_referencia)+' · vencimento '+dateBR(doc.vencimento)+
+  (doc.descricao?' · '+doc.descricao:''));
+ write('op-delete-status','O boleto sairá das listas. O registro da exclusão ficará disponível para auditoria.');
+ openDialog('op-delete-dialog');
+}
+async function confirmDelete(e){
+ e.preventDefault();
+ if(busy||!deleteTarget)return;
+ const target={...deleteTarget};
+ busy=true;
+ const confirm=$('op-delete-submit');
+ if(confirm)confirm.disabled=true;
+ try{
+  const {data,error}=await db.rpc('fin_boleto_avulso_excluir',{p_boleto:target.id});
+  if(error)throw error;
+  if(!data||data.resultado!=='excluido')throw Error('O servidor não confirmou a exclusão.');
+  deleteTarget=null;
+  closeDialog('op-delete-dialog');
+  const result=await Promise.allSettled([
+   load(),
+   window.frOperationalUI?.refresh?.()||Promise.resolve(),
+   window.frOperationalPayablesUI?.refresh?.()||Promise.resolve()
+  ]);
+  const failure=result.find(x=>x.status==='rejected');
+  window.frFinanceUI?.showToast(failure?
+    'Boleto excluído com sucesso. Atualize a página para rever a lista.':
+    'Boleto excluído da carteira. Pagamentos e planilha original preservados.',Boolean(failure));
+ }catch(error){
+  write('op-delete-status','Não foi possível excluir: '+(error.message||error));
+ }finally{
+  busy=false;
+  if(confirm)confirm.disabled=false;
+  updateDeleteButton();
+ }
+}
 async function confirmPay(e){
  e.preventDefault();
  if(busy||!recalc()||!$('op-pay-ack').checked)return;
@@ -300,6 +360,17 @@ function init(){
   button.addEventListener('click',()=>openPay().catch(e=>write('op-pay-error',String(e)))));
  document.querySelectorAll('[data-ops-new]').forEach(button=>button.addEventListener('click',openAdd));
  $('op-pay-select')?.addEventListener('change',()=>{ $('op-pay-ack').checked=false;updateBank() });
+ $('op-pay-delete')?.addEventListener('click',()=>{
+  const doc=chosen();
+  if(doc?.tipo==='avulso')requestDelete(doc.id);
+ });
+ $('op-delete-form')?.addEventListener('submit',confirmDelete);
+ $('op-delete-cancel')?.addEventListener('click',()=>{
+  if(busy)return;
+  deleteTarget=null;closeDialog('op-delete-dialog');
+ });
+ $('op-delete-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
+ $('op-delete-dialog')?.addEventListener('close',()=>{deleteTarget=null;});
  $('op-pay-movement')?.addEventListener('change',()=>{$('op-pay-ack').checked=false;movementChanged()});
  ['op-pay-discount','op-pay-fees'].forEach(id=>$(id)?.addEventListener('input',recalc));
  $('op-pay-ack')?.addEventListener('change',recalc);
@@ -314,13 +385,18 @@ function init(){
  $('op-pay-form')?.addEventListener('submit',confirmPay);
  $('op-new-form')?.addEventListener('submit',createManual);
  document.querySelectorAll('[data-op-close]').forEach(b=>
-  b.addEventListener('click',()=>closeDialog(b.dataset.opClose)));
+  b.addEventListener('click',()=>{
+   if(busy&&b.dataset.opClose==='op-delete-dialog')return;
+   closeDialog(b.dataset.opClose);
+  }));
  if(!document.querySelector('[data-view-panel="payables"]')?.hidden){
   load().catch(e=>write('op-manual-count','Falha ao carregar boletos: '+(e.message||e)));
  }
  $('op-manual-rows')?.addEventListener('click',e=>{
   const button=e.target.closest('[data-op-pay-manual]');
+  const del=e.target.closest('[data-op-delete-manual]');
   if(button)openPay('avulso:'+button.dataset.opPayManual).catch(()=>{});
+  else if(del)requestDelete(del.dataset.opDeleteManual);
  });
 }
 window.frBoletoUI={openPay,openAdd,refresh:load};

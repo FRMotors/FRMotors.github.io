@@ -62,7 +62,7 @@ async function load(){
     db.from('fin_contas_pagar').select('id',{count:'exact',head:true}).eq('situacao','aberto'),
     db.from('fin_legacy_registros').select('id',{count:'exact',head:true}).eq('situacao','ignorar'),
     db.from('fin_teste_excel_abertos_vinculos').select('id',{count:'exact',head:true}),
-    db.from('fin_boletos_avulsos').select('id',{count:'exact',head:true}),
+    db.from('fin_boletos_avulsos').select('id',{count:'exact',head:true}).is('excluido_em',null),
     fetchAll(()=>db.from('fin_baixas_operacionais')
       .select('conta_pagar_id,boleto_avulso_id').order('criado_em',{ascending:false})),
     db.from('fin_baixas_extrato_avulsos').select('id',{count:'exact',head:true})
