@@ -38,6 +38,7 @@ let view='overview';
 const NAV_VIEWS=['overview','payables','purchases','imports','itau','history','operational','expenses'];
 const SECTION_SLUGS={'vl-title-section':'payments','ag-title':'agenda'};
 const VIEWPORT_KEY='fr-financeiro-viewport-atual';
+const SIDEBAR_KEY='fr-financeiro-sidebar-desktop-recolhida';
 function syncNavigationUrl(next,section){
  try{
   const url=new URL(window.location.href);
@@ -111,8 +112,48 @@ function selectView(next,options={}){
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
  if(!options.preserveScroll)window.scrollTo({top:0,behavior:'auto'});
 }
-function closeSidebar(){document.body.classList.remove('sidebar-open');byId('sidebar-overlay')?.setAttribute('hidden','');byId('menu-toggle')?.setAttribute('aria-expanded','false')}
-function openSidebar(){document.body.classList.add('sidebar-open');byId('sidebar-overlay')?.removeAttribute('hidden');byId('menu-toggle')?.setAttribute('aria-expanded','true')}
+function isMobileSidebar(){return window.matchMedia('(max-width:760px)').matches}
+function syncSidebarToggle(){
+ const mobile=isMobileSidebar();
+ const open=mobile?document.body.classList.contains('sidebar-open'):
+  !document.body.classList.contains('sidebar-collapsed');
+ const btn=byId('menu-toggle');
+ if(!btn)return;
+ btn.setAttribute('aria-expanded',String(open));
+ btn.setAttribute('aria-controls','sidebar');
+ const label=mobile?(open?'Fechar menu':'Abrir menu'):
+  (open?'Recolher barra lateral':'Expandir barra lateral');
+ btn.setAttribute('aria-label',label);
+ btn.title=label;
+}
+function closeSidebar(){
+ document.body.classList.remove('sidebar-open');
+ byId('sidebar-overlay')?.setAttribute('hidden','');
+ syncSidebarToggle();
+}
+function openSidebar(){
+ document.body.classList.add('sidebar-open');
+ byId('sidebar-overlay')?.removeAttribute('hidden');
+ syncSidebarToggle();
+}
+function toggleSidebar(){
+ if(isMobileSidebar()){
+  document.body.classList.contains('sidebar-open')?closeSidebar():openSidebar();
+  return;
+ }
+ const collapsed=document.body.classList.toggle('sidebar-collapsed');
+ try{window.localStorage.setItem(SIDEBAR_KEY,collapsed?'1':'0')}catch(_){}
+ syncSidebarToggle();
+}
+function initSidebar(){
+ try{document.body.classList.toggle('sidebar-collapsed',window.localStorage.getItem(SIDEBAR_KEY)==='1')}
+ catch(_){}
+ syncSidebarToggle();
+ window.addEventListener('resize',()=>{
+  if(!isMobileSidebar())closeSidebar();
+  syncSidebarToggle();
+ });
+}
 function openModal(name){
  const dlg=byId('modal-'+name);
  if(dlg?.showModal){dlg.showModal();dlg.querySelector('input:not([readonly]),select,button')?.focus()}
@@ -283,6 +324,7 @@ function scrollToExpensesSection(id){
 }
 function setup(){
  applyIcons();
+ initSidebar();
  document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>selectView(btn.dataset.view)));
  document.querySelectorAll('[data-jump-section]').forEach(btn=>btn.addEventListener('click',()=>{
   selectView('expenses');
@@ -293,7 +335,7 @@ function setup(){
  document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openModal(btn.dataset.open)));
  document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));
  document.querySelectorAll('[data-period]').forEach(btn=>btn.addEventListener('click',()=>changePeriod(btn.dataset.period)));
- byId('menu-toggle')?.addEventListener('click',()=>{document.body.classList.contains('sidebar-open')?closeSidebar():openSidebar()});
+ byId('menu-toggle')?.addEventListener('click',toggleSidebar);
  byId('sidebar-overlay')?.addEventListener('click',closeSidebar);
  document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar()});
