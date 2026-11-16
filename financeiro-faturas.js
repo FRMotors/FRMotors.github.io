@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const format=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dateBR=s=>s?String(s).slice(0,10).split('-').reverse().join('/'):'Não informado';
-let rows={imports:[],faturas:[],payments:[],cardMoves:[],bank:[],boletoLinks:[],excelLinks:[],documents:[]};
+let rows={imports:[],faturas:[],payments:[],cardMoves:[],bank:[],boletoLinks:[],excelLinks:[],avulsoLinks:[],documents:[]};
 let selected=null,busy=false,refreshing=null,manualRequestKey=null,documentUsed=null;
 function say(text,bad=false){
  const el=$('invoice-message');if(!el)return;
@@ -75,7 +75,7 @@ function detail(){
  if(rows.documents.some(d=>d.id===oldDoc))docSelect.value=oldDoc;
  updateDocumentButton();
  const bankRoot=$('invoice-bank-move'),prev=bankRoot.value;
- const unavailable=new Set([...rows.boletoLinks.map(x=>x.movimento_id),...rows.excelLinks.map(x=>x.movimento_id),...rows.payments.map(x=>x.movimento_id)]);
+ const unavailable=new Set([...rows.boletoLinks.map(x=>x.movimento_id),...rows.excelLinks.map(x=>x.movimento_id),...rows.avulsoLinks.map(x=>x.movimento_teste_id),...rows.payments.map(x=>x.movimento_id)]);
  const candidates=rows.bank.filter(x=>!unavailable.has(x.id));
  bankRoot.disabled=!candidates.length;
  $('invoice-bank-empty').hidden=candidates.length>0;
@@ -167,7 +167,7 @@ async function refresh(){
  if(typeof db==='undefined'||!db||!$('invoice-list'))return;
  if(refreshing)return refreshing;
  refreshing=(async()=>{
-  const [imports,faturas,payments,cardMoves,allBankMoves,boletoLinks,excelLinks,documents]=await Promise.all([
+  const [imports,faturas,payments,cardMoves,allBankMoves,boletoLinks,excelLinks,avulsoLinks,documents]=await Promise.all([
    getRows(()=>db.from('fin_teste_importacoes').select('id,conta_nome,arquivo_nome,criado_em')
     .eq('tipo','cartao').order('criado_em',{ascending:false}).order('id',{ascending:false})),
    getRows(()=>db.from('fin_teste_faturas').select('id,importacao_id,valor_total,vencimento').order('criado_em',{ascending:false})),
@@ -178,13 +178,14 @@ async function refresh(){
     .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
    getRows(()=>db.from('fin_teste_vinculos').select('movimento_id').order('id',{ascending:false})),
    getRows(()=>db.from('fin_teste_excel_abertos_vinculos').select('movimento_id').order('vinculado_em',{ascending:false})),
+   getRows(()=>db.from('fin_baixas_extrato_avulsos').select('movimento_teste_id').order('criado_em',{ascending:false})),
    getRows(()=>db.from('fin_teste_pagamentos_informados_cartao')
     .select('id,importacao_id,data_pagamento,descricao,valor')
     .order('data_pagamento',{ascending:false}).order('id',{ascending:false}))
   ]);
   const bank=allBankMoves.filter(m=>m.referencia_cliente?.startsWith('extrato:')||
     m.referencia_cliente?.startsWith('fatura_manual:'));
-  rows={imports,faturas,payments,cardMoves,bank,boletoLinks,excelLinks,documents};
+  rows={imports,faturas,payments,cardMoves,bank,boletoLinks,excelLinks,avulsoLinks,documents};
   if(selected&&!imports.some(x=>x.id===selected))selected=null;
   if(!selected&&imports.length)selected=imports[0].id;
   detail();
