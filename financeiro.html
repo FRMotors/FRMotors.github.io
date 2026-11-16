@@ -216,7 +216,7 @@
     <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
     <button type="button" data-view="movements"><span class="icon" data-icon="activity"></span> Movimentações</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
-    <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras e parcelas</button>
+    <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras parceladas</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
     <button type="button" data-jump-section="vl-title-section"><span class="icon" data-icon="credit"></span> Faturas e pagamentos</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
@@ -580,10 +580,10 @@
         </dialog>
       </section>
 
-      <section class="view" data-view-panel="purchases" hidden aria-label="Compras e parcelas">
+      <section class="view" data-view-panel="purchases" hidden aria-label="Compras parceladas">
         <div class="section-header"><div>
           <p class="eyebrow">Histórico de cartões · planilha homologada</p>
-          <h1 class="page-heading">Compras e parcelas</h1>
+          <h1 class="page-heading">Compras parceladas</h1>
           <p class="page-description">Parcelas de compras no cartão, com cartão, parcela atual/total e mês da fatura. Os pagamentos são controlados pela fatura, sem duplicar saídas do caixa.</p>
         </div>
           <div class="header-buttons">
@@ -1734,7 +1734,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116cartoesparcelas1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116nomeparceladas1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
