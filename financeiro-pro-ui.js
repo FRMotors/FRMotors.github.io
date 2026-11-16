@@ -239,7 +239,8 @@ function setup(){
   const p=e.target.closest('[data-pay-id]');
   if(p){selectView('payables');openModal('pay');if(byId('pay-installment'))byId('pay-installment').value=p.dataset.payId;if(typeof refreshPaymentSuggestion==='function')refreshPaymentSuggestion()}
  });
- selectView('overview');
+ const initialView=new URLSearchParams(window.location.search).get('view')==='operational'?'operational':'overview';
+ selectView(initialView);
 }
 window.frFinanceUI={sync,afterSaved,showToast,selectView,openModal,closeModal,applyIcons,getSnapshot:()=>({moves:state.moves,purchases:state.purchases,dues:state.dues,suppliers:state.suppliers})};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
