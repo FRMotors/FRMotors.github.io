@@ -422,6 +422,51 @@
 }
 </style>
 <link rel="stylesheet" href="./financeiro-densidade.css?v=20261116compact58">
+
+<style>
+/* Financeiro: pares de ações sempre lado a lado, sem romper no celular.
+   Limita-se às duas áreas solicitadas e não altera os demais cabeçalhos. */
+.pc-header-actions.header-buttons,
+.fin-agenda-shortcuts{
+  display:grid;
+  grid-template-columns:repeat(2,max-content);
+  align-items:stretch;
+  gap:8px;
+}
+.pc-header-actions.header-buttons .btn,
+.fin-agenda-shortcuts .btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-width:0;
+  width:100%;
+  height:auto;
+  min-height:42px;
+  text-align:center;
+  white-space:normal;
+  line-height:1.25;
+}
+.pc-header-actions.header-buttons .btn .icon,
+.fin-agenda-shortcuts .btn .icon{flex:0 0 auto}
+@media(max-width:760px){
+  .pc-header-actions.header-buttons,
+  .fin-agenda-shortcuts{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+  }
+  .pc-header-actions.header-buttons .btn,
+  .fin-agenda-shortcuts .btn{
+    flex:none;
+    grid-column:auto;
+    padding:9px 6px;
+    font-size:clamp(10px,2.8vw,12px);
+  }
+  /* Evita que a regra global para botões de cabeçalho mande
+     o primeiro botão sozinho para uma linha inteira. */
+  .pc-header-actions.header-buttons .btn:first-child{grid-column:auto}
+}
+</style>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -939,7 +984,7 @@
           <h1 class="page-heading">Compras parceladas</h1>
           <p class="page-description">Parcelas de compras no cartão, com cartão, parcela atual/total e mês da fatura. Os pagamentos são controlados pela fatura, sem duplicar saídas do caixa.</p>
         </div>
-          <div class="header-buttons">
+          <div class="header-buttons pc-header-actions">
             <button type="button" class="btn" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
             <button type="button" class="btn btn-primary" id="pc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar parcelas</button>
           </div>
@@ -2257,7 +2302,7 @@ init();
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261116avulsosedit1" defer></script>
-<script src="./financeiro-baixas-operacionais.js?v=20261116editmanual1" defer></script>
+<script src="./financeiro-baixas-operacionais.js?v=20261116overviewdialogs2" defer></script>
 <script src="./financeiro-documentos.js?v=20261116pages1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261116cartoesparcelas1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261116pages1" defer></script>
