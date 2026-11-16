@@ -201,6 +201,19 @@
 @media(max-width:550px){.pc-kpis{gap:8px;margin-bottom:14px}.pc-kpis .insight-card{padding:12px}
 .pc-kpis .insight-card strong{font-size:19px}
 .pc-toolbar .filter-select{min-width:0;flex:1 1 140px}}
+
+.vl-invoice-paging{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.vl-invoice-paging>div{display:flex;gap:8px}
+.vl-show-confirmed-control{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+ padding:8px 10px;font-size:12px;color:var(--ink);cursor:pointer}
+.vl-show-confirmed-control input{margin:0;cursor:pointer}
+.vl-exceptions-summary{font-size:12px;color:var(--muted);margin:0;padding:0 18px 12px}
+.vl-exceptions-empty{font-size:12px;color:var(--muted);margin:0;padding:0 18px 16px}
+#vl-auto-table-wrap[hidden],#vl-auto-empty[hidden]{display:none}
+.fin-doc-month-panel .fin-doc-paging{display:flex;align-items:center;justify-content:space-between;
+ flex-wrap:wrap;gap:10px}
+.fin-doc-month-panel .fin-doc-paging>div{display:flex;gap:8px}
+@media(max-width:620px){.vl-exceptions-summary,.vl-exceptions-empty{padding-left:12px;padding-right:12px}}
 </style>
 </head>
 <body>
@@ -708,12 +721,22 @@
   </tr></thead>
    <tbody id="vl-invoices"><tr><td colspan="8" class="empty">Aguardando conferência...</td></tr></tbody>
   </table></div>
-  <div class="table-footer" id="vl-invoice-count">Aguardando dados.</div>
+  <div class="table-footer vl-invoice-paging">
+   <span id="vl-invoice-count">Aguardando dados.</span>
+   <div>
+    <button type="button" class="btn" id="vl-invoice-prev" disabled>Anterior</button>
+    <button type="button" class="btn" id="vl-invoice-next" disabled>Próxima</button>
+   </div>
+  </div>
  </section>
  <section class="card vl-card">
   <div class="card-head"><div><h2>Exceções de autopeças pagas após o vencimento</h2>
-   <p>Conferência individual de compras marcadas como pagas, mas fora da janela automática de três dias.</p></div></div>
-  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <p>Depois da conferência manual, a compra sai desta lista. O histórico permanece disponível.</p></div>
+   <label class="vl-show-confirmed-control"><input type="checkbox" id="vl-show-confirmed"> Mostrar conferidas</label>
+  </div>
+  <p id="vl-auto-summary" class="vl-exceptions-summary" role="status" aria-live="polite">Aguardando conferências.</p>
+  <p id="vl-auto-empty" class="vl-exceptions-empty" hidden>Nenhuma exceção pendente. As conferidas continuam preservadas e podem ser exibidas acima.</p>
+  <div class="table-wrap" id="vl-auto-table-wrap"><table class="data-table"><thead><tr>
    <th>Compra e fornecedor</th><th>Vencimento</th><th>Pago em</th>
    <th class="money">Valor pago informado</th><th>Situação</th><th>Ação</th>
   </tr></thead>
@@ -887,6 +910,13 @@
   <div class="table-wrap"><table class="data-table"><thead><tr><th>Mês / ano</th>
    <th class="money">Autopeças · valor dos documentos</th><th class="money">Cartões · valor dos lançamentos</th></tr></thead>
    <tbody id="doc-month-rows"><tr><td colspan="3" class="empty">Aguardando...</td></tr></tbody></table></div>
+  <div class="table-footer fin-doc-paging">
+    <span id="doc-month-paging">Aguardando dados mensais.</span>
+    <div>
+     <button type="button" class="btn" id="doc-month-prev" disabled>Anterior</button>
+     <button type="button" class="btn" id="doc-month-next" disabled>Próxima</button>
+    </div>
+  </div>
  </section>
  <section class="card fin-doc-records">
   <div class="card-head">
@@ -1745,9 +1775,9 @@ init();
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261116fixpay1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261116parcelas1" defer></script>
-<script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
+<script src="./financeiro-documentos.js?v=20261116pages1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261116cartoesparcelas1" defer></script>
-<script src="./financeiro-conciliacao-documental.js?v=20261116quitadas1" defer></script>
-<script src="./financeiro-vinculos-faturas.js?v=20261116quitadas1" defer></script>
+<script src="./financeiro-conciliacao-documental.js?v=20261116pages1" defer></script>
+<script src="./financeiro-vinculos-faturas.js?v=20261116pages1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 </body></html>
