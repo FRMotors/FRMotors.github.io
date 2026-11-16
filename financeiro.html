@@ -400,7 +400,7 @@
         <dialog id="op-pay-dialog" class="fin-dialog fin-cp-dialog fin-op-pay-dialog" aria-labelledby="op-pay-title">
           <form id="op-pay-form">
             <div class="dialog-head"><div><h2 id="op-pay-title">Dar baixa em boleto operacional</h2>
-              <p>Vincule o boleto a uma saída já registrada no Fluxo de Caixa, sem duplicar pagamento.</p></div>
+              <p>Vincule o boleto a uma saída já confirmada no Fluxo de Caixa ou no extrato importado, sem duplicar pagamento.</p></div>
               <button type="button" class="dialog-close" data-op-close="op-pay-dialog" aria-label="Fechar">&times;</button>
             </div>
             <div class="dialog-body">
@@ -409,7 +409,7 @@
                   <select id="op-pay-select" required><option value="">Carregando contas...</option></select>
                 </label>
                 <p id="op-pay-list-status" class="info-note" style="grid-column:1/-1" role="status">Carregando boletos pendentes...</p>
-                <label style="grid-column:1/-1">Saída já confirmada no Fluxo de Caixa
+                <label style="grid-column:1/-1">Saída já confirmada no Fluxo de Caixa ou extrato importado
                   <select id="op-pay-movement" required><option value="">Selecione um boleto primeiro</option></select>
                 </label>
                 <div style="grid-column:1/-1" class="fin-op-base">
@@ -430,7 +430,7 @@
               <p id="op-pay-error" class="status" role="alert"></p>
               <div class="form-actions"><button type="button" class="btn" data-op-close="op-pay-dialog">Cancelar</button>
                <button type="submit" id="op-pay-confirm" class="btn btn-primary" disabled>Confirmar baixa sem duplicação</button></div>
-              <p class="info-note">A lista utiliza saídas confirmadas do Fluxo de Caixa e a regra de até três dias entre vencimento e pagamento. Se a saída não aparecer, ela precisa estar registrada e conferida antes da baixa. A conciliação não inventa pagamentos.</p>
+              <p class="info-note">A lista utiliza saídas confirmadas do Fluxo de Caixa e de extratos já importados, com a regra de até três dias entre vencimento e pagamento. Se a saída não aparecer, confirme a importação antes da baixa. A conciliação nunca inventa pagamentos.</p>
             </div>
           </form>
         </dialog>
@@ -1388,7 +1388,7 @@ init();
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261116fixpay1" defer></script>
-<script src="./financeiro-baixas-operacionais.js?v=20261116fixpay1" defer></script>
+<script src="./financeiro-baixas-operacionais.js?v=20261116fixpay2" defer></script>
 <script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116fixpay1" defer></script>
 </body></html>
