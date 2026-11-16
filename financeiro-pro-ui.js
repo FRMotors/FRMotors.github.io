@@ -97,6 +97,7 @@ function selectView(next,options={}){
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
  if(next==='imports')window.frImportUI?.refresh?.();
+ if(next==='imports')window.frPixRulesUI?.refresh?.();
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
   if(next==='operational')window.frOperationalUI?.open?.();
   if(next==='overview')window.frRealDashboard?.refresh?.();
