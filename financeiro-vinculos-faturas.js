@@ -225,6 +225,8 @@ function open(type,id){
  if($('vl-reason'))$('vl-reason').value='';
  if($('vl-ack'))$('vl-ack').checked=false;
  if($('vl-entry-fields'))$('vl-entry-fields').hidden=Boolean(summary?.full);
+ if($('vl-readonly-close'))$('vl-readonly-close').hidden=!Boolean(summary?.full);
+ if($('vl-invoice-summary'))$('vl-invoice-summary').hidden=!invoice;
  out('vl-title',invoice?'Pagamentos da fatura':'Conferir pagamento da autopeça');
  out('vl-description',invoice?refName(doc)+' · '+doc.quantidade_lancamentos+' lançamentos.':
   doc.codigo_origem+' · '+doc.fornecedor_nome+' · '+money(doc.valor_pago_informado)+
@@ -371,6 +373,7 @@ function init(){
  $('vl-form')?.addEventListener('submit',submit);
  $('vl-close')?.addEventListener('click',()=>{if(!busy&&$('vl-dialog')?.open)$('vl-dialog').close()});
  $('vl-cancel')?.addEventListener('click',()=>{if(!busy&&$('vl-dialog')?.open)$('vl-dialog').close()});
+ $('vl-close-history')?.addEventListener('click',()=>{if(!busy&&$('vl-dialog')?.open)$('vl-dialog').close()});
  $('vl-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
  $('vl-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  if(!document.querySelector('[data-view-panel="expenses"]')?.hidden)refresh().catch(()=>{});
