@@ -36,7 +36,7 @@ function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
 function selectView(next){
- if(!['overview','movements','payables','purchases','imports','settings','itau','history','operational'].includes(next))next='overview';
+ if(!['overview','movements','payables','purchases','imports','settings','itau','history','operational','expenses'].includes(next))next='overview';
  view=next;
  document.querySelectorAll('[data-view-panel]').forEach(n=>{n.hidden=n.getAttribute('data-view-panel')!==next});
  document.querySelectorAll('[data-view]').forEach(n=>{
@@ -44,13 +44,14 @@ function selectView(next){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',payables:'Contas a pagar',purchases:'Compras',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada'};
+ const names={overview:'Visão geral',movements:'Movimentações',payables:'Contas a pagar',purchases:'Compras',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
  if(next==='imports')window.frImportUI?.refresh?.();
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
   if(next==='operational')window.frOperationalUI?.open?.();
+  if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
  window.scrollTo({top:0,behavior:'auto'});
 }
@@ -241,7 +242,7 @@ function setup(){
   if(p){selectView('payables');openModal('pay');if(byId('pay-installment'))byId('pay-installment').value=p.dataset.payId;if(typeof refreshPaymentSuggestion==='function')refreshPaymentSuggestion()}
  });
  const requestedView=new URLSearchParams(window.location.search).get('view');
- const initialView=['operational','payables'].includes(requestedView)?requestedView:'overview';
+ const initialView=['operational','payables','expenses'].includes(requestedView)?requestedView:'overview';
  selectView(initialView);
 }
 window.frFinanceUI={sync,afterSaved,showToast,selectView,openModal,closeModal,applyIcons,getSnapshot:()=>({moves:state.moves,purchases:state.purchases,dues:state.dues,suppliers:state.suppliers})};

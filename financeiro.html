@@ -63,6 +63,37 @@
 .fin-cp-grid strong{font-size:19px}
 .fin-cp-status,.fin-cp-note{padding:0 12px 14px}
 .fin-cp-toolbar .search-box{flex-basis:100%}}
+
+.fin-doc-summary,.fin-doc-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.fin-doc-summary{margin-bottom:16px}
+.fin-doc-summary-card{padding-bottom:16px}
+.fin-doc-summary-card .fin-doc-main-value{font-size:27px;font-weight:850;color:var(--ink);padding:0 20px;overflow-wrap:anywhere}
+.fin-doc-summary-card>p{padding:0 20px;margin:8px 0 0;color:var(--muted);font-size:12px}
+.fin-doc-stats{display:flex;gap:15px;flex-wrap:wrap;padding:0 20px 16px;color:var(--muted);font-size:12px}
+.fin-doc-stats strong{color:var(--ink);font-size:16px}
+.fin-doc-status{margin:0;padding:0 20px 18px}
+.fin-doc-split{margin-top:16px}
+.fin-doc-split .table-wrap{overflow-x:auto}
+.fin-doc-split .data-table th,.fin-doc-split .data-table td{min-width:85px}
+.fin-doc-split .data-table th:first-child,.fin-doc-split .data-table td:first-child{min-width:130px}
+.fin-doc-split .data-table small,.fin-doc-table small,.fin-doc-month-panel small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.fin-doc-month-panel,.fin-doc-records{margin-top:16px}
+.fin-doc-filters{flex-wrap:wrap}
+.fin-doc-filters .search-box{flex:2 1 285px}
+.fin-doc-filters .filter-select{flex:1 1 160px}
+.fin-doc-selected{font-size:12px;color:var(--muted);padding:0 20px 12px;margin:0}
+.fin-doc-table .data-table td:nth-child(3){min-width:170px}
+.fin-doc-table .data-table td:nth-child(10){min-width:120px}
+.fin-doc-table .data-table th,.fin-doc-table .data-table td{white-space:normal}
+.fin-doc-table .money{white-space:nowrap}
+.fin-doc-paging{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.fin-doc-paging>div{display:flex;gap:9px}
+.fin-doc-note{margin:0;padding:16px 20px}
+@media(max-width:1120px){.fin-doc-split{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:620px){.fin-doc-summary{grid-template-columns:1fr;gap:10px}
+.fin-doc-summary-card .fin-doc-main-value{font-size:23px}
+.fin-doc-stats,.fin-doc-status,.fin-doc-note{padding-left:12px;padding-right:12px}
+.fin-doc-selected{padding:0 12px 12px}}
 </style>
 </head>
 <body>
@@ -79,6 +110,7 @@
     <button type="button" data-view="movements"><span class="icon" data-icon="activity"></span> Movimentações</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras e parcelas</button>
+    <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
     <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
     <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
@@ -144,6 +176,7 @@
             <button type="button" class="btn btn-primary" data-view="itau"><span class="icon icon-sm" data-icon="bank"></span> Abrir painel Itaú</button>
             <button type="button" class="btn" data-view="history"><span class="icon icon-sm" data-icon="chart"></span> Outras fontes</button>
              <a class="btn btn-teal" href="./financeiro.html?view=operational"><span class="icon icon-sm" data-icon="wallet"></span> Abrir Base migrada</a>
+             <a class="btn" href="./financeiro.html?view=expenses"><span class="icon icon-sm" data-icon="receipt"></span> Autopeças e cartões</a>
           </div>
         </div>
         <div class="section-tools">
@@ -345,6 +378,8 @@
       </section>
 
       <section class="view" data-view-panel="purchases" hidden aria-label="Compras e parcelas">
+        <p class="info-note" style="margin:0 0 16px"><strong>Importações homologadas:</strong> consulte as carteiras de Autopeças e Cartões sem misturar os documentos de despesas aos pagamentos do Fluxo de Caixa.
+        <button type="button" class="btn" data-view="expenses">Abrir Autopeças e cartões</button></p>
         <div class="section-header"><div><p class="eyebrow">Gestão de fornecedores</p><h1 class="page-heading">Compras e parcelas</h1><p class="page-description">Compras com número de parcelas, datas e valores personalizados. O pagamento é registrado separadamente.</p></div>
         <div class="header-buttons"><button type="button" class="btn btn-primary" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button></div></div>
         <section class="card">
@@ -355,6 +390,96 @@
         </section>
       </section>
 
+
+<section class="view" data-view-panel="expenses" hidden aria-label="Carteiras históricas de autopeças e cartões">
+ <div class="section-header">
+  <div><p class="eyebrow">Documentos homologados · sem duplicar o caixa</p>
+   <h1 class="page-heading">Autopeças e cartões</h1>
+   <p class="page-description">Compras de autopeças e lançamentos da aba CARTÕES, lado a lado. As faturas e as saídas bancárias continuam sendo controladas separadamente.</p>
+  </div>
+  <span class="env-chip">DOCUMENTOS · CONSULTA</span>
+ </div>
+ <div class="fin-doc-summary">
+  <section class="card fin-doc-summary-card">
+   <div class="card-head"><div><h2>Autopeças</h2><p>Valor dos documentos incluídos, não pagamentos novos</p></div></div>
+   <div class="fin-doc-main-value" id="doc-auto-total">—</div>
+   <p><strong id="doc-auto-count">—</strong> compras e parcelas incluídas</p>
+  </section>
+  <section class="card fin-doc-summary-card">
+   <div class="card-head"><div><h2>Cartões e outros meios</h2><p>Valores líquidos da aba CARTÕES, incluindo ajustes negativos</p></div></div>
+   <div class="fin-doc-main-value" id="doc-card-total">—</div>
+   <p><strong id="doc-card-count">—</strong> lançamentos incluídos</p>
+  </section>
+ </div>
+ <section class="card">
+  <div class="card-head">
+   <div><h2>Conferência de documentos</h2><p>Os registros marcados como “não incluir” são mantidos apenas para auditoria.</p></div>
+   <button type="button" class="btn" id="doc-refresh">Atualizar</button>
+  </div>
+  <div class="fin-doc-stats">
+   <span><strong id="doc-ignored-count">—</strong> registros não incluir</span>
+   <span><strong id="doc-paid-origin">—</strong> autopeças marcadas “Pago” na planilha</span>
+   <span><strong id="doc-credits-count">—</strong> valores negativos na aba CARTÕES</span>
+  </div>
+  <p id="doc-status" class="info-note fin-doc-status" role="status" aria-live="polite">Aguardando consulta da carteira homologada.</p>
+ </section>
+ <div class="fin-doc-split">
+  <section class="card">
+   <div class="card-head"><div><h2>Gastos por fornecedor de autopeças</h2><p>Valor cheio, com desconto e pago, somente quando informados no documento.</p></div></div>
+   <div class="table-wrap"><table class="data-table"><thead><tr>
+     <th>Fornecedor</th><th class="money">Registros</th><th class="money">Valor cheio</th>
+     <th class="money">Com desconto informado</th><th class="money">Pago na planilha</th>
+   </tr></thead>
+   <tbody id="doc-supplier-rows"><tr><td colspan="5" class="empty">Aguardando...</td></tr></tbody></table></div>
+  </section>
+  <section class="card">
+   <div class="card-head"><div><h2>Valores por cartão / meio</h2><p>Identificações originais preservadas; bancos com nomes diferentes não são unidos automaticamente.</p></div></div>
+   <div class="table-wrap"><table class="data-table"><thead><tr>
+     <th>Cartão / meio</th><th class="money">Registros</th><th class="money">Soma documental</th><th class="money">Valores negativos</th>
+   </tr></thead>
+   <tbody id="doc-card-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
+  </section>
+ </div>
+ <section class="card fin-doc-month-panel">
+  <div class="card-head"><div><h2>Comparativo mensal, lado a lado</h2>
+   <p>Autopeças agrupadas por vencimento e CARTÕES agrupados pelo mês da fatura. Valores históricos, sem lançamento adicional no caixa.</p></div></div>
+  <div class="table-wrap"><table class="data-table"><thead><tr><th>Mês / ano</th>
+   <th class="money">Autopeças · valor dos documentos</th><th class="money">Cartões · valor dos lançamentos</th></tr></thead>
+   <tbody id="doc-month-rows"><tr><td colspan="3" class="empty">Aguardando...</td></tr></tbody></table></div>
+ </section>
+ <section class="card fin-doc-records">
+  <div class="card-head">
+   <div><h2>Registros históricos</h2><p>Pesquise, filtre e exporte os documentos incluídos ou excluídos.</p></div>
+   <button type="button" class="btn" id="doc-export">Exportar CSV filtrado</button>
+  </div>
+  <div class="data-toolbar fin-doc-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="doc-search" aria-label="Buscar documentos" placeholder="Fornecedor, cartão, descrição ou código..."></label>
+   <select id="doc-type" class="filter-select" aria-label="Filtrar origem">
+    <option value="todos">Autopeças e cartões</option><option value="autopecas">Autopeças</option>
+    <option value="cartoes">Cartões e outros meios</option>
+   </select>
+   <select id="doc-include" class="filter-select" aria-label="Filtrar inclusão">
+    <option value="incluidos">Somente incluir</option><option value="excluidos">Somente não incluir</option><option value="todos">Todos (auditoria)</option>
+   </select>
+   <select id="doc-month" class="filter-select" aria-label="Filtrar mês do documento">
+    <option value="todos">Todos os meses</option>
+   </select>
+  </div>
+  <p class="fin-doc-selected" id="doc-selected-total">Aguardando seleção.</p>
+  <div class="table-wrap fin-doc-table"><table class="data-table"><thead><tr>
+   <th>Referência</th><th>Origem</th><th>Fornecedor / descrição</th><th>Cartão / meio</th><th>Data / mês</th>
+   <th class="money">Valor registrado</th><th class="money">Valor cheio</th>
+   <th class="money">Com desconto</th><th class="money">Pago informado</th><th>Situação / inclusão</th>
+  </tr></thead><tbody id="doc-rows"><tr><td colspan="10" class="empty">Aguardando...</td></tr></tbody></table></div>
+  <div class="table-footer fin-doc-paging">
+    <span id="doc-found">Aguardando dados.</span>
+    <div><button type="button" class="btn" id="doc-prev" disabled>Anterior</button>
+     <button type="button" class="btn" id="doc-next" disabled>Próxima</button></div>
+  </div>
+  <p class="info-note fin-doc-note">“Pago na planilha” é uma informação histórica, não uma baixa confirmada no extrato. “Com desconto informado” registra um valor previsto no documento, sem presumir desconto efetivamente obtido. O histórico contém compras de 2025 e 2026, além de PIX e débito listados originalmente na aba CARTÕES. Nenhum desses valores foi somado novamente ao caixa.</p>
+ </section>
+</section>
 
       <!-- Análise do Itaú isolada dos lançamentos operacionais do Financeiro -->
       <section class="view" data-view-panel="itau" hidden aria-label="Análise exclusiva do Fluxo de Caixa Itaú">
@@ -1168,7 +1293,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116cp2"></script>
+<script src="./financeiro-pro-ui.js?v=20261116docs1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1178,5 +1303,6 @@ init();
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261116cp1" defer></script>
+<script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116cp1" defer></script>
 </body></html>
