@@ -51,6 +51,7 @@ function selectView(next){
  if(next==='imports')window.frImportUI?.refresh?.();
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
   if(next==='operational')window.frOperationalUI?.open?.();
+  if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
  window.scrollTo({top:0,behavior:'auto'});
 }
 function closeSidebar(){document.body.classList.remove('sidebar-open');byId('sidebar-overlay')?.setAttribute('hidden','');byId('menu-toggle')?.setAttribute('aria-expanded','false')}
