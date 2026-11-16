@@ -552,68 +552,137 @@ async function deleteCard(){
  }catch(e){cardStatus('Erro ao excluir cartão: '+e.message,true)}
  finally{toggleCardBusy(false)}
 }
+// Chave de negócio mantida entre lotes: a mesma conta histórica não pode
+// ser quitada duas vezes apenas porque uma nova planilha foi homologada.
+function excelOpenKey(item){
+ const original=String(item.dados?.linha_original||'').trim()||('linha:'+item.linha_excel);
+ const name=String(item.descricao||'').trim().toLocaleUpperCase('pt-BR');
+ return original+'|'+name+'|'+(item.data_evento||'sem-data')+'|'+Math.round(Number(item.valor)*100);
+}
 async function refreshReconcile(){
- const [moves,links,dues,cardLinks]=await Promise.all([
+ const [moves,links,dues,cardLinks,excelLinks,latestLotResponse]=await Promise.all([
   fetchAll(()=>db.from('fin_teste_movimentos')
-   .select('id,descricao,valor,data_movimento,referencia_cliente')
-   .eq('tipo','saida').like('referencia_cliente','extrato:%')
+   .select('id,descricao,valor,data_movimento,referencia_cliente,estado')
+   .eq('tipo','saida').eq('estado','confirmado').like('referencia_cliente','extrato:%')
    .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
   fetchAll(()=>db.from('fin_teste_vinculos').select('movimento_id').order('id',{ascending:true})),
   fetchAll(()=>db.from('fin_teste_parcelas')
    .select('id,vencimento,valor_cheio,status,fin_teste_compras(fornecedor_id,descricao)')
    .eq('status','aberto').order('vencimento',{ascending:true}).order('id',{ascending:true})),
-  fetchAll(()=>db.from('fin_teste_fatura_pagamentos').select('movimento_id').order('id',{ascending:false}))
+  fetchAll(()=>db.from('fin_teste_fatura_pagamentos').select('movimento_id').order('id',{ascending:false})),
+  fetchAll(()=>db.from('fin_teste_excel_abertos_vinculos')
+   .select('movimento_id,origem_chave').order('vinculado_em',{ascending:false})),
+  db.from('fin_teste_excel_lotes').select('id,arquivo_nome,resumo_excel').eq('status','conferido')
+   .order('criado_em',{ascending:false}).order('id',{ascending:false}).limit(1).maybeSingle()
  ]);
- linkedBank=new Set([...links.map(x=>x.movimento_id),...cardLinks.map(x=>x.movimento_id)]);
+ if(latestLotResponse.error)throw latestLotResponse.error;
+ const lot=latestLotResponse.data;
+ const excelOpen=lot?await fetchAll(()=>db.from('fin_teste_excel_linhas')
+  .select('id,grupo,linha_excel,codigo_origem,data_evento,descricao,valor,dados')
+  .eq('lote_id',lot.id).eq('grupo','abertos_fluxo')
+  .order('linha_excel',{ascending:true})):[];
+
+ // Detectar uma importação incompleta antes de permitir qualquer vínculo.
+ if(lot){
+  const expected=lot.resumo_excel?.grupos?.abertos_fluxo;
+  const cents=excelOpen.reduce((sum,x)=>sum+Math.round(Number(x.valor)*100),0);
+  if(!expected||excelOpen.length!==Number(expected.quantidade)||
+   cents!==Math.round(Number(expected.soma)*100)){
+   throw Error('A aba ABERTOS FLUXO diverge do resumo homologado. Confira a planilha antes de conciliar.');
+  }
+ }
+ const alreadyLinked=new Set(excelLinks.map(x=>x.origem_chave));
+ const availableExcel=excelOpen.filter(x=>
+  String(x.dados?.situacao||'').trim().toLocaleUpperCase('pt-BR')==='EM ABERTO'&&
+  !alreadyLinked.has(excelOpenKey(x)));
+
+ linkedBank=new Set([...links.map(x=>x.movimento_id),...cardLinks.map(x=>x.movimento_id),
+  ...excelLinks.map(x=>x.movimento_id)]);
  bankImported=moves.filter(x=>!linkedBank.has(x.id));
  const beforeMove=$('reconcile-move').value,beforePar=$('reconcile-parcel').value;
  $('reconcile-move').replaceChildren(new Option('Selecione uma saída do extrato',''),
-  ...bankImported.map(r=>new Option(r.data_movimento.split('-').reverse().join('/')+' · '+r.descricao.slice(0,36)+' · '+cash(r.valor),r.id)));
+  ...bankImported.map(r=>new Option(r.data_movimento.split('-').reverse().join('/')+
+   ' · '+r.descricao.slice(0,36)+' · '+cash(r.valor),r.id)));
+
  const suppliers=window.frFinanceUI?.getSnapshot()?.suppliers||[];
- $('reconcile-parcel').replaceChildren(new Option('Selecione uma parcela em aberto',''),
-  ...dues.map(r=>{
-   const name=suppliers.find(s=>s.id===r.fin_teste_compras?.fornecedor_id)?.nome||'Fornecedor';
-   return new Option(name+' · '+r.vencimento.split('-').reverse().join('/')+' · '+cash(r.valor_cheio),r.id);
-  }));
+ const manualGroup=document.createElement('optgroup');manualGroup.label='Parcelas do aplicativo';
+ const manualOptions=dues.map(r=>{
+  const name=suppliers.find(s=>s.id===r.fin_teste_compras?.fornecedor_id)?.nome||'Fornecedor';
+  manualGroup.append(new Option(name+' · '+(r.vencimento?.split('-').reverse().join('/')||'Sem data')+
+   ' · '+cash(r.valor_cheio),'app:'+r.id));
+  return {id:'app:'+r.id,kind:'app',valor:Number(r.valor_cheio)};
+ });
+ const excelGroup=document.createElement('optgroup');excelGroup.label='Excel homologado · ABERTOS FLUXO';
+ const excelOptions=availableExcel.map(r=>{
+  const supplier=r.dados?.fornecedor||r.descricao||'Sem descrição';
+  const date=r.data_evento?r.data_evento.split('-').reverse().join('/'):'Sem vencimento';
+  excelGroup.append(new Option(supplier+' · '+date+' · previsto '+cash(Number(r.valor))+
+   ' · linha '+r.linha_excel,'excel:'+r.id));
+  return {id:'excel:'+r.id,kind:'excel',valor:Number(r.valor)};
+ });
+ const select=$('reconcile-parcel');
+ select.replaceChildren(new Option('Selecione um boleto ou compromisso em aberto',''),manualGroup,excelGroup);
+ const cached=manualOptions.concat(excelOptions);
+ select.dataset.cached=JSON.stringify(cached);
  if(bankImported.some(x=>x.id===beforeMove))$('reconcile-move').value=beforeMove;
- if(dues.some(x=>x.id===beforePar))$('reconcile-parcel').value=beforePar;
- $('reconcile-parcel').dataset.cached=JSON.stringify(dues.map(d=>({id:d.id,valor:Number(d.valor_cheio)})));
+ if(cached.some(x=>x.id===beforePar))select.value=beforePar;
+ const note=$('reconcile-source-note');
+ if(note){
+  note.textContent=(lot?'Planilha: '+lot.arquivo_nome+'. ':'Nenhuma planilha homologada disponível. ')+
+   availableExcel.length+' compromisso(s) do Excel disponíveis de '+excelOpen.length+
+   ' · '+alreadyLinked.size+' vínculo(s) históricos registrados · '+
+   dues.length+' parcela(s) manuais disponíveis. Não serão criados novos pagamentos.';
+ }
  checkReconcile();
+}
+function selectedReconcileParcel(){
+ let opts=[];try{opts=JSON.parse($('reconcile-parcel').dataset.cached||'[]')}catch(e){}
+ return opts.find(x=>x.id===$('reconcile-parcel').value);
 }
 function checkReconcile(){
  const move=bankImported.find(x=>x.id===$('reconcile-move').value);
- let dues=[];try{dues=JSON.parse($('reconcile-parcel').dataset.cached||'[]')}catch(e){}
- const part=dues.find(x=>x.id===$('reconcile-parcel').value);
+ const part=selectedReconcileParcel();
  const discount=numMoney($('reconcile-discount').value),fees=numMoney($('reconcile-fees').value);
  const valid=Boolean(move&&part&&discount!==null&&discount>=0&&fees!==null&&fees>=0&&
-   discount<=part.valor&&Math.round((part.valor-discount+fees)*100)===Math.round(Number(move.valor)*100));
+  discount<=part.valor&&Math.round((part.valor-discount+fees)*100)===Math.round(Number(move.valor)*100));
  $('reconcile-submit').disabled=!valid||working;
- const message=!move||!part?'Escolha uma saída bancária e um boleto em aberto.':
-  'Valor do boleto '+cash(part.valor)+' − desconto '+cash(discount||0)+' + juros '+cash(fees||0)+
+ const source=part?.kind==='excel'?'Valor previsto da planilha':'Valor cheio do boleto';
+ const message=!move||!part?'Escolha uma saída bancária e um compromisso em aberto.':
+  source+' '+cash(part.valor)+' − desconto '+cash(discount||0)+' + juros '+cash(fees||0)+
   ' = '+cash(part.valor-(discount||0)+(fees||0))+'. Saída bancária: '+cash(move.valor)+'. '+
-  (valid?'Valores conferem. Pode vincular.':'Os valores precisam ser iguais.');
+  (valid?'Valores conferem. Pode vincular sem duplicar a saída.':'Os valores precisam ser iguais.');
  $('reconcile-check').textContent=message;
  $('reconcile-check').classList.toggle('reconcile-valid',valid);
  $('reconcile-check').classList.toggle('reconcile-invalid',Boolean(move&&part&&!valid));
 }
 async function reconcile(){
  if(working)return;
- const move=$('reconcile-move').value,parcel=$('reconcile-parcel').value;
- if(!move||!parcel||$('reconcile-submit').disabled)return;
+ const move=$('reconcile-move').value,part=selectedReconcileParcel();
+ if(!move||!part||$('reconcile-submit').disabled)return;
  const discount=numMoney($('reconcile-discount').value),fees=numMoney($('reconcile-fees').value);
  if(discount===null||fees===null)return;
  working=true;$('reconcile-submit').disabled=true;
  try{
-  const {data,error}=await db.rpc('fin_teste_vincular_pagamento_importado',{
-   p_movimento:move,p_parcela:parcel,p_desconto:discount,p_juros:fees
-  });
+  const excel=part.kind==='excel',id=part.id.slice(excel?6:4);
+  const {data,error}=excel?
+   await db.rpc('fin_teste_conciliar_aberto_excel',{
+    p_movimento:move,p_aberto:id,p_desconto:discount,p_juros:fees
+   }):
+   await db.rpc('fin_teste_vincular_pagamento_importado',{
+    p_movimento:move,p_parcela:id,p_desconto:discount,p_juros:fees
+   });
   if(error)throw error;
-  notice('reconcile-status','Boleto baixado com a saída bancária já existente. Nenhuma movimentação extra foi criada.');
-  window.frFinanceUI?.showToast('Boleto conciliado. Pagamento não duplicado.');
-  await Promise.allSettled([typeof render==='function'?render():Promise.resolve(),refresh()]);
+  const message=excel?
+   'Compromisso da planilha vinculado à saída bancária existente. O histórico da planilha foi preservado e não foi criado outro pagamento.':
+   'Boleto do aplicativo baixado com a saída bancária existente. Nenhuma movimentação extra foi criada.';
+  notice('reconcile-status',message);
+  window.frFinanceUI?.showToast(excel?'Conta da planilha conciliada sem duplicação.':'Boleto conciliado sem duplicação.');
+  await Promise.allSettled([typeof render==='function'?render():Promise.resolve(),
+   refresh(),window.frHomologPayablesUI?.refresh?.()||Promise.resolve()]);
  }catch(e){notice('reconcile-status','Falha na conciliação: '+e.message,true)}
  finally{working=false;checkReconcile()}
 }
+
 let pendingRefresh=null;
 async function refresh(){
  if(typeof db==='undefined'||!db)return;
