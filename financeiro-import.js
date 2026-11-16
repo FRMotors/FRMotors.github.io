@@ -443,7 +443,8 @@ async function saveImport(){
   }
   notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Duplicados ignorados: '+data.duplicadas+'.'+evidenceMessage);
   window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+data.duplicadas+' repetidos ignorados.');
-  await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve()]);
+  await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve(),
+    window.frPixRulesUI?.refresh?.()||Promise.resolve()]);
  }catch(e){notice('import-save-status','Importação não concluída: '+e.message,true)}
  finally{working=false;updateCounts()}
 }

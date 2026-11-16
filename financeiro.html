@@ -366,6 +366,40 @@
 .cashx-card>p.cashx-note{padding:0 12px 12px}
 .cashx-layout{gap:10px;padding:0 12px 12px}.cashx-categories{display:flex}
 .cashx-filters{padding:0 10px 10px}.cashx-table{min-width:710px}}
+
+/* Regras de categorização de PIX enviados, sem modificar extratos originais */
+.pix-rules-card{margin:0 0 18px;overflow:hidden}
+.pix-rules-card>.card-head{align-items:flex-start}
+.pix-rules-card>.card-head .eyebrow{margin:0 0 4px}
+.pix-rules-card>.card-head h2{font-size:18px;margin:0 0 5px}
+.pix-rules-card>.card-head p{font-size:12px;line-height:1.5;margin:0}
+.pix-rules-note{font-size:12px;line-height:1.5;padding:0 18px 10px;margin:0}
+.pix-rules-status{font-size:12px;padding:0 18px 12px;color:var(--muted);margin:0}
+.pix-rules-table{min-width:830px}
+.pix-rules-table td{vertical-align:top;font-size:12px}
+.pix-rules-table td small,.pix-rules-audit td small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.pix-rule-actions{display:flex;flex-wrap:wrap;gap:6px;min-width:140px}
+.pix-rules-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.pix-rules-apply-status{padding:8px 18px;margin:0;font-size:11px}
+.pix-rules-form-area{margin:6px 18px 18px;padding:16px;border:1px solid var(--stroke);border-radius:12px}
+.pix-rules-form-area h3{font-size:14px;margin:0 0 14px;font-weight:750}
+.pix-rules-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.pix-rules-fields label{display:flex;flex-direction:column;gap:6px;font-size:12px;min-width:0;font-weight:650}
+.pix-rules-fields input{width:100%;max-width:100%;min-width:0}
+.pix-rules-form-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.pix-rules-form-actions>div{display:flex;gap:8px;flex-wrap:wrap}
+.pix-rule-checkbox{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:12px}
+.pix-rule-checkbox input{margin:0}
+.pix-rules-form-area .info-note{margin:10px 0 0;font-size:11px}
+.pix-rules-audit{border-top:1px solid var(--stroke);padding:12px 18px 18px}
+.pix-rules-audit summary{cursor:pointer;font-size:12px;font-weight:700}
+.pix-rules-audit .table-wrap{margin-top:10px}
+.pix-rules-audit .data-table{min-width:760px}
+@media(max-width:820px){.pix-rules-fields{grid-template-columns:1fr}}
+@media(max-width:650px){.pix-rules-note,.pix-rules-status{padding:0 12px 10px}
+.pix-rules-form-area{margin:6px 12px 12px;padding:12px}
+.pix-rules-apply-status{padding:8px 12px}
+.pix-rules-audit{padding:12px}}
 </style>
 </head>
 <body>
@@ -1430,11 +1464,70 @@
     </div>
   </div>
   <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
-    <div><strong>Modo de testes, com conferência antes de salvar.</strong>
+    <div><strong>Importações com conferência antes de salvar.</strong>
       <p>Compras do cartão ficam separadas das movimentações bancárias. Pagamentos de faturas que constam no extrato não serão duplicados como gastos do cartão no caixa.</p>
     </div>
   </div>
   
+  <section class="card pix-rules-card" id="pix-rules-panel" aria-labelledby="pix-rules-title">
+   <div class="card-head">
+    <div><p class="eyebrow">Organização automática dos pagamentos</p>
+     <h2 id="pix-rules-title">Regras de classificação de PIX</h2>
+     <p>Transforme nomes de destinatários do extrato em descrições e categorias financeiras sem perder a descrição original do banco.</p>
+    </div>
+    <button type="button" class="btn" id="pix-rules-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar regras</button>
+   </div>
+   <p class="info-note pix-rules-note">Ao importar um <strong>pagamento enviado</strong>, a regra confere o nome do destinatário e preenche a descrição e categoria. <strong>PIX recebidos nunca são classificados como saídas.</strong> O extrato original, seus valores, datas e conciliações ficam preservados.</p>
+   <p id="pix-rules-status" class="pix-rules-status" role="status" aria-live="polite">Aguardando consulta das regras...</p>
+   <div class="table-wrap"><table class="data-table pix-rules-table">
+    <thead><tr><th>Nome reconhecido no extrato</th><th>Descrição padrão</th><th>Categoria</th><th>Aplicações</th><th>Ações</th></tr></thead>
+    <tbody id="pix-rules-rows"><tr><td colspan="5" class="empty">Carregando regras...</td></tr></tbody>
+   </table></div>
+   <div class="table-footer pix-rules-footer">
+    <span id="pix-rules-count">Aguardando...</span>
+    <button type="button" class="btn" id="pix-rules-apply">Aplicar aos extratos já importados</button>
+   </div>
+   <p id="pix-rule-reapply-status" class="info-note pix-rules-apply-status" role="status">O botão acima aplica regras a transações antigas ainda não classificadas, preservando correções manuais.</p>
+   <div class="pix-rules-form-area">
+    <form id="pix-rule-form">
+     <h3 id="pix-rule-form-title">Nova regra de classificação</h3>
+     <div class="pix-rules-fields">
+      <label>Nome do destinatário no extrato
+       <input id="pix-rule-name" type="text" maxlength="100" required minlength="6" autocomplete="off" placeholder="Ex.: FRED SANTOS">
+      </label>
+      <label>Descrição que aparecerá no Financeiro
+       <input id="pix-rule-label" type="text" maxlength="150" required autocomplete="off" placeholder="Ex.: PROLABORE">
+      </label>
+      <label>Categoria do lançamento
+       <input id="pix-rule-category" type="text" maxlength="100" list="pix-rule-categories" required autocomplete="off" placeholder="Ex.: SALARIOS">
+       <datalist id="pix-rule-categories">
+        <option value="SALARIOS"></option><option value="CAFÉ DA MANHÃ"></option>
+        <option value="FORNECEDORES"></option><option value="DESPESAS"></option>
+        <option value="IMPOSTOS"></option><option value="PESSOAL"></option>
+        <option value="JUROS"></option><option value="GASTO CARROS"></option>
+       </datalist>
+      </label>
+     </div>
+     <div class="pix-rules-form-actions">
+      <label class="pix-rule-checkbox"><input type="checkbox" id="pix-rule-active" checked> Regra ativa</label>
+      <div>
+       <button type="button" class="btn" id="pix-rule-cancel" hidden>Cancelar edição</button>
+       <button type="submit" class="btn btn-primary" id="pix-rule-save">Adicionar regra</button>
+      </div>
+     </div>
+     <p id="pix-rule-form-message" class="info-note" role="status" aria-live="polite">Ex.: FRED SANTOS → PROLABORE / SALARIOS. Não use palavras genéricas como “PIX ENVIADO”.</p>
+    </form>
+   </div>
+   <details class="pix-rules-audit">
+    <summary>Histórico das classificações aplicadas</summary>
+    <p class="info-note">O nome original permanece registrado. Identificadores pessoais são ocultados nesta lista, sem alterar os dados arquivados.</p>
+    <div class="table-wrap"><table class="data-table">
+     <thead><tr><th>Data de classificação</th><th>Descrição bancária original</th><th>Descrição / categoria aplicada</th><th>Modo</th></tr></thead>
+     <tbody id="pix-rules-audit"><tr><td colspan="4" class="empty">Aguardando histórico...</td></tr></tbody>
+    </table></div>
+   </details>
+  </section>
+
   <section class="card fin-unificado-card" id="fin-unificado-card" aria-labelledby="fin-unificado-title">
     <div class="card-head">
       <div>
@@ -2103,11 +2196,12 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116detail1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116pixrules1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
-<script src="./financeiro-import.js?v=20261116parcelas1" defer></script>
+<script src="./financeiro-import.js?v=20261116pixrules1" defer></script>
+<script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 <script src="./financeiro-faturas.js?v=20261116parcelas1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
