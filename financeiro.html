@@ -728,7 +728,7 @@
         <section class="card fin-op-manual-card" id="op-boletos-adicionados">
           <div class="card-head"><div>
            <h2>Boletos adicionados após a migração</h2>
-           <p>Registros novos do Financeiro, separados do Excel original. Somente saídas do Fluxo de Caixa podem ser vinculadas à baixa.</p>
+           <p>Registros novos do Financeiro, separados do Excel original. É possível editar os boletos antes da baixa e vincular pagamentos existentes sem duplicação.</p>
           </div><button type="button" class="btn btn-primary" data-ops-new>Novo boleto</button></div>
           <div class="table-wrap"><table class="data-table">
            <thead><tr><th>Vencimento</th><th>Fornecedor e descrição</th><th class="money">Valor</th><th>Situação</th><th>Ação</th></tr></thead>
@@ -797,6 +797,33 @@
               <p id="op-new-status" class="info-note" role="status">Preencha os dados.</p>
               <div class="form-actions"><button type="button" class="btn" data-op-close="op-new-dialog">Cancelar</button>
                 <button id="op-new-submit" type="submit" class="btn btn-primary">Salvar boleto em aberto</button></div>
+            </div>
+          </form>
+        </dialog>
+
+        <dialog id="op-manual-edit-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="op-manual-edit-title">
+          <form id="op-manual-edit-form">
+            <div class="dialog-head"><div>
+              <h2 id="op-manual-edit-title">Editar boleto cadastrado</h2>
+              <p>Corrija os dados do boleto adicionado ao aplicativo antes de conciliá-lo.</p>
+            </div>
+              <button type="button" class="dialog-close" data-op-close="op-manual-edit-dialog" aria-label="Fechar edição">&times;</button>
+            </div>
+            <div class="dialog-body">
+              <div class="fields fin-op-fields">
+                <label>Fornecedor <input name="fornecedor" required maxlength="160" minlength="2"></label>
+                <label>Vencimento <input name="vencimento" type="date"></label>
+                <label>Valor do boleto (R$) <input name="valor" type="number" min="0.01" step="0.01" required></label>
+                <label>Categoria <input name="categoria" maxlength="120" placeholder="Ex.: IMPOSTOS"></label>
+                <label style="grid-column:1/-1">Descrição <input name="descricao" maxlength="250"></label>
+                <label style="grid-column:1/-1">Observações <textarea name="observacoes" rows="3" maxlength="2000"></textarea></label>
+              </div>
+              <p class="info-note">Somente boletos cadastrados manualmente e ainda não conciliados podem ser alterados. O sistema registra o conteúdo anterior e o novo para auditoria. Nenhum pagamento será gerado.</p>
+              <p id="op-manual-edit-status" class="info-note" role="alert"></p>
+              <div class="form-actions">
+                <button type="button" class="btn" data-op-close="op-manual-edit-dialog">Cancelar</button>
+                <button id="op-manual-edit-submit" type="submit" class="btn btn-primary">Salvar alterações</button>
+              </div>
             </div>
           </form>
         </dialog>
@@ -2206,8 +2233,8 @@ init();
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261116avulsos1" defer></script>
-<script src="./financeiro-baixas-operacionais.js?v=20261116parcelas1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261116avulsosedit1" defer></script>
+<script src="./financeiro-baixas-operacionais.js?v=20261116editmanual1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116pages1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261116cartoesparcelas1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261116pages1" defer></script>
