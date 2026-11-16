@@ -309,6 +309,12 @@
 .real-dashboard-metrics>div{padding:10px}.real-dashboard-metrics>div>strong{font-size:19px}
 .real-dashboard-lead strong{font-size:20px}
 .real-dashboard-period,.real-dashboard-period select{width:100%}}
+
+/* Os formulários legados ficam no DOM para compatibilidade, mas fora da operação diária. */
+.legacy-demo-block[hidden],
+.fin-cp-legacy[hidden],
+.pc-separator-note[hidden],
+[data-view-panel="purchases"] section[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -318,11 +324,10 @@
     <span class="brand-mark">FR</span>
     <div><div class="brand-name">FR Motors</div><span class="brand-subtitle">Gestão empresarial</span></div>
   </div>
-  <div class="sidebar-workspace"><span class="online-dot"></span> Área Financeira <span class="env-chip">TESTE</span></div>
+  <div class="sidebar-workspace"><span class="online-dot"></span> Área Financeira <span class="env-chip">FINANCEIRO</span></div>
   <div class="sidebar-section-label">Painel de controle</div>
   <nav class="sidebar-links" aria-label="Seções do financeiro">
     <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
-    <button type="button" data-view="movements"><span class="icon" data-icon="activity"></span> Movimentações</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras parceladas</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
@@ -330,7 +335,6 @@
     <button type="button" data-jump-section="ag-title"><span class="icon" data-icon="calendar"></span> Agenda de faturas</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
     <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
-    <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-section-label">Histórico homologado</div>
@@ -371,14 +375,12 @@
           <div>
             <p class="eyebrow">Inteligência financeira</p>
             <h1 class="page-heading">Visão geral</h1>
-            <p class="page-description">Consulte primeiro os dados homologados; os controles de demonstração permanecem abaixo.</p>
+            <p class="page-description">Acompanhe os lançamentos homologados e os compromissos reais, sem duplicação de valores.</p>
           </div>
           <div class="header-buttons">
             <button type="button" class="btn btn-teal" data-view="imports"><span class="icon icon-sm" data-icon="download"></span> Importar arquivo</button>
             <button type="button" class="btn" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
             <button type="button" class="btn" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
-            <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Nova compra (teste)</button>
-            <button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button>
           </div>
         </div>
         <section class="card real-dashboard" id="real-dashboard" aria-labelledby="real-dashboard-title">
@@ -436,6 +438,7 @@
             </section>
           </div>
         </section>
+        <div class="legacy-demo-block" hidden aria-hidden="true">
         <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
           <div><strong>Abaixo começa o ambiente de demonstração.</strong>
           <p>Os indicadores, gráficos e lançamentos abaixo são somente de testes. Os valores reais homologados estão no painel acima e nos módulos operacionais.</p></div>
@@ -499,6 +502,7 @@
           <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Fornecedor</th><th class="money">Valor</th><th class="edit-column">Ações</th></tr></thead><tbody id="recent-rows"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
           <div class="table-footer"><span id="last-refresh">Sincronizando com o Supabase</span></div>
         </section>
+        </div>
       </section>
 
       <section class="view" data-view-panel="movements" hidden aria-label="Movimentações financeiras">
@@ -620,7 +624,7 @@
           <p class="info-note fin-homolog-note">Os compromissos são os registros expressamente marcados como EM ABERTO no Fluxo de Caixa. Nem todos são boletos de autopeças. A aba de origem informa o valor previsto, mas não o valor cheio ou desconto individual: esses campos aparecem como “—”. O vínculo de conciliação é exibido separadamente e não altera a planilha nem cria pagamentos.</p>
         </section>
         </details>
-        <details class="fin-cp-legacy">
+        <details class="fin-cp-legacy" hidden>
           <summary>Mostrar parcelas cadastradas manualmente no ambiente de testes</summary>
         <h2 class="fin-homolog-manual-title">Parcelas cadastradas manualmente no aplicativo (teste)</h2>
         <div class="section-card-list">
@@ -794,8 +798,8 @@
               <button type="button" class="btn" id="pc-next" disabled>Próxima</button></div>
           </div>
         </section>
-        <p class="info-note pc-separator-note"><strong>Cadastro manual de testes:</strong> a lista abaixo continua separada dos cartões históricos. Compras inseridas manualmente no ambiente de testes não são somadas aos valores homologados.</p>
-        <section class="card">
+        <p class="info-note pc-separator-note" hidden><strong>Cadastro manual de testes:</strong> a lista abaixo continua separada dos cartões históricos. Compras inseridas manualmente no ambiente de testes não são somadas aos valores homologados.</p>
+        <section class="card" hidden>
           <div class="card-head"><div><h2>Compras cadastradas (teste)</h2><p>Histórico isolado do ambiente de testes</p></div>
           <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra de teste</button></div>
           <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-purchases" type="search" placeholder="Buscar descrição, fornecedor ou data..." aria-label="Buscar compras"></label></div>
@@ -1994,7 +1998,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116real1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116limpeza1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>

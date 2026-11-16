@@ -36,7 +36,10 @@ function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
 function selectView(next){
- if(!['overview','movements','payables','purchases','imports','settings','itau','history','operational','expenses'].includes(next))next='overview';
+ // Páginas legadas de demonstração não devem aparecer como financeiras operacionais.
+ if(next==='movements')next='operational';
+ if(next==='settings')next='overview';
+ if(!['overview','payables','purchases','imports','itau','history','operational','expenses'].includes(next))next='overview';
  view=next;
  document.querySelectorAll('[data-view-panel]').forEach(n=>{n.hidden=n.getAttribute('data-view-panel')!==next});
  document.querySelectorAll('[data-view]').forEach(n=>{
