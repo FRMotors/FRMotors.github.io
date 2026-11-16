@@ -10,6 +10,8 @@ const brdate=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Sem data
 const out=(id,t)=>{if($(id))$(id).textContent=t};
 let invoices=[],autos=[],comprovs=[],parts=[],revisions=[],declared=[],banks=[],busy=false,loading=null,current=null;
 let reservedFlow=new Set(),reservedExt=new Set(),autoRefs=new Set();
+let invoicePage=0;
+const INVOICE_PAGE_SIZE=10;
 const fields='id,tipo,fatura_id,documento_id,origem_pagamento,movimento_fluxo_id,movimento_extrato_id,valor_conferido,data_pagamento,justificativa';
 async function getAll(query,max=6000){
  const arr=[],size=400;
@@ -70,7 +72,10 @@ function draw(){
   return [f.cartao_nome,f.mes_fatura,f.valor_documental].join(' ')
     .toLocaleLowerCase('pt-BR').includes(q);
  }).sort((a,b)=>b.mes_fatura.localeCompare(a.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
- if($('vl-invoices'))$('vl-invoices').innerHTML=list.length?list.map(f=>{
+ const invoicePages=Math.max(1,Math.ceil(list.length/INVOICE_PAGE_SIZE));
+ invoicePage=Math.max(0,Math.min(invoicePage,invoicePages-1));
+ const visibleInvoices=list.slice(invoicePage*INVOICE_PAGE_SIZE,(invoicePage+1)*INVOICE_PAGE_SIZE);
+ if($('vl-invoices'))$('vl-invoices').innerHTML=visibleInvoices.length?visibleInvoices.map(f=>{
   const x=summaries.get(f.id),rev=revs.get(f.id);
   const status=x.isDeclared?'<span class="state paid">Quitada por confirmação</span><small>Sem conciliação bancária</small>':
    x.full?'<span class="state paid">Quitada pelo(s) vínculo(s)</span>':
@@ -89,8 +94,21 @@ function draw(){
     (x.isDeclared?'Ver quitação histórica':x.full?'Ver pagamentos':x.partial?'Adicionar outro pagamento':'Adicionar pagamento')+
     '</button></td></tr>';
  }).join(''):'<tr><td colspan="8" class="empty">Nenhuma fatura corresponde aos filtros.</td></tr>';
- out('vl-invoice-count',list.length+' de '+invoices.length+' faturas');
- const review=autos.filter(x=>!autoRefs.has(x.id));
+ out('vl-invoice-count',list.length+' de '+invoices.length+' faturas · 10 por página · página '+(invoicePage+1)+' de '+invoicePages);
+ if($('vl-invoice-prev'))$('vl-invoice-prev').disabled=invoicePage===0;
+ if($('vl-invoice-next'))$('vl-invoice-next').disabled=invoicePage>=invoicePages-1;
+
+ // A conferência manual retira a exceção da lista ativa, mas preserva o histórico.
+ const allExceptions=autos.filter(x=>!autoRefs.has(x.id));
+ const confirmedExceptions=allExceptions.filter(x=>manualAutos.has(x.id)).length;
+ const showConfirmed=$('vl-show-confirmed')?.checked===true;
+ const review=showConfirmed?allExceptions:allExceptions.filter(x=>!manualAutos.has(x.id));
+ const pendingCount=allExceptions.length-confirmedExceptions;
+ out('vl-auto-summary',pendingCount+' pendente(s) · '+confirmedExceptions+
+  ' conferida(s)'+(showConfirmed?' (histórico visível)':' (ocultas para liberar espaço)'));
+ const wrap=$('vl-auto-table-wrap');
+ if(wrap)wrap.hidden=review.length===0;
+ if($('vl-auto-empty'))$('vl-auto-empty').hidden=review.length!==0;
  if($('vl-auto-rows'))$('vl-auto-rows').innerHTML=review.length?review.map(d=>{
   const linked=manualAutos.get(d.id);
   return '<tr><td><strong>'+esc(d.codigo_origem)+'</strong><small>'+
@@ -383,8 +401,11 @@ async function refresh(force=false){
 }
 function init(){
  if(!$('vl-invoices'))return;
- $('vl-search')?.addEventListener('input',draw);
- $('vl-filter-status')?.addEventListener('change',draw);
+ $('vl-search')?.addEventListener('input',()=>{invoicePage=0;draw()});
+ $('vl-filter-status')?.addEventListener('change',()=>{invoicePage=0;draw()});
+ $('vl-invoice-prev')?.addEventListener('click',()=>{invoicePage--;draw()});
+ $('vl-invoice-next')?.addEventListener('click',()=>{invoicePage++;draw()});
+ $('vl-show-confirmed')?.addEventListener('change',draw);
  $('vl-invoices')?.addEventListener('click',e=>{
   const button=e.target.closest('[data-vl-invoice]');
   if(button)open('fatura',button.dataset.vlInvoice);
