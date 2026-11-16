@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
-<link rel="stylesheet" href="./financeiro-pro.css?v=20261113imp1">
+<link rel="stylesheet" href="./financeiro-pro.css?v=20261116sidebar2">
 <link rel="stylesheet" href="./financeiro-import.css?v=20261113paid3">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
@@ -47,6 +47,7 @@
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras e parcelas</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
+    <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
     <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
   </nav>
   <div class="sidebar-divider"></div>
@@ -54,11 +55,6 @@
   <nav class="sidebar-links" aria-label="Visões separadas do histórico financeiro">
     <button type="button" data-view="itau"><span class="icon" data-icon="bank"></span> Itaú · Fluxo de Caixa</button>
     <button type="button" data-view="history"><span class="icon" data-icon="chart"></span> Outras fontes</button>
-  </nav>
-  <div class="sidebar-divider"></div>
-  <div class="sidebar-section-label">Base consolidada</div>
-  <nav class="sidebar-links" aria-label="Histórico operacional">
-    <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-section-label">Sistema FR Motors</div>
@@ -109,11 +105,12 @@
         <div class="hist-quicklink" role="note">
           <div>
             <strong>Histórico homologado disponível</strong>
-            <p>Os dados importados do Excel têm visualizações próprias e não aparecem nos indicadores operacionais de teste abaixo. Consulte o Itaú ou as outras fontes sem misturar movimentações.</p>
+            <p>Os lançamentos efetivos já estão disponíveis na Base migrada. Consulte o livro-caixa histórico separado dos indicadores de testes, sem misturar pagamentos, boletos e cartões.</p>
           </div>
           <div class="hist-quick-actions">
             <button type="button" class="btn btn-primary" data-view="itau"><span class="icon icon-sm" data-icon="bank"></span> Abrir painel Itaú</button>
             <button type="button" class="btn" data-view="history"><span class="icon icon-sm" data-icon="chart"></span> Outras fontes</button>
+             <a class="btn btn-teal" href="./financeiro.html?view=operational"><span class="icon icon-sm" data-icon="wallet"></span> Abrir Base migrada</a>
           </div>
         </div>
         <div class="section-tools">
@@ -1057,7 +1054,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116base1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116atalho2"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
