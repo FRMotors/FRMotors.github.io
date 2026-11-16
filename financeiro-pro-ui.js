@@ -51,6 +51,7 @@ function selectView(next){
  if(next==='imports')window.frImportUI?.refresh?.();
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
   if(next==='operational')window.frOperationalUI?.open?.();
+  if(next==='overview')window.frRealDashboard?.refresh?.();
   if(next==='purchases')window.frCardInstallmentsUI?.refresh?.();
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='expenses')window.frDocsReconcileUI?.refresh?.();
