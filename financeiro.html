@@ -19,6 +19,17 @@
 .fin-homolog-manual-title{font-size:17px;margin:24px 0 12px}
 @media(max-width:900px){.fin-homolog-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:460px){.fin-homolog-kpis{margin:4px 12px 14px;gap:8px}.fin-homolog-kpis .insight-card{padding:12px}.fin-homolog-note,.fin-homolog-status{padding-left:12px;padding-right:12px}}
+.fin-ops-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:4px 20px 18px}
+.fin-ops-grid .insight-card{min-width:0;padding:16px}
+.fin-ops-grid strong{font-size:20px;overflow-wrap:anywhere}
+.fin-ops-foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 20px 18px}
+.fin-ops-foot>div{display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border:1px solid var(--stroke);border-radius:9px}
+.fin-ops-foot strong{font-size:18px}.fin-ops-foot span{font-size:12px;color:var(--muted)}
+.fin-ops-status{padding:0 20px 18px;margin:0}
+.fin-ops-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.fin-ops-footer>div{display:flex;gap:8px}
+@media(max-width:960px){.fin-ops-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fin-ops-foot{grid-template-columns:1fr}}
+@media(max-width:480px){.fin-ops-grid{padding:4px 12px 14px}.fin-ops-grid .insight-card{padding:12px}.fin-ops-foot{padding:0 12px 14px}.fin-ops-status{padding:0 12px 14px}}
 </style>
 </head>
 <body>
@@ -43,6 +54,11 @@
   <nav class="sidebar-links" aria-label="Visões separadas do histórico financeiro">
     <button type="button" data-view="itau"><span class="icon" data-icon="bank"></span> Itaú · Fluxo de Caixa</button>
     <button type="button" data-view="history"><span class="icon" data-icon="chart"></span> Outras fontes</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section-label">Base consolidada</div>
+  <nav class="sidebar-links" aria-label="Histórico operacional">
+    <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-section-label">Sistema FR Motors</div>
@@ -647,7 +663,49 @@
   </dialog>
 </section>
 
-      <section class="view" data-view-panel="settings" hidden aria-label="Configurações de testes">
+      <section class="view" data-view-panel="operational" hidden aria-label="Base financeira operacional migrada">
+ <div class="section-header">
+  <div><p class="eyebrow">Migração controlada · histórico 2026</p><h1 class="page-heading">Base financeira migrada</h1>
+   <p class="page-description">Pagamentos e recebimentos efetivos da planilha homologada, sem duplicar compras e faturas.</p></div>
+  <span class="env-chip">SOMENTE LEITURA</span>
+ </div>
+ <section class="card">
+  <div class="card-head"><div><h2>Conferência da primeira migração</h2><p id="ops-source">Consultando arquivo...</p></div>
+   <button type="button" id="ops-refresh" class="btn"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button></div>
+  <div class="fin-ops-grid">
+   <article class="insight-card"><span>Movimentações efetivas</span><strong id="ops-count">—</strong><small>Sem saldo inicial e lançamentos zerados</small></article>
+   <article class="insight-card"><span>Recebimentos</span><strong id="ops-entradas">—</strong><small>Entradas confirmadas</small></article>
+   <article class="insight-card"><span>Pagamentos</span><strong id="ops-saidas">—</strong><small>Saídas confirmadas</small></article>
+   <article class="insight-card"><span>Resultado das movimentações</span><strong id="ops-result">—</strong><small>Não é o saldo bancário</small></article>
+  </div>
+  <div class="fin-ops-foot">
+   <div><strong id="ops-open">—</strong><span>Compromissos em aberto preservados</span></div>
+   <div><strong id="ops-ignored">—</strong><span>Registros excluídos dos indicadores</span></div>
+   <div><strong id="ops-links">—</strong><span>Boletos conciliados no teste</span></div>
+  </div>
+  <p id="ops-status" class="info-note fin-ops-status" role="status" aria-live="polite">Selecione a aba para consultar o histórico migrado.</p>
+ </section>
+ <section class="card" style="margin-top:17px">
+  <div class="card-head"><div><h2>Livro-caixa histórico</h2><p>Consulta auditável dos recebimentos e pagamentos registrados.</p></div></div>
+  <div class="data-toolbar">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="ops-search" placeholder="Buscar descrição, categoria ou data..." aria-label="Buscar histórico migrado"></label>
+   <select class="filter-select" id="ops-type" aria-label="Filtrar tipo de operação">
+    <option value="todos">Todas as operações</option><option value="entrada">Entradas</option><option value="saida">Saídas</option>
+   </select>
+  </div>
+  <div class="table-wrap"><table class="data-table">
+   <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Meio</th><th class="money">Valor</th><th>Referência</th></tr></thead>
+   <tbody id="ops-rows"><tr><td colspan="6" class="empty">Aguardando consulta...</td></tr></tbody>
+  </table></div>
+  <div class="table-footer fin-ops-footer"><span id="ops-pagination">Aguardando dados.</span>
+   <div><button type="button" class="btn" id="ops-prev" disabled>Anterior</button>
+    <button type="button" class="btn" id="ops-next" disabled>Próxima</button></div></div>
+ </section>
+ <p class="info-note">Boletos em aberto, despesas de cartões e compras de autopeças permanecem como histórico para vinculação posterior. O caixa da oficina e o painel de homologação não foram substituídos.</p>
+</section>
+
+<section class="view" data-view-panel="settings" hidden aria-label="Configurações de testes">
         <div class="section-header"><div><p class="eyebrow">Administração</p><h1 class="page-heading">Configurações</h1><p class="page-description">Gerencie o ambiente de testes do módulo financeiro sem interferir nos dados reais da oficina.</p></div></div>
         <div class="section-card-list">
           <div class="insight-card"><span>Ambiente em uso</span><strong style="font-size:20px">Sandbox financeiro</strong><small>Banco Supabase · tabelas fin_teste_*</small></div>
@@ -999,7 +1057,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261113history1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116base1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1008,4 +1066,5 @@ init();
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
+<script src="./financeiro-operacional.js?v=20261116base1" defer></script>
 </body></html>
