@@ -117,6 +117,8 @@ function syncSidebarToggle(){
  const mobile=isMobileSidebar();
  const open=mobile?document.body.classList.contains('sidebar-open'):
   !document.body.classList.contains('sidebar-collapsed');
+ const sidebar=byId('sidebar');
+ if(sidebar)sidebar.inert=!open;
  const btn=byId('menu-toggle');
  if(!btn)return;
  btn.setAttribute('aria-expanded',String(open));
