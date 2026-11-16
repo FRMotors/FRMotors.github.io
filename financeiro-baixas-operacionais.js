@@ -176,7 +176,7 @@ async function load(){
   if(typeof db==='undefined'||!db)throw Error('Conexão financeira indisponível.');
   const {data:allowed,error:accessError}=await db.rpc('fluxo_caixa_autorizado');
   if(accessError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-  const [cp,extra,linked,bank,used,vendors,testBank,usedTestParcels,usedTestExcel,usedTestCards,paidImported]=await Promise.all([
+  const [cp,extra,linked,bank,used,vendors,testBank,usedTestParcels,usedTestExcel,usedTestCards,paidImported,paidParts,paidExact,autoRefs,pixRefs]=await Promise.all([
    allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,fornecedor_id,descricao,valor_referencia,vencimento,situacao,linha_origem_id').order('vencimento',{ascending:true})),
    allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em').is('excluido_em',null).order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id,movimento_id,valor_pago,data_pagamento,desconto,juros').order('criado_em',{ascending:false})),
@@ -194,14 +194,27 @@ async function load(){
    allRows(()=>db.from('fin_teste_fatura_pagamentos').select('movimento_id').order('id',{ascending:false})),
    allRows(()=>db.from('fin_baixas_extrato_avulsos')
     .select('boleto_avulso_id,movimento_teste_id,valor_pago,data_pagamento,desconto,juros')
-    .order('criado_em',{ascending:false}))
+    .order('criado_em',{ascending:false})),
+   allRows(()=>db.from('fin_faturas_pagamentos_parciais')
+    .select('movimento_fluxo_id,movimento_extrato_id').order('confirmado_em',{ascending:false})),
+   allRows(()=>db.from('fin_comprovacoes_documentais')
+    .select('movimento_fluxo_id,movimento_extrato_id').order('conferido_em',{ascending:false})),
+   allRows(()=>db.from('fin_conciliacoes_documentais')
+    .select('movimento_id').order('identificado_em',{ascending:false})),
+   allRows(()=>db.from('fin_pix_debito_referencias')
+    .select('movimento_id').not('movimento_id','is',null)
+    .order('migrado_em',{ascending:false}))
   ]);
   accounts=cp;avulsos=extra;links=linked;importedLinks=paidImported;
   movements=[...bank.map(x=>({...x,source:'fluxo',ref:x.id,id:'fluxo:'+x.id})),
    ...testBank.map(x=>({...x,source:'extrato',ref:x.id,id:'extrato:'+x.id}))];
-  otherUsed=new Set(used.map(x=>x.movimento_id));
+  otherUsed=new Set([...used.map(x=>x.movimento_id),
+   ...paidParts.map(x=>x.movimento_fluxo_id),...paidExact.map(x=>x.movimento_fluxo_id),
+   ...autoRefs.map(x=>x.movimento_id),...pixRefs.map(x=>x.movimento_id)].filter(Boolean));
   testUsed=new Set([...usedTestParcels,...usedTestExcel,...usedTestCards,...paidImported]
-    .map(x=>x.movimento_id||x.movimento_teste_id));
+    .map(x=>x.movimento_id||x.movimento_teste_id)
+    .concat([...paidParts.map(x=>x.movimento_extrato_id),
+     ...paidExact.map(x=>x.movimento_extrato_id)]).filter(Boolean));
   suppliers=new Map(vendors.map(x=>[x.id,x]));
   updateManualList();
   const previously=$('op-pay-select')?.value||'';
