@@ -26,7 +26,15 @@ svg{flex-shrink:0}
   position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:var(--navy);
   color:#c6d2dd;z-index:55;display:flex;flex-direction:column;border-right:1px solid #263747;
   box-shadow:5px 0 20px rgba(16,29,44,.03);
+  height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-color:#3a5367 var(--navy);
+  -webkit-overflow-scrolling:touch;
 }
+.sidebar::-webkit-scrollbar{width:6px}
+.sidebar::-webkit-scrollbar-thumb{background:#3a5367;border-radius:8px}
+.sidebar>*{flex-shrink:0}
+.sidebar-brand{position:sticky;top:0;z-index:2;background:var(--navy)}
+.sidebar-footer{padding-bottom:max(24px,env(safe-area-inset-bottom))}
 .sidebar-brand{display:flex;align-items:center;gap:12px;padding:28px 23px 25px;min-height:88px}
 .brand-mark{width:43px;height:43px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#1e8991,#166c7a);color:#fff;font-weight:900;font-size:17px;letter-spacing:-1px;box-shadow:0 10px 22px #0a526c44}
 .brand-name{font-size:16px;font-weight:850;color:white;letter-spacing:-.3px;line-height:1.05}
