@@ -8,6 +8,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const monthNames={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};
 let current=null,preview=[],invalid=0,working=false,bankImported=[],linkedBank=new Set();
 let cardRows=[],selectedCard=null;
+let reconcilePairKey='';
 const pdfModule='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 const pdfWorker='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 function notice(id,message,bad=false){const el=$(id);if(!el)return;el.textContent=message;el.className='status '+(bad?'bad':'ok')}
@@ -560,7 +561,7 @@ function excelOpenKey(item){
  return original+'|'+name+'|'+(item.data_evento||'sem-data')+'|'+Math.round(Number(item.valor)*100);
 }
 async function refreshReconcile(){
- const [moves,links,dues,cardLinks,excelLinks,latestLotResponse]=await Promise.all([
+ const [moves,links,dues,cardLinks,excelLinks,latestLotResponse,supplierResponse]=await Promise.all([
   fetchAll(()=>db.from('fin_teste_movimentos')
    .select('id,descricao,valor,data_movimento,referencia_cliente,estado')
    .eq('tipo','saida').eq('estado','confirmado').like('referencia_cliente','extrato:%')
@@ -573,9 +574,11 @@ async function refreshReconcile(){
   fetchAll(()=>db.from('fin_teste_excel_abertos_vinculos')
    .select('movimento_id,origem_chave').order('vinculado_em',{ascending:false})),
   db.from('fin_teste_excel_lotes').select('id,arquivo_nome,resumo_excel').eq('status','conferido')
-   .order('criado_em',{ascending:false}).order('id',{ascending:false}).limit(1).maybeSingle()
+   .order('criado_em',{ascending:false}).order('id',{ascending:false}).limit(1).maybeSingle(),
+  db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento')
  ]);
  if(latestLotResponse.error)throw latestLotResponse.error;
+ if(supplierResponse.error)throw supplierResponse.error;
  const lot=latestLotResponse.data;
  const excelOpen=lot?await fetchAll(()=>db.from('fin_teste_excel_linhas')
   .select('id,grupo,linha_excel,codigo_origem,data_evento,descricao,valor,dados')
@@ -604,13 +607,18 @@ async function refreshReconcile(){
   ...bankImported.map(r=>new Option(r.data_movimento.split('-').reverse().join('/')+
    ' · '+r.descricao.slice(0,36)+' · '+cash(r.valor),r.id)));
 
- const suppliers=window.frFinanceUI?.getSnapshot()?.suppliers||[];
+ const suppliers=supplierResponse.data||[];
+ const supplierByName=new Map(suppliers.map(s=>[String(s.nome).trim().toLocaleUpperCase('pt-BR'),s]));
  const manualGroup=document.createElement('optgroup');manualGroup.label='Parcelas do aplicativo';
  const manualOptions=dues.map(r=>{
   const name=suppliers.find(s=>s.id===r.fin_teste_compras?.fornecedor_id)?.nome||'Fornecedor';
   manualGroup.append(new Option(name+' · '+(r.vencimento?.split('-').reverse().join('/')||'Sem data')+
    ' · '+cash(r.valor_cheio),'app:'+r.id));
-  return {id:'app:'+r.id,kind:'app',valor:Number(r.valor_cheio)};
+  const selectedSupplier=suppliers.find(s=>s.id===r.fin_teste_compras?.fornecedor_id);
+  return {id:'app:'+r.id,kind:'app',valor:Number(r.valor_cheio),vencimento:r.vencimento,
+   fornecedor:selectedSupplier?.nome||name,
+   desconto_pct:Number(selectedSupplier?.desconto_atual_pct||0),
+   desconto_ate_vencimento:Boolean(selectedSupplier?.desconto_ate_vencimento)};
  });
  const excelGroup=document.createElement('optgroup');excelGroup.label='Excel homologado · ABERTOS FLUXO';
  const excelOptions=availableExcel.map(r=>{
@@ -618,7 +626,11 @@ async function refreshReconcile(){
   const date=r.data_evento?r.data_evento.split('-').reverse().join('/'):'Sem vencimento';
   excelGroup.append(new Option(supplier+' · '+date+' · previsto '+cash(Number(r.valor))+
    ' · linha '+r.linha_excel,'excel:'+r.id));
-  return {id:'excel:'+r.id,kind:'excel',valor:Number(r.valor)};
+  const selectedSupplier=supplierByName.get(String(supplier).trim().toLocaleUpperCase('pt-BR'));
+  return {id:'excel:'+r.id,kind:'excel',valor:Number(r.valor),vencimento:r.data_evento,
+   fornecedor:supplier,
+   desconto_pct:Number(selectedSupplier?.desconto_atual_pct||0),
+   desconto_ate_vencimento:Boolean(selectedSupplier?.desconto_ate_vencimento)};
  });
  const select=$('reconcile-parcel');
  select.replaceChildren(new Option('Selecione um boleto ou compromisso em aberto',''),manualGroup,excelGroup);
@@ -633,11 +645,52 @@ async function refreshReconcile(){
    ' · '+alreadyLinked.size+' vínculo(s) históricos registrados · '+
    dues.length+' parcela(s) manuais disponíveis. Não serão criados novos pagamentos.';
  }
- checkReconcile();
+ suggestReconcileDiscount();
 }
 function selectedReconcileParcel(){
  let opts=[];try{opts=JSON.parse($('reconcile-parcel').dataset.cached||'[]')}catch(e){}
  return opts.find(x=>x.id===$('reconcile-parcel').value);
+}
+// O extrato informa o valor efetivamente debitado. O boleto guarda o valor
+// cheio ou previsto. Só sugerimos desconto automático quando a regra do
+// fornecedor, a data e o valor líquido conferem exatamente (em centavos).
+function matchedReconcileDiscount(move,part){
+ if(!move||!part||!part.vencimento||!move.data_movimento||
+    move.data_movimento>part.vencimento||!part.desconto_ate_vencimento)return null;
+ const rate=Number(part.desconto_pct);
+ if(!Number.isFinite(rate)||rate<=0||rate>=100)return null;
+ const full=Math.round(Number(part.valor)*100),paid=Math.round(Number(move.valor)*100);
+ const discount=Math.round(full*rate/100);
+ if(discount<=0||full-discount!==paid)return null;
+ return {discount,rate};
+}
+function reconcileSelection(){
+ const move=bankImported.find(x=>x.id===$('reconcile-move').value);
+ const part=selectedReconcileParcel();
+ return {move,part};
+}
+function suggestReconcileDiscount(){
+ const {move,part}=reconcileSelection();
+ const key=(move?.id||'')+'|'+(part?.id||'');
+ if(key!==reconcilePairKey){
+  reconcilePairKey=key;
+  $('reconcile-discount').value='0.00';
+  $('reconcile-fees').value='0.00';
+  const match=matchedReconcileDiscount(move,part);
+  if(match)$('reconcile-discount').value=(match.discount/100).toFixed(2);
+ }
+ checkReconcile();
+}
+function applyReconcileDifference(){
+ const {move,part}=reconcileSelection();
+ if(!move||!part)return;
+ const full=Math.round(Number(part.valor)*100),paid=Math.round(Number(move.valor)*100);
+ const fees=numMoney($('reconcile-fees').value);
+ if(fees===null||fees<0||!Number.isSafeInteger(full)||!Number.isSafeInteger(paid))return;
+ const difference=full+Math.round(fees*100)-paid;
+ if(difference<=0||difference>full)return;
+ $('reconcile-discount').value=(difference/100).toFixed(2);
+ checkReconcile();
 }
 function checkReconcile(){
  const move=bankImported.find(x=>x.id===$('reconcile-move').value);
@@ -647,10 +700,37 @@ function checkReconcile(){
   discount<=part.valor&&Math.round((part.valor-discount+fees)*100)===Math.round(Number(move.valor)*100));
  $('reconcile-submit').disabled=!valid||working;
  const source=part?.kind==='excel'?'Valor previsto da planilha':'Valor cheio do boleto';
+ const automatic=matchedReconcileDiscount(move,part);
+ const discountCents=discount===null?null:Math.round(discount*100);
+ const fullCents=part?Math.round(Number(part.valor)*100):0;
+ const bankCents=move?Math.round(Number(move.valor)*100):0;
+ const feesCents=fees===null?0:Math.round(fees*100);
+ const outstandingDiff=fullCents+feesCents-bankCents;
+ const automaticApplied=Boolean(automatic&&automatic.discount===discountCents&&feesCents===0);
+ const diffButton=$('reconcile-use-difference');
+ if(diffButton){
+  diffButton.hidden=!(move&&part&&!valid&&discount!==null&&fees!==null&&
+   outstandingDiff>0&&outstandingDiff<=fullCents);
+  diffButton.disabled=working;
+  if(!diffButton.hidden)diffButton.textContent='Usar diferença de '+cash(outstandingDiff/100)+' como desconto';
+ }
+ const note=$('reconcile-discount-note');
+ if(note){
+  note.textContent=!move||!part?
+   'Selecione um boleto e uma saída bancária. O desconto será sugerido quando houver correspondência segura.':
+   automaticApplied?
+   'Desconto de '+automatic.rate+'% ('+cash(automatic.discount/100)+') identificado para '+part.fornecedor+
+   ' no pagamento até o vencimento. Confira e confirme a conciliação.':
+   valid?
+   'Valor pago no banco conferido. Não será descontado novamente nem criado outro pagamento.':
+   outstandingDiff>0&&outstandingDiff<=fullCents?
+   'O banco debitou '+cash(outstandingDiff/100)+' a menos. Confira se essa diferença é realmente desconto antes de aplicá-la.':
+   'Confira os valores, a data e a origem do boleto. Descontos não são aplicados automaticamente em atraso.';
+ }
  const message=!move||!part?'Escolha uma saída bancária e um compromisso em aberto.':
   source+' '+cash(part.valor)+' − desconto '+cash(discount||0)+' + juros '+cash(fees||0)+
   ' = '+cash(part.valor-(discount||0)+(fees||0))+'. Saída bancária: '+cash(move.valor)+'. '+
-  (valid?'Valores conferem. Pode vincular sem duplicar a saída.':'Os valores precisam ser iguais.');
+  (valid?'Valores conferem. Pode vincular sem duplicar a saída.':'Confira o desconto ou os juros para igualar o débito bancário.');
  $('reconcile-check').textContent=message;
  $('reconcile-check').classList.toggle('reconcile-valid',valid);
  $('reconcile-check').classList.toggle('reconcile-invalid',Boolean(move&&part&&!valid));
@@ -750,8 +830,11 @@ function init(){
   $('card-edit-form').classList.remove('hidden');
  });
  $('import-reload').addEventListener('click',refresh);
- ['reconcile-move','reconcile-parcel','reconcile-discount','reconcile-fees'].forEach(id=>
-  $(id).addEventListener(id.startsWith('reconcile-')&&id.includes('discount')||id.includes('fees')?'input':'change',checkReconcile));
+ ['reconcile-move','reconcile-parcel'].forEach(id=>
+  $(id).addEventListener('change',suggestReconcileDiscount));
+ ['reconcile-discount','reconcile-fees'].forEach(id=>
+  $(id).addEventListener('input',checkReconcile));
+ $('reconcile-use-difference')?.addEventListener('click',applyReconcileDifference);
  $('reconcile-submit').addEventListener('click',reconcile);
  updateKind();
 }
