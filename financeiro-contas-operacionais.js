@@ -17,9 +17,13 @@ const plusDays=(ymd,amount)=>{
 };
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text;};
 const cents=x=>Math.round(Number(x)*100);
-let all=[],suppliers=new Map(),cashLinks=new Map(),page=0,busy=false,loading=null,editing=null;
+let all=[],suppliers=new Map(),cashLinks=new Map(),manualLinks=new Map(),page=0,busy=false,loading=null,editing=null;
 const pageSize=25;
 function stateOf(r,now){
+ if(r.registro_tipo==='avulso'){
+  const manual=manualLinks.get(r.id);
+  if(manual)return manual.source==='extrato'?'conciliado':'conciliado_fluxo';
+ }
  if(r.situacao==='conciliado_extrato')return 'conciliado';
  if(cashLinks.has(r.id))return 'conciliado_fluxo';
  if(!r.vencimento)return 'sem_data';
@@ -28,6 +32,7 @@ function stateOf(r,now){
  return 'a_vencer';
 }
 function estimatedDiscount(r,now){
+ if(r.registro_tipo==='avulso')return null;
  if(r.situacao!=='aberto'||cashLinks.has(r.id)||!r.vencimento||r.vencimento<now||!r.fornecedor_id)return null;
  const s=suppliers.get(r.fornecedor_id);
  if(!s||!s.desconto_ate_vencimento)return null;
@@ -68,8 +73,8 @@ function updateMonths(){
 }
 function draw(){
  const now=today(),next7=plusDays(now,7);
- const open=all.filter(r=>r.situacao==='aberto'&&!cashLinks.has(r.id));
- const reconciled=all.filter(r=>r.situacao==='conciliado_extrato'||cashLinks.has(r.id));
+ const open=all.filter(r=>!['conciliado','conciliado_fluxo'].includes(stateOf(r,now)));
+ const reconciled=all.filter(r=>['conciliado','conciliado_fluxo'].includes(stateOf(r,now)));
  const overdue=open.filter(r=>r.vencimento&&r.vencimento<now);
  const next=open.filter(r=>r.vencimento&&r.vencimento>=now&&r.vencimento<=next7);
  const undated=open.filter(r=>!r.vencimento);
@@ -85,7 +90,7 @@ function draw(){
  const tbody=$('cp-rows');
  if(tbody){
   tbody.innerHTML=visible.length?visible.map(r=>{
-   const st=stateOf(r,now),possible=estimatedDiscount(r,now),cashLink=cashLinks.get(r.id);
+   const st=stateOf(r,now),possible=estimatedDiscount(r,now),cashLink=r.registro_tipo==='avulso'?manualLinks.get(r.id):cashLinks.get(r.id);
    const discount=cashLink?money(cashLink.desconto):r.desconto_efetivo!==null?money(r.desconto_efetivo):
     (possible?'<span class="cp-possible">'+money(possible.discount/100)+' <small>possível '+possible.pct+'%</small></span>':'—');
    const amount=cashLink?'<strong>'+money(cashLink.valor_pago)+'</strong><small>Pago em '+esc(dateBR(cashLink.data_pagamento))+'</small>':
@@ -97,15 +102,17 @@ function draw(){
     '<td><span class="row-main">'+esc(dateBR(r.vencimento))+'</span></td>'+
     '<td><span class="row-main">'+esc(r.fornecedor_nome)+'</span>'+
        (r.descricao!==r.fornecedor_nome?'<span class="row-sub">'+esc(r.descricao)+'</span>':'')+
-       '<small class="cp-src">Planilha · linha '+esc(r.linha_excel)+'</small></td>'+
+       '<small class="cp-src">'+(r.registro_tipo==='avulso'?'Cadastrado no aplicativo':'Planilha · linha '+esc(r.linha_excel))+'</small></td>'+
     '<td>'+esc(r.categoria||'Não informada')+'</td>'+
     '<td class="money"><strong>'+money(r.valor_referencia)+'</strong></td>'+
     '<td class="money">'+(r.valor_cheio_informado===null?'—':money(r.valor_cheio_informado))+'</td>'+
     '<td class="money">'+discount+'</td>'+
     '<td class="money cp-value">'+amount+'</td>'+
     '<td><span class="state '+statusClass+'">'+esc(statusLabel(st))+'</span></td>'+
-    '<td><div class="cp-actions"><button class="row-edit-button" type="button" data-cp-edit="'+esc(r.id)+'">Editar</button>'+
-      (r.situacao==='aberto'&&!cashLink?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Dar baixa</button>':'')+
+    '<td><div class="cp-actions">'+(r.registro_tipo==='avulso'?
+      (cashLink?'—':'<button class="row-edit-button" type="button" data-cp-manual-pay="'+esc(r.id)+'">Dar baixa / gerenciar</button>'):
+      '<button class="row-edit-button" type="button" data-cp-edit="'+esc(r.id)+'">Editar</button>'+
+      (r.situacao==='aberto'&&!cashLink?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Dar baixa</button>':''))+
     '</div></td></tr>';
   }).join(''):
    '<tr><td colspan="9" class="empty">Nenhum compromisso corresponde aos filtros.</td></tr>';
@@ -122,23 +129,34 @@ async function refresh(){
    if(typeof db==='undefined'||!db)throw Error('Conexão indisponível.');
    const {data:autorizado,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||autorizado!==true)throw Error('Acesso financeiro não autorizado.');
-   const [rows,suppliersRes,linkedRes]=await Promise.all([
+   const [rows,manualRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes]=await Promise.all([
     db.from('fin_contas_pagar').select(
      'id,origem_chave,linha_origem_id,linha_excel,linha_original,codigo_origem,descricao,fornecedor_nome,fornecedor_id,categoria,vencimento,valor_referencia,valor_cheio_informado,desconto_efetivo,juros_efetivos,valor_pago,data_pagamento,situacao,observacoes'
     ).order('vencimento',{ascending:true,nullsFirst:false}).order('linha_excel',{ascending:true}).limit(500),
+    db.from('fin_boletos_avulsos')
+     .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em')
+     .is('excluido_em',null).order('criado_em',{ascending:false}).limit(500),
     db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento'),
-    db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,data_pagamento').not('conta_pagar_id','is',null)
+    db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,data_pagamento').not('conta_pagar_id','is',null),
+    db.from('fin_baixas_operacionais').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
+     .not('boleto_avulso_id','is',null),
+    db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
    ]);
-   if(rows.error)throw rows.error;
-   if(suppliersRes.error)throw suppliersRes.error;
-   if(linkedRes.error)throw linkedRes.error;
-   if((rows.data||[]).length>=500)throw Error('Carteira maior que 500 contas. Paginação do banco necessária.');
-   all=rows.data||[];
+   for(const result of [rows,manualRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes])if(result.error)throw result.error;
+   if((rows.data||[]).length>=500||(manualRes.data||[]).length>=500)
+    throw Error('Carteira maior que 500 contas por origem. Paginação do banco necessária.');
+   const originals=(rows.data||[]).map(r=>({...r,registro_tipo:'planilha'}));
+   const added=(manualRes.data||[]).map(r=>({...r,registro_tipo:'avulso',situacao:'aberto',
+    valor_cheio_informado:null,desconto_efetivo:null,juros_efetivos:null,valor_pago:null,data_pagamento:null}));
+   all=[...added,...originals];
    cashLinks=new Map((linkedRes.data||[]).map(x=>[x.conta_pagar_id,x]));
+   manualLinks=new Map();
+   (manualFluxoRes.data||[]).forEach(x=>manualLinks.set(x.boleto_avulso_id,{...x,source:'fluxo'}));
+   (manualExtratoRes.data||[]).forEach(x=>manualLinks.set(x.boleto_avulso_id,{...x,source:'extrato'}));
    suppliers=new Map((suppliersRes.data||[]).map(x=>[x.id,x]));
    updateMonths();draw();
-   set('cp-load-status','Carteira operacional ativa: '+all.length+
-    ' registros do Excel homologado. Conciliações bancárias preservadas. Nenhuma saída extra foi criada.');
+   set('cp-load-status','Carteira operacional ativa: '+originals.length+' compromissos da planilha e '+
+    added.length+' boletos cadastrados no aplicativo. Conciliações preservadas, sem criar saídas adicionais.');
   }catch(error){
    set('cp-load-status','Falha ao consultar contas a pagar: '+(error.message||error));
    if($('cp-rows'))$('cp-rows').innerHTML='<tr><td colspan="9" class="empty">Não foi possível consultar a carteira operacional.</td></tr>';
@@ -198,6 +216,11 @@ async function sync(){
 }
 async function reconcile(id){
  const record=all.find(r=>r.id===id);
+ if(record?.registro_tipo==='avulso'){
+  if(manualLinks.has(id))return;
+  if(!window.frBoletoUI?.openPay){set('cp-load-status','Atualize a página para abrir a baixa operacional.');return;}
+  return window.frBoletoUI.openPay('avulso:'+id);
+ }
  if(!record||record.situacao!=='aberto'||cashLinks.has(id))return;
  if(!window.frBoletoUI?.openPay){
   set('cp-load-status','Atualize a página para abrir a baixa operacional.');return;
@@ -217,8 +240,10 @@ function init(){
  $('cp-next')?.addEventListener('click',()=>{page++;draw()});
  $('cp-rows').addEventListener('click',ev=>{
   const e=ev.target.closest('[data-cp-edit]'),r=ev.target.closest('[data-cp-reconcile]');
+  const m=ev.target.closest('[data-cp-manual-pay]');
   if(e)openEdit(e.dataset.cpEdit);
   else if(r)reconcile(r.dataset.cpReconcile).catch(()=>{});
+  else if(m)reconcile(m.dataset.cpManualPay).catch(()=>{});
  });
  $('cp-edit-form')?.addEventListener('submit',saveEdit);
  $('cp-edit-cancel')?.addEventListener('click',()=>$('cp-edit-dialog')?.close?.());
