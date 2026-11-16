@@ -86,7 +86,7 @@ function draw(){
   tbody.innerHTML=visible.length?visible.map(r=>{
    const st=stateOf(r,now),possible=estimatedDiscount(r,now);
    const discount=r.desconto_efetivo!==null?money(r.desconto_efetivo):
-    (possible?'<span class="cp-possible">'+money(possible.discount)+' <small>possível '+possible.pct+'%</small></span>':'—');
+    (possible?'<span class="cp-possible">'+money(possible.discount/100)+' <small>possível '+possible.pct+'%</small></span>':'—');
    const amount=r.situacao==='conciliado_extrato'?
     '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>':
     (possible?'<span class="cp-possible">'+money(possible.liquido/100)+'<small>estimativa, não pago</small></span>':'—');
