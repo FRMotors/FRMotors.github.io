@@ -400,6 +400,26 @@
 .pix-rules-form-area{margin:6px 12px 12px;padding:12px}
 .pix-rules-apply-status{padding:8px 12px}
 .pix-rules-audit{padding:12px}}
+
+/* Agenda unificada de boletos e cartões, com contagem por tipo no dia. */
+.fin-agenda-legend{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:10px 2px 0;font-size:11px;color:var(--muted);font-weight:750}
+.fin-agenda-legend span{display:inline-flex;align-items:center;gap:6px}
+.ag-legend-dot{display:inline-block;flex:none;width:9px;height:9px;border-radius:99px}
+.ag-legend-bill{background:#0d838e}
+.ag-legend-card{background:#3c70bb}
+.fin-agenda-calendar button.ag-day.has-boletos{border-color:#62b5bb;background:#eaf7f7}
+.fin-agenda-calendar button.ag-day.is-selected{outline:2px solid #0d838e;outline-offset:0}
+.fin-agenda-calendar .ag-day-breakdown{display:flex;align-items:flex-start;flex-direction:column;gap:2px;font-size:9px;line-height:1.15}
+.fin-agenda-calendar .ag-calendar-bill{font-weight:800;color:#0b727a}
+.fin-agenda-calendar .ag-calendar-card{font-weight:800;color:#345f9b}
+.fin-agenda-table .ag-kind{display:inline-flex;margin:3px 0 0;padding:2px 6px;border-radius:6px;font-size:9px;font-weight:800;line-height:1.25}
+.fin-agenda-table .ag-kind-bill{background:#e9f7f6;color:#0b727a}
+.fin-agenda-table .ag-kind-card{background:#eaf0fb;color:#365f9d}
+.fin-agenda-filters #ag-clear-day{white-space:nowrap;flex:0 0 auto}
+@media(max-width:620px){
+ .fin-agenda-calendar .ag-day-breakdown{font-size:8px}
+ .fin-agenda-legend{gap:12px}
+}
 </style>
 <link rel="stylesheet" href="./financeiro-densidade.css?v=20261116compact58">
 </head>
@@ -1006,19 +1026,19 @@
  </div>
  <section class="card fin-agenda-card" aria-labelledby="ag-title">
   <div class="card-head">
-   <div><h2 id="ag-title">Agenda de vencimentos das faturas</h2>
-    <p>Faturas ainda com saldo a acompanhar. O mês da fatura não substitui o vencimento real.</p></div>
+   <div><h2 id="ag-title">Agenda de vencimentos · boletos e cartões</h2>
+    <p>Boletos de fornecedores e faturas de cartões ainda pendentes, reunidos pelas datas reais de vencimento.</p></div>
    <button type="button" class="btn" id="ag-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar agenda</button>
   </div>
   <div class="fin-agenda-stats">
-   <article class="insight-card"><span>Faturas a acompanhar</span><strong id="ag-count">—</strong><small>Sem quitação registrada</small></article>
-   <article class="insight-card"><span>Saldo documental restante</span><strong id="ag-total">—</strong><small>Não é saldo bancário</small></article>
+   <article class="insight-card"><span>Compromissos a acompanhar</span><strong id="ag-count">—</strong><small id="ag-count-detail">Boletos e faturas pendentes</small></article>
+   <article class="insight-card"><span>Valor nominal pendente</span><strong id="ag-total">—</strong><small>Referências documentais, não saída bancária</small></article>
    <article class="insight-card"><span>Sem vencimento informado</span><strong id="ag-no-date">—</strong><small>Não são marcadas como atrasadas</small></article>
    <article class="insight-card"><span>Prazo informado já passado</span><strong id="ag-overdue">—</strong><small>Quitação não confirmada</small></article>
    <article class="insight-card"><span>Vencem em até 7 dias</span><strong id="ag-soon">—</strong><small>Conforme datas informadas</small></article>
-   <article class="insight-card"><span>Com pagamento parcial</span><strong id="ag-partial">—</strong><small>Saldo remanescente</small></article>
+   <article class="insight-card"><span>Faturas parcialmente pagas</span><strong id="ag-partial">—</strong><small>Saldo ainda pendente</small></article>
   </div>
-  <p class="info-note fin-agenda-status" id="ag-status" role="status" aria-live="polite">Aguardando consulta das faturas.</p>
+  <p class="info-note fin-agenda-status" id="ag-status" role="status" aria-live="polite">Aguardando consulta dos boletos e das faturas.</p>
   <div class="fin-agenda-layout">
    <div class="fin-agenda-calendar-panel">
     <div class="fin-agenda-calendar-header">
@@ -1028,32 +1048,42 @@
       <button type="button" class="btn" id="ag-next" aria-label="Próximo mês">Próximo</button></div>
     </div>
     <div id="ag-calendar" class="fin-agenda-calendar" aria-label="Calendário de vencimentos"></div>
+    <div class="fin-agenda-legend" aria-label="Legenda do calendário">
+      <span><i class="ag-legend-dot ag-legend-bill"></i> Boletos</span>
+      <span><i class="ag-legend-dot ag-legend-card"></i> Cartões</span>
+    </div>
     <p id="ag-calendar-note" class="fin-agenda-calendar-note">Informe os vencimentos reais para preencher o calendário.</p>
    </div>
    <div class="fin-agenda-guidance">
     <h3>Como usar</h3>
-    <p>Informe a <strong>data real de vencimento</strong> de cada fatura. Competência e data da compra não determinam o prazo.</p>
-    <p>Se a fatura foi paga em duas partes, selecione <strong>Adicionar pagamento</strong>. Cada parte utiliza uma saída bancária já confirmada e reduz o saldo restante.</p>
-    <p>As faturas quitadas historicamente até setembro permanecem fora desta lista, sem criar comprovantes ou datas fictícias.</p>
+    <p>O calendário reúne os boletos de <strong>Contas a pagar</strong>, inclusive os cadastrados no aplicativo, com as faturas de cartões ainda em aberto.</p>
+    <p>As datas dos boletos vêm da carteira financeira. Para cartões, informe o <strong>vencimento real</strong> quando ainda não estiver cadastrado.</p>
+    <p>Clique em um dia para ver seus compromissos. <strong>Dar baixa</strong> abre a conciliação com um pagamento existente; o calendário não gera saídas bancárias nem mostra boletos já conciliados como pendentes.</p>
    </div>
   </div>
   <div class="data-toolbar fin-agenda-filters">
    <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-    <input id="ag-search" type="search" placeholder="Buscar cartão, mês ou valor..." aria-label="Pesquisar faturas em acompanhamento"></label>
+    <input id="ag-search" type="search" placeholder="Buscar boleto, fornecedor, cartão ou valor..." aria-label="Pesquisar boletos e faturas em acompanhamento"></label>
+   <select id="ag-type" class="filter-select" aria-label="Filtrar tipo de compromisso">
+    <option value="todos">Boletos e cartões</option>
+    <option value="boleto">Somente boletos</option>
+    <option value="cartao">Somente cartões</option>
+   </select>
    <select id="ag-filter" class="filter-select" aria-label="Filtrar situação">
-    <option value="todos">Todas com saldo</option>
+    <option value="todos">Todos os pendentes</option>
     <option value="sem-data">Sem data informada</option>
     <option value="prazo-passado">Prazo passado</option>
     <option value="proximos-7">Vencem em 7 dias</option>
     <option value="programada">Programadas</option>
     <option value="parcial">Pagamento parcial</option>
    </select>
+   <button type="button" id="ag-clear-day" class="btn" hidden>Limpar filtro de dia</button>
   </div>
   <div class="table-wrap"><table class="data-table fin-agenda-table">
-   <thead><tr><th>Cartão</th><th>Mês da fatura</th><th class="money">Valor da fatura</th>
-    <th class="money">Pago vinculado</th><th class="money">Saldo restante</th>
-    <th>Vencimento real</th><th>Situação</th><th>Ações</th></tr></thead>
-   <tbody id="ag-rows"><tr><td colspan="8" class="empty">Aguardando consulta...</td></tr></tbody>
+   <thead><tr><th>Compromisso</th><th>Referência / origem</th><th class="money">Valor nominal</th>
+    <th class="money">Pago vinculado</th><th class="money">Em aberto</th>
+    <th>Vencimento</th><th>Situação</th><th>Ações</th></tr></thead>
+   <tbody id="ag-rows"><tr><td colspan="8" class="empty">Aguardando boletos e faturas...</td></tr></tbody>
   </table></div>
   <div class="table-footer fin-agenda-pagination">
    <span id="ag-listed">Aguardando dados.</span>
@@ -2232,7 +2262,7 @@ init();
 <script src="./financeiro-cartoes-parcelados.js?v=20261116cartoesparcelas1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261116pages1" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261116agenda1" defer></script>
-<script src="./financeiro-agenda-faturas.js?v=20261116agenda1" defer></script>
+<script src="./financeiro-agenda-faturas.js?v=20261116boletos1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 <script src="./financeiro-resumo-operacional.js?v=20261116real1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
