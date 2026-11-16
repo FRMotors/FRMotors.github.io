@@ -94,6 +94,19 @@
 .fin-doc-summary-card .fin-doc-main-value{font-size:23px}
 .fin-doc-stats,.fin-doc-status,.fin-doc-note{padding-left:12px;padding-right:12px}
 .fin-doc-selected{padding:0 12px 12px}}
+
+.fin-op-manual-card{margin-top:16px}
+.fin-op-manual-card .data-table small{display:block;color:var(--muted);font-size:11px}
+.fin-op-fields{gap:14px}
+.fin-op-fields label{min-width:0}
+.fin-op-fields select{width:100%;max-width:100%}
+.fin-op-base{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px;background:var(--bg);border-radius:10px}
+.fin-op-ack{display:flex;align-items:flex-start;gap:10px;padding:12px 0;font-size:13px;line-height:1.5}
+.fin-op-ack input{flex:0 0 auto;margin-top:3px}
+.fin-op-pay-dialog{width:min(670px,calc(100vw - 20px));max-width:670px}
+.fin-op-pay-dialog .dialog-body{max-height:min(78dvh,690px);overflow-y:auto}
+#op-pay-list-status{padding:0;margin:0}
+@media(max-width:620px){.fin-op-base{flex-direction:column}.fin-op-fields{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -158,7 +171,7 @@
           </div>
           <div class="header-buttons">
             <button type="button" class="btn btn-teal" data-view="imports"><span class="icon icon-sm" data-icon="download"></span> Importar arquivo</button>
-            <button type="button" class="btn" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
+            <button type="button" class="btn" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
             <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Nova compra</button>
             <button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button>
           </div>
@@ -263,6 +276,8 @@
             <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
               <p>59 compromissos migrados da aba ABERTOS FLUXO, com rastreabilidade e conciliações preservadas.</p></div>
             <div class="header-buttons">
+              <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
+              <button class="btn" type="button" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
               <button class="btn" id="cp-sync" type="button"><span class="icon icon-sm" data-icon="refresh"></span> Sincronizar conciliações</button>
               <button class="btn" id="cp-refresh" type="button">Atualizar</button>
             </div>
@@ -307,6 +322,17 @@
           <p class="info-note fin-cp-note">O valor da planilha não é automaticamente tratado como valor cheio. Descontos possíveis da PARQUE são apenas estimativas até o vencimento e não geram baixas. A opção <strong>Conciliar</strong> utiliza a saída bancária existente; só depois da confirmação o vínculo chega à carteira operacional.</p>
         </section>
 
+        <section class="card fin-op-manual-card" id="op-boletos-adicionados">
+          <div class="card-head"><div>
+           <h2>Boletos adicionados após a migração</h2>
+           <p>Registros novos do Financeiro, separados do Excel original. Somente saídas do Fluxo de Caixa podem ser vinculadas à baixa.</p>
+          </div><button type="button" class="btn btn-primary" data-ops-new>Novo boleto</button></div>
+          <div class="table-wrap"><table class="data-table">
+           <thead><tr><th>Vencimento</th><th>Fornecedor e descrição</th><th class="money">Valor</th><th>Situação</th><th>Ação</th></tr></thead>
+           <tbody id="op-manual-rows"><tr><td colspan="5" class="empty">Aguardando consulta dos boletos adicionados.</td></tr></tbody>
+          </table></div>
+          <div class="table-footer" id="op-manual-count">Carregando...</div>
+        </section>
         <details class="fin-cp-legacy">
           <summary>Consultar os 59 registros originais da planilha homologada (histórico)</summary>
         <section class="card" id="fin-homolog-payables" aria-labelledby="fin-homolog-title">
@@ -349,6 +375,65 @@
           <div class="table-footer" id="dues-count">0 parcela(s)</div>
         </section>
         </details>
+        <dialog id="op-new-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="op-new-title">
+          <form id="op-new-form">
+            <div class="dialog-head"><div><h2 id="op-new-title">Adicionar boleto esquecido</h2>
+              <p>Registra uma nova conta em aberto sem lançar pagamento no caixa.</p></div>
+              <button type="button" class="dialog-close" data-op-close="op-new-dialog" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="dialog-body">
+              <div class="fields fin-op-fields">
+                <label>Fornecedor <input name="fornecedor" required maxlength="160" minlength="2" placeholder="Nome do fornecedor"></label>
+                <label>Vencimento <input name="vencimento" type="date"></label>
+                <label>Valor do boleto (R$) <input name="valor" type="number" min="0.01" step="0.01" required></label>
+                <label>Categoria <input name="categoria" maxlength="120" placeholder="Ex.: FORNECEDORES"></label>
+                <label style="grid-column:1/-1">Descrição <input name="descricao" maxlength="250" placeholder="Referência ou número do boleto"></label>
+                <label style="grid-column:1/-1">Observações <textarea name="observacoes" rows="2" maxlength="2000" placeholder="Origem, número do documento ou justificativa"></textarea></label>
+              </div>
+              <p class="info-note">Informe o valor do boleto. Se o banco aplicar desconto, registre apenas o desconto efetivo na baixa. Nenhuma saída bancária será criada aqui.</p>
+              <p id="op-new-status" class="info-note" role="status">Preencha os dados.</p>
+              <div class="form-actions"><button type="button" class="btn" data-op-close="op-new-dialog">Cancelar</button>
+                <button id="op-new-submit" type="submit" class="btn btn-primary">Salvar boleto em aberto</button></div>
+            </div>
+          </form>
+        </dialog>
+        <dialog id="op-pay-dialog" class="fin-dialog fin-cp-dialog fin-op-pay-dialog" aria-labelledby="op-pay-title">
+          <form id="op-pay-form">
+            <div class="dialog-head"><div><h2 id="op-pay-title">Dar baixa em boleto operacional</h2>
+              <p>Vincule o boleto a uma saída já registrada no Fluxo de Caixa, sem duplicar pagamento.</p></div>
+              <button type="button" class="dialog-close" data-op-close="op-pay-dialog" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="dialog-body">
+              <div class="fields fin-op-fields">
+                <label style="grid-column:1/-1">Boleto pendente
+                  <select id="op-pay-select" required><option value="">Carregando contas...</option></select>
+                </label>
+                <p id="op-pay-list-status" class="info-note" style="grid-column:1/-1" role="status">Carregando boletos pendentes...</p>
+                <label style="grid-column:1/-1">Saída já confirmada no Fluxo de Caixa
+                  <select id="op-pay-movement" required><option value="">Selecione um boleto primeiro</option></select>
+                </label>
+                <div style="grid-column:1/-1" class="fin-op-base">
+                  <span id="op-pay-source">Selecione um compromisso.</span>
+                  <strong>Valor de referência: <span id="op-pay-base">—</span></strong>
+                </div>
+                <label>Desconto efetivo (R$)
+                  <input id="op-pay-discount" type="number" min="0" step="0.01" value="0.00" required>
+                </label>
+                <label>Juros e multa (R$)
+                  <input id="op-pay-fees" type="number" min="0" step="0.01" value="0.00" required>
+                </label>
+              </div>
+              <button type="button" id="op-pay-use-difference" class="btn" hidden>Usar diferença como desconto</button>
+              <p id="op-pay-info" class="info-note" role="status">Os valores precisam coincidir com a saída bancária selecionada.</p>
+              <label class="fin-op-ack"><input type="checkbox" id="op-pay-ack" required>
+                Confirmei que esta saída corresponde ao boleto selecionado e não deve ser registrada outra vez.</label>
+              <p id="op-pay-error" class="status" role="alert"></p>
+              <div class="form-actions"><button type="button" class="btn" data-op-close="op-pay-dialog">Cancelar</button>
+               <button type="submit" id="op-pay-confirm" class="btn btn-primary" disabled>Confirmar baixa sem duplicação</button></div>
+              <p class="info-note">A lista utiliza saídas confirmadas do Fluxo de Caixa e a regra de até três dias entre vencimento e pagamento. Se a saída não aparecer, ela precisa estar registrada e conferida antes da baixa. A conciliação não inventa pagamentos.</p>
+            </div>
+          </form>
+        </dialog>
         <dialog id="cp-edit-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="cp-edit-title">
           <form id="cp-edit-form">
             <div class="card-head"><div>
@@ -1293,7 +1378,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116docs1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116fixpay1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1302,7 +1387,8 @@ init();
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261113receber1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261116cp1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261116fixpay1" defer></script>
+<script src="./financeiro-baixas-operacionais.js?v=20261116fixpay1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
-<script src="./financeiro-operacional.js?v=20261116cp1" defer></script>
+<script src="./financeiro-operacional.js?v=20261116fixpay1" defer></script>
 </body></html>
