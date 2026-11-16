@@ -8,7 +8,7 @@ const money=x=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).
 const cent=x=>Math.round(Number(x)*100);
 const brdate=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const out=(id,t)=>{if($(id))$(id).textContent=t};
-let invoices=[],autos=[],comprovs=[],banks=[],busy=false,loading=null,current=null;
+let invoices=[],autos=[],comprovs=[],parts=[],revisions=[],banks=[],busy=false,loading=null,current=null;
 let reservedFlow=new Set(),reservedExt=new Set(),autoRefs=new Set();
 const fields='id,tipo,fatura_id,documento_id,origem_pagamento,movimento_fluxo_id,movimento_extrato_id,valor_conferido,data_pagamento,justificativa';
 async function getAll(query,max=6000){
@@ -23,40 +23,67 @@ async function getAll(query,max=6000){
 }
 const byInvoice=()=>new Map(comprovs.filter(x=>x.fatura_id).map(x=>[x.fatura_id,x]));
 const byAuto=()=>new Map(comprovs.filter(x=>x.documento_id).map(x=>[x.documento_id,x]));
+const byParts=()=>{
+ const map=new Map();
+ parts.forEach(p=>{const a=map.get(p.fatura_id)||[];a.push(p);map.set(p.fatura_id,a)});
+ return map;
+};
+const byReview=()=>new Map(revisions.filter(x=>x.situacao==='em_revisao').map(x=>[x.fatura_id,x]));
+function invoiceSummary(f){
+ const older=byInvoice().get(f.id);
+ const list=byParts().get(f.id)||[];
+ const paid=older?cent(older.valor_conferido):list.reduce((sum,x)=>sum+cent(x.valor_pago),0);
+ const total=cent(f.valor_documental),balance=Math.max(0,total-paid);
+ return {total,paid,balance,parts:list,full:balance===0,partial:paid>0&&balance>0};
+}
+
 function refName(f){return f.cartao_nome+' · '+brdate(f.mes_fatura).slice(3)}
 function dateDiff(a,b){return Math.abs(new Date(a+'T12:00:00Z').getTime()-new Date(b+'T12:00:00Z').getTime())/86400000}
 function draw(){
- const invLinks=byInvoice(),autoLinks=byAuto();
- const pending=invoices.filter(x=>!invLinks.has(x.id));
- const unmatched=autos.filter(x=>!autoRefs.has(x.id)&&!autoLinks.has(x.id));
+ const refs=byInvoice(),manualAutos=byAuto(),revs=byReview();
+ const summaries=new Map(invoices.map(f=>[f.id,invoiceSummary(f)]));
+ const pending=invoices.filter(f=>summaries.get(f.id).balance>0);
+ const partially=invoices.filter(f=>summaries.get(f.id).partial);
+ const completed=invoices.filter(f=>summaries.get(f.id).full);
+ const unmatched=autos.filter(x=>!autoRefs.has(x.id)&&!manualAutos.has(x.id));
  out('vl-open-count',String(pending.length));
- out('vl-confirmed-count',String(invLinks.size));
+ out('vl-confirmed-count',String(completed.length));
+ out('vl-partial-count',String(partially.length));
+ out('vl-review-count',String(revs.size));
  out('vl-auto-count',String(unmatched.length));
- out('vl-auto-confirmed-count',String(autoLinks.size));
+ out('vl-auto-confirmed-count',String(manualAutos.size));
  const q=($('vl-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  const filter=$('vl-filter-status')?.value||'todos';
  const list=invoices.filter(f=>{
-  if(filter==='pendentes'&&invLinks.has(f.id))return false;
-  if(filter==='conferidos'&&!invLinks.has(f.id))return false;
+  const x=summaries.get(f.id);
+  if(filter==='pendentes'&&x.balance===0)return false;
+  if(filter==='conferidos'&&!x.full)return false;
+  if(filter==='parciais'&&!x.partial)return false;
+  if(filter==='revisao'&&!revs.has(f.id))return false;
   return [f.cartao_nome,f.mes_fatura,f.valor_documental].join(' ')
     .toLocaleLowerCase('pt-BR').includes(q);
  }).sort((a,b)=>b.mes_fatura.localeCompare(a.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
  if($('vl-invoices'))$('vl-invoices').innerHTML=list.length?list.map(f=>{
-  const link=invLinks.get(f.id);
+  const x=summaries.get(f.id),rev=revs.get(f.id);
+  const status=x.full?'<span class="state paid">Quitada pelo(s) vínculo(s)</span>':
+   x.partial?'<span class="state open">Parcialmente paga</span>':
+   rev?'<span class="state open">Em revisão, não quitada</span>':
+   '<span class="state open">Sem pagamento vinculado</span>';
   return '<tr><td><strong>'+esc(f.cartao_nome)+'</strong></td>'+
    '<td>'+brdate(f.mes_fatura).slice(3)+'</td>'+
    '<td class="money">'+f.quantidade_lancamentos+'</td>'+
    '<td class="money"><strong>'+money(f.valor_documental)+'</strong></td>'+
-   '<td>'+(link?'<span class="state paid">Vinculada à saída</span><small>'+
-     esc(link.origem_pagamento==='fluxo'?'Fluxo':'Extrato')+' · '+brdate(link.data_pagamento)+
-     ' · '+money(link.valor_conferido)+'</small>':
-     '<span class="state open">A conferir</span>')+'</td>'+
-   '<td>'+(link?'—':'<button type="button" class="btn" data-vl-invoice="'+esc(f.id)+'">Vincular pagamento</button>')+'</td></tr>';
- }).join(''):'<tr><td colspan="6" class="empty">Nenhuma fatura corresponde aos filtros.</td></tr>';
+   '<td class="money">'+money(x.paid/100)+'<small>'+x.parts.length+' pagamento(s) parcial(is)</small></td>'+
+   '<td class="money"><strong>'+money(x.balance/100)+'</strong></td>'+
+   '<td>'+status+(rev?'<small>Revisão registrada, não é pagamento</small>':'')+'</td>'+
+   '<td><button type="button" class="btn" data-vl-invoice="'+esc(f.id)+'">'+
+    (x.full?'Ver pagamentos':x.partial?'Adicionar outro pagamento':'Adicionar pagamento')+
+    '</button></td></tr>';
+ }).join(''):'<tr><td colspan="8" class="empty">Nenhuma fatura corresponde aos filtros.</td></tr>';
  out('vl-invoice-count',list.length+' de '+invoices.length+' faturas');
  const review=autos.filter(x=>!autoRefs.has(x.id));
  if($('vl-auto-rows'))$('vl-auto-rows').innerHTML=review.length?review.map(d=>{
-  const linked=autoLinks.get(d.id);
+  const linked=manualAutos.get(d.id);
   return '<tr><td><strong>'+esc(d.codigo_origem)+'</strong><small>'+
    esc(d.fornecedor_nome||d.descricao)+'</small></td>'+
    '<td>'+brdate(d.vencimento)+'</td>'+
