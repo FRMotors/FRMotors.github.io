@@ -752,13 +752,19 @@ async function reconcile(){
     p_movimento:move,p_parcela:id,p_desconto:discount,p_juros:fees
    });
   if(error)throw error;
+  let syncWarning='';
+  if(excel){
+   const {error:syncError}=await db.rpc('fin_cp_sincronizar_conciliacoes');
+   if(syncError)syncWarning=' Atenção: vínculo bancário confirmado, mas a carteira operacional não sincronizou: '+syncError.message;
+  }
   const message=excel?
-   'Compromisso da planilha vinculado à saída bancária existente. O histórico da planilha foi preservado e não foi criado outro pagamento.':
+   'Compromisso da planilha vinculado à saída bancária existente. O histórico foi preservado e não foi criado outro pagamento.':
    'Boleto do aplicativo baixado com a saída bancária existente. Nenhuma movimentação extra foi criada.';
-  notice('reconcile-status',message);
+  notice('reconcile-status',message+syncWarning,Boolean(syncWarning));
   window.frFinanceUI?.showToast(excel?'Conta da planilha conciliada sem duplicação.':'Boleto conciliado sem duplicação.');
   await Promise.allSettled([typeof render==='function'?render():Promise.resolve(),
-   refresh(),window.frHomologPayablesUI?.refresh?.()||Promise.resolve()]);
+   refresh(),window.frHomologPayablesUI?.refresh?.()||Promise.resolve(),
+   window.frOperationalPayablesUI?.refresh?.()||Promise.resolve()]);
  }catch(e){notice('reconcile-status','Falha na conciliação: '+e.message,true)}
  finally{working=false;checkReconcile()}
 }
