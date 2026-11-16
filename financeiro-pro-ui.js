@@ -51,6 +51,7 @@ function selectView(next){
  if(next==='imports')window.frImportUI?.refresh?.();
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
   if(next==='operational')window.frOperationalUI?.open?.();
+  if(next==='purchases')window.frCardInstallmentsUI?.refresh?.();
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='expenses')window.frDocsReconcileUI?.refresh?.();
   if(next==='expenses')window.frDocumentLinksUI?.refresh?.();
@@ -258,7 +259,7 @@ function setup(){
  });
  const params=new URLSearchParams(window.location.search);
  const requestedView=params.get('view');
- const initialView=['operational','payables','expenses'].includes(requestedView)?requestedView:'overview';
+ const initialView=['operational','payables','expenses','purchases'].includes(requestedView)?requestedView:'overview';
  selectView(initialView);
  if(initialView==='expenses'&&params.get('section')==='payments'){
   requestAnimationFrame(()=>scrollToExpensesSection('vl-title-section'));
