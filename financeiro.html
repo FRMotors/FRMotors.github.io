@@ -115,6 +115,29 @@
 .fin-op-delete-button:hover:not(:disabled){background:#fff1f1!important}
 .fin-op-manual-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .fin-op-delete-summary{font-weight:750;font-size:15px;overflow-wrap:anywhere;padding:12px;border-radius:9px;border:1px solid #e2caca;background:#fdf8f8}
+
+.fin-doc-match-card{margin-bottom:16px}
+.fin-doc-match-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 20px 18px}
+.fin-doc-match-stats .insight-card{min-width:0;padding:16px}
+.fin-doc-match-stats strong{font-size:22px;overflow-wrap:anywhere}
+.fin-doc-match-stats small{display:block;overflow-wrap:anywhere}
+.fin-doc-match-note{margin:0;padding:0 20px 16px}
+.fin-doc-match-filters{display:flex;flex-wrap:wrap;gap:10px}
+.fin-doc-match-filters .search-box{flex:2 1 240px}
+.fin-doc-match-filters .filter-select{flex:1 1 180px}
+.fin-doc-match-paging{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.fin-doc-match-paging>div{display:flex;gap:8px}
+.fin-doc-match-card .data-table small{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+.fin-doc-match-card .data-table th,.fin-doc-match-card .data-table td{min-width:90px}
+.fin-doc-match-card .money{white-space:nowrap}
+.fin-doc-fatura-detail{border-top:1px solid var(--stroke);margin-top:8px;padding-top:14px}
+.fin-doc-fatura-detail[hidden]{display:none}
+.fin-doc-match-card .table-wrap{overflow-x:auto}
+@media(max-width:1100px){.fin-doc-match-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:570px){.fin-doc-match-stats{padding:0 12px 14px;gap:8px}
+.fin-doc-match-stats .insight-card{padding:12px}
+.fin-doc-match-stats strong{font-size:19px}
+.fin-doc-match-note{padding:0 12px 14px}}
 </style>
 </head>
 <body>
@@ -527,6 +550,82 @@
    <p><strong id="doc-card-count">—</strong> lançamentos incluídos</p>
   </section>
  </div>
+ <section class="card fin-doc-match-card" aria-labelledby="dc-title">
+  <div class="card-head"><div>
+    <h2 id="dc-title">Conciliação documental</h2>
+    <p>Relações auditáveis entre autopeças, saídas já confirmadas e agrupamentos de cartões. Nenhuma nova baixa no caixa.</p>
+   </div>
+   <button type="button" id="dc-refresh" class="btn"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar conferência</button>
+  </div>
+  <div class="fin-doc-match-stats">
+   <article class="insight-card"><span>Autopeças localizadas no Fluxo</span><strong id="dc-matched-count">—</strong>
+    <small id="dc-matched-total">—</small></article>
+   <article class="insight-card"><span>Compras pagas para revisar</span><strong id="dc-review-count">—</strong>
+    <small>Sem correspondência individual segura</small></article>
+   <article class="insight-card"><span>Faturas documentais</span><strong id="dc-invoice-count">—</strong>
+    <small id="dc-invoice-total">—</small></article>
+   <article class="insight-card"><span>PIX / Débito já validados</span><strong id="dc-pix-count">—</strong>
+    <small>Origem e justificativa preservadas</small></article>
+  </div>
+  <p id="dc-status" class="info-note fin-doc-match-note" role="status" aria-live="polite">Aguardando consulta das correspondências.</p>
+  <p class="info-note fin-doc-match-note">As referências de autopeças usam <strong>fornecedor igual, valor efetivamente pago igual e até três dias</strong> entre vencimento e saída. As faturas são agrupamentos de lançamentos, não comprovantes de quitação. O livro-caixa não foi alterado.</p>
+ </section>
+ <section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>Autopeças e pagamentos existentes</h2>
+    <p>Compras marcadas como pagas no Excel, incluindo aquelas que ainda precisam ser revisadas.</p></div></div>
+  <div class="data-toolbar fin-doc-match-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="dc-auto-search" placeholder="Buscar fornecedor ou código..." aria-label="Buscar compras para conciliação"></label>
+   <select id="dc-auto-filter" class="filter-select" aria-label="Situação das correspondências">
+    <option value="todos">Todas as compras pagas</option>
+    <option value="localizados">Localizadas no Fluxo</option>
+    <option value="pendentes">Precisam de revisão</option>
+   </select>
+  </div>
+  <div class="table-wrap"><table class="data-table">
+   <thead><tr><th>Código</th><th>Fornecedor</th><th>Vencimento</th>
+    <th class="money">Pago na planilha</th><th>Correspondência</th><th>Regra</th></tr></thead>
+   <tbody id="dc-auto-rows"><tr><td colspan="6" class="empty">Aguardando consulta...</td></tr></tbody>
+  </table></div>
+  <div class="table-footer fin-doc-match-paging"><span id="dc-auto-paging">Carregando...</span>
+   <div><button type="button" id="dc-auto-prev" class="btn" disabled>Anterior</button>
+    <button type="button" id="dc-auto-next" class="btn" disabled>Próxima</button></div>
+  </div>
+ </section>
+ <section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>Faturas documentais por cartão e mês</h2>
+    <p>Compras e ajustes negativos agrupados por nome exato do cartão, preservando as identificações da planilha.</p></div></div>
+  <div class="data-toolbar fin-doc-match-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="dc-fatura-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas históricas"></label>
+  </div>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
+   <th class="money">Compras</th><th class="money">Ajustes</th><th class="money">Total documental</th><th>Ação</th>
+  </tr></thead>
+   <tbody id="dc-fatura-rows"><tr><td colspan="7" class="empty">Aguardando consulta...</td></tr></tbody></table>
+  </div>
+  <div class="table-footer fin-doc-match-paging"><span id="dc-fatura-paging">Carregando...</span>
+   <div><button type="button" class="btn" id="dc-fatura-prev" disabled>Anterior</button>
+    <button type="button" class="btn" id="dc-fatura-next" disabled>Próxima</button></div>
+  </div>
+  <div class="fin-doc-fatura-detail" id="dc-fatura-detail" hidden>
+   <div class="card-head"><div><h2 id="dc-detail-title">Lançamentos da fatura</h2>
+     <p id="dc-detail-status" role="status">Aguardando...</p></div>
+    <button type="button" id="dc-detail-close" class="btn">Fechar detalhes</button>
+   </div>
+   <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição / código</th><th class="money">Valor</th></tr></thead>
+    <tbody id="dc-detail-rows"></tbody></table>
+   </div>
+  </div>
+ </section>
+ <section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>PIX / Débito previamente conferidos</h2>
+   <p>Referências da planilha homologada: quando o vínculo não está no Fluxo, a classificação “Outro banco” permanece.</p></div></div>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Código</th><th>Meio</th><th class="money">Valor</th><th>Situação</th><th>Justificativa</th>
+  </tr></thead><tbody id="dc-pix-rows"><tr><td colspan="5" class="empty">Aguardando consulta...</td></tr></tbody></table></div>
+ </section>
  <section class="card">
   <div class="card-head">
    <div><h2>Conferência de documentos</h2><p>Os registros marcados como “não incluir” são mantidos apenas para auditoria.</p></div>
@@ -1409,7 +1508,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116fixpay1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116conciliacao1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1421,5 +1520,6 @@ init();
 <script src="./financeiro-contas-operacionais.js?v=20261116fixpay1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261116delete1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
+<script src="./financeiro-conciliacao-documental.js?v=20261116conciliacao1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 </body></html>
