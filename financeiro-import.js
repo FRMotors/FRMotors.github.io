@@ -604,16 +604,16 @@ async function refreshReconcile(){
  bankImported=moves.filter(x=>!linkedBank.has(x.id));
  const beforeMove=$('reconcile-move').value,beforePar=$('reconcile-parcel').value;
  $('reconcile-move').replaceChildren(new Option('Selecione uma saída do extrato',''),
-  ...bankImported.map(r=>new Option(r.data_movimento.split('-').reverse().join('/')+
-   ' · '+r.descricao.slice(0,36)+' · '+cash(r.valor),r.id)));
+  ...bankImported.map(r=>new Option(cash(r.valor)+' · '+r.data_movimento.split('-').reverse().join('/')+
+   ' · '+r.descricao.slice(0,36),r.id)));
 
  const suppliers=supplierResponse.data||[];
  const supplierByName=new Map(suppliers.map(s=>[String(s.nome).trim().toLocaleUpperCase('pt-BR'),s]));
  const manualGroup=document.createElement('optgroup');manualGroup.label='Parcelas do aplicativo';
  const manualOptions=dues.map(r=>{
   const name=suppliers.find(s=>s.id===r.fin_teste_compras?.fornecedor_id)?.nome||'Fornecedor';
-  manualGroup.append(new Option(name+' · '+(r.vencimento?.split('-').reverse().join('/')||'Sem data')+
-   ' · '+cash(r.valor_cheio),'app:'+r.id));
+  manualGroup.append(new Option(cash(r.valor_cheio)+' · '+name+' · '+
+   (r.vencimento?.split('-').reverse().join('/')||'Sem data'),'app:'+r.id));
   const selectedSupplier=suppliers.find(s=>s.id===r.fin_teste_compras?.fornecedor_id);
   return {id:'app:'+r.id,kind:'app',valor:Number(r.valor_cheio),vencimento:r.vencimento,
    fornecedor:selectedSupplier?.nome||name,
@@ -624,7 +624,7 @@ async function refreshReconcile(){
  const excelOptions=availableExcel.map(r=>{
   const supplier=r.dados?.fornecedor||r.descricao||'Sem descrição';
   const date=r.data_evento?r.data_evento.split('-').reverse().join('/'):'Sem vencimento';
-  excelGroup.append(new Option(supplier+' · '+date+' · previsto '+cash(Number(r.valor))+
+  excelGroup.append(new Option(cash(Number(r.valor))+' · '+supplier+' · '+date+
    ' · linha '+r.linha_excel,'excel:'+r.id));
   const selectedSupplier=supplierByName.get(String(supplier).trim().toLocaleUpperCase('pt-BR'));
   return {id:'excel:'+r.id,kind:'excel',valor:Number(r.valor),vencimento:r.data_evento,
