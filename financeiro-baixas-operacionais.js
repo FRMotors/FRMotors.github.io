@@ -9,7 +9,7 @@ const dateBR=s=>s?String(s).slice(0,10).split('-').reverse().join('/'):'Sem data
 const esc=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const cents=x=>Math.round(Number(x)*100);
 const write=(id,t)=>{if($(id))$(id).textContent=t};
-let accounts=[],avulsos=[],links=[],movements=[],otherUsed=new Set(),suppliers=new Map();
+let accounts=[],avulsos=[],links=[],importedLinks=[],movements=[],otherUsed=new Set(),testUsed=new Set(),suppliers=new Map();
 let loading=null,busy=false;
 const byId=new Map();
 function validAmount(x){const n=Number(x),c=Math.round(n*100);return Number.isFinite(n)&&n>=0&&Number.isSafeInteger(c)&&Math.abs(n*100-c)<.00001?c:null}
@@ -27,9 +27,10 @@ const paidLinks=()=>{
  const cp=new Map(),manual=new Map(),movement=new Set();
  links.forEach(x=>{
   if(x.conta_pagar_id)cp.set(x.conta_pagar_id,x);
-  if(x.boleto_avulso_id)manual.set(x.boleto_avulso_id,x);
-  movement.add(x.movimento_id);
+  if(x.boleto_avulso_id)manual.set(x.boleto_avulso_id,{...x,source:'fluxo'});
+  movement.add('fluxo:'+x.movimento_id);
  });
+ importedLinks.forEach(x=>manual.set(x.boleto_avulso_id,{...x,source:'extrato'}));
  return {cp,manual,movement};
 };
 function collectOpen(){
@@ -39,7 +40,7 @@ function collectOpen(){
   if(x.situacao!=='aberto'||linked.cp.has(x.id))return;
   list.push({tipo:'homologado',id:x.id,fornecedor:x.fornecedor_nome,descricao:x.descricao,
    valor:Number(x.valor_referencia),vencimento:x.vencimento,origem:'Planilha homologada',
-   fornecedor_id:x.fornecedor_id});
+   fornecedor_id:x.fornecedor_id,linha_origem_id:x.linha_origem_id});
  });
  avulsos.forEach(x=>{
   if(linked.manual.has(x.id))return;
@@ -73,7 +74,8 @@ function availableBank(doc){
  if(!doc)return[];
  const paid=paidLinks().movement;
  return movements.filter(x=>{
-  if(otherUsed.has(x.id)||paid.has(x.id))return false;
+  if((x.source==='fluxo'&&otherUsed.has(x.ref))||
+    (x.source==='extrato'&&testUsed.has(x.ref))||paid.has(x.id))return false;
   if(doc.vencimento){
    const delta=Math.round((Date.parse(x.data_movimento+'T12:00:00Z')-
       Date.parse(doc.vencimento+'T12:00:00Z'))/86400000);
@@ -96,7 +98,8 @@ function updateBank(){
  const doc=chosen();
  const previous=$('op-pay-movement').value;
  const candidates=availableBank(doc);
- const opts=candidates.map(x=>new Option(brl(x.valor)+' · '+dateBR(x.data_movimento)+' · '+x.descricao.slice(0,58),x.id));
+ const opts=candidates.map(x=>new Option(brl(x.valor)+' · '+dateBR(x.data_movimento)+' · '+x.descricao.slice(0,45)+
+  (x.source==='extrato'?' · Extrato importado':' · Fluxo homologado'),x.id));
  $('op-pay-movement').replaceChildren(new Option(doc?'Selecione uma saída já paga':'Selecione primeiro o boleto',''),...opts);
  if(candidates.some(x=>x.id===previous))$('op-pay-movement').value=previous;
  write('op-pay-base',doc?brl(doc.valor):'—');
@@ -131,7 +134,7 @@ function recalc(){
  const desc=doc&&bank?
    'Valor do compromisso '+brl(doc.valor)+' − desconto '+brl((disc||0)/100)+
    ' + juros '+brl((fees||0)/100)+' = '+(calc===null?'—':brl(calc/100))+
-   '. Saída do Fluxo: '+brl(bank.valor)+'. '+
+   '. Saída já registrada ('+(bank.source==='extrato'?'extrato importado':'Fluxo de Caixa')+'): '+brl(bank.valor)+'. '+
    (correct?'Valores conferem. Confirme o vínculo sem criar pagamento.':
    'Os valores não conferem. Use desconto/juros somente com base no comprovante.')+
    (rule?' Regra '+rule.pct+'% do fornecedor aplicável até o vencimento.':''):
@@ -148,7 +151,7 @@ function updateManualList(){
   return '<tr><td>'+esc(dateBR(x.vencimento))+'</td><td><strong>'+esc(x.fornecedor_nome)+'</strong>'+
    '<small>'+esc(x.descricao||'Boleto adicionado')+'</small></td>'+
    '<td class="money">'+brl(x.valor_referencia)+'</td>'+
-   '<td>'+(l?'<span class="state paid">Conciliado no Fluxo</span>':'<span class="state open">Em aberto</span>')+
+   '<td>'+(l?'<span class="state paid">'+(l.source==='extrato'?'Conciliado no extrato':'Conciliado no Fluxo')+'</span>':'<span class="state open">Em aberto</span>')+
    (l?'<small>Pago '+esc(dateBR(l.data_pagamento))+' · '+brl(l.valor_pago)+'</small>':'')+'</td>'+
    '<td>'+(l?'—':'<button type="button" class="btn" data-op-pay-manual="'+esc(x.id)+'">Dar baixa</button>')+'</td></tr>';
  }).join(''):'<tr><td colspan="5" class="empty">Nenhum boleto adicional registrado aqui. Use “Novo boleto” para incluir um compromisso esquecido.</td></tr>';
@@ -160,17 +163,32 @@ async function load(){
   if(typeof db==='undefined'||!db)throw Error('Conexão financeira indisponível.');
   const {data:allowed,error:accessError}=await db.rpc('fluxo_caixa_autorizado');
   if(accessError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-  const [cp,extra,linked,bank,used,vendors]=await Promise.all([
-   allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,fornecedor_id,descricao,valor_referencia,vencimento,situacao').order('vencimento',{ascending:true})),
+  const [cp,extra,linked,bank,used,vendors,testBank,usedTestParcels,usedTestExcel,usedTestCards,paidImported]=await Promise.all([
+   allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,fornecedor_id,descricao,valor_referencia,vencimento,situacao,linha_origem_id').order('vencimento',{ascending:true})),
    allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em').order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id,movimento_id,valor_pago,data_pagamento,desconto,juros').order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_movimentos').select('id,descricao,valor,data_movimento,meio_pagamento,estado,origem')
     .eq('tipo','saida').eq('estado','confirmado').eq('origem','fluxo_caixa_homologado')
     .order('data_movimento',{ascending:false})),
    allRows(()=>db.from('fin_vinculos_pagamento').select('movimento_id').order('id',{ascending:false})),
-   allRows(()=>db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento').order('nome',{ascending:true}))
+   allRows(()=>db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento').order('nome',{ascending:true})),
+   allRows(()=>db.from('fin_teste_movimentos')
+    .select('id,descricao,valor,data_movimento,estado,referencia_cliente')
+    .eq('tipo','saida').eq('estado','confirmado').like('referencia_cliente','extrato:%')
+    .order('data_movimento',{ascending:false})),
+   allRows(()=>db.from('fin_teste_vinculos').select('movimento_id').order('id',{ascending:false})),
+   allRows(()=>db.from('fin_teste_excel_abertos_vinculos').select('movimento_id').order('vinculado_em',{ascending:false})),
+   allRows(()=>db.from('fin_teste_fatura_pagamentos').select('movimento_id').order('id',{ascending:false})),
+   allRows(()=>db.from('fin_baixas_extrato_avulsos')
+    .select('boleto_avulso_id,movimento_teste_id,valor_pago,data_pagamento,desconto,juros')
+    .order('criado_em',{ascending:false}))
   ]);
-  accounts=cp;avulsos=extra;links=linked;movements=bank;otherUsed=new Set(used.map(x=>x.movimento_id));
+  accounts=cp;avulsos=extra;links=linked;importedLinks=paidImported;
+  movements=[...bank.map(x=>({...x,source:'fluxo',ref:x.id,id:'fluxo:'+x.id})),
+   ...testBank.map(x=>({...x,source:'extrato',ref:x.id,id:'extrato:'+x.id}))];
+  otherUsed=new Set(used.map(x=>x.movimento_id));
+  testUsed=new Set([...usedTestParcels,...usedTestExcel,...usedTestCards,...paidImported]
+    .map(x=>x.movimento_id||x.movimento_teste_id));
   suppliers=new Map(vendors.map(x=>[x.id,x]));
   updateManualList();
   const previously=$('op-pay-select')?.value||'';
@@ -236,23 +254,44 @@ async function createManual(e){
 async function confirmPay(e){
  e.preventDefault();
  if(busy||!recalc()||!$('op-pay-ack').checked)return;
- const doc=chosen(),payment=$('op-pay-movement').value;
+ const doc=chosen(),payment=movements.find(x=>x.id===$('op-pay-movement').value);
  const discount=validAmount($('op-pay-discount').value),fees=validAmount($('op-pay-fees').value);
+ if(!doc||!payment||discount===null||fees===null)return;
  busy=true;$('op-pay-confirm').disabled=true;
  try{
-  const {error}=await db.rpc('fin_baixa_operacional_vincular',{
-   p_tipo:doc.tipo,p_boleto:doc.id,p_movimento:payment,p_desconto:discount/100,p_juros:fees/100
-  });
-  if(error)throw error;
+  let response;
+  if(payment.source==='fluxo'){
+   response=await db.rpc('fin_baixa_operacional_vincular',{
+    p_tipo:doc.tipo,p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
+   });
+  }else if(doc.tipo==='homologado'){
+   response=await db.rpc('fin_teste_conciliar_aberto_excel',{
+    p_aberto:doc.linha_origem_id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
+   });
+  }else{
+   response=await db.rpc('fin_boleto_avulso_conciliar_extrato',{
+    p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
+   });
+  }
+  if(response.error)throw response.error;
+  let warning='';
+  if(payment.source==='extrato'&&doc.tipo==='homologado'){
+   const sync=await db.rpc('fin_cp_sincronizar_conciliacoes');
+   if(sync.error)warning=' Baixa do extrato salva, porém a carteira não sincronizou: '+sync.error.message;
+  }
   await load();
-  window.frFinanceUI?.showToast('Baixa vinculada à saída existente, sem gerar outro pagamento.');
+  window.frFinanceUI?.showToast('Baixa vinculada a pagamento existente. Nenhuma saída duplicada.'+
+    (warning?' Atualize a carteira.':''));
   await Promise.allSettled([window.frOperationalPayablesUI?.refresh?.()||Promise.resolve(),
-   window.frOperationalUI?.refresh?.()||Promise.resolve()]);
+   window.frOperationalUI?.refresh?.()||Promise.resolve(),
+   window.frImportUI?.refresh?.()||Promise.resolve()]);
   closeDialog('op-pay-dialog');
+  if(warning)window.frFinanceUI?.showToast(warning,true);
  }catch(error){
   write('op-pay-error','Falha ao vincular: '+(error.message||error)+'. Nenhum pagamento novo foi criado.');
  }finally{busy=false;recalc()}
 }
+
 function init(){
  if(!$('op-pay-dialog'))return;
  document.querySelectorAll('[data-ops-pay]').forEach(button=>
