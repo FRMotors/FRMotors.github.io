@@ -323,7 +323,7 @@
           <div>
             <p class="eyebrow">Inteligência financeira</p>
             <h1 class="page-heading">Visão geral</h1>
-            <p class="page-description">Acompanhe o desempenho do caixa, compromissos e operações em um único lugar.</p>
+            <p class="page-description">Consulte primeiro os dados homologados; os controles de demonstração permanecem abaixo.</p>
           </div>
           <div class="header-buttons">
             <button type="button" class="btn btn-teal" data-view="imports"><span class="icon icon-sm" data-icon="download"></span> Importar arquivo</button>
@@ -333,9 +333,64 @@
             <button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button>
           </div>
         </div>
+        <section class="card real-dashboard" id="real-dashboard" aria-labelledby="real-dashboard-title">
+          <div class="card-head">
+            <div><p class="eyebrow">Dados homologados · somente consulta</p>
+              <h2 id="real-dashboard-title">Painel financeiro operacional</h2>
+              <p>Caixa confirmado, contas em aberto e faturas com saldo, sem contabilizar a mesma saída duas vezes.</p></div>
+            <button type="button" class="btn" id="real-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar dados</button>
+          </div>
+          <p id="real-status" class="info-note real-dashboard-status" role="status">Carregando o financeiro homologado...</p>
+          <div class="real-dashboard-grid">
+            <section class="real-dashboard-panel real-dashboard-cash">
+              <div class="real-dashboard-panel-head">
+                <div><h3>Fluxo de Caixa homologado</h3><p>Apenas movimentações confirmadas. Faturas e boletos não são lançados novamente.</p></div>
+                <label class="real-dashboard-period"><span>Período do caixa</span><select id="real-cash-month" aria-label="Período do caixa homologado">
+                  <option value="todos">Todo o histórico homologado</option></select></label>
+              </div>
+              <div class="real-dashboard-metrics">
+                <div><span>Entradas efetivas</span><strong id="real-cash-in">—</strong></div>
+                <div><span>Saídas efetivas</span><strong id="real-cash-out">—</strong></div>
+                <div><span>Resultado das movimentações</span><strong id="real-cash-net">—</strong></div>
+              </div>
+              <p class="real-dashboard-fine">O resultado não corresponde necessariamente ao saldo bancário. <span id="real-cash-count">Aguardando...</span></p>
+              <details class="real-dashboard-details"><summary>Evolução mensal do caixa homologado</summary>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>Mês</th><th class="money">Entradas</th>
+                <th class="money">Saídas</th><th class="money">Resultado</th></tr></thead>
+                <tbody id="real-month-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
+              </details>
+            </section>
+            <section class="real-dashboard-panel">
+              <div class="real-dashboard-panel-head"><div><h3>Contas a pagar</h3><p>Compromissos sem baixa. Valores de referência dos boletos.</p></div>
+                <button type="button" class="btn" data-view="payables">Ver contas</button></div>
+              <div class="real-dashboard-lead"><strong id="real-bill-value">—</strong><span id="real-bill-count">—</span><span> contas em aberto</span></div>
+              <div class="real-dashboard-small-metrics">
+                <span><strong id="real-bill-overdue">—</strong> vencidas</span>
+                <span><strong id="real-bill-soon">—</strong> vencem em 7 dias</span>
+                <span><strong id="real-bill-undated">—</strong> sem data</span>
+              </div>
+              <p class="real-dashboard-fine">Valor de referência vencido: <strong id="real-bill-overdue-value">—</strong>. Descontos possíveis não foram deduzidos.</p>
+              <details class="real-dashboard-details"><summary>Próximos compromissos registrados</summary>
+                <ul id="real-bill-list" class="real-dashboard-list"><li>Aguardando...</li></ul></details>
+            </section>
+            <section class="real-dashboard-panel">
+              <div class="real-dashboard-panel-head"><div><h3>Faturas de cartões</h3><p>Saldo documental restante, separado do total de contas a pagar.</p></div>
+                <button type="button" class="btn" data-jump-section="ag-title">Abrir faturas</button></div>
+              <div class="real-dashboard-lead"><strong id="real-card-value">—</strong><span id="real-card-count">—</span><span> faturas com saldo</span></div>
+              <div class="real-dashboard-small-metrics">
+                <span><strong id="real-card-partial">—</strong> parcialmente pagas</span>
+                <span><strong id="real-card-undated">—</strong> sem vencimento</span>
+                <span><strong id="real-card-declared">—</strong> quitadas historicamente</span>
+              </div>
+              <p class="real-dashboard-fine">Quitações declaradas não criam saídas bancárias nem datas fictícias.</p>
+              <details class="real-dashboard-details"><summary>Faturas com saldo</summary>
+                <ul id="real-card-list" class="real-dashboard-list"><li>Aguardando...</li></ul></details>
+            </section>
+          </div>
+        </section>
         <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
-          <div><strong>Você está no ambiente de demonstração.</strong>
-          <p>Todos os valores abaixo são gerados pelos seus lançamentos de teste. A planilha oficial, o caixa real e os demais módulos permanecem inalterados.</p></div>
+          <div><strong>Abaixo começa o ambiente de demonstração.</strong>
+          <p>Os indicadores, gráficos e lançamentos abaixo são somente de testes. Os valores reais homologados estão no painel acima e nos módulos operacionais.</p></div>
         </div>
         <div class="hist-quicklink" role="note">
           <div>
@@ -1891,7 +1946,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116agenda1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116real1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1908,4 +1963,5 @@ init();
 <script src="./financeiro-vinculos-faturas.js?v=20261116agenda1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261116agenda1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261116real1" defer></script>
 </body></html>
