@@ -438,6 +438,60 @@
             </section>
           </div>
         </section>
+
+<section class="card cashx-card" id="cashx-panel" aria-labelledby="cashx-title">
+ <div class="card-head">
+  <div><p class="eyebrow">Fluxo de Caixa homologado</p>
+   <h2 id="cashx-title">Entenda o resultado de cada mês</h2>
+   <p>Consulte categorias, principais saídas e lançamentos originais. Nenhuma obrigação é somada novamente ao caixa.</p>
+  </div>
+  <button type="button" class="btn" id="cashx-refresh">Atualizar análise</button>
+ </div>
+ <p id="cashx-status" class="info-note cashx-status" role="status">Aguardando dados homologados...</p>
+ <div class="cashx-period">
+  <label>Período analisado <select id="cashx-month" aria-label="Período de análise"><option value="todos">Todo o histórico</option></select></label>
+  <p id="cashx-period-summary">Aguardando consulta.</p>
+ </div>
+ <div class="cashx-kpis">
+  <article class="insight-card"><span>Entradas do período</span><strong id="cashx-in">—</strong></article>
+  <article class="insight-card"><span>Saídas do período</span><strong id="cashx-out">—</strong></article>
+  <article class="insight-card"><span>Resultado do período</span><strong id="cashx-net">—</strong></article>
+ </div>
+ <p id="cashx-range" class="cashx-note">Os filtros da tabela não alteram os totais do período. Descrições não comprovam a identidade do fornecedor.</p>
+ <div class="cashx-layout">
+  <section class="cashx-block">
+   <div class="cashx-subhead"><h3>Principais categorias de saída</h3>
+    <p id="cashx-categories-summary">Aguardando categorias.</p></div>
+   <div id="cashx-categories" class="cashx-categories"><p>Carregando...</p></div>
+   <p class="cashx-note">Clique em uma categoria para consultar as transações correspondentes. Nomes são preservados da planilha original.</p>
+  </section>
+  <section class="cashx-block">
+   <div class="cashx-subhead"><h3>Lançamentos do período</h3>
+    <p>Dados somente leitura, sem criar ou alterar pagamentos.</p></div>
+   <div class="cashx-filters">
+    <label>Tipo
+     <select id="cashx-type" aria-label="Tipo de movimentação"><option value="saida">Saídas</option><option value="entrada">Entradas</option><option value="todos">Ambos</option></select></label>
+    <label>Categoria
+     <select id="cashx-category" aria-label="Categoria dos lançamentos"><option value="todos">Todas as categorias</option></select></label>
+    <label>Ordenar por
+     <select id="cashx-sort" aria-label="Ordenação dos lançamentos">
+      <option value="valor">Maior valor</option><option value="data">Data recente</option><option value="antiga">Data antiga</option></select></label>
+    <label>Buscar descrição, meio ou valor
+     <input id="cashx-search" type="search" maxlength="120" placeholder="Buscar lançamento..." aria-label="Busca de movimentos"></label>
+   </div>
+   <div class="table-wrap"><table class="data-table cashx-table">
+    <thead><tr><th>Data</th><th>Descrição original</th><th>Categoria</th>
+     <th>Tipo</th><th>Meio</th><th class="money">Valor</th></tr></thead>
+    <tbody id="cashx-rows"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody>
+   </table></div>
+   <div class="table-footer cashx-pager">
+    <span id="cashx-filter-summary">Aguardando consulta.</span>
+    <div><button type="button" class="btn" id="cashx-prev" disabled>Anterior</button>
+     <button type="button" class="btn" id="cashx-next" disabled>Próxima</button></div>
+   </div>
+  </section>
+ </div>
+</section>
         <div class="legacy-demo-block" hidden aria-hidden="true">
         <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
           <div><strong>Abaixo começa o ambiente de demonstração.</strong>
@@ -1998,7 +2052,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116persistencia1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116detail1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -2016,4 +2070,5 @@ init();
 <script src="./financeiro-agenda-faturas.js?v=20261116agenda1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 <script src="./financeiro-resumo-operacional.js?v=20261116real1" defer></script>
+<script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
 </body></html>
