@@ -11,8 +11,9 @@ const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data
 const write=(id,text)=>{const node=$(id);if(node)node.textContent=text};
 const groupName=g=>g==='autopecas'?'Autopeças':'Cartões / outros meios';
 const monthOf=r=>(r.grupo==='cartoes'?r.mes_fatura:r.vencimento)?.slice(0,7)||'sem-mes';
-let documents=[],page=0,loading=null;
+let documents=[],page=0,monthPage=0,loading=null;
 const PAGE_SIZE=35;
+const MONTH_PAGE_SIZE=12;
 const fields='id,grupo,codigo_origem,linha_excel,data_evento,vencimento,data_compra,mes_fatura,descricao,fornecedor_nome,cartao_nome,parcela,meio,valor_registrado,valor_cheio_documento,valor_com_desconto_informado,valor_pago_informado,data_pagamento_informada,situacao_origem,incluir,revisao_origem';
 async function fetchAll(){
  const all=[],size=500;
@@ -97,12 +98,18 @@ function drawSummary(){
  const currentMonth=$('doc-month')?.value||'todos';
  const months=[...byMonth].filter(([key])=>currentMonth==='todos'||currentMonth===key)
   .sort(([a],[b])=>(b==='sem-mes'?'0000-00':b).localeCompare(a==='sem-mes'?'0000-00':a));
+ const monthPages=Math.max(1,Math.ceil(months.length/MONTH_PAGE_SIZE));
+ monthPage=Math.min(Math.max(monthPage,0),monthPages-1);
+ const visibleMonths=months.slice(monthPage*MONTH_PAGE_SIZE,(monthPage+1)*MONTH_PAGE_SIZE);
  const monthly=$('doc-month-rows');
- if(monthly)monthly.innerHTML=months.length?months.map(([m,v])=>
+ if(monthly)monthly.innerHTML=visibleMonths.length?visibleMonths.map(([m,v])=>
   '<tr><td>'+escapeHTML(m==='sem-mes'?'Sem mês':m.slice(5,7)+'/'+m.slice(0,4))+'</td>'+
   '<td class="money">'+brl(v.auto/100)+' <small>'+v.autoCount+' registros</small></td>'+
   '<td class="money">'+brl(v.card/100)+' <small>'+v.cardCount+' registros</small></td></tr>'
  ).join(''):'<tr><td colspan="3" class="empty">Nenhum mês corresponde ao filtro.</td></tr>';
+ write('doc-month-paging',months.length+' mês(es) · página '+(monthPage+1)+' de '+monthPages);
+ if($('doc-month-prev'))$('doc-month-prev').disabled=monthPage===0;
+ if($('doc-month-next'))$('doc-month-next').disabled=monthPage>=monthPages-1;
 }
 function draw(){
  const list=filters(),pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
@@ -206,10 +213,12 @@ async function refresh(){
 function setup(){
  if(!$('doc-rows'))return;
  for(const id of ['doc-type','doc-include','doc-month'])
-  $(id)?.addEventListener('change',()=>{page=0;draw()});
+  $(id)?.addEventListener('change',()=>{page=0;if(id==='doc-month')monthPage=0;draw()});
  $('doc-search')?.addEventListener('input',()=>{page=0;draw()});
  $('doc-prev')?.addEventListener('click',()=>{page--;draw()});
  $('doc-next')?.addEventListener('click',()=>{page++;draw()});
+ $('doc-month-prev')?.addEventListener('click',()=>{monthPage--;drawSummary()});
+ $('doc-month-next')?.addEventListener('click',()=>{monthPage++;drawSummary()});
  $('doc-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  $('doc-export')?.addEventListener('click',exportCsv);
 }
