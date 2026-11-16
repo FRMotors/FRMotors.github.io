@@ -140,7 +140,7 @@
 .fin-doc-match-note{padding:0 12px 14px}}
 
 .vl-card{margin-bottom:16px}
-.vl-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:2px 20px 15px}
+.vl-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:2px 20px 15px}
 .vl-overview .insight-card{min-width:0;padding:13px}
 .vl-overview strong{font-size:22px}
 .vl-message{padding:0 20px 15px;margin:0}
@@ -162,6 +162,17 @@
 .vl-ack input{margin-top:3px;flex-shrink:0}
 @media(max-width:990px){.vl-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.vl-overview{gap:8px;padding:2px 12px 12px}.vl-message{padding:0 12px 12px}.vl-overview .insight-card{padding:12px}}
+
+.vl-modal-summary{padding:12px;border:1px solid var(--stroke);border-radius:9px;font-size:14px;font-weight:750;margin:6px 0 14px}
+.vl-history{margin:0 0 15px;border:1px solid var(--stroke);border-radius:10px;overflow:hidden}
+.vl-history[hidden],#vl-entry-fields[hidden],#vl-mode-wrap[hidden],#vl-readonly-close[hidden],#vl-submit[hidden]{display:none}
+.vl-history>h3{font-size:13px;font-weight:800;padding:12px;margin:0}
+.vl-history .table-wrap{max-height:210px;overflow:auto}
+.vl-history .data-table{font-size:12px}
+.vl-history .data-table th,.vl-history .data-table td{min-width:74px;padding:9px}
+.vl-select-label{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.vl-select-label select{max-width:100%;width:100%}
+.vl-card .data-table td:nth-child(4),.vl-card .data-table td:nth-child(5),.vl-card .data-table td:nth-child(6){min-width:110px}
 </style>
 </head>
 <body>
@@ -657,30 +668,35 @@
   </div>
   <div class="vl-overview">
    <article class="insight-card"><span>Faturas sem vínculo</span><strong id="vl-open-count">—</strong></article>
-   <article class="insight-card"><span>Faturas conferidas</span><strong id="vl-confirmed-count">—</strong></article>
+   <article class="insight-card"><span>Faturas integralmente pagas</span><strong id="vl-confirmed-count">—</strong></article>
+   <article class="insight-card"><span>Faturas parcialmente pagas</span><strong id="vl-partial-count">—</strong></article>
+   <article class="insight-card"><span>Pagamentos possíveis em revisão</span><strong id="vl-review-count">—</strong></article>
    <article class="insight-card"><span>Autopeças para revisar</span><strong id="vl-auto-count">—</strong></article>
    <article class="insight-card"><span>Exceções conferidas</span><strong id="vl-auto-confirmed-count">—</strong></article>
   </div>
   <p class="info-note vl-message" id="vl-load-status" role="status" aria-live="polite">Aguardando consulta dos pagamentos.</p>
-  <p class="info-note vl-message">Uma fatura somente será vinculada quando o valor do pagamento for <strong>exatamente igual</strong> ao total documental. Para autopeças pagas após o vencimento, a data do pagamento e o fornecedor também devem coincidir com o Fluxo. Em ambos os casos, você escolhe a saída e informa uma justificativa.</p>
+  <p class="info-note vl-message">Uma fatura pode receber <strong>vários pagamentos parciais</strong>, cada um associado a uma saída bancária já confirmada. A soma nunca pode ultrapassar o valor documental. O sistema mostra total pago, saldo e histórico por parcela. Pagamentos divergentes podem ser apenas anotados para revisão, sem quitar a fatura.</p>
  </section>
  <section class="card vl-card">
   <div class="card-head"><div><h2>Faturas e pagamentos bancários</h2>
-   <p>Escolha uma fatura para localizar uma saída confirmada do Fluxo de Caixa ou de um extrato importado.</p></div></div>
+   <p>Adicione quantos pagamentos comprovados forem necessários, em datas diferentes, até completar o saldo da fatura.</p></div></div>
   <div class="data-toolbar vl-controls">
    <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
     <input type="search" id="vl-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas para vincular"></label>
    <select id="vl-filter-status" class="filter-select" aria-label="Filtrar faturas por situação">
     <option value="todos">Todas as faturas</option>
-    <option value="pendentes">Sem vínculo</option>
-    <option value="conferidos">Vinculadas</option>
+    <option value="pendentes">Com saldo restante</option>
+    <option value="parciais">Parcialmente pagas</option>
+    <option value="conferidos">Quitadas</option>
+    <option value="revisao">Em revisão</option>
    </select>
   </div>
   <div class="table-wrap"><table class="data-table"><thead><tr>
    <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
-   <th class="money">Valor documental</th><th>Situação do vínculo</th><th>Ação</th>
+   <th class="money">Valor da fatura</th><th class="money">Total pago</th><th class="money">Saldo restante</th>
+   <th>Situação</th><th>Ação</th>
   </tr></thead>
-   <tbody id="vl-invoices"><tr><td colspan="6" class="empty">Aguardando conferência...</td></tr></tbody>
+   <tbody id="vl-invoices"><tr><td colspan="8" class="empty">Aguardando conferência...</td></tr></tbody>
   </table></div>
   <div class="table-footer" id="vl-invoice-count">Aguardando dados.</div>
  </section>
@@ -696,32 +712,57 @@
  <dialog id="vl-dialog" class="fin-dialog vl-dialog" aria-labelledby="vl-title">
   <form id="vl-form">
    <div class="dialog-head">
-    <div><h2 id="vl-title">Vincular pagamento existente</h2>
-     <p id="vl-description">Selecione e confira o documento.</p></div>
+    <div><h2 id="vl-title">Pagamentos da fatura</h2>
+     <p id="vl-description">Selecione a fatura para consultar os valores.</p></div>
     <button type="button" class="dialog-close" id="vl-close" aria-label="Fechar">&times;</button>
    </div>
    <div class="dialog-body">
-    <div class="fields vl-form-fields">
-     <label>Origem do pagamento
-      <select id="vl-source" required>
-       <option value="fluxo">Fluxo de Caixa homologado</option>
-       <option value="extrato" id="vl-ext-option">Extrato bancário importado</option>
-      </select></label>
-     <label>Saída já confirmada (valores exatos)
-      <select id="vl-bank" required><option value="">Selecione uma saída...</option></select></label>
+    <p class="vl-modal-summary" id="vl-invoice-summary" role="status"></p>
+    <div class="vl-history" id="vl-history-wrapper" hidden>
+     <h3>Pagamentos já vinculados</h3>
+     <div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Nº</th><th>Pago em</th><th class="money">Valor</th><th>Origem</th><th>Conferência</th></tr></thead>
+      <tbody id="vl-history-rows"></tbody>
+     </table></div>
     </div>
-    <p class="info-note" id="vl-bank-info" role="status">Selecione a origem.</p>
-    <p class="info-note" id="vl-match-check">O valor do pagamento precisa ser igual ao valor documental.</p>
-    <label class="vl-reason-label">Justificativa da conferência
-     <textarea id="vl-reason" rows="3" required minlength="12" maxlength="1000" placeholder="Ex.: Comprovante de pagamento conferido com a fatura e o extrato, mesma data e valor."></textarea></label>
-    <label class="vl-ack"><input type="checkbox" id="vl-ack" required>
-     Confirmo que esta saída corresponde ao documento informado. Não será criado um novo pagamento.</label>
-    <p class="status" id="vl-error" role="alert"></p>
-    <div class="form-actions">
-     <button type="button" class="btn" onclick="this.closest('dialog').close()" >Cancelar</button>
-     <button type="submit" class="btn btn-primary" id="vl-submit" disabled>Confirmar vínculo</button>
+    <div id="vl-entry-fields">
+     <label id="vl-mode-wrap" class="vl-select-label">Tipo de registro
+      <select id="vl-mode">
+       <option value="pagamento">Adicionar pagamento confirmado, integral ou parcial</option>
+       <option value="revisao">Anotar pagamento possível com divergência, sem dar baixa</option>
+      </select>
+     </label>
+     <div class="fields vl-form-fields">
+      <label>Origem do pagamento
+       <select id="vl-source" required>
+        <option value="fluxo">Fluxo de Caixa homologado</option>
+        <option value="extrato" id="vl-ext-option">Extrato bancário importado</option>
+       </select>
+      </label>
+      <label>Buscar saída por descrição, data ou valor
+       <input id="vl-bank-search" type="search" placeholder="Ex.: SICOOB, 12/08 ou 250,00">
+      </label>
+      <label>Saída bancária já confirmada
+       <select id="vl-bank" required><option value="">Selecione uma saída...</option></select>
+      </label>
+     </div>
+     <p class="info-note" id="vl-bank-info" role="status">Selecione a origem.</p>
+     <p class="info-note" id="vl-match-check">O valor aplicado será exatamente o da saída escolhida.</p>
+     <label class="vl-reason-label">Justificativa da conferência
+      <textarea id="vl-reason" rows="3" required minlength="12" maxlength="1500" placeholder="Ex.: Primeira parcela da fatura, pagamento identificado no extrato e valor conferido."></textarea>
+     </label>
+     <label class="vl-ack"><input type="checkbox" id="vl-ack" required>
+      Conferi a saída e confirmo que ela corresponde ao documento. Sei que não será criado um segundo pagamento no caixa.</label>
+     <p class="status" id="vl-error" role="alert"></p>
+     <div class="form-actions">
+      <button type="button" class="btn" id="vl-cancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary" id="vl-submit" disabled>Registrar pagamento</button>
+     </div>
+     <p class="info-note">Cada saída bancária só pode ser usada uma vez. Um pagamento parcial reduz o saldo e a fatura só será considerada quitada quando a soma dos pagamentos vinculados alcançar o total. Anotações de revisão não contam como pagamento.</p>
     </div>
-    <p class="info-note">Essa conferência registra apenas uma relação entre documento e saída existente. Faturas com pagamentos parciais ou valores divergentes continuam pendentes para revisão específica.</p>
+    <div id="vl-readonly-close" class="form-actions" hidden>
+     <button type="button" class="btn" id="vl-close-history">Fechar histórico</button>
+    </div>
    </div>
   </form>
  </dialog>
@@ -1620,6 +1661,6 @@ init();
 <script src="./financeiro-baixas-operacionais.js?v=20261116delete1" defer></script>
 <script src="./financeiro-documentos.js?v=20261116docs1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261116conciliacao1" defer></script>
-<script src="./financeiro-vinculos-faturas.js?v=20261116vinculos1" defer></script>
+<script src="./financeiro-vinculos-faturas.js?v=20261116parcelas1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 </body></html>
