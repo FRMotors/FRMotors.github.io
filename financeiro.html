@@ -261,6 +261,54 @@
 .fin-agenda-layout{padding:0 12px 12px}.fin-agenda-status{padding:0 12px 12px}
 .fin-agenda-shortcuts{width:100%}.fin-agenda-shortcuts .btn{flex:1 1 155px}
 .fin-agenda-calendar-panel{padding:9px}.fin-agenda-calendar .ag-day{min-height:43px;padding:3px}}
+
+/* Operação real: indicadores diferenciados do ambiente de demonstração. */
+.real-dashboard{margin:0 0 20px;overflow:hidden}
+.real-dashboard>.card-head{align-items:flex-start}
+.real-dashboard>.card-head .eyebrow{margin:0 0 5px}
+.real-dashboard>.card-head h2{font-size:18px;margin:0 0 4px}
+.real-dashboard>.card-head p{font-size:12px;line-height:1.5;margin:0}
+.real-dashboard-status{margin:0;padding:0 18px 12px;font-size:12px}
+.real-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0 18px 18px}
+.real-dashboard-panel{border:1px solid var(--stroke);border-radius:12px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.real-dashboard-cash{grid-column:1/-1}
+.real-dashboard-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.real-dashboard-panel-head h3{font-size:14px;font-weight:800;margin:0 0 5px}
+.real-dashboard-panel-head p{font-size:11px;color:var(--muted);line-height:1.5;margin:0;max-width:590px}
+.real-dashboard-panel-head>.btn{padding:8px 10px}
+.real-dashboard-period{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted)}
+.real-dashboard-period select{font-size:12px;max-width:100%;min-width:195px}
+.real-dashboard-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.real-dashboard-metrics>div{display:flex;flex-direction:column;gap:5px;min-width:0;border:1px solid var(--stroke);border-radius:10px;padding:13px}
+.real-dashboard-metrics>div>span{font-size:11px;color:var(--muted)}
+.real-dashboard-metrics>div>strong{font-size:22px;line-height:1.25;overflow-wrap:anywhere;color:var(--ink)}
+.real-dashboard-metrics strong.negative{color:var(--bad)}
+.real-dashboard-fine{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
+.real-dashboard-lead{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.real-dashboard-lead strong{font-size:24px;font-weight:800;line-height:1.15;overflow-wrap:anywhere}
+.real-dashboard-lead span{font-size:12px;color:var(--muted)}
+.real-dashboard-small-metrics{display:flex;gap:8px;flex-wrap:wrap}
+.real-dashboard-small-metrics span{font-size:11px;color:var(--muted);padding:7px 9px;border:1px solid var(--stroke);border-radius:9px}
+.real-dashboard-small-metrics strong{font-size:13px;color:var(--ink)}
+.real-dashboard-details{border-top:1px solid var(--stroke);margin-top:auto;padding-top:10px}
+.real-dashboard-details summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);padding:4px 0}
+.real-dashboard-details .data-table{font-size:12px}
+.real-dashboard-details .data-table td,.real-dashboard-details .data-table th{padding:9px}
+.real-dashboard-list{list-style:none;padding:8px 0 0;margin:0}
+.real-dashboard-list li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--stroke);padding:9px 0}
+.real-dashboard-list li:last-child{border-bottom:0}
+.real-dashboard-list li>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.real-dashboard-list strong{font-size:12px}
+.real-dashboard-list small{font-size:10px;color:var(--muted)}
+.real-dashboard-list b{white-space:nowrap;font-size:12px}
+.real-dashboard-list .real-empty-line{font-size:11px;color:var(--muted)}
+@media(max-width:960px){.real-dashboard-grid{grid-template-columns:1fr}.real-dashboard-cash{grid-column:auto}}
+@media(max-width:640px){.real-dashboard-grid{padding:0 12px 12px;gap:10px}
+.real-dashboard-status{padding:0 12px 12px}.real-dashboard-panel{padding:12px;gap:10px}
+.real-dashboard-metrics{grid-template-columns:1fr;gap:6px}
+.real-dashboard-metrics>div{padding:10px}.real-dashboard-metrics>div>strong{font-size:19px}
+.real-dashboard-lead strong{font-size:20px}
+.real-dashboard-period,.real-dashboard-period select{width:100%}}
 </style>
 </head>
 <body>
