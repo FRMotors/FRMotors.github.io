@@ -1,0 +1,231 @@
+/* FR Motors | Carteira de Contas a Pagar operacional 2026.
+   Origem: fin_contas_pagar. Pagamentos só via conciliação bancária já existente.
+   Valor previsto e valor cheio confirmado são grandezas distintas. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value)||0);
+const dateBR=date=>date?String(date).slice(0,10).split('-').reverse().join('/'):'Sem vencimento';
+const today=()=>{
+ const n=new Date();
+ return [n.getFullYear(),String(n.getMonth()+1).padStart(2,'0'),String(n.getDate()).padStart(2,'0')].join('-');
+};
+const plusDays=(ymd,amount)=>{
+ const d=new Date(ymd+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+amount);
+ return d.toISOString().slice(0,10);
+};
+const set=(id,text)=>{const e=$(id);if(e)e.textContent=text;};
+const cents=x=>Math.round(Number(x)*100);
+let all=[],suppliers=new Map(),page=0,busy=false,loading=null,editing=null;
+const pageSize=25;
+function stateOf(r,now){
+ if(r.situacao==='conciliado_extrato')return 'conciliado';
+ if(!r.vencimento)return 'sem_data';
+ if(r.vencimento<now)return 'vencido';
+ if(r.vencimento===now)return 'hoje';
+ return 'a_vencer';
+}
+function estimatedDiscount(r,now){
+ if(r.situacao!=='aberto'||!r.vencimento||r.vencimento<now||!r.fornecedor_id)return null;
+ const s=suppliers.get(r.fornecedor_id);
+ if(!s||!s.desconto_ate_vencimento)return null;
+ const pct=Number(s.desconto_atual_pct);
+ if(!Number.isFinite(pct)||pct<=0||pct>=100)return null;
+ const base=cents(r.valor_referencia),discount=Math.round(base*pct/100);
+ return discount>0?{pct,discount,liquido:base-discount}:null;
+}
+function statusLabel(s){
+ return {conciliado:'Conciliado no extrato',vencido:'Vencido',sem_data:'Sem vencimento',
+  hoje:'Vence hoje',a_vencer:'A vencer'}[s]||s;
+}
+function filterRows(){
+ const q=($('cp-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
+ const filter=$('cp-status-filter')?.value||'todos';
+ const month=$('cp-month-filter')?.value||'todos';
+ const now=today(),next7=plusDays(now,7);
+ return all.filter(r=>{
+  const s=stateOf(r,now);
+  const accepted=filter==='todos'||(filter==='aberto'&&r.situacao==='aberto')||
+    (filter==='proximos7'&&r.situacao==='aberto'&&r.vencimento&&r.vencimento>=now&&r.vencimento<=next7)||
+    filter===s;
+  if(!accepted||(month!=='todos'&&(!r.vencimento||r.vencimento.slice(0,7)!==month)))return false;
+  const haystack=[r.fornecedor_nome,r.descricao,r.categoria,r.vencimento,r.linha_original,
+   r.codigo_origem,r.observacoes].join(' ').toLocaleLowerCase('pt-BR');
+  return haystack.includes(q);
+ });
+}
+function updateMonths(){
+ const control=$('cp-month-filter');
+ if(!control)return;
+ const existing=control.value||'todos';
+ const months=[...new Set(all.map(r=>r.vencimento?.slice(0,7)).filter(Boolean))].sort();
+ control.replaceChildren(new Option('Todos os meses','todos'),...months.map(m=>{
+  const [y,mm]=m.split('-');return new Option(mm+'/'+y,m);
+ }));
+ if(months.includes(existing))control.value=existing;
+}
+function draw(){
+ const now=today(),next7=plusDays(now,7);
+ const open=all.filter(r=>r.situacao==='aberto');
+ const reconciled=all.filter(r=>r.situacao==='conciliado_extrato');
+ const overdue=open.filter(r=>r.vencimento&&r.vencimento<now);
+ const next=open.filter(r=>r.vencimento&&r.vencimento>=now&&r.vencimento<=next7);
+ const undated=open.filter(r=>!r.vencimento);
+ set('cp-count',String(open.length));
+ set('cp-total',money(open.reduce((a,r)=>a+cents(r.valor_referencia),0)/100));
+ set('cp-overdue',money(overdue.reduce((a,r)=>a+cents(r.valor_referencia),0)/100));
+ set('cp-soon',String(next.length));
+ set('cp-undated',String(undated.length));
+ set('cp-reconciled',String(reconciled.length));
+ const rows=filterRows(),pageCount=Math.max(1,Math.ceil(rows.length/pageSize));
+ page=Math.min(Math.max(0,page),pageCount-1);
+ const visible=rows.slice(page*pageSize,(page+1)*pageSize);
+ const tbody=$('cp-rows');
+ if(tbody){
+  tbody.innerHTML=visible.length?visible.map(r=>{
+   const st=stateOf(r,now),possible=estimatedDiscount(r,now);
+   const discount=r.desconto_efetivo!==null?money(r.desconto_efetivo):
+    (possible?'<span class="cp-possible">'+money(possible.discount)+' <small>possível '+possible.pct+'%</small></span>':'—');
+   const amount=r.situacao==='conciliado_extrato'?
+    '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>':
+    (possible?'<span class="cp-possible">'+money(possible.liquido/100)+'<small>estimativa, não pago</small></span>':'—');
+   const statusClass=st==='conciliado'?'paid':st==='vencido'?'overdue':'open';
+   return '<tr>'+
+    '<td><span class="row-main">'+esc(dateBR(r.vencimento))+'</span></td>'+
+    '<td><span class="row-main">'+esc(r.fornecedor_nome)+'</span>'+
+       (r.descricao!==r.fornecedor_nome?'<span class="row-sub">'+esc(r.descricao)+'</span>':'')+
+       '<small class="cp-src">Planilha · linha '+esc(r.linha_excel)+'</small></td>'+
+    '<td>'+esc(r.categoria||'Não informada')+'</td>'+
+    '<td class="money"><strong>'+money(r.valor_referencia)+'</strong></td>'+
+    '<td class="money">'+(r.valor_cheio_informado===null?'—':money(r.valor_cheio_informado))+'</td>'+
+    '<td class="money">'+discount+'</td>'+
+    '<td class="money cp-value">'+amount+'</td>'+
+    '<td><span class="state '+statusClass+'">'+esc(statusLabel(st))+'</span></td>'+
+    '<td><div class="cp-actions"><button class="row-edit-button" type="button" data-cp-edit="'+esc(r.id)+'">Editar</button>'+
+      (r.situacao==='aberto'?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Conciliar</button>':'')+
+    '</div></td></tr>';
+  }).join(''):
+   '<tr><td colspan="9" class="empty">Nenhum compromisso corresponde aos filtros.</td></tr>';
+ }
+ set('cp-shown',rows.length+' de '+all.length+' compromisso(s) · página '+(page+1)+' de '+pageCount);
+ if($('cp-prev'))$('cp-prev').disabled=page===0;
+ if($('cp-next'))$('cp-next').disabled=page>=pageCount-1;
+}
+async function refresh(){
+ if(loading)return loading;
+ loading=(async()=>{
+  set('cp-load-status','Consultando a carteira operacional...');
+  try{
+   if(typeof db==='undefined'||!db)throw Error('Conexão indisponível.');
+   const {data:autorizado,error:authError}=await db.rpc('fluxo_caixa_autorizado');
+   if(authError||autorizado!==true)throw Error('Acesso financeiro não autorizado.');
+   const [rows,suppliersRes]=await Promise.all([
+    db.from('fin_contas_pagar').select(
+     'id,origem_chave,linha_origem_id,linha_excel,linha_original,codigo_origem,descricao,fornecedor_nome,fornecedor_id,categoria,vencimento,valor_referencia,valor_cheio_informado,desconto_efetivo,juros_efetivos,valor_pago,data_pagamento,situacao,observacoes'
+    ).order('vencimento',{ascending:true,nullsFirst:false}).order('linha_excel',{ascending:true}).limit(500),
+    db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento')
+   ]);
+   if(rows.error)throw rows.error;
+   if(suppliersRes.error)throw suppliersRes.error;
+   if((rows.data||[]).length>=500)throw Error('Carteira maior que 500 contas. Paginação do banco necessária.');
+   all=rows.data||[];
+   suppliers=new Map((suppliersRes.data||[]).map(x=>[x.id,x]));
+   updateMonths();draw();
+   set('cp-load-status','Carteira operacional ativa: '+all.length+
+    ' registros do Excel homologado. Conciliações bancárias preservadas. Nenhuma saída extra foi criada.');
+  }catch(error){
+   set('cp-load-status','Falha ao consultar contas a pagar: '+(error.message||error));
+   if($('cp-rows'))$('cp-rows').innerHTML='<tr><td colspan="9" class="empty">Não foi possível consultar a carteira operacional.</td></tr>';
+  }
+ })();
+ try{await loading}finally{loading=null}
+}
+function openEdit(id){
+ const r=all.find(x=>x.id===id);if(!r)return;
+ editing=id;
+ set('cp-edit-title','Editar compromisso · '+r.fornecedor_nome);
+ set('cp-edit-source','Origem: ABERTOS FLUXO, linha '+r.linha_excel+
+  ' · valor da planilha '+money(r.valor_referencia)+
+  (r.situacao==='conciliado_extrato'?' · conciliado no extrato por '+money(r.valor_pago):''));
+ $('cp-edit-date').value=r.vencimento||'';
+ $('cp-edit-full').value=r.valor_cheio_informado===null?'':Number(r.valor_cheio_informado).toFixed(2);
+ $('cp-edit-category').value=r.categoria||'';
+ $('cp-edit-notes').value=r.observacoes||'';
+ set('cp-edit-message','');
+ const modal=$('cp-edit-dialog');
+ if(modal?.showModal)modal.showModal();
+ else modal?.setAttribute('open','');
+}
+async function saveEdit(event){
+ event.preventDefault();
+ if(busy||!editing)return;
+ const id=editing,date=$('cp-edit-date').value||null;
+ const fullRaw=$('cp-edit-full').value.trim(),full=fullRaw===''?null:Number(fullRaw);
+ if(full!==null&&(!Number.isFinite(full)||full<=0||Math.abs(full*100-Math.round(full*100))>0.00001)){
+  set('cp-edit-message','Informe um valor cheio válido, com no máximo duas casas decimais.');return;
+ }
+ busy=true;$('cp-save').disabled=true;
+ try{
+  const {error}=await db.rpc('fin_cp_editar',{
+   p_id:id,p_vencimento:date,p_valor_cheio:full,
+   p_categoria:$('cp-edit-category').value,p_observacoes:$('cp-edit-notes').value
+  });
+  if(error)throw error;
+  $('cp-edit-dialog')?.close?.();editing=null;
+  await refresh();
+  set('cp-load-status','Alteração salva com auditoria, sem modificar a planilha original ou o caixa.');
+ }catch(e){set('cp-edit-message','Não foi possível salvar: '+(e.message||e));}
+ finally{busy=false;$('cp-save').disabled=false}
+}
+async function sync(){
+ if(busy)return;
+ busy=true;const btn=$('cp-sync');if(btn)btn.disabled=true;
+ try{
+  set('cp-load-status','Sincronizando conciliações validadas...');
+  const {data,error}=await db.rpc('fin_cp_sincronizar_conciliacoes');
+  if(error)throw error;
+  await refresh();
+  set('cp-load-status',(data?.novos_vinculos||0)+' nova(s) conciliação(ões) bancária(s) vinculada(s) à carteira. Nenhum pagamento duplicado.');
+ }catch(e){set('cp-load-status','Falha na sincronização: '+(e.message||e));}
+ finally{busy=false;if(btn)btn.disabled=false}
+}
+async function reconcile(id){
+ const record=all.find(r=>r.id===id);if(!record||record.situacao!=='aberto')return;
+ if(!window.frFinanceUI?.selectView||!window.frImportUI?.refresh){
+  set('cp-load-status','A seção Importações ainda não está pronta. Atualize a página e tente novamente.');return;
+ }
+ window.frFinanceUI.selectView('imports');
+ try{
+  await window.frImportUI.refresh();
+  const select=$('reconcile-parcel');
+  const value='excel:'+record.linha_origem_id;
+  if(!select||![...select.options].some(option=>option.value===value)){
+   const status=$('reconcile-status');
+   if(status)status.textContent='A conta está preservada na carteira, mas sua linha não está disponível no lote atualmente homologado. Confira o arquivo antes de conciliar.';
+   return;
+  }
+  select.value=value;select.dispatchEvent(new Event('change',{bubbles:true}));
+  select.scrollIntoView({block:'center',behavior:'smooth'});
+ }catch(e){set('cp-load-status','Não foi possível abrir a conciliação: '+(e.message||e));}
+}
+function init(){
+ if(!$('cp-rows'))return;
+ $('cp-search')?.addEventListener('input',()=>{page=0;draw()});
+ $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data')$('cp-month-filter').value='todos';draw()});
+ $('cp-month-filter')?.addEventListener('change',()=>{page=0;draw()});
+ $('cp-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
+ $('cp-sync')?.addEventListener('click',()=>sync().catch(()=>{}));
+ $('cp-prev')?.addEventListener('click',()=>{page--;draw()});
+ $('cp-next')?.addEventListener('click',()=>{page++;draw()});
+ $('cp-rows').addEventListener('click',ev=>{
+  const e=ev.target.closest('[data-cp-edit]'),r=ev.target.closest('[data-cp-reconcile]');
+  if(e)openEdit(e.dataset.cpEdit);
+  else if(r)reconcile(r.dataset.cpReconcile).catch(()=>{});
+ });
+ $('cp-edit-form')?.addEventListener('submit',saveEdit);
+ $('cp-edit-cancel')?.addEventListener('click',()=>$('cp-edit-dialog')?.close?.());
+}
+window.frOperationalPayablesUI={refresh,sync};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
