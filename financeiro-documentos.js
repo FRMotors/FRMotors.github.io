@@ -96,7 +96,7 @@ function drawSummary(){
  });
  const currentMonth=$('doc-month')?.value||'todos';
  const months=[...byMonth].filter(([key])=>currentMonth==='todos'||currentMonth===key)
-  .sort(([a],[b])=>b.localeCompare(a));
+  .sort(([a],[b])=>(b==='sem-mes'?'0000-00':b).localeCompare(a==='sem-mes'?'0000-00':a));
  const monthly=$('doc-month-rows');
  if(monthly)monthly.innerHTML=months.length?months.map(([m,v])=>
   '<tr><td>'+escapeHTML(m==='sem-mes'?'Sem mês':m.slice(5,7)+'/'+m.slice(0,4))+'</td>'+
@@ -142,12 +142,21 @@ function draw(){
 function updateMonths(){
  const sel=$('doc-month');if(!sel)return;
  const value=sel.value||'todos';
- const months=[...new Set(documents.map(monthOf))].sort().reverse();
+ const months=[...new Set(documents.map(monthOf))]
+  .sort((a,b)=>(b==='sem-mes'?'0000-00':b).localeCompare(a==='sem-mes'?'0000-00':a));
  sel.replaceChildren(new Option('Todos os meses','todos'),
    ...months.map(m=>new Option(m==='sem-mes'?'Sem mês':m.slice(5,7)+'/'+m.slice(0,4),m)));
  if(months.includes(value))sel.value=value;
 }
-function csvQuoted(s){return '"'+String(s??'').replace(/"/g,'""')+'"'}
+function csvQuoted(s){
+ let value=String(s??'');
+ // Texto de origem não deve executar fórmulas quando o CSV for aberto em planilhas.
+ if(/^[\s\x00-\x1f]*[=+@]/.test(value)||
+   (/^[\s\x00-\x1f]*-/.test(value)&&!/^\s*-\d+(?:[,.]\d+)?\s*$/.test(value))){
+  value="'"+value;
+ }
+ return '"'+value.replace(/"/g,'""')+'"';
+}
 function exportCsv(){
  const rows=filters();
  const cols=[['Origem','Código','Linha Excel','Incluir','Descrição','Fornecedor','Cartão','Parcela','Data evento','Vencimento','Mês fatura',
@@ -176,7 +185,13 @@ async function refresh(){
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
    const rows=await fetchAll();
-   documents=rows;
+   documents=rows.sort((a,b)=>{
+    const m1=monthOf(a)==='sem-mes'?'0000-00':monthOf(a);
+    const m2=monthOf(b)==='sem-mes'?'0000-00':monthOf(b);
+    return m2.localeCompare(m1)||
+      String(b.data_evento||b.vencimento||'').localeCompare(String(a.data_evento||a.vencimento||''))||
+      b.linha_excel-a.linha_excel;
+   });
    updateMonths();draw();
    const included=documents.filter(r=>r.incluir).length,ignored=documents.length-included;
    write('doc-status','Histórico conferido: '+documents.length+' documentos, '+included+
