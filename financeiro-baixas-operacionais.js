@@ -274,6 +274,9 @@ function init(){
  $('op-new-form')?.addEventListener('submit',createManual);
  document.querySelectorAll('[data-op-close]').forEach(b=>
   b.addEventListener('click',()=>closeDialog(b.dataset.opClose)));
+ if(!document.querySelector('[data-view-panel="payables"]')?.hidden){
+  load().catch(e=>write('op-manual-count','Falha ao carregar boletos: '+(e.message||e)));
+ }
  $('op-manual-rows')?.addEventListener('click',e=>{
   const button=e.target.closest('[data-op-pay-manual]');
   if(button)openPay('avulso:'+button.dataset.opPayManual).catch(()=>{});
