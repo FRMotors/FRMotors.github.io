@@ -432,6 +432,12 @@ function init(){
  $('vl-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  if(!document.querySelector('[data-view-panel="expenses"]')?.hidden)refresh().catch(()=>{});
 }
-window.frDocumentLinksUI={refresh};
+async function openInvoiceFromAgenda(id){
+ if(loading)await loading;
+ if(!invoices.some(x=>x.id===id))await refresh();
+ if(!invoices.some(x=>x.id===id))throw Error('Fatura não encontrada. Atualize a conferência.');
+ open('fatura',id);
+}
+window.frDocumentLinksUI={refresh,openInvoice:openInvoiceFromAgenda};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

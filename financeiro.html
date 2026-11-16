@@ -214,6 +214,53 @@
  flex-wrap:wrap;gap:10px}
 .fin-doc-month-panel .fin-doc-paging>div{display:flex;gap:8px}
 @media(max-width:620px){.vl-exceptions-summary,.vl-exceptions-empty{padding-left:12px;padding-right:12px}}
+
+.fin-agenda-shortcuts{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.fin-agenda-card{margin:0 0 18px;scroll-margin-top:95px}
+#ag-title{scroll-margin-top:95px}
+.fin-agenda-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 18px 14px}
+.fin-agenda-stats .insight-card{padding:14px;min-width:0}
+.fin-agenda-stats .insight-card strong{font-size:21px;overflow-wrap:anywhere}
+.fin-agenda-stats .insight-card small{display:block;margin-top:5px}
+.fin-agenda-status{margin:0;padding:0 18px 14px}
+.fin-agenda-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:14px;padding:0 18px 16px}
+.fin-agenda-calendar-panel,.fin-agenda-guidance{padding:14px;border:1px solid var(--stroke);border-radius:12px;min-width:0}
+.fin-agenda-calendar-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.fin-agenda-calendar-header h3,.fin-agenda-guidance h3{font-size:14px;font-weight:750;margin:0}
+.fin-agenda-calendar-header>div{display:flex;gap:6px;flex-wrap:wrap}
+.fin-agenda-calendar-header .btn{font-size:12px;padding:7px 9px}
+.fin-agenda-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.fin-agenda-calendar .ag-weekday{text-align:center;color:var(--muted);font-size:10px;padding:6px 0;font-weight:750}
+.fin-agenda-calendar .ag-day{border:1px solid var(--stroke);border-radius:8px;min-width:0;min-height:54px;padding:5px;
+ text-align:left;background:transparent;color:var(--ink);font:inherit;display:flex;flex-direction:column;gap:4px}
+.fin-agenda-calendar .ag-day-number{font-size:12px;font-weight:700}
+.fin-agenda-calendar .ag-day small{font-size:9px;overflow-wrap:anywhere}
+.fin-agenda-calendar button.ag-day{cursor:pointer;background:rgba(27,112,169,.09);border-color:rgba(27,112,169,.35)}
+.fin-agenda-calendar button.ag-day:focus-visible,.fin-agenda-calendar button.ag-day:hover{outline:2px solid var(--ink);outline-offset:0}
+.fin-agenda-calendar .ag-day.is-today{box-shadow:inset 0 0 0 2px var(--ink)}
+.fin-agenda-calendar .ag-day.ag-pad{border:none}
+.fin-agenda-calendar-note,.fin-agenda-guidance p{font-size:12px;line-height:1.5;color:var(--muted);margin:12px 0 0}
+.fin-agenda-filters{display:flex;gap:10px;flex-wrap:wrap}
+.fin-agenda-filters .search-box{flex:2 1 230px}
+.fin-agenda-filters .filter-select{flex:1 1 180px}
+.fin-agenda-table{min-width:1000px}
+.fin-agenda-table .money{white-space:nowrap}
+.fin-agenda-table small{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.fin-agenda-table .ag-actions{display:flex;gap:6px;flex-wrap:wrap;min-width:155px}
+.fin-agenda-table .ag-state{display:block;font-size:11px;max-width:180px}
+.fin-agenda-pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.fin-agenda-pagination>div{display:flex;gap:8px}
+.fin-agenda-dialog{width:min(570px,calc(100vw - 20px))}
+.fin-agenda-edit-summary{font-size:13px;font-weight:700;border:1px solid var(--stroke);border-radius:9px;padding:12px}
+.fin-agenda-form-fields{display:grid;grid-template-columns:1fr;gap:12px}
+.fin-agenda-form-fields label{display:flex;flex-direction:column;gap:6px}
+.fin-agenda-form-fields input,.fin-agenda-form-fields textarea{width:100%;max-width:100%}
+@media(max-width:940px){.fin-agenda-layout{grid-template-columns:1fr}}
+@media(max-width:620px){.fin-agenda-stats{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 12px 12px;gap:8px}
+.fin-agenda-stats .insight-card{padding:10px}.fin-agenda-stats .insight-card strong{font-size:19px}
+.fin-agenda-layout{padding:0 12px 12px}.fin-agenda-status{padding:0 12px 12px}
+.fin-agenda-shortcuts{width:100%}.fin-agenda-shortcuts .btn{flex:1 1 155px}
+.fin-agenda-calendar-panel{padding:9px}.fin-agenda-calendar .ag-day{min-height:43px;padding:3px}}
 </style>
 </head>
 <body>
@@ -232,6 +279,7 @@
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras parceladas</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
     <button type="button" data-jump-section="vl-title-section"><span class="icon" data-icon="credit"></span> Faturas e pagamentos</button>
+    <button type="button" data-jump-section="ag-title"><span class="icon" data-icon="calendar"></span> Agenda de faturas</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
     <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
     <button type="button" data-view="settings"><span class="icon" data-icon="settings"></span> Configurações</button>
@@ -667,9 +715,10 @@
    <strong>Faturas e pagamentos parciais</strong>
    <span>Acompanhe o valor total, as parcelas pagas e o saldo restante.</span>
   </div>
-  <button type="button" class="btn btn-primary" data-jump-section="vl-title-section">
-   <span class="icon icon-sm" data-icon="credit"></span> Ir para faturas e pagamentos
-  </button>
+  <div class="fin-agenda-shortcuts">
+   <button type="button" class="btn" data-jump-section="ag-title"><span class="icon icon-sm" data-icon="calendar"></span> Agenda de vencimentos</button>
+   <button type="button" class="btn btn-primary" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
+  </div>
  </div>
  <div class="fin-doc-summary">
   <section class="card fin-doc-summary-card">
@@ -683,6 +732,84 @@
    <p><strong id="doc-card-count">—</strong> lançamentos incluídos</p>
   </section>
  </div>
+ <section class="card fin-agenda-card" aria-labelledby="ag-title">
+  <div class="card-head">
+   <div><h2 id="ag-title">Agenda de vencimentos das faturas</h2>
+    <p>Faturas ainda com saldo a acompanhar. O mês da fatura não substitui o vencimento real.</p></div>
+   <button type="button" class="btn" id="ag-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar agenda</button>
+  </div>
+  <div class="fin-agenda-stats">
+   <article class="insight-card"><span>Faturas a acompanhar</span><strong id="ag-count">—</strong><small>Sem quitação registrada</small></article>
+   <article class="insight-card"><span>Saldo documental restante</span><strong id="ag-total">—</strong><small>Não é saldo bancário</small></article>
+   <article class="insight-card"><span>Sem vencimento informado</span><strong id="ag-no-date">—</strong><small>Não são marcadas como atrasadas</small></article>
+   <article class="insight-card"><span>Prazo informado já passado</span><strong id="ag-overdue">—</strong><small>Quitação não confirmada</small></article>
+   <article class="insight-card"><span>Vencem em até 7 dias</span><strong id="ag-soon">—</strong><small>Conforme datas informadas</small></article>
+   <article class="insight-card"><span>Com pagamento parcial</span><strong id="ag-partial">—</strong><small>Saldo remanescente</small></article>
+  </div>
+  <p class="info-note fin-agenda-status" id="ag-status" role="status" aria-live="polite">Aguardando consulta das faturas.</p>
+  <div class="fin-agenda-layout">
+   <div class="fin-agenda-calendar-panel">
+    <div class="fin-agenda-calendar-header">
+     <h3 id="ag-month-label">Mês de referência</h3>
+     <div><button type="button" class="btn" id="ag-prev" aria-label="Mês anterior">Anterior</button>
+      <button type="button" class="btn" id="ag-today">Este mês</button>
+      <button type="button" class="btn" id="ag-next" aria-label="Próximo mês">Próximo</button></div>
+    </div>
+    <div id="ag-calendar" class="fin-agenda-calendar" aria-label="Calendário de vencimentos"></div>
+    <p id="ag-calendar-note" class="fin-agenda-calendar-note">Informe os vencimentos reais para preencher o calendário.</p>
+   </div>
+   <div class="fin-agenda-guidance">
+    <h3>Como usar</h3>
+    <p>Informe a <strong>data real de vencimento</strong> de cada fatura. Competência e data da compra não determinam o prazo.</p>
+    <p>Se a fatura foi paga em duas partes, selecione <strong>Adicionar pagamento</strong>. Cada parte utiliza uma saída bancária já confirmada e reduz o saldo restante.</p>
+    <p>As faturas quitadas historicamente até setembro permanecem fora desta lista, sem criar comprovantes ou datas fictícias.</p>
+   </div>
+  </div>
+  <div class="data-toolbar fin-agenda-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input id="ag-search" type="search" placeholder="Buscar cartão, mês ou valor..." aria-label="Pesquisar faturas em acompanhamento"></label>
+   <select id="ag-filter" class="filter-select" aria-label="Filtrar situação">
+    <option value="todos">Todas com saldo</option>
+    <option value="sem-data">Sem data informada</option>
+    <option value="prazo-passado">Prazo passado</option>
+    <option value="proximos-7">Vencem em 7 dias</option>
+    <option value="programada">Programadas</option>
+    <option value="parcial">Pagamento parcial</option>
+   </select>
+  </div>
+  <div class="table-wrap"><table class="data-table fin-agenda-table">
+   <thead><tr><th>Cartão</th><th>Mês da fatura</th><th class="money">Valor da fatura</th>
+    <th class="money">Pago vinculado</th><th class="money">Saldo restante</th>
+    <th>Vencimento real</th><th>Situação</th><th>Ações</th></tr></thead>
+   <tbody id="ag-rows"><tr><td colspan="8" class="empty">Aguardando consulta...</td></tr></tbody>
+  </table></div>
+  <div class="table-footer fin-agenda-pagination">
+   <span id="ag-listed">Aguardando dados.</span>
+   <div><button type="button" class="btn" id="ag-page-prev" disabled>Anterior</button>
+    <button type="button" class="btn" id="ag-page-next" disabled>Próxima</button></div>
+  </div>
+ </section>
+ <dialog id="ag-dialog" class="fin-dialog fin-agenda-dialog" aria-labelledby="ag-edit-title">
+  <form id="ag-form">
+   <div class="dialog-head">
+    <div><h2 id="ag-edit-title">Vencimento da fatura</h2><p>Informe a data que consta na fatura.</p></div>
+    <button type="button" class="dialog-close" id="ag-close" aria-label="Fechar">&times;</button>
+   </div>
+   <div class="dialog-body">
+    <p id="ag-edit-summary" class="fin-agenda-edit-summary"></p>
+    <div class="fields fin-agenda-form-fields">
+     <label>Data real do vencimento <input type="date" id="ag-date"></label>
+     <label>Observações (opcional) <textarea id="ag-notes" rows="3" maxlength="1000" placeholder="Ex.: data conferida no aplicativo do cartão."></textarea></label>
+    </div>
+    <p id="ag-edit-error" class="info-note" role="status">A data pode ficar vazia até ser confirmada.</p>
+    <div class="form-actions">
+     <button type="button" class="btn" id="ag-cancel">Cancelar</button>
+     <button type="submit" class="btn btn-primary" id="ag-save">Salvar vencimento</button>
+    </div>
+    <p class="info-note">Salvar o vencimento não cria ou modifica saídas bancárias. As alterações ficam registradas para auditoria.</p>
+   </div>
+  </form>
+ </dialog>
  <section class="card vl-card" aria-labelledby="vl-title-section">
   <div class="card-head"><div><h2 id="vl-title-section">Vincular faturas e revisar exceções</h2>
    <p>Confirmação manual de pagamentos existentes. Sem criar saídas financeiras ou alterar o Fluxo de Caixa.</p></div>
@@ -1764,7 +1891,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116nomeparceladas1"></script>
+<script src="./financeiro-pro-ui.js?v=20261116agenda1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
@@ -1778,6 +1905,7 @@ init();
 <script src="./financeiro-documentos.js?v=20261116pages1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261116cartoesparcelas1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261116pages1" defer></script>
-<script src="./financeiro-vinculos-faturas.js?v=20261116pages1" defer></script>
+<script src="./financeiro-vinculos-faturas.js?v=20261116agenda1" defer></script>
+<script src="./financeiro-agenda-faturas.js?v=20261116agenda1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
 </body></html>
