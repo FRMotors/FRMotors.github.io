@@ -8,7 +8,8 @@ const h=x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&g
 const brl=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
 const date=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const set=(id,value)=>{if($(id))$(id).textContent=value;};
-const pageSize=18;
+const autoPageSize=18;
+const invoicePageSize=10;
 let documents=[],autoRefs=[],pixRefs=[],faturas=[],declaredFaturas=new Set(),movements=new Map();
 let autoPage=0,faturaPage=0,loading=null,selectedInvoice=null,detailVersion=0;
 async function fetchAll(builder,max=6000){
@@ -39,9 +40,9 @@ function autoFiltered(){
   String(a.fornecedor_nome||'').localeCompare(String(b.fornecedor_nome||''),'pt-BR'));
 }
 function renderAuto(){
- const refs=referenceByDoc(),rows=autoFiltered(),totalPages=Math.max(1,Math.ceil(rows.length/pageSize));
+ const refs=referenceByDoc(),rows=autoFiltered(),totalPages=Math.max(1,Math.ceil(rows.length/autoPageSize));
  autoPage=Math.min(Math.max(0,autoPage),totalPages-1);
- const current=rows.slice(autoPage*pageSize,(autoPage+1)*pageSize);
+ const current=rows.slice(autoPage*autoPageSize,(autoPage+1)*autoPageSize);
  if($('dc-auto-rows'))$('dc-auto-rows').innerHTML=current.length?current.map(d=>{
   const r=refs.get(d.id),m=r&&movements.get(r.movimento_id);
   return '<tr><td><strong>'+h(d.codigo_origem)+'</strong>'+
@@ -67,9 +68,9 @@ function invoiceFiltered(){
   .sort((a,b)=>b.mes_fatura.localeCompare(a.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
 }
 function renderFaturas(){
- const list=invoiceFiltered(),pages=Math.max(1,Math.ceil(list.length/pageSize));
+ const list=invoiceFiltered(),pages=Math.max(1,Math.ceil(list.length/invoicePageSize));
  faturaPage=Math.min(Math.max(faturaPage,0),pages-1);
- const current=list.slice(faturaPage*pageSize,(faturaPage+1)*pageSize);
+ const current=list.slice(faturaPage*invoicePageSize,(faturaPage+1)*invoicePageSize);
  if($('dc-fatura-rows'))$('dc-fatura-rows').innerHTML=current.length?current.map(f=>
   '<tr><td><strong>'+h(f.cartao_nome)+'</strong></td>'+
    '<td>'+h(date(f.mes_fatura).slice(3))+'</td>'+
@@ -81,7 +82,7 @@ function renderFaturas(){
    (declaredFaturas.has(f.id)?'<small>Quitada por confirmação, sem conciliação</small>':'<small>Pagamento não confirmado nesta base</small>')+'</td>'+
    '<td><button type="button" class="btn" data-dc-invoice="'+h(f.id)+'">Ver lançamentos</button></td></tr>'
  ).join(''):'<tr><td colspan="7" class="empty">Nenhuma fatura documental corresponde à pesquisa.</td></tr>';
- set('dc-fatura-paging',list.length+' agrupamento(s) · página '+(faturaPage+1)+' de '+pages);
+ set('dc-fatura-paging',list.length+' fatura(s) · 10 por página · página '+(faturaPage+1)+' de '+pages);
  if($('dc-fatura-prev'))$('dc-fatura-prev').disabled=faturaPage===0;
  if($('dc-fatura-next'))$('dc-fatura-next').disabled=faturaPage>=pages-1;
 }
