@@ -1844,7 +1844,7 @@
   </div>
   <section class="card" style="margin-top:16px" id="import-preview-card" hidden>
     <div class="card-head">
-      <div><h2>3. Revisar e confirmar os lançamentos</h2><p>Desmarque saldos, totais de fatura e qualquer linha que não represente uma transação individual. Você também pode corrigir o valor de uma linha antes de importar, conferindo o documento original.</p></div>
+      <div><h2>3. Revisar e confirmar os lançamentos</h2><p>O sistema identifica movimentos já importados na mesma conta e bloqueia as repetições. Confira as linhas novas, desmarque saldos e totais e corrija valores somente de acordo com o documento original.</p></div>
       <div class="import-header-actions"><span id="import-preview-count" class="state">0 selecionados</span><button id="import-toggle-all" type="button" class="btn">Marcar / desmarcar todos</button></div>
     </div>
     <div class="import-summary">
@@ -1853,9 +1853,9 @@
       <div><span>Ignorados / inválidos</span><strong id="import-count-skipped">0</strong></div>
       <div><span>Total líquido selecionado</span><strong id="import-total-selected">R$ 0,00</strong></div>
     </div>
-    <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor (editável)</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
+    <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor (editável)</th><th>Verificação</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
     <div class="import-bottom-bar">
-      <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação. Em lançamentos idênticos no mesmo dia, confira se são operações distintas. Para o Sicoob, o subtotal de compras será comparado com o valor impresso na fatura antes de liberar a prévia.</span>
+      <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação. Repetições identificadas em extratos anteriores ficam desmarcadas e bloqueadas; verifique operações distintas de mesmo valor no mesmo dia.</span>
       <button type="button" id="import-confirm" class="btn btn-primary" disabled>Importar lançamentos selecionados</button>
     </div>
     <div id="import-save-status" class="status" role="status" style="padding:0 22px 18px"></div>
@@ -2395,7 +2395,7 @@ init();
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
-<script src="./financeiro-import.js?v=20261117itau-import1" defer></script>
+<script src="./financeiro-import.js?v=20261117dedup2" defer></script>
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 <script src="./financeiro-faturas.js?v=20261116parcelas1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
