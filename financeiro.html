@@ -2295,34 +2295,34 @@ async function render(){
  const from=$('from').value,to=$('to').value;
  if(!from||!to||from>to)throw Error('Selecione um período válido para consultar as movimentações.');
  const [rows,open,purchases]=await Promise.all([
-  fetchAllPages(()=>db.from('fin_teste_movimentos')
-   .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,estado,fornecedor_id,referencia_cliente')
+  fetchAllPages(()=>db.from('fin_movimentos')
+   .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,estado,fornecedor_id,origem,referencia_origem')
    .gte('data_movimento',from).lte('data_movimento',to)
    .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
-  fetchAllPages(()=>db.from('fin_teste_parcelas')
-   .select('id,vencimento,valor_cheio,numero,status,fin_teste_compras(id,fornecedor_id,descricao)')
+  fetchAllPages(()=>db.from('fin_parcelas')
+   .select('id,vencimento,valor_cheio,numero,status,fin_compras(id,fornecedor_id,descricao,forma_pagamento)')
    .eq('status','aberto').order('vencimento',{ascending:true}).order('id',{ascending:true})),
-  fetchAllPages(()=>db.from('fin_teste_compras')
-   .select('id,data_compra,descricao,forma_pagamento,valor_total,fornecedor_id,fin_teste_parcelas(status)')
+  fetchAllPages(()=>db.from('fin_compras')
+   .select('id,data_compra,descricao,forma_pagamento,valor_total,fornecedor_id,origem,referencia_origem,fin_parcelas(status)')
    .order('data_compra',{ascending:false}).order('id',{ascending:false}))
  ]);
  if(requestId!==latestRender)return;
  let ins=0,outs=0;
  rows.forEach(x=>{if(x.estado==='confirmado'){if(x.tipo==='entrada')ins+=Number(x.valor);else outs+=Number(x.valor);}});
  $('k-in').textContent=fmt.format(ins);$('k-out').textContent=fmt.format(outs);$('k-net').textContent=fmt.format(ins-outs);
- openInstallments=open;
+ openInstallments=open.filter(x=>x.fin_compras?.forma_pagamento==='boleto');
  $('k-open').textContent=String(openInstallments.length);
  updatePaymentOptions();
  const name=id=>suppliers.find(x=>x.id===id)?.nome||'—';
  $('rows').innerHTML=rows.length?rows.map(x=>'<tr><td>'+dateFmt(x.data_movimento)+'</td><td>'+safe(x.descricao)+'</td><td>'+safe(x.tipo)+'</td><td>'+safe(name(x.fornecedor_id))+'</td><td class="money">'+fmt.format(Number(x.valor))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhum lançamento no período.</td></tr>';
- $('due').innerHTML=open.length?open.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_teste_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Nenhuma parcela em aberto.</td></tr>';
- window.frFinanceUI?.sync({moves:rows,dues:open,purchases,suppliers});
+ $('due').innerHTML=openInstallments.length?openInstallments.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Nenhuma parcela em aberto.</td></tr>';
+ window.frFinanceUI?.sync({moves:rows,dues:openInstallments,purchases,suppliers});
 }
 function selectedPaymentParcel(){return openInstallments.find(x=>x.id===$('pay-installment').value);}
 function updatePaymentOptions(){
  const field=$('pay-installment'),selected=field.value;
  const opts=openInstallments.map(x=>{
-  const supplier=suppliers.find(s=>s.id===x.fin_teste_compras?.fornecedor_id)?.nome||'Fornecedor';
+  const supplier=suppliers.find(s=>s.id===x.fin_compras?.fornecedor_id)?.nome||'Fornecedor';
   return '<option value="'+safe(x.id)+'">'+safe(supplier)+' · '+dateFmt(x.vencimento)+' · '+fmt.format(Number(x.valor_cheio))+' · #'+x.numero+'</option>';
  });
  field.innerHTML='<option value="">Selecione um boleto</option>'+opts.join('');
@@ -2333,7 +2333,7 @@ function refreshPaymentSuggestion(){
  const x=selectedPaymentParcel();
  if(!x){$('pay-full').value='';$('pay-hint').textContent='Selecione uma parcela para conferir valor e desconto.';return;}
  const full=Math.round(Number(x.valor_cheio)*100);
- const supplier=suppliers.find(s=>s.id===x.fin_teste_compras?.fornecedor_id);
+ const supplier=suppliers.find(s=>s.id===x.fin_compras?.fornecedor_id);
  const isDue=$('pay-date').value&&$('pay-date').value<=x.vencimento;
  const rate=(supplier?.desconto_ate_vencimento&&isDue)?Number(supplier.desconto_atual_pct||0):0;
  const discount=Math.round(full*rate/100);
