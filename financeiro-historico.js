@@ -28,6 +28,101 @@ async function query(table,cols,lote){
  if(error)throw Error(table+': '+error.message);
  return data||[];
 }
+/* Atualização somente de leitura para o PDF bancário mais recente.
+   Não soma PDFs sobrepostos ao Excel homologado nem grava movimentações. */
+async function fetchImportLines(importId){
+ const result=[],chunk=400,max=4000;
+ for(let off=0;off<max;off+=chunk){
+  const {data,error}=await db.from('fin_teste_import_linhas')
+   .select('data_lancamento,natureza,valor')
+   .eq('importacao_id',importId).order('data_lancamento',{ascending:false})
+   .range(off,off+chunk-1);
+  if(error)throw error;
+  result.push(...(data||[]));
+  if(!data||data.length<chunk)return result;
+ }
+ throw Error('O arquivo excedeu 4.000 lançamentos; não é possível mostrar um resumo parcial.');
+}
+const importSignature=r=>[
+ String(r.data_lancamento||'').slice(0,10),
+ String(r.natureza||'').toLowerCase(),
+ Math.round(num(r.valor)*100)
+].join('|');
+function importTotals(rows){
+ const entries=rows.filter(r=>r.natureza==='entrada');
+ const exits=rows.filter(r=>r.natureza==='saida');
+ return {count:rows.length,entries:sum(entries,'valor'),exits:sum(exits,'valor')};
+}
+function overlappingImports(current,previous){
+ // As comparações são sugestões, não baixas nem deduplicação da base.
+ // A contagem por ocorrência evita esconder duas operações iguais no mesmo dia.
+ const keys=new Map();
+ previous.forEach(r=>{
+  const key=importSignature(r);
+  keys.set(key,(keys.get(key)||0)+1);
+ });
+ const unmatched=[];
+ let matches=0;
+ current.forEach(r=>{
+  const key=importSignature(r);
+  if(keys.get(key)>0){matches++;keys.set(key,keys.get(key)-1)}
+  else unmatched.push(r);
+ });
+ return {matches,unmatched};
+}
+async function refreshImportedItau(){
+ const source=$('hist-itau-import-source'),kpis=$('hist-itau-import-kpis'),compare=$('hist-itau-import-compare');
+ if(!source||!kpis||!compare)return;
+ source.textContent='Consultando a última importação do banco...';
+ try{
+  const {data,error}=await db.from('fin_teste_importacoes')
+   .select('id,arquivo_nome,criado_em,linhas_selecionadas')
+   .eq('tipo','banco').ilike('conta_nome','itau')
+   .order('criado_em',{ascending:false}).limit(2);
+  if(error)throw error;
+  const latest=data?.[0],previous=data?.[1];
+  if(!latest){
+   source.textContent='Nenhum extrato bancário do Itaú importado.';
+   kpis.innerHTML='';compare.textContent='Faça a importação pela página Importações.';
+   return;
+  }
+  const [current,prior]=await Promise.all([
+   fetchImportLines(latest.id),
+   previous?fetchImportLines(previous.id):Promise.resolve([])
+  ]);
+  const valid=current.filter(r=>r.natureza==='entrada'||r.natureza==='saida');
+  const total=importTotals(valid);
+  const dates=valid.map(r=>String(r.data_lancamento||'').slice(0,10)).filter(Boolean).sort();
+  const stamp=latest.criado_em?new Date(latest.criado_em).toLocaleString('pt-BR',{
+   day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'
+  }):'data não informada';
+  source.textContent='Arquivo: '+latest.arquivo_nome+' · importado em '+stamp+
+   (dates.length?' · movimentos de '+dateBR(dates[0])+' a '+dateBR(dates[dates.length-1]):'');
+  kpis.innerHTML=
+   metric('Entradas no PDF',money(total.entries),count(valid.filter(r=>r.natureza==='entrada').length)+' lançamentos','positive')+
+   metric('Saídas no PDF',money(total.exits),count(valid.filter(r=>r.natureza==='saida').length)+' lançamentos')+
+   metric('Resultado deste PDF',money(Math.round((total.entries-total.exits)*100)/100),
+    'Não é o saldo bancário',(total.entries-total.exits)<0?'negative':'positive')+
+   metric('Registros importados',count(total.count),count(current.length)+' selecionados, sem somar ao Excel');
+  if(!previous){
+   compare.textContent='Este é o primeiro extrato Itaú importado. O saldo do histórico homologado permanece independente.';
+  }else{
+   const overlap=overlappingImports(valid,prior);
+   const novel=importTotals(overlap.unmatched);
+   compare.textContent='Comparação com o extrato anterior ('+previous.arquivo_nome+'): '+
+    count(overlap.matches)+' possível(is) coincidência(s) por data, tipo e valor; '+
+    count(overlap.unmatched.length)+' registro(s) sem coincidência. '+
+    'Valores sem coincidência: entradas '+money(novel.entries)+' e saídas '+money(novel.exits)+
+    '. Confira antes de incorporar ao caixa homologado.';
+  }
+  if(current.length!==valid.length)compare.textContent+=' Há '+(current.length-valid.length)+' linha(s) com natureza não reconhecida.';
+ }catch(e){
+  source.textContent='Não foi possível consultar a última importação Itaú.';
+  kpis.innerHTML='';
+  compare.textContent='Falha na consulta: '+String(e.message||e);
+ }
+}
+
 async function refresh(){
  if(loading)return loading;
  loading=(async()=>{
@@ -35,6 +130,7 @@ async function refresh(){
    status('hist-itau-status','Consultando o histórico homologado...');
    status('hist-other-status','Consultando as fontes financeiras...');
    if(typeof db==='undefined'||!db)throw Error('Conexão financeira indisponível.');
+   await refreshImportedItau();
    const {data:lote,error}=await db.from('fin_teste_excel_lotes')
     .select('id,arquivo_nome,esperado_linhas,status,concluido_em')
     .eq('status','conferido').order('concluido_em',{ascending:false}).limit(1).maybeSingle();
@@ -66,8 +162,11 @@ async function refresh(){
 }
 function open(view){
  if(!ready){refresh().catch(()=>{});return}
- if(view==='itau')renderItau();
- else renderOther();
+ if(view==='itau'){
+  renderItau();
+  // A última importação pode ter acontecido nesta mesma sessão.
+  refreshImportedItau().catch(()=>{});
+ }else renderOther();
 }
 function period(){
  const months=state.monthly;
