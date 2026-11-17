@@ -63,12 +63,25 @@ function renderAuto(){
 }
 function invoiceFiltered(){
  const q=($('dc-fatura-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
- return faturas.filter(x=>[x.cartao_nome,date(x.mes_fatura),x.mes_fatura,
+ const year=$('dc-fatura-year')?.value||'todos',card=$('dc-fatura-card')?.value||'todos';
+ return faturas.filter(x=>(year==='todos'||String(x.mes_fatura||'').slice(0,4)===year)&&
+  (card==='todos'||x.cartao_nome===card)).filter(x=>[x.cartao_nome,date(x.mes_fatura),x.mes_fatura,
   x.valor_documental,x.quantidade_lancamentos].join(' ').toLocaleLowerCase('pt-BR').includes(q))
   .sort((a,b)=>b.mes_fatura.localeCompare(a.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
 }
+function rebuildInvoiceFilters(){
+ const y=$('dc-fatura-year'),c=$('dc-fatura-card');
+ const years=[...new Set(faturas.map(x=>String(x.mes_fatura||'').slice(0,4)).filter(x=>/^\d{4}$/.test(x)))].sort().reverse();
+ const prevYear=y?.value||'todos';
+ if(y){y.replaceChildren(new Option('Todos os anos','todos'),...years.map(x=>new Option(x,x)));if(years.includes(prevYear))y.value=prevYear;}
+ const year=y?.value||'todos',prevCard=c?.value||'todos';
+ const cards=[...new Set(faturas.filter(x=>year==='todos'||String(x.mes_fatura||'').startsWith(year)).map(x=>x.cartao_nome))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ if(c){c.replaceChildren(new Option('Todos os cartões','todos'),...cards.map(x=>new Option(x,x)));if(cards.includes(prevCard))c.value=prevCard;}
+}
 function renderFaturas(){
  const list=invoiceFiltered(),pages=Math.max(1,Math.ceil(list.length/invoicePageSize));
+ const total=list.reduce((s,x)=>s+Math.round(Number(x.valor_documental)*100),0);
+ set('dc-fatura-period-summary',list.length+' fatura(s) no filtro · total documental '+brl(total/100)+'. Valores de faturas, não pagamentos comprovados.');
  faturaPage=Math.min(Math.max(faturaPage,0),pages-1);
  const current=list.slice(faturaPage*invoicePageSize,(faturaPage+1)*invoicePageSize);
  if($('dc-fatura-rows'))$('dc-fatura-rows').innerHTML=current.length?current.map(f=>
@@ -182,7 +195,7 @@ async function refresh(){
    set('dc-invoice-count',String(invoices.length));
    set('dc-invoice-total',brl(invoices.reduce((s,x)=>s+Math.round(Number(x.valor_documental)*100),0)/100));
    set('dc-pix-count',String(pix.length));
-   renderAuto();renderFaturas();renderPix();
+   rebuildInvoiceFilters();renderAuto();renderFaturas();renderPix();
    set('dc-status',auto.length+' referências únicas às saídas existentes · '+remaining.length+
     ' compras pagas sem correspondência única · '+invoices.length+
     ' faturas documentais ('+declaredFaturas.size+' quitadas por confirmação, sem conciliação) · '+
@@ -199,6 +212,8 @@ function initialize(){
  $('dc-auto-filter')?.addEventListener('change',()=>{autoPage=0;renderAuto()});
  $('dc-auto-search')?.addEventListener('input',()=>{autoPage=0;renderAuto()});
  $('dc-fatura-search')?.addEventListener('input',()=>{faturaPage=0;renderFaturas()});
+ $('dc-fatura-year')?.addEventListener('change',()=>{rebuildInvoiceFilters();faturaPage=0;renderFaturas()});
+ $('dc-fatura-card')?.addEventListener('change',()=>{faturaPage=0;renderFaturas()});
  $('dc-auto-prev')?.addEventListener('click',()=>{autoPage--;renderAuto()});
  $('dc-auto-next')?.addEventListener('click',()=>{autoPage++;renderAuto()});
  $('dc-fatura-prev')?.addEventListener('click',()=>{faturaPage--;renderFaturas()});
