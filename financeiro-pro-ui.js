@@ -220,7 +220,7 @@ function movementsHTML(rows,showAll=false){
   '<td>'+statusChip(r.tipo)+'</td>'+
   '<td>'+escapeHTML(supplierName(r.fornecedor_id))+'</td>'+
   '<td class="money" style="color:'+(r.tipo==='entrada'?'#188369':'#344c5b')+'">'+(r.tipo==='entrada'?'+ ':'− ')+currency(r.valor)+'</td>'+
- '<td class="edit-cell"><button type="button" class="row-edit-button" data-edit-record="movimento" data-edit-id="'+escapeHTML(r.id)+'">Editar</button></td>'+
+ '<td class="edit-cell">'+(r.origem==='app'&&r.referencia_origem?.startsWith('site-financeiro-mov-')&&r.estado==='confirmado'?'<button type="button" class="row-edit-button" data-edit-record="movimento" data-edit-id="'+escapeHTML(r.id)+'">Editar</button>':'<span class="row-sub">Histórico protegido</span>')+'</td>'+
  '</tr>').join('');
 }
 function updateMoves(){
@@ -272,12 +272,14 @@ function purchasesHTML(rows){
  const parts=x.fin_parcelas||[];
  const allPaid=parts.length>0&&parts.every(p=>p.status==='pago');
  const anyPaid=parts.some(p=>p.status==='pago');
- const badge=allPaid?statusChip('pago'):anyPaid?'<span class="state open">Parcial</span>':statusChip('aberto');
+ const allCancelled=parts.length>0&&parts.every(p=>p.status==='cancelado');
+ const badge=allCancelled?statusChip('cancelado'):allPaid?statusChip('pago'):anyPaid?'<span class="state open">Parcial</span>':statusChip('aberto');
+ const editable=x.origem==='app'&&x.referencia_origem?.startsWith('site-financeiro-compra-')&&parts.length>0&&parts.every(p=>p.status==='aberto');
  return '<tr><td><span class="row-main">'+escapeHTML(dateBR(x.data_compra))+'</span></td>'+
  '<td><span class="row-main">'+escapeHTML(x.descricao||'Compra sem descrição')+'</span><span class="row-sub">'+escapeHTML(x.forma_pagamento||'')+'</span></td>'+
  '<td>'+escapeHTML(supplierName(x.fornecedor_id))+'</td>'+
  '<td class="money">'+currency(x.valor_total)+'</td>'+
- '<td>'+badge+'</td><td class="edit-cell"><button type="button" class="row-edit-button" data-edit-record="compra" data-edit-id="'+escapeHTML(x.id)+'">Editar</button></td></tr>'; }).join('');
+ '<td>'+badge+'</td><td class="edit-cell">'+(editable?'<button type="button" class="row-edit-button" data-edit-record="compra" data-edit-id="'+escapeHTML(x.id)+'">Editar</button>':'<span class="row-sub">Somente consulta</span>')+'</td></tr>'; }).join('');
 }
 function updatePurchases(){
  const q=(byId('search-purchases')?.value||'').trim().toLocaleLowerCase('pt-BR');
