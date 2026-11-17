@@ -2413,10 +2413,27 @@ async function savePayment(e){
   msg('pay-status','Pagamento oficial registrado e parcela baixada.');await render();window.frFinanceUI?.afterSaved('pay');
  }catch(err){msg('pay-status','Não foi possível registrar a baixa: '+err.message,true)}finally{btn.disabled=false}
 }
+function openCreditPurchaseFromMovement(){
+ const current=$('move-form'), purchase=$('purchase-form');
+ if(!current||!purchase)return;
+ const d=Object.fromEntries(new FormData(current));
+ purchase.elements.forma_pagamento.value='cartao_credito';
+ if(d.data_movimento)purchase.elements.data_compra.value=d.data_movimento;
+ if(d.descricao&&!purchase.elements.descricao.value)purchase.elements.descricao.value=d.descricao.trim();
+ if(d.valor&&!purchase.elements.valor_total.value)purchase.elements.valor_total.value=d.valor;
+ if(d.fornecedor_id&&!purchase.elements.fornecedor_id.value)purchase.elements.fornecedor_id.value=d.fornecedor_id;
+ current.elements.meio_pagamento.value='';
+ $('installments').replaceChildren();
+ updateInstallments();
+ if($('modal-move')?.open)$('modal-move').close();
+ window.frFinanceUI?.openModal('purchase');
+ window.frFinanceUI?.showToast('Compra no crédito: escolha o número de parcelas e confira os vencimentos.');
+}
 async function saveMove(e){
  e.preventDefault();const f=e.target;const b=$('save-move');b.disabled=true;
  try{
   const d=Object.fromEntries(new FormData(f));
+  if(d.meio_pagamento==='cartao_credito')throw Error('Para compras no cartão, utilize Nova compra parcelada. O crédito não é saída imediata de caixa.');
   const cents=Math.round(Number(d.valor)*100);if(!Number.isSafeInteger(cents)||cents<1)throw Error('Informe um valor válido.');
   const ref=f.dataset.operacaoChave||(f.dataset.operacaoChave='site-financeiro-mov-'+crypto.randomUUID());
   const {data:movimentoId,error}=await db.rpc('fin_site_criar_movimento',{
@@ -2440,7 +2457,7 @@ function addDaysLocal(iso,days){
 function updateInstallments(){
  const f=$('purchase-form'), n=Number(f.elements.quantidade.value), first=f.elements.vencimento.value;
  const raw=Number(f.elements.valor_total.value), cents=Math.round(raw*100);
- if(!Number.isSafeInteger(cents)||cents<=0||!first||n<1||n>24){
+ if(!Number.isSafeInteger(cents)||cents<=0||!first||!Number.isInteger(n)||n<1||n>24){
   $('installments').innerHTML='';
   $('installment-check').textContent='Informe valor e primeiro vencimento para visualizar as parcelas.';
   return;
@@ -2469,6 +2486,9 @@ async function savePurchase(e){
  e.preventDefault();const f=e.target;const b=$('save-purchase');b.disabled=true;
  try{
   const d=Object.fromEntries(new FormData(f));const cents=Math.round(Number(d.valor_total)*100);
+  const numberOfInstallments=Number(d.quantidade);
+  if(!Number.isInteger(numberOfInstallments)||numberOfInstallments<1||numberOfInstallments>24)throw Error('Informe um número de parcelas entre 1 e 24.');
+  if(!['boleto','cartao_credito'].includes(d.forma_pagamento))throw Error('Selecione boleto ou cartão de crédito.');
   if(!Number.isSafeInteger(cents)||cents<1)throw Error('Informe um valor válido.');
   if(!checkInstallments())throw Error('Revise os valores das parcelas.');
   const rows=[...$('installments').querySelectorAll('.installment-row')];
@@ -2515,7 +2535,11 @@ async function init(){
   $('purchase-form').elements.valor_total.addEventListener('input',()=>{$('installments').innerHTML='';updateInstallments()});
   $('installments').addEventListener('input',checkInstallments);
   updateInstallments();
-  $('move-form').addEventListener('submit',saveMove);$('purchase-form').addEventListener('submit',savePurchase);
+  $('move-form').elements.meio_pagamento.addEventListener('change',e=>{
+    if(e.target.value==='cartao_credito')openCreditPurchaseFromMovement();
+   });
+   $('move-to-credit-purchase').addEventListener('click',openCreditPurchaseFromMovement);
+   $('move-form').addEventListener('submit',saveMove);$('purchase-form').addEventListener('submit',savePurchase);
   $('reset-test').addEventListener('click',async()=>{
    const confirmation=window.prompt('Para limpar somente os dados desta página de testes, digite LIMPAR TESTES:');
    if(confirmation!=='LIMPAR TESTES'){msg('reset-status','Operação cancelada. Nenhum dado foi removido.');return;}
