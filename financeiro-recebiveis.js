@@ -213,7 +213,13 @@ async function savePay(e){
   if(amount>remaining)throw Error('O recebimento não pode superar o saldo restante.');
   if(!x.data)throw Error('Informe a data do recebimento.');
   if(x.origem==='existente'&&!x.movimento)throw Error('Selecione uma entrada bancária existente.');
-  if(x.origem==='novo'&&!window.confirm('Confirma que o dinheiro já foi recebido e ainda NÃO consta no extrato importado? Isso adicionará uma entrada ao caixa.'))return;
+  if(x.origem==='novo'){
+   const unlinked=new Set(state.receipts.map(r=>r.movimento_id));
+   const possible=state.cash.filter(m=>!unlinked.has(m.id) && m.data_movimento===x.data && cents(m.valor)===amount);
+   if(possible.length){
+    if(!window.confirm('Atenção: já existem '+possible.length+' entrada(s) de mesmo valor e data no caixa. Se uma delas for este pagamento, cancele e escolha Vincular entrada já registrada. Confirma que é um NOVO recebimento diferente?'))return;
+   }else if(!window.confirm('Confirma que este valor foi recebido e ainda NÃO consta no extrato importado? Uma nova entrada será adicionada ao caixa.'))return;
+  }
   const key=f.dataset.chave||(f.dataset.chave='fr-receber-pago-'+crypto.randomUUID());
   const {data,error}=await db.rpc('fin_receber_registrar',{
    p_conta:account.id,p_data:x.data,p_valor:amount/100,p_meio:x.meio||null,
