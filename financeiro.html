@@ -1521,19 +1521,8 @@
             <p class="page-description">Entradas, saídas, resultado e evolução mensal do histórico do Itaú, sem compras de cartão ou boletos somados em duplicidade.</p>
           </div>
           <div class="header-buttons">
-            <button type="button" class="btn" id="hist-itau-export"><span class="icon icon-sm" data-icon="download"></span> Exportar CSV</button>
+            
             <button type="button" class="btn" id="hist-itau-reload"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
-          </div>
-        </div>
-        <div class="card hist-filter-card">
-          <div class="card-body hist-period">
-            <label>De
-              <input type="month" id="hist-itau-from" aria-label="Mês inicial do histórico Itaú">
-            </label>
-            <label>Até
-              <input type="month" id="hist-itau-to" aria-label="Mês final do histórico Itaú">
-            </label>
-            <span id="hist-itau-period-note">Período do Excel homologado</span>
           </div>
         </div>
         <div id="hist-itau-status" class="status" role="status"></div>
@@ -1545,9 +1534,16 @@
               <p id="hist-itau-reconcile-source">Conferindo os lançamentos novos e as repetições...</p>
             </div>
           </div>
-          <div id="hist-itau-reconcile-kpis" class="hist-kpis hist-reconcile-kpis"></div>
+          <div id="hist-itau-reconcile-headline" class="hist-kpis hist-reconcile-headline" aria-label="Resumo principal da conciliação"></div>
           <p id="hist-itau-reconcile-diff" class="hist-import-compare" role="status" aria-live="polite">Calculando a diferença com o último saldo de referência...</p>
-          <p id="hist-itau-reconcile-note" class="hist-import-warning">Os lançamentos coincidentes não serão somados novamente. O histórico homologado e os arquivos originais permanecem preservados para auditoria.</p>
+          <details class="fin-collapse fin-collapse-in-card" id="hist-itau-memoria-calculo">
+            <summary>
+              <span>Como chegamos a esse saldo</span>
+              <small>Entradas, saídas, base histórica e movimentos ignorados</small>
+            </summary>
+            <div class="fin-collapse-panel">
+              <div id="hist-itau-reconcile-kpis" class="hist-kpis hist-reconcile-kpis"></div>
+              <p id="hist-itau-reconcile-note" class="hist-import-warning">Os lançamentos coincidentes não serão somados novamente. O histórico homologado e os arquivos originais permanecem preservados para auditoria.</p>
           <details class="hist-reconcile-details">
             <summary>Ver lançamentos incluídos e repetições identificadas</summary>
             <div class="table-wrap">
@@ -1557,8 +1553,13 @@
               </table>
             </div>
           </details>
+            </div>
+          </details>
         </section>
-        <section class="card hist-import-card" id="hist-itau-import-card" aria-labelledby="hist-itau-import-title">
+        <details class="fin-collapse" id="itau-detalhes-extrato">
+  <summary><span>Extrato bancário mais recente</span><small>Arquivo recebido, totais brutos e comparação com o anterior</small></summary>
+  <div class="fin-collapse-panel">
+<section class="card hist-import-card" id="hist-itau-import-card" aria-labelledby="hist-itau-import-title">
           <div class="card-head">
             <div>
               <p class="eyebrow">Extratos bancários importados · conferência</p>
@@ -1571,7 +1572,26 @@
           <p id="hist-itau-import-compare" class="hist-import-compare" role="status" aria-live="polite"></p>
           <p class="hist-import-warning">Os totais acima representam somente os lançamentos selecionados no arquivo indicado. A importação fica separada do Fluxo de Caixa homologado até a conferência dos registros. Não é seguro somar extratos sobrepostos nem interpretar a diferença como saldo bancário.</p>
         </section>
-        <p class="hist-homolog-label">Histórico homologado do Excel (não incorpora automaticamente os extratos PDF)</p>
+        
+  </div>
+</details><details class="fin-collapse" id="itau-historico-detalhado">
+  <summary><span>Histórico homologado e relatórios</span><small>Filtros, evolução mensal, gráficos, lançamentos e exportação</small></summary>
+  <div class="fin-collapse-panel">
+
+  <div class="fin-accordion-tools"><button type="button" class="btn" id="hist-itau-export"><span class="icon icon-sm" data-icon="download"></span> Exportar CSV</button></div>
+  <div class="card hist-filter-card">
+          <div class="card-body hist-period">
+            <label>De
+              <input type="month" id="hist-itau-from" aria-label="Mês inicial do histórico Itaú">
+            </label>
+            <label>Até
+              <input type="month" id="hist-itau-to" aria-label="Mês final do histórico Itaú">
+            </label>
+            <span id="hist-itau-period-note">Período do Excel homologado</span>
+          </div>
+        </div>
+        
+  <p class="hist-homolog-label">Histórico homologado do Excel (não incorpora automaticamente os extratos PDF)</p>
         <div class="hist-kpis" id="hist-itau-kpis" aria-label="Indicadores homologados do Itaú"></div>
         <div class="hist-two-col">
           <section class="card">
@@ -1599,7 +1619,10 @@
             <tbody id="hist-itau-transactions"></tbody>
           </table></div>
         </section>
-      </section>
+      
+
+  </div>
+</details></section>
 
       <!-- Fontes não bancárias e compromissos separados do caixa Itaú -->
       <section class="view" data-view-panel="history" hidden aria-label="Histórico financeiro separado por fonte">
@@ -1679,138 +1702,12 @@
       <button type="button" class="btn" id="import-reload"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar listas</button>
     </div>
   </div>
-  <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
-    <div><strong>Importações com conferência antes de salvar.</strong>
-      <p>Compras do cartão ficam separadas das movimentações bancárias. Pagamentos de faturas que constam no extrato não serão duplicados como gastos do cartão no caixa.</p>
-    </div>
-  </div>
   
-  <section class="card pix-rules-card" id="pix-rules-panel" aria-labelledby="pix-rules-title">
-   <div class="card-head">
-    <div><p class="eyebrow">Organização automática dos pagamentos</p>
-     <h2 id="pix-rules-title">Regras de classificação de PIX</h2>
-     <p>Transforme nomes de destinatários do extrato em descrições e categorias financeiras sem perder a descrição original do banco.</p>
-    </div>
-    <button type="button" class="btn" id="pix-rules-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar regras</button>
-   </div>
-   <p class="info-note pix-rules-note">Ao importar um <strong>pagamento enviado</strong>, a regra confere o nome do destinatário e preenche a descrição e categoria. <strong>PIX recebidos nunca são classificados como saídas.</strong> O extrato original, seus valores, datas e conciliações ficam preservados.</p>
-   <p id="pix-rules-status" class="pix-rules-status" role="status" aria-live="polite">Aguardando consulta das regras...</p>
-   <div class="table-wrap"><table class="data-table pix-rules-table">
-    <thead><tr><th>Nome reconhecido no extrato</th><th>Descrição padrão</th><th>Categoria</th><th>Aplicações</th><th>Ações</th></tr></thead>
-    <tbody id="pix-rules-rows"><tr><td colspan="5" class="empty">Carregando regras...</td></tr></tbody>
-   </table></div>
-   <div class="table-footer pix-rules-footer">
-    <span id="pix-rules-count">Aguardando...</span>
-    <button type="button" class="btn" id="pix-rules-apply">Aplicar aos extratos já importados</button>
-   </div>
-   <p id="pix-rule-reapply-status" class="info-note pix-rules-apply-status" role="status">O botão acima aplica regras a transações antigas ainda não classificadas, preservando correções manuais.</p>
-   <div class="pix-rules-form-area">
-    <form id="pix-rule-form">
-     <h3 id="pix-rule-form-title">Nova regra de classificação</h3>
-     <div class="pix-rules-fields">
-      <label>Nome do destinatário no extrato
-       <input id="pix-rule-name" type="text" maxlength="100" required minlength="6" autocomplete="off" placeholder="Ex.: FRED SANTOS">
-      </label>
-      <label>Descrição que aparecerá no Financeiro
-       <input id="pix-rule-label" type="text" maxlength="150" required autocomplete="off" placeholder="Ex.: PROLABORE">
-      </label>
-      <label>Categoria do lançamento
-       <input id="pix-rule-category" type="text" maxlength="100" list="pix-rule-categories" required autocomplete="off" placeholder="Ex.: SALARIOS">
-       <datalist id="pix-rule-categories">
-        <option value="SALARIOS"></option><option value="CAFÉ DA MANHÃ"></option>
-        <option value="FORNECEDORES"></option><option value="DESPESAS"></option>
-        <option value="IMPOSTOS"></option><option value="PESSOAL"></option>
-        <option value="JUROS"></option><option value="GASTO CARROS"></option>
-       </datalist>
-      </label>
-     </div>
-     <div class="pix-rules-form-actions">
-      <label class="pix-rule-checkbox"><input type="checkbox" id="pix-rule-active" checked> Regra ativa</label>
-      <div>
-       <button type="button" class="btn" id="pix-rule-cancel" hidden>Cancelar edição</button>
-       <button type="submit" class="btn btn-primary" id="pix-rule-save">Adicionar regra</button>
-      </div>
-     </div>
-     <p id="pix-rule-form-message" class="info-note" role="status" aria-live="polite">Ex.: FRED SANTOS → PROLABORE / SALARIOS. Não use palavras genéricas como “PIX ENVIADO”.</p>
-    </form>
-   </div>
-   <details class="pix-rules-audit">
-    <summary>Histórico das classificações aplicadas</summary>
-    <p class="info-note">O nome original permanece registrado. Identificadores pessoais são ocultados nesta lista, sem alterar os dados arquivados.</p>
-    <div class="table-wrap"><table class="data-table">
-     <thead><tr><th>Data de classificação</th><th>Descrição bancária original</th><th>Descrição / categoria aplicada</th><th>Modo</th></tr></thead>
-     <tbody id="pix-rules-audit"><tr><td colspan="4" class="empty">Aguardando histórico...</td></tr></tbody>
-    </table></div>
-   </details>
-  </section>
-
-  <section class="card fin-unificado-card" id="fin-unificado-card" aria-labelledby="fin-unificado-title">
-    <div class="card-head">
-      <div>
-        <h2 id="fin-unificado-title">Importar Financeiro Unificado</h2>
-        <p>Homologação da planilha completa, com conferência de totais e sem afetar a operação financeira.</p>
-      </div>
-      <span class="env-chip">TESTE ISOLADO</span>
-    </div>
-    <div class="card-body">
-      <div class="fin-unificado-start">
-        <div>
-          <label for="fin-unificado-file" class="fin-unificado-label">Planilha Financeiro Unificado (.xlsx)</label>
-          <input id="fin-unificado-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-          <p class="info-note">Use o Financeiro Unificado (.xlsx). A importação reconhece AUTOPEÇAS, CARTÕES, SAÍDAS FLUXO, ENTRADAS FLUXO, ABERTOS FLUXO e BAIXAS CONCILIADAS.</p>
-          <p class="info-note"><strong>Versão CORRIGIDO_TOPLINE:</strong> o sistema identifica os 11 novos recebimentos, transfere automaticamente as 69 validações e 6 conciliações já aprovadas e arquiva a versão anterior sem apagar o histórico. Não utilize “Limpar testes” para atualizar a planilha.</p>
-        </div>
-        <div class="fin-unificado-start-actions">
-          <button type="button" id="fin-unificado-analisar" class="btn btn-teal" disabled>Analisar planilha</button>
-        </div>
-      </div>
-      <div id="fin-unificado-mensagem" class="status" role="status"></div>
-      <div id="fin-unificado-previa" class="hidden">
-        <div class="fin-unificado-metrics" id="fin-unificado-metrics"></div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead><tr><th>Origem</th><th class="money">Registros</th><th class="money">Soma da origem</th><th>Conferência</th></tr></thead>
-            <tbody id="fin-unificado-resumo"></tbody>
-          </table>
-        </div>
-        <div class="fin-unificado-samples">
-          <h3>Amostra de registros reconhecidos</h3>
-          <div class="table-wrap"><table class="data-table">
-            <thead><tr><th>Aba / Linha</th><th>Descrição</th><th>Data</th><th class="money">Valor</th></tr></thead>
-            <tbody id="fin-unificado-amostras"></tbody>
-          </table></div>
-        </div>
-        <p class="fin-unificado-warning">Compras de autopeças, despesas de cartões e pagamentos do Fluxo são conceitos diferentes. A importação guarda o histórico para conferência, mas não o adiciona automaticamente ao Dashboard nem gera novos pagamentos.</p>
-        <div class="fin-unificado-bottom">
-          <span id="fin-unificado-count">Nenhuma planilha analisada.</span>
-          <button type="button" id="fin-unificado-confirmar" class="btn btn-primary" disabled>Importar cópia para homologação</button>
-        </div>
-      </div>
-      <div class="fin-unificado-history">
-        <h3>Cópias recebidas para homologação</h3>
-        <div id="fin-unificado-historico" class="info-note">Nenhuma cópia enviada.</div>
-      </div>
-      <div class="fin-unificado-validacoes" id="fin-unificado-validacoes">
-        <h3>Conferências confirmadas do histórico</h3>
-        <div id="fin-unificado-validacoes-resumo" class="info-note" role="status">As confirmações aparecerão aqui após a homologação.</div>
-        <p class="info-note">Os métodos PIX e Débito são preservados como pagamentos à vista, não como faturas de crédito. As diferenças de valor foram conferidas, mas não classificadas automaticamente como juros. Datas perdidas permanecem em branco e seus valores são mantidos.</p>
-      </div>
-      <div class="fin-unificado-itau" id="fin-unificado-itau">
-        <h3>Conferência PIX / Débito com o Itaú</h3>
-        <p class="info-note">Recorte definido: <strong>a partir de 01/06/2026</strong>. O Fluxo de Caixa desta homologação representa o Itaú. Movimentações anteriores pertencem a outros bancos e não serão conciliadas com ele. Sem data exata, o registro fica pendente.</p>
-        <div id="fin-unificado-itau-resumo" class="fin-unificado-metrics" role="status">Aguardando a leitura da homologação.</div>
-        <div class="table-wrap">
-          <table class="data-table fin-unificado-itau-table">
-            <thead><tr><th>Compra / lançamento</th><th>Data</th><th>Meio</th><th class="money">Valor</th><th>Conferência no Itaú</th></tr></thead>
-            <tbody id="fin-unificado-itau-linhas"><tr><td colspan="5" class="info-note">Nenhuma conferência carregada.</td></tr></tbody>
-          </table>
-        </div>
-        <p class="info-note" id="fin-unificado-itau-aviso">Conciliações confirmadas com o Itaú usam referências às saídas já registradas no Fluxo de Caixa. Registros classificados como outro banco permanecem fora do caixa Itaú; sem data exata, continuam pendentes.</p>
-      </div>
-    </div>
-  </section>
-
-  <div class="import-layout">
+  <div class="fin-workflow-intro">
+    <strong>Importar com segurança</strong>
+    <span>Escolha o banco ou cartão, envie o arquivo e revise os lançamentos. Repetições entre arquivos são verificadas antes de salvar.</span>
+  </div>
+<div class="import-layout">
     <section class="card">
       <div class="card-head"><div><h2>1. Selecionar origem e arquivo</h2><p>As informações são lidas localmente e somente os lançamentos confirmados são enviados ao Supabase.</p></div></div>
       <div class="card-body">
@@ -1881,32 +1778,16 @@
     </div>
     <div id="import-save-status" class="status" role="status" style="padding:0 22px 18px"></div>
   </section>
-  <div class="content-grid" style="margin-top:17px">
-    <section class="card">
-      <div class="card-head"><div><h2>Despesas importadas dos cartões</h2><p>Compras e estornos para conferência. Estes valores não são somados automaticamente às saídas bancárias.</p></div>
-        <span id="import-card-count" class="state">0 lançamento(s)</span></div>
-      <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Cartão</th><th>Natureza</th><th class="money">Valor</th><th class="edit-column">Ações</th></tr></thead><tbody id="import-card-rows"><tr><td colspan="6" class="empty">Nenhuma fatura importada.</td></tr></tbody></table></div>
-      <div class="table-footer" id="import-card-summary">Importe uma fatura para começar.</div>
-    </section>
-    <section class="card">
-      <div class="card-head"><div><h2>Conciliar boleto ou compromisso com saída bancária</h2><p>Vincule uma saída bancária a uma parcela do aplicativo ou a um compromisso do Excel homologado, sem criar outra movimentação.</p></div></div>
-      <div class="card-body">
-        <div class="fields">
-          <label style="grid-column:1/-1">Saída bancária importada<select id="reconcile-move"><option value="">Selecione uma saída do extrato</option></select></label>
-          <label style="grid-column:1/-1">Boleto ou compromisso em aberto<select id="reconcile-parcel"><option value="">Selecione uma parcela</option></select></label>
-          <p id="reconcile-source-note" class="info-note" style="grid-column:1/-1;margin:0" role="status">Carregando boletos do aplicativo e compromissos do Excel homologado...</p>
-          <label>Desconto efetivo (R$)<input id="reconcile-discount" type="number" min="0" step="0.01" value="0.00"></label>
-          <label>Juros efetivos (R$)<input id="reconcile-fees" type="number" min="0" step="0.01" value="0.00"></label>
-        </div>
-        <p id="reconcile-discount-note" class="info-note" role="status" aria-live="polite">Quando o valor bancário já tiver desconto, o sistema reconhecerá automaticamente os casos que correspondem às regras cadastradas do fornecedor.</p>
-        <button type="button" id="reconcile-use-difference" class="btn" hidden>Usar diferença como desconto</button>
-        <p id="reconcile-check" class="info-note">Selecione os dois registros. O valor da parcela, menos desconto e mais juros, precisa coincidir com a saída do banco.</p>
-        <button type="button" class="btn btn-teal" id="reconcile-submit" disabled>Vincular sem duplicar pagamento</button>
-        <div id="reconcile-status" class="status" role="status"></div>
-      </div>
-    </section>
+  
+  <div class="fin-accordion-head">
+    <h2>Conferência e ferramentas</h2>
+    <p>Abra somente o que precisar. Informações e históricos ficam disponíveis sem ocupar a tela inicial.</p>
   </div>
-  <section class="card" id="invoice-settlement-panel" style="margin-top:17px" aria-labelledby="invoice-settlement-title">
+  <div class="fin-accordion-stack">
+<details class="fin-collapse" id="imports-faturas">
+  <summary><span>Faturas e pagamentos</span><small>Valores das faturas, pagamentos vinculados e conciliação</small></summary>
+  <div class="fin-collapse-panel">
+<section class="card" id="invoice-settlement-panel" style="margin-top:17px" aria-labelledby="invoice-settlement-title">
     <div class="card-head">
       <div>
         <h2 id="invoice-settlement-title">Faturas de cartão e pagamentos</h2>
@@ -1980,13 +1861,193 @@
       </div>
     </div>
   </section>
-  <section class="card" style="margin-top:17px">
+  
+  </div>
+</details><details class="fin-collapse" id="imports-conciliacao">
+  <summary><span>Movimentações e conciliação de boletos</span><small>Despesas de cartão importadas e vínculo com saídas do banco</small></summary>
+  <div class="fin-collapse-panel">
+<div class="content-grid" style="margin-top:17px">
+    <section class="card">
+      <div class="card-head"><div><h2>Despesas importadas dos cartões</h2><p>Compras e estornos para conferência. Estes valores não são somados automaticamente às saídas bancárias.</p></div>
+        <span id="import-card-count" class="state">0 lançamento(s)</span></div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição</th><th>Cartão</th><th>Natureza</th><th class="money">Valor</th><th class="edit-column">Ações</th></tr></thead><tbody id="import-card-rows"><tr><td colspan="6" class="empty">Nenhuma fatura importada.</td></tr></tbody></table></div>
+      <div class="table-footer" id="import-card-summary">Importe uma fatura para começar.</div>
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>Conciliar boleto ou compromisso com saída bancária</h2><p>Vincule uma saída bancária a uma parcela do aplicativo ou a um compromisso do Excel homologado, sem criar outra movimentação.</p></div></div>
+      <div class="card-body">
+        <div class="fields">
+          <label style="grid-column:1/-1">Saída bancária importada<select id="reconcile-move"><option value="">Selecione uma saída do extrato</option></select></label>
+          <label style="grid-column:1/-1">Boleto ou compromisso em aberto<select id="reconcile-parcel"><option value="">Selecione uma parcela</option></select></label>
+          <p id="reconcile-source-note" class="info-note" style="grid-column:1/-1;margin:0" role="status">Carregando boletos do aplicativo e compromissos do Excel homologado...</p>
+          <label>Desconto efetivo (R$)<input id="reconcile-discount" type="number" min="0" step="0.01" value="0.00"></label>
+          <label>Juros efetivos (R$)<input id="reconcile-fees" type="number" min="0" step="0.01" value="0.00"></label>
+        </div>
+        <p id="reconcile-discount-note" class="info-note" role="status" aria-live="polite">Quando o valor bancário já tiver desconto, o sistema reconhecerá automaticamente os casos que correspondem às regras cadastradas do fornecedor.</p>
+        <button type="button" id="reconcile-use-difference" class="btn" hidden>Usar diferença como desconto</button>
+        <p id="reconcile-check" class="info-note">Selecione os dois registros. O valor da parcela, menos desconto e mais juros, precisa coincidir com a saída do banco.</p>
+        <button type="button" class="btn btn-teal" id="reconcile-submit" disabled>Vincular sem duplicar pagamento</button>
+        <div id="reconcile-status" class="status" role="status"></div>
+      </div>
+    </section>
+  </div>
+  
+  </div>
+</details><details class="fin-collapse" id="imports-historico">
+  <summary><span>Histórico de arquivos enviados</span><small>Extratos, faturas recebidas e registros anteriores</small></summary>
+  <div class="fin-collapse-panel">
+<section class="card" style="margin-top:17px">
     <div class="card-head"><div><h2>Histórico de arquivos importados</h2><p>Controle dos extratos e faturas recebidos no ambiente de testes, com identificação por arquivo.</p></div></div>
     <div class="table-wrap"><table class="data-table"><thead><tr><th>Importado em</th><th>Arquivo</th><th>Origem</th><th>Conta / cartão</th><th class="money">Selecionados</th></tr></thead>
     <tbody id="import-history-rows"><tr><td colspan="5" class="empty">Nenhum arquivo importado.</td></tr></tbody></table></div>
     <div class="table-footer" id="import-history-count">Sem importações registradas.</div>
   </section>
-  <dialog class="fin-dialog" id="modal-import-card" aria-labelledby="card-edit-title">
+  
+  </div>
+</details><details class="fin-collapse" id="imports-regras-pix">
+  <summary><span>Regras de classificação PIX</span><small>Configurações de destinatários, categorias e auditoria</small></summary>
+  <div class="fin-collapse-panel">
+<section class="card pix-rules-card" id="pix-rules-panel" aria-labelledby="pix-rules-title">
+   <div class="card-head">
+    <div><p class="eyebrow">Organização automática dos pagamentos</p>
+     <h2 id="pix-rules-title">Regras de classificação de PIX</h2>
+     <p>Transforme nomes de destinatários do extrato em descrições e categorias financeiras sem perder a descrição original do banco.</p>
+    </div>
+    <button type="button" class="btn" id="pix-rules-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar regras</button>
+   </div>
+   <p class="info-note pix-rules-note">Ao importar um <strong>pagamento enviado</strong>, a regra confere o nome do destinatário e preenche a descrição e categoria. <strong>PIX recebidos nunca são classificados como saídas.</strong> O extrato original, seus valores, datas e conciliações ficam preservados.</p>
+   <p id="pix-rules-status" class="pix-rules-status" role="status" aria-live="polite">Aguardando consulta das regras...</p>
+   <div class="table-wrap"><table class="data-table pix-rules-table">
+    <thead><tr><th>Nome reconhecido no extrato</th><th>Descrição padrão</th><th>Categoria</th><th>Aplicações</th><th>Ações</th></tr></thead>
+    <tbody id="pix-rules-rows"><tr><td colspan="5" class="empty">Carregando regras...</td></tr></tbody>
+   </table></div>
+   <div class="table-footer pix-rules-footer">
+    <span id="pix-rules-count">Aguardando...</span>
+    <button type="button" class="btn" id="pix-rules-apply">Aplicar aos extratos já importados</button>
+   </div>
+   <p id="pix-rule-reapply-status" class="info-note pix-rules-apply-status" role="status">O botão acima aplica regras a transações antigas ainda não classificadas, preservando correções manuais.</p>
+   <div class="pix-rules-form-area">
+    <form id="pix-rule-form">
+     <h3 id="pix-rule-form-title">Nova regra de classificação</h3>
+     <div class="pix-rules-fields">
+      <label>Nome do destinatário no extrato
+       <input id="pix-rule-name" type="text" maxlength="100" required minlength="6" autocomplete="off" placeholder="Ex.: FRED SANTOS">
+      </label>
+      <label>Descrição que aparecerá no Financeiro
+       <input id="pix-rule-label" type="text" maxlength="150" required autocomplete="off" placeholder="Ex.: PROLABORE">
+      </label>
+      <label>Categoria do lançamento
+       <input id="pix-rule-category" type="text" maxlength="100" list="pix-rule-categories" required autocomplete="off" placeholder="Ex.: SALARIOS">
+       <datalist id="pix-rule-categories">
+        <option value="SALARIOS"></option><option value="CAFÉ DA MANHÃ"></option>
+        <option value="FORNECEDORES"></option><option value="DESPESAS"></option>
+        <option value="IMPOSTOS"></option><option value="PESSOAL"></option>
+        <option value="JUROS"></option><option value="GASTO CARROS"></option>
+       </datalist>
+      </label>
+     </div>
+     <div class="pix-rules-form-actions">
+      <label class="pix-rule-checkbox"><input type="checkbox" id="pix-rule-active" checked> Regra ativa</label>
+      <div>
+       <button type="button" class="btn" id="pix-rule-cancel" hidden>Cancelar edição</button>
+       <button type="submit" class="btn btn-primary" id="pix-rule-save">Adicionar regra</button>
+      </div>
+     </div>
+     <p id="pix-rule-form-message" class="info-note" role="status" aria-live="polite">Ex.: FRED SANTOS → PROLABORE / SALARIOS. Não use palavras genéricas como “PIX ENVIADO”.</p>
+    </form>
+   </div>
+   <details class="pix-rules-audit">
+    <summary>Histórico das classificações aplicadas</summary>
+    <p class="info-note">O nome original permanece registrado. Identificadores pessoais são ocultados nesta lista, sem alterar os dados arquivados.</p>
+    <div class="table-wrap"><table class="data-table">
+     <thead><tr><th>Data de classificação</th><th>Descrição bancária original</th><th>Descrição / categoria aplicada</th><th>Modo</th></tr></thead>
+     <tbody id="pix-rules-audit"><tr><td colspan="4" class="empty">Aguardando histórico...</td></tr></tbody>
+    </table></div>
+   </details>
+  </section>
+
+  
+  </div>
+</details><details class="fin-collapse" id="imports-planilha-homologada">
+  <summary><span>Planilha Financeiro Unificado</span><small>Homologação da planilha, histórico e conferências de PIX e débito</small></summary>
+  <div class="fin-collapse-panel">
+<div class="callout" role="note"><span class="icon" data-icon="shield"></span>
+    <div><strong>Importações com conferência antes de salvar.</strong>
+      <p>Compras do cartão ficam separadas das movimentações bancárias. Pagamentos de faturas que constam no extrato não serão duplicados como gastos do cartão no caixa.</p>
+    </div>
+  </div>
+  
+  <section class="card fin-unificado-card" id="fin-unificado-card" aria-labelledby="fin-unificado-title">
+    <div class="card-head">
+      <div>
+        <h2 id="fin-unificado-title">Importar Financeiro Unificado</h2>
+        <p>Homologação da planilha completa, com conferência de totais e sem afetar a operação financeira.</p>
+      </div>
+      <span class="env-chip">TESTE ISOLADO</span>
+    </div>
+    <div class="card-body">
+      <div class="fin-unificado-start">
+        <div>
+          <label for="fin-unificado-file" class="fin-unificado-label">Planilha Financeiro Unificado (.xlsx)</label>
+          <input id="fin-unificado-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <p class="info-note">Use o Financeiro Unificado (.xlsx). A importação reconhece AUTOPEÇAS, CARTÕES, SAÍDAS FLUXO, ENTRADAS FLUXO, ABERTOS FLUXO e BAIXAS CONCILIADAS.</p>
+          <p class="info-note"><strong>Versão CORRIGIDO_TOPLINE:</strong> o sistema identifica os 11 novos recebimentos, transfere automaticamente as 69 validações e 6 conciliações já aprovadas e arquiva a versão anterior sem apagar o histórico. Não utilize “Limpar testes” para atualizar a planilha.</p>
+        </div>
+        <div class="fin-unificado-start-actions">
+          <button type="button" id="fin-unificado-analisar" class="btn btn-teal" disabled>Analisar planilha</button>
+        </div>
+      </div>
+      <div id="fin-unificado-mensagem" class="status" role="status"></div>
+      <div id="fin-unificado-previa" class="hidden">
+        <div class="fin-unificado-metrics" id="fin-unificado-metrics"></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Origem</th><th class="money">Registros</th><th class="money">Soma da origem</th><th>Conferência</th></tr></thead>
+            <tbody id="fin-unificado-resumo"></tbody>
+          </table>
+        </div>
+        <div class="fin-unificado-samples">
+          <h3>Amostra de registros reconhecidos</h3>
+          <div class="table-wrap"><table class="data-table">
+            <thead><tr><th>Aba / Linha</th><th>Descrição</th><th>Data</th><th class="money">Valor</th></tr></thead>
+            <tbody id="fin-unificado-amostras"></tbody>
+          </table></div>
+        </div>
+        <p class="fin-unificado-warning">Compras de autopeças, despesas de cartões e pagamentos do Fluxo são conceitos diferentes. A importação guarda o histórico para conferência, mas não o adiciona automaticamente ao Dashboard nem gera novos pagamentos.</p>
+        <div class="fin-unificado-bottom">
+          <span id="fin-unificado-count">Nenhuma planilha analisada.</span>
+          <button type="button" id="fin-unificado-confirmar" class="btn btn-primary" disabled>Importar cópia para homologação</button>
+        </div>
+      </div>
+      <div class="fin-unificado-history">
+        <h3>Cópias recebidas para homologação</h3>
+        <div id="fin-unificado-historico" class="info-note">Nenhuma cópia enviada.</div>
+      </div>
+      <div class="fin-unificado-validacoes" id="fin-unificado-validacoes">
+        <h3>Conferências confirmadas do histórico</h3>
+        <div id="fin-unificado-validacoes-resumo" class="info-note" role="status">As confirmações aparecerão aqui após a homologação.</div>
+        <p class="info-note">Os métodos PIX e Débito são preservados como pagamentos à vista, não como faturas de crédito. As diferenças de valor foram conferidas, mas não classificadas automaticamente como juros. Datas perdidas permanecem em branco e seus valores são mantidos.</p>
+      </div>
+      <div class="fin-unificado-itau" id="fin-unificado-itau">
+        <h3>Conferência PIX / Débito com o Itaú</h3>
+        <p class="info-note">Recorte definido: <strong>a partir de 01/06/2026</strong>. O Fluxo de Caixa desta homologação representa o Itaú. Movimentações anteriores pertencem a outros bancos e não serão conciliadas com ele. Sem data exata, o registro fica pendente.</p>
+        <div id="fin-unificado-itau-resumo" class="fin-unificado-metrics" role="status">Aguardando a leitura da homologação.</div>
+        <div class="table-wrap">
+          <table class="data-table fin-unificado-itau-table">
+            <thead><tr><th>Compra / lançamento</th><th>Data</th><th>Meio</th><th class="money">Valor</th><th>Conferência no Itaú</th></tr></thead>
+            <tbody id="fin-unificado-itau-linhas"><tr><td colspan="5" class="info-note">Nenhuma conferência carregada.</td></tr></tbody>
+          </table>
+        </div>
+        <p class="info-note" id="fin-unificado-itau-aviso">Conciliações confirmadas com o Itaú usam referências às saídas já registradas no Fluxo de Caixa. Registros classificados como outro banco permanecem fora do caixa Itaú; sem data exata, continuam pendentes.</p>
+      </div>
+    </div>
+  </section>
+
+  
+  </div>
+</details>
+  </div>
+<dialog class="fin-dialog" id="modal-import-card" aria-labelledby="card-edit-title">
     <div class="dialog-head">
       <div><h2 id="card-edit-title">Editar gasto importado</h2><p>Corrija os dados da fatura com segurança.</p></div>
       <button type="button" id="card-edit-close" class="dialog-close" aria-label="Fechar edição do cartão"><span class="icon" data-icon="close"></span></button>
