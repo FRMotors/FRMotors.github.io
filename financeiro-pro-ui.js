@@ -336,7 +336,19 @@ function setup(){
   syncNavigationUrl('expenses',SECTION_SLUGS[id]);
   scrollToExpensesSection(id);
  }));
- document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>openModal(btn.dataset.open)));
+ document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>{
+  const target=btn.dataset.open;
+  if(btn.dataset.dismissDialog){
+    const previous=byId(btn.dataset.dismissDialog);
+    if(previous?.open)previous.close();
+  }
+  if(target==='purchase'){
+    const mode=btn.dataset.purchaseMode||'boleto';
+    const form=byId('purchase-form');
+    if(form?.elements?.forma_pagamento)form.elements.forma_pagamento.value=mode;
+  }
+  openModal(target);
+}));
  document.querySelectorAll('[data-close-modal]').forEach(btn=>btn.addEventListener('click',()=>closeModal(btn.dataset.closeModal)));
  document.querySelectorAll('[data-period]').forEach(btn=>btn.addEventListener('click',()=>changePeriod(btn.dataset.period)));
  byId('menu-toggle')?.addEventListener('click',toggleSidebar);
