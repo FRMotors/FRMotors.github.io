@@ -68,3 +68,22 @@
 .import-checking{background:#edf4fa;border:1px solid #cfdfe9;color:#50687e}
 .import-preview-table .data-table td:last-child{min-width:110px}
 @media(max-width:760px){.import-duplicate-badge,.import-new-badge,.import-checking{font-size:9px;padding:4px 6px}}
+
+/* V4.4.64 · revisão de valores idênticos no mesmo PDF */
+#import-preview-body tr[data-review="true"]{background:#fffaf0}
+.import-review-badge{
+ display:inline-block;
+ max-width:160px;
+ margin:3px 2px 1px 0;
+ padding:4px 7px;
+ background:#fff3dc;
+ border:1px solid #e9ce90;
+ color:#845b26;
+ border-radius:7px;
+ font-weight:800;
+ font-size:10px;
+ line-height:1.3;
+ white-space:normal;
+}
+#import-preview-body tr[data-review="true"] .row-sub{color:#8a6630}
+@media(max-width:760px){.import-review-badge{font-size:9px;padding:3px 5px}}
