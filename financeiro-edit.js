@@ -1,4 +1,4 @@
-/* Financeiro FR Motors · edição e exclusão segura no ambiente de testes. */
+/* Financeiro FR Motors · edição e cancelamento auditados de novos registros do site. */
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -87,6 +87,10 @@ async function open(kind,id){
  const snapshot=window.frFinanceUI?.getSnapshot();if(!snapshot)return;
  let record=(kind==='movimento'?snapshot.moves:snapshot.purchases).find(r=>r.id===id);
  if(!record){window.frFinanceUI?.showToast('Registro não encontrado. Atualize a página.',true);return}
+ const prefix=kind==='movimento'?'site-financeiro-mov-':'site-financeiro-compra-';
+ if(record.origem!=='app'||!record.referencia_origem?.startsWith(prefix)){
+  window.frFinanceUI?.showToast('Histórico protegido. Somente cadastros novos do site podem ser editados.',true);return;
+ }
  selected={kind,id,linked:false,locked:false};
  $('edit-feedback').textContent='';
  $('edit-linked-notice').textContent='Este lançamento está vinculado à baixa de um boleto. É possível corrigir descrição, data e meio de pagamento. Para alterar valor, tipo ou fornecedor, exclua a baixa e registre o pagamento novamente.';
@@ -104,7 +108,7 @@ async function open(kind,id){
   $('edit-move-amount').value=Number(record.valor).toFixed(2);
   $('edit-move-category').value=record.categoria||'';
   $('edit-move-method').value=record.meio_pagamento||'';
-  const {data,error}=await db.from('fin_teste_vinculos').select('id').eq('movimento_id',id).limit(1);
+  const {data,error}=await db.from('fin_vinculos_pagamento').select('id').eq('movimento_id',id).limit(1);
   if(error){window.frFinanceUI?.showToast('Não foi possível conferir os vínculos: '+error.message,true);return}
   if(selected?.id!==id)return;
   selected.linked=(data||[]).length>0;
@@ -114,12 +118,12 @@ async function open(kind,id){
   $('edit-purchase-date').value=record.data_compra||'';
   $('edit-purchase-amount').value=Number(record.valor_total).toFixed(2);
   $('edit-purchase-method').value=record.forma_pagamento||'boleto';
-  const {data,error}=await db.from('fin_teste_parcelas').select('id,numero,vencimento,valor_cheio,status').eq('compra_id',id).order('numero');
+  const {data,error}=await db.from('fin_parcelas').select('id,numero,vencimento,valor_cheio,status').eq('compra_id',id).order('numero');
   if(error){window.frFinanceUI?.showToast('Não foi possível carregar as parcelas: '+error.message,true);return}
   if(selected?.id!==id)return;
   if(!data?.length){window.frFinanceUI?.showToast('A compra não possui parcelas para editar.',true);return}
   fillParts(data);
-  selected.locked=data.some(p=>p.status==='pago');
+  selected.locked=data.some(p=>p.status!=='aberto');
   if(selected.locked){
     $('edit-linked-notice').textContent='Esta compra possui parcelas pagas. Para corrigir ou excluir a compra, primeiro abra Movimentações e exclua as baixas correspondentes. Os boletos serão reabertos automaticamente.';
     $('edit-linked-notice').classList.remove('hidden');
@@ -157,7 +161,7 @@ async function save(e){
   }
   if(!payload.descricao&&kind==='movimento')throw Error('Informe a descrição do lançamento.');
   toggleBusy(true);
-  const {error}=await db.rpc(kind==='movimento'?'fin_teste_alterar_movimento':'fin_teste_alterar_compra',
+  const {error}=await db.rpc(kind==='movimento'?'fin_site_alterar_movimento':'fin_site_alterar_compra',
     {p_id:id,p_acao:'editar',p_dados:payload});
   if(error)throw error;
   window.frFinanceUI?.closeModal('edit');
@@ -184,8 +188,8 @@ async function remove(){
  const {kind,id}=selected;
  try{
   toggleBusy(true);
-  const {data,error}=await db.rpc(kind==='movimento'?'fin_teste_alterar_movimento':'fin_teste_alterar_compra',
-    {p_id:id,p_acao:'excluir',p_dados:{}});
+  const {data,error}=await db.rpc(kind==='movimento'?'fin_site_alterar_movimento':'fin_site_alterar_compra',
+    {p_id:id,p_acao:'cancelar',p_dados:{}});
   if(error)throw error;
   window.frFinanceUI?.closeModal('edit');
   const reopened=Number(data?.parcelas_reabertas||0);
