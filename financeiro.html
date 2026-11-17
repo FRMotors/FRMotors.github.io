@@ -1548,6 +1548,15 @@
           <div id="hist-itau-reconcile-kpis" class="hist-kpis hist-reconcile-kpis"></div>
           <p id="hist-itau-reconcile-diff" class="hist-import-compare" role="status" aria-live="polite">Calculando a diferença com o último saldo de referência...</p>
           <p id="hist-itau-reconcile-note" class="hist-import-warning">Os lançamentos coincidentes não serão somados novamente. O histórico homologado e os arquivos originais permanecem preservados para auditoria.</p>
+          <details class="hist-reconcile-details">
+            <summary>Ver lançamentos incluídos e repetições identificadas</summary>
+            <div class="table-wrap">
+              <table class="data-table hist-table">
+                <thead><tr><th>Data</th><th>Movimentação</th><th>Tipo</th><th class="money">Valor</th><th>Decisão automática</th></tr></thead>
+                <tbody id="hist-itau-reconcile-rows"><tr><td colspan="5" class="hist-empty">Aguardando conciliação...</td></tr></tbody>
+              </table>
+            </div>
+          </details>
         </section>
         <section class="card hist-import-card" id="hist-itau-import-card" aria-labelledby="hist-itau-import-title">
           <div class="card-head">
