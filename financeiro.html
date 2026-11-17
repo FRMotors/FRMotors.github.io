@@ -2228,7 +2228,7 @@
               <label data-edit-move>Meio de pagamento
                 <select id="edit-move-method">
                   <option value="">Não informado</option><option value="boleto">Boleto</option><option value="pix">PIX</option>
-                  <option value="cartao_credito">Cartão de crédito</option><option value="debito">Débito</option>
+                  <option value="debito">Débito</option>
                   <option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option>
                 </select>
               </label>
@@ -2238,12 +2238,12 @@
               <label data-edit-purchase class="hidden">Forma da compra
                 <select id="edit-purchase-method">
                   <option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito</option>
-                  <option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option>
-                  <option value="outro">Outro</option>
+                  
+                  
                 </select>
               </label>
               <div data-edit-purchase class="hidden" style="grid-column:1/-1">
-                <p class="form-note">Edite os valores e vencimentos das parcelas. A soma deve ser igual ao valor total. Compras já pagas precisam ter suas baixas estornadas antes da edição.</p>
+                <p class="form-note">Edite os valores e vencimentos das parcelas. A soma deve ser igual ao valor total. Compras pagas ou canceladas ficam protegidas e não podem ser alteradas por este formulário.</p>
                 <div id="edit-installments" class="installments"></div>
                 <p id="edit-installments-check" class="info-note" role="status"></p>
               </div>
@@ -2261,7 +2261,7 @@
             </div>
           </form>
           <div id="edit-confirm" class="edit-confirm hidden" role="alertdialog" aria-labelledby="edit-confirm-title" aria-describedby="edit-confirm-description">
-            <strong id="edit-confirm-title">Excluir este registro?</strong>
+            <strong id="edit-confirm-title">Cancelar este registro?</strong>
             <p id="edit-confirm-description">O registro será marcado como cancelado e permanecerá no histórico de auditoria.</p>
             <div class="edit-actions-right">
               <button type="button" class="btn" id="edit-delete-cancel">Manter registro</button>
