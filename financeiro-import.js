@@ -9,6 +9,7 @@ const monthNames={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,n
 let current=null,preview=[],invalid=0,working=false,bankImported=[],linkedBank=new Set();
 let cardRows=[],selectedCard=null;
 let reconcilePairKey='';
+let duplicateInventory=new Map(),duplicateCheckReady=false,previewGeneration=0;
 const pdfModule='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 const pdfWorker='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 function notice(id,message,bad=false){const el=$(id);if(!el)return;el.textContent=message;el.className='status '+(bad?'bad':'ok')}
@@ -256,6 +257,7 @@ async function saveSicoobPaymentsFromButton(){
  finally{working=false;$('sicoob-save-payments').disabled=false}
 }
 function updateKind(){
+ previewGeneration++;duplicateCheckReady=false;duplicateInventory=new Map();
  const kind=selectedKind();
  $('import-sign-bank').classList.toggle('hidden',kind!=='banco');
  $('import-sign-card').classList.toggle('hidden',kind!=='cartao');
@@ -265,6 +267,7 @@ function updateKind(){
  notice('import-read-status','Confira os lançamentos antes de importar. Arquivos não são enviados integralmente ao banco.');
 }
 async function readFile(){
+ previewGeneration++;duplicateCheckReady=false;duplicateInventory=new Map();
  const file=$('import-file').files?.[0];
  if(!file)return;
  if(working)return;
@@ -358,9 +361,48 @@ function validateSource(){
  if($('import-col-amount').value===''&&$('import-col-debit').value===''&&$('import-col-credit').value==='')throw Error('Selecione a coluna de valor ou as colunas de débito/crédito.');
  return account;
 }
-function buildPreview(){
+function duplicateKey(item){
+ if(!item?.date||!item?.nature||!Number.isFinite(item.valor))return '';
+ return [item.date,item.nature,Math.round(item.valor*100)].join('|');
+}
+function normalizedBankName(s){
+ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+}
+async function existingBankDuplicates(account){
+ const {data:imports,error}=await db.from('fin_teste_importacoes')
+  .select('id,conta_nome').eq('tipo','banco').order('criado_em',{ascending:false});
+ if(error)throw error;
+ const ids=(imports||[]).filter(x=>normalizedBankName(x.conta_nome)===normalizedBankName(account)).map(x=>x.id);
+ const result=new Map();
+ for(let n=0;n<ids.length;n+=30){
+  const part=await fetchAll(()=>db.from('fin_teste_import_linhas')
+   .select('id,importacao_id,data_lancamento,natureza,valor')
+   .in('importacao_id',ids.slice(n,n+30)).order('id',{ascending:true}));
+  for(const item of part){
+   const key=duplicateKey({date:item.data_lancamento,nature:item.natureza,valor:Number(item.valor)});
+   if(key)result.set(key,(result.get(key)||0)+1);
+  }
+ }
+ return result;
+}
+function markRepeatedLines(){
+ const counts=new Map();
+ for(const row of preview){
+  const key=duplicateKey(row);
+  const seen=(counts.get(key)||0)+1;
+  if(key)counts.set(key,seen);
+  const duplicate=selectedKind()==='banco'&&duplicateCheckReady&&key&&seen<=(duplicateInventory.get(key)||0);
+  const wasDuplicate=Boolean(row.duplicate);
+  row.duplicate=Boolean(duplicate);
+  if(row.duplicate){row.selected=false}
+  else if(wasDuplicate&&!row.userToggled){row.selected=row.defaultSelected}
+ }
+}
+async function buildPreview(){
+ const generation=++previewGeneration;
  try{
-  validateSource();const rows=current.rows.slice(Number($('import-header').value)+1);
+  duplicateCheckReady=false;duplicateInventory=new Map();
+  const account=validateSource();const rows=current.rows.slice(Number($('import-header').value)+1);
   if(rows.length>4000)throw Error('Arquivo com mais de 4.000 linhas. Faça uma exportação de período menor.');
   preview=[];invalid=0;let offset=Number($('import-header').value)+1;
   const seen=new Map();
@@ -372,50 +414,76 @@ function buildPreview(){
    const base=[selectedKind(),$('import-account').value.trim().toUpperCase(),
       current.hash,'linha:'+(i+offset)].join('|');
    const n=seen.get(base)||0;seen.set(base,n+1);
-   preview.push({...result,base,occurrence:n,selected:current.meta[i]?.defaultInclude??result.defaultInclude,
+   const defaultSelected=current.meta[i]?.defaultInclude??result.defaultInclude;
+   preview.push({...result,base,occurrence:n,selected:defaultSelected,defaultSelected,
       originalValue:result.valor,rawAmount:result.valor.toFixed(2).replace('.',','),
-      index:i+offset});
+      index:i+offset,duplicate:false,userToggled:false});
   }
   if(!preview.length)throw Error('Nenhuma transação válida. Revise as colunas e o formato das datas.');
   if(preview.length>1500)throw Error('Foram identificadas mais de 1.500 transações; selecione um período menor.');
   $('import-preview-card').hidden=false;
+  if(selectedKind()==='banco'){
+   notice('import-read-status','Comparando os movimentos com extratos bancários já importados...');
+   drawPreview();
+   duplicateInventory=await existingBankDuplicates(account);
+   if(generation!==previewGeneration)return;
+  }
+  duplicateCheckReady=true;
+  markRepeatedLines();
   drawPreview();
-  notice('import-read-status','Prévia pronta. Revise os tipos e desmarque linhas que não representem transações reais.');
- }catch(e){notice('import-read-status',e.message,true);$('import-preview-card').hidden=true}
+  const duplicateCount=preview.filter(r=>r.duplicate).length;
+  notice('import-read-status',duplicateCount?
+   'Verificação concluída: '+duplicateCount+' possível(is) repetição(ões) bloqueada(s). Apenas movimentos novos podem ser selecionados.':
+   'Verificação concluída. Nenhuma repetição identificada nos extratos desta conta.');
+ }catch(e){
+  if(generation!==previewGeneration)return;
+  duplicateCheckReady=false;
+  notice('import-read-status','Não foi possível verificar repetições: '+e.message+'. A importação está bloqueada até concluir a verificação.',true);
+  if(preview.length){drawPreview()}else $('import-preview-card').hidden=true;
+ }
 }
 function drawPreview(){
  const body=$('import-preview-body'),kind=selectedKind(),opts=kind==='banco'?
    [['entrada','Entrada'],['saida','Saída']]:[['compra','Compra'],['estorno','Estorno']];
- body.innerHTML=preview.map((r,i)=>'<tr data-pidx="'+i+'" data-excluded="'+(!r.selected)+'"><td>'+
-  '<input type="checkbox" data-import-check="'+i+'" '+(r.selected?'checked':'')+' aria-label="Incluir linha '+r.index+'"></td>'+
+ body.innerHTML=preview.map((r,i)=>'<tr data-pidx="'+i+'" data-excluded="'+(!r.selected)+'" data-duplicate="'+Boolean(r.duplicate)+'"><td>'+
+  '<input type="checkbox" data-import-check="'+i+'" '+(r.selected?'checked':'')+(r.duplicate?' disabled':'')+' aria-label="Incluir linha '+r.index+'"></td>'+
   '<td>'+esc(r.date.split('-').reverse().join('/'))+'</td><td><span class="row-main">'+esc(r.desc)+'</span><span class="row-sub">Linha '+r.index+'</span></td>'+
   '<td><select data-import-nature="'+i+'" aria-label="Natureza linha '+r.index+'">'+opts.map(([value,label])=>
     '<option value="'+value+'"'+(r.nature===value?' selected':'')+'>'+label+'</option>').join('')+'</select></td>'+
-  '<td class="money"><input class="import-edit-value" type="text" inputmode="decimal" data-import-value="'+i+'" aria-label="Valor em reais da linha '+r.index+'" value="'+esc(r.rawAmount)+'" title="Corrija o valor antes de importar" /></td></tr>').join('');
+  '<td class="money"><input class="import-edit-value" type="text" inputmode="decimal" data-import-value="'+i+'" aria-label="Valor em reais da linha '+r.index+'" value="'+esc(r.rawAmount)+'" title="Corrija o valor antes de importar" /></td>'+
+  '<td>'+(r.duplicate?'<span class="import-duplicate-badge" title="Mesmo dia, tipo e valor já importados nesta conta">Repetição bloqueada</span>':
+    !duplicateCheckReady&&kind==='banco'?'<span class="import-checking">Verificando...</span>':
+    '<span class="import-new-badge">Sem repetição</span>')+'</td></tr>').join('');
  updateCounts();
 }
 function updateCounts(){
+ if(duplicateCheckReady)markRepeatedLines();
  const rows=preview.filter(x=>x.selected);
+ const repeats=preview.filter(x=>x.duplicate).length;
  const amountInvalid=rows.filter(r=>r.valor===null||!Number.isFinite(r.valor)||r.valor<=0);
  const net=rows.reduce((v,r)=>v+(['entrada','estorno'].includes(r.nature)?1:-1)*(r.valor||0),0);
- $('import-preview-count').textContent=rows.length+' selecionados';
+ $('import-preview-count').textContent=rows.length+' selecionados'+(repeats?' · '+repeats+' repetidos bloqueados':'');
  $('import-count-all').textContent=String(preview.length);
  $('import-count-selected').textContent=String(rows.length);
  $('import-count-skipped').textContent=String(invalid+preview.length-rows.length);
  $('import-total-selected').textContent=cash(selectedKind()==='banco'?net:-net);
- $('import-confirm').disabled=working||rows.length===0||rows.length>1500||amountInvalid.length>0;
- $('import-select-all').checked=preview.length>0&&rows.length===preview.length;
- $('import-preview-warning').textContent=amountInvalid.length?
-  amountInvalid.length+' linha(s) com valor inválido. Corrija o valor antes de importar.':
-  rows.length?
-  'Confira cada valor. Para corrigir um PDF já importado, use Editar; reimportar o mesmo arquivo não substitui lançamentos anteriores.':
-  'Selecione ao menos uma transação para importar.';
+ $('import-confirm').disabled=working||!duplicateCheckReady||rows.length===0||rows.length>1500||amountInvalid.length>0;
+ $('import-select-all').checked=preview.some(r=>!r.duplicate)&&preview.filter(r=>!r.duplicate).every(r=>r.selected);
+ $('import-preview-warning').textContent=!duplicateCheckReady&&selectedKind()==='banco'?
+  'Verificação de repetições pendente. Não é possível importar enquanto a conferência não for concluída.':
+  amountInvalid.length?amountInvalid.length+' linha(s) com valor inválido. Corrija o valor antes de importar.':
+  repeats?repeats+' repetição(ões) bloqueada(s) automaticamente por data, tipo e valor; '+rows.length+' movimento(s) novo(s) selecionado(s).':
+  rows.length?'Sem repetições identificadas nesta conta. Confira cada valor antes de salvar.':
+  'Nenhuma linha nova selecionada para importar.';
 }
 async function saveImport(){
  if(working)return;
  try{
-  const account=validateSource(),selected=preview.filter(x=>x.selected);
-  if(!selected.length)throw Error('Selecione pelo menos uma transação.');
+  const account=validateSource();
+  if(!duplicateCheckReady)throw Error('A verificação de repetições ainda não foi concluída.');
+  markRepeatedLines();
+  const selected=preview.filter(x=>x.selected&&!x.duplicate);
+  if(!selected.length)throw Error('Nenhum lançamento novo para importar. Os repetidos foram bloqueados.');
   if(selected.some(r=>r.valor===null||!Number.isFinite(r.valor)||r.valor<=0))throw Error('Corrija os valores inválidos antes de importar.');
   working=true;$('import-confirm').disabled=true;
   notice('import-save-status','Calculando identificadores e conferindo duplicidades...');
@@ -441,10 +509,12 @@ async function saveImport(){
       notice('sicoob-payments-status',evidenceMessage,true);
     }
   }
+  const blocked=preview.filter(x=>x.duplicate).length;
+  const repeatMessage=blocked?' '+blocked+' possível(is) repetição(ões) bloqueada(s) na prévia.':'';
   const bankItau=selectedKind()==='banco'&&/itau|itaú/i.test(account);
   const boundary=bankItau?' Extrato salvo na base de importações; o caixa homologado não é alterado automaticamente. Consulte o resumo no painel Itaú.':'';
-  notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Duplicados ignorados: '+data.duplicadas+'.'+evidenceMessage+boundary);
-  window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+data.duplicadas+' repetidos ignorados.'+boundary);
+  notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Repetidos ignorados pelo banco: '+data.duplicadas+'.'+repeatMessage+evidenceMessage+boundary);
+  window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+(data.duplicadas+blocked)+' repetidos não adicionados.'+boundary);
   await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve(),
     window.frPixRulesUI?.refresh?.()||Promise.resolve()]);
  }catch(e){notice('import-save-status','Importação não concluída: '+e.message,true)}
@@ -801,6 +871,7 @@ function init(){
   if(!current?.workbook)return;
   current.rows=window.XLSX.utils.sheet_to_json(current.workbook.Sheets[$('import-sheet').value],{header:1,raw:false,defval:''});
   current.meta=[];setRows(current.rows);
+  previewGeneration++;duplicateCheckReady=false;duplicateInventory=new Map();
   $('import-preview-card').hidden=true;
  });
  $('import-header').addEventListener('change',mapColumns);
@@ -810,7 +881,7 @@ function init(){
  $('import-preview-body').addEventListener('change',event=>{
   const check=event.target.closest('[data-import-check]'),nature=event.target.closest('[data-import-nature]');
   const amount=event.target.closest('[data-import-value]');
-  if(check){const i=Number(check.dataset.importCheck);if(preview[i])preview[i].selected=check.checked;check.closest('tr').dataset.excluded=String(!check.checked)}
+  if(check){const i=Number(check.dataset.importCheck);if(preview[i]&&!preview[i].duplicate){preview[i].selected=check.checked;preview[i].userToggled=true}check.closest('tr').dataset.excluded=String(!check.checked)}
   if(nature){const i=Number(nature.dataset.importNature);if(preview[i])preview[i].nature=nature.value}
   if(amount){
     const i=Number(amount.dataset.importValue);
@@ -821,13 +892,14 @@ function init(){
     }
     amount.classList.toggle('import-invalid-value',n===null||n<=0);
   }
-  updateCounts();
+  if(nature||amount)drawPreview();else updateCounts();
  });
  $('import-select-all').addEventListener('change',e=>{
-  preview.forEach(r=>r.selected=e.target.checked);drawPreview();
+  preview.forEach(r=>{if(!r.duplicate){r.selected=e.target.checked;r.userToggled=true}});drawPreview();
  });
  $('import-toggle-all').addEventListener('click',()=>{
-  const target=preview.some(x=>!x.selected);preview.forEach(r=>r.selected=target);drawPreview();
+  const target=preview.some(x=>!x.selected&&!x.duplicate);
+  preview.forEach(r=>{if(!r.duplicate){r.selected=target;r.userToggled=true}});drawPreview();
  });
  $('import-card-rows').addEventListener('click',event=>{
   const btn=event.target.closest('[data-card-edit]');
