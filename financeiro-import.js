@@ -441,8 +441,10 @@ async function saveImport(){
       notice('sicoob-payments-status',evidenceMessage,true);
     }
   }
-  notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Duplicados ignorados: '+data.duplicadas+'.'+evidenceMessage);
-  window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+data.duplicadas+' repetidos ignorados.');
+  const bankItau=selectedKind()==='banco'&&/itau|itaú/i.test(account);
+  const boundary=bankItau?' Extrato salvo na base de importações; o caixa homologado não é alterado automaticamente. Consulte o resumo no painel Itaú.':'';
+  notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Duplicados ignorados: '+data.duplicadas+'.'+evidenceMessage+boundary);
+  window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+data.duplicadas+' repetidos ignorados.'+boundary);
   await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve(),
     window.frPixRulesUI?.refresh?.()||Promise.resolve()]);
  }catch(e){notice('import-save-status','Importação não concluída: '+e.message,true)}
