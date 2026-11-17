@@ -85,3 +85,33 @@
  .hist-import-compare{margin:0 12px 10px;font-size:11px}
  .hist-import-warning{padding:0 12px 14px}
 }
+
+/* V4.4.63 · Conciliação Itaú auditável, sem corrigir o saldo por aproximação. */
+.hist-reconcile-card{margin:12px 0 18px;overflow:hidden;border:1px solid #b7d9dd;background:linear-gradient(180deg,#f5fbfb 0%,#fff 100%)}
+.hist-reconcile-card>.card-head{align-items:center;gap:12px}
+.hist-reconcile-card>.card-head h2{font-size:18px;font-weight:820;margin:2px 0 5px}
+.hist-reconcile-card>.card-head p:not(.eyebrow){font-size:11px;line-height:1.5;color:var(--muted);margin:0}
+.hist-reconcile-kpis{padding:0 18px 12px;gap:10px;margin:0;grid-template-columns:repeat(4,minmax(0,1fr))}
+.hist-reconcile-kpis>.hist-kpi{padding:13px;min-width:0}
+.hist-reconcile-kpis .hist-kpi-value{font-size:clamp(16px,1.6vw,23px);white-space:normal;overflow-wrap:anywhere}
+.hist-reconcile-card .hist-import-compare{margin:0 18px 12px}
+.hist-reconcile-ok{background:#e9f7f0;border-color:#b8dfc7;color:#206346}
+.hist-reconcile-mismatch{background:#fff7e9;border-color:#e8d4ab;color:#80602d}
+.hist-reconcile-card .hist-import-warning{margin-bottom:0}
+.hist-reconcile-details{border-top:1px solid #dae9e9;margin-top:8px}
+.hist-reconcile-details>summary{cursor:pointer;padding:13px 18px;font-size:12px;font-weight:800;color:#32626b}
+.hist-reconcile-details>summary:hover{background:#ecf8f8}
+.hist-reconcile-details .table-wrap{padding:0 15px 14px}
+.hist-reconcile-flag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:7px;display:inline-block}
+.hist-reconcile-flag.new{color:#23634b;background:#e4f5eb}
+.hist-reconcile-flag.duplicate{color:#825b25;background:#fff0d5}
+@media(max-width:960px){.hist-reconcile-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){
+ .hist-reconcile-card>.card-head{align-items:stretch;flex-direction:column}
+ .hist-reconcile-kpis{padding:0 12px 12px;gap:8px}
+ .hist-reconcile-kpis>.hist-kpi{padding:11px}
+ .hist-reconcile-kpis .hist-kpi-value{font-size:16px}
+ .hist-reconcile-card .hist-import-compare{margin:0 12px 12px}
+ .hist-reconcile-details>summary{padding:13px 12px}
+ .hist-reconcile-details .table-wrap{padding:0 8px 10px}
+}
