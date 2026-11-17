@@ -566,6 +566,7 @@
   <div class="sidebar-section-label">Painel de controle</div>
   <nav class="sidebar-links" aria-label="Seções do financeiro">
     <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
+    <button type="button" data-view="movements"><span class="icon" data-icon="wallet"></span> Movimentações do site</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras parceladas</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
@@ -586,8 +587,8 @@
     <a href="./dashboard.html"><span class="icon" data-icon="chart"></span> Dashboard da oficina</a>
   </nav>
   <div class="sidebar-footer">
-    <strong>Financeiro · versão de testes</strong>
-    <p>Ambiente isolado. Os dados desta área não afetam o caixa oficial da empresa.</p>
+    <strong>Financeiro · banco operacional</strong>
+    <p>Cadastros oficiais no Supabase, com histórico migrado protegido e cópia periódica no Google.</p>
   </div>
 </aside>
 <div class="main-shell">
@@ -598,7 +599,7 @@
       <span class="crumb-current" id="crumb-page">Visão geral</span>
     </div>
     <div class="topbar-actions">
-      <span class="top-status">Ambiente de testes</span>
+      <span class="top-status">Supabase · operacional</span>
       <button type="button" id="refresh-data" class="btn btn-icon" aria-label="Atualizar informações" title="Atualizar informações"><span class="icon" data-icon="refresh"></span></button>
       <span class="account-avatar" aria-label="FR Motors">FR</span>
     </div>
@@ -731,12 +732,12 @@
         <div class="legacy-demo-block" hidden aria-hidden="true">
         <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
           <div><strong>Abaixo começa o ambiente de demonstração.</strong>
-          <p>Os indicadores, gráficos e lançamentos abaixo são somente de testes. Os valores reais homologados estão no painel acima e nos módulos operacionais.</p></div>
+          <p>Os indicadores abaixo consultam os lançamentos reais do Supabase, sem somar compras ou faturas.</p></div>
         </div>
         <div class="hist-quicklink" role="note">
           <div>
             <strong>Histórico homologado disponível</strong>
-            <p>Os lançamentos efetivos já estão disponíveis na Base migrada. Consulte o livro-caixa histórico separado dos indicadores de testes, sem misturar pagamentos, boletos e cartões.</p>
+            <p>Os lançamentos efetivos já estão disponíveis na Base migrada, sem somar compras e faturas duas vezes.</p>
           </div>
           <div class="hist-quick-actions">
             <button type="button" class="btn btn-primary" data-view="itau"><span class="icon icon-sm" data-icon="bank"></span> Abrir painel Itaú</button>
@@ -804,7 +805,7 @@
           </div>
         </div>
         <div class="section-header">
-          <div><p class="eyebrow">Registros financeiros</p><h1 class="page-heading">Movimentações</h1><p class="page-description">Entradas e saídas confirmadas, vinculadas à base de testes. Consulte e exporte os lançamentos por período.</p></div>
+          <div><p class="eyebrow">Registros financeiros</p><h1 class="page-heading">Movimentações</h1><p class="page-description">Entradas e saídas efetivas do banco oficial. Compras no cartão e boletos pendentes não são somados como saídas de caixa.</p></div>
           <div class="header-buttons"><button type="button" class="btn btn-primary" data-open="move"><span class="icon icon-sm" data-icon="plus"></span> Novo lançamento</button></div>
         </div>
         <section class="card">
@@ -914,16 +915,16 @@
           <p class="info-note fin-homolog-note">Os compromissos são os registros expressamente marcados como EM ABERTO no Fluxo de Caixa. Nem todos são boletos de autopeças. A aba de origem informa o valor previsto, mas não o valor cheio ou desconto individual: esses campos aparecem como “—”. O vínculo de conciliação é exibido separadamente e não altera a planilha nem cria pagamentos.</p>
         </section>
         </details>
-        <details class="fin-cp-legacy" hidden>
-          <summary>Mostrar parcelas cadastradas manualmente no ambiente de testes</summary>
-        <h2 class="fin-homolog-manual-title">Parcelas cadastradas manualmente no aplicativo (teste)</h2>
+        <details class="fin-cp-legacy" open>
+          <summary>Boletos e parcelas cadastrados pelo site</summary>
+        <h2 class="fin-homolog-manual-title">Parcelas operacionais da FR Motors</h2>
         <div class="section-card-list">
           <article class="insight-card"><span>Valor cheio em aberto</span><strong id="pending-value">R$ 0,00</strong><small>Antes de descontos e encargos</small></article>
           <article class="insight-card"><span>Valor cheio vencido</span><strong id="overdue-value">R$ 0,00</strong><small>Parcelas com vencimento anterior a hoje</small></article>
           <article class="insight-card"><span>Vencem nos próximos sete dias</span><strong id="soon-count">0</strong><small>Contagem de parcelas</small></article>
         </div>
         <section class="card">
-          <div class="card-head"><div><h2>Boletos e parcelas cadastrados no aplicativo</h2><p>Registros manuais separados da planilha homologada</p></div><div class="header-buttons"><button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button><button type="button" class="btn btn-primary" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button></div></div>
+          <div class="card-head"><div><h2>Boletos e parcelas cadastrados pelo site</h2><p>Novos boletos oficiais; carteira histórica conciliada preservada.</p></div><div class="header-buttons"><button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button><button type="button" class="btn btn-primary" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button></div></div>
           <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-dues" type="search" placeholder="Buscar fornecedor ou vencimento..." aria-label="Buscar contas a pagar"></label></div>
           <div class="table-wrap"><table class="data-table"><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Situação</th><th></th></tr></thead><tbody id="due"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
           <div class="table-footer" id="dues-count">0 parcela(s)</div>
@@ -1115,10 +1116,10 @@
               <button type="button" class="btn" id="pc-next" disabled>Próxima</button></div>
           </div>
         </section>
-        <p class="info-note pc-separator-note" hidden><strong>Cadastro manual de testes:</strong> a lista abaixo continua separada dos cartões históricos. Compras inseridas manualmente no ambiente de testes não são somadas aos valores homologados.</p>
-        <section class="card" hidden>
-          <div class="card-head"><div><h2>Compras cadastradas (teste)</h2><p>Histórico isolado do ambiente de testes</p></div>
-          <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra de teste</button></div>
+        <p class="info-note pc-separator-note"><strong>Compras novas do site:</strong> as compras cadastradas pelo site ficam separadas das faturas históricas, evitando dupla contagem.</p>
+        <section class="card">
+          <div class="card-head"><div><h2>Compras cadastradas pelo site</h2><p>Novos registros oficiais, com auditoria e sem alterar compras antigas.</p></div>
+          <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button></div>
           <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-purchases" type="search" placeholder="Buscar descrição, fornecedor ou data..." aria-label="Buscar compras"></label></div>
           <div class="table-wrap"><table class="data-table"><thead><tr><th>Data da compra</th><th>Descrição</th><th>Fornecedor</th><th class="money">Valor total</th><th>Situação</th><th class="edit-column">Ações</th></tr></thead><tbody id="purchases-rows"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
           <div class="table-footer" id="purchase-count">0 compra(s)</div>
@@ -2149,8 +2150,8 @@
             <label>Valor (R$)<input name="valor" type="number" step="0.01" min="0.01" required placeholder="0,00"></label>
             <label>Categoria<input name="categoria" placeholder="Ex.: Autopeças" maxlength="100"></label>
             <label>Fornecedor<select name="fornecedor_id" id="supplier-select"><option value="">Não se aplica</option></select></label>
-            <label>Meio<select name="meio_pagamento"><option value="">Não informado</option><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="cartao_credito">Cartão de crédito</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option></select></label>
-            <div style="grid-column:1/-1"><p class="form-note">Para quitar um boleto cadastrado, use <b>Dar baixa</b>. Assim, o pagamento não será registrado duas vezes.</p><div class="form-actions"><button type="button" class="btn" data-close-modal="move">Cancelar</button><button class="btn btn-primary" id="save-move" type="submit">Salvar lançamento</button></div><div id="move-status" class="status" role="status"></div></div>
+            <label>Meio<select name="meio_pagamento"><option value="">Não informado</option><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option></select></label>
+            <div style="grid-column:1/-1"><p class="form-note">Para quitar um boleto cadastrado pelo site, use <b>Dar baixa</b>. Não registre novamente pagamentos já importados pelo extrato.</p><div class="form-actions"><button type="button" class="btn" data-close-modal="move">Cancelar</button><button class="btn btn-primary" id="save-move" type="submit">Salvar lançamento</button></div><div id="move-status" class="status" role="status"></div></div>
           </form>
         </div>
       </dialog>
@@ -2163,10 +2164,10 @@
             <label>Data da compra<input name="data_compra" type="date" required></label>
             <label style="grid-column:1/-1">Descrição<input name="descricao" maxlength="250" placeholder="Ex.: Compra de peças e acessórios"></label>
             <label>Valor total (R$)<input name="valor_total" type="number" min="0.01" step="0.01" required placeholder="0,00"></label>
-            <label>Forma de pagamento<select name="forma_pagamento" required><option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
+            <label>Forma de pagamento<select name="forma_pagamento" required><option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito</option></select></label>
             <label>Parcelas<select name="quantidade" id="installment-count" required><option value="1">1 parcela</option><option value="2">2 parcelas</option><option value="3">3 parcelas (30/60/90)</option><option value="4">4 parcelas</option><option value="6">6 parcelas</option><option value="10">10 parcelas</option><option value="12">12 parcelas</option></select></label>
             <label>Primeiro vencimento<input name="vencimento" id="purchase-due" type="date" required></label>
-            <div style="grid-column:1/-1"><p class="form-note">Os vencimentos são sugeridos com intervalos de 30 dias. Revise as datas e os valores de cada parcela antes de salvar.</p><div id="installments" class="installments"></div><p class="info-note" id="installment-check" role="status"></p>
+            <div style="grid-column:1/-1"><p class="form-note">Revise cada parcela. Compras no cartão não geram saída bancária; o pagamento da fatura é controlado separadamente.</p><div id="installments" class="installments"></div><p class="info-note" id="installment-check" role="status"></p>
               <div class="form-actions"><button type="button" class="btn" data-close-modal="purchase">Cancelar</button><button id="save-purchase" class="btn btn-primary" type="submit">Salvar compra e parcelas</button></div><div id="purchase-status" class="status" role="status"></div>
             </div>
           </form>
@@ -2174,7 +2175,7 @@
       </dialog>
 
       <dialog id="modal-pay" class="fin-dialog" aria-labelledby="pay-title">
-        <div class="dialog-head"><div><h2 id="pay-title">Dar baixa em parcela</h2><p>Confirme o valor efetivamente pago, com desconto ou juros.</p></div><button type="button" class="dialog-close" data-close-modal="pay" aria-label="Fechar"><span class="icon" data-icon="close"></span></button></div>
+        <div class="dialog-head"><div><h2 id="pay-title">Dar baixa em parcela</h2><p>Confirme o pagamento do boleto do site, com desconto ou juros.</p></div><button type="button" class="dialog-close" data-close-modal="pay" aria-label="Fechar"><span class="icon" data-icon="close"></span></button></div>
         <div class="dialog-body">
           <form id="pay-form" class="fields">
             <label style="grid-column:1/-1">Parcela em aberto<select id="pay-installment" required><option value="">Selecione um boleto</option></select></label>
