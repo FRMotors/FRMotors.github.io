@@ -11,6 +11,7 @@ const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data
 const write=(id,text)=>{const node=$(id);if(node)node.textContent=text};
 const groupName=g=>g==='autopecas'?'Autopeças':'Cartões / outros meios';
 const monthOf=r=>(r.grupo==='cartoes'?r.mes_fatura:r.vencimento)?.slice(0,7)||'sem-mes';
+const inYear=r=>{const y=$('doc-year')?.value||'todos';return y==='todos'||monthOf(r).slice(0,4)===y;};
 let documents=[],page=0,monthPage=0,loading=null;
 const PAGE_SIZE=35;
 const MONTH_PAGE_SIZE=12;
@@ -33,6 +34,7 @@ function filters(){
  const month=$('doc-month')?.value||'todos';
  const search=($('doc-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  return documents.filter(r=>{
+  if(!inYear(r))return false;
   if(group!=='todos'&&r.grupo!==group)return false;
   if(include==='incluidos'&&!r.incluir)return false;
   if(include==='excluidos'&&r.incluir)return false;
@@ -61,10 +63,12 @@ function summaryRows(rows,keySelector){
  return [...groups.values()].sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,'pt-BR'));
 }
 function drawSummary(){
- const included=documents.filter(r=>r.incluir);
+ const chosenMonth=$('doc-month')?.value||'todos';
+ const inPeriod=r=>inYear(r)&&(chosenMonth==='todos'||monthOf(r)===chosenMonth);
+ const included=documents.filter(r=>r.incluir&&inPeriod(r));
  const auto=included.filter(r=>r.grupo==='autopecas');
  const cards=included.filter(r=>r.grupo==='cartoes');
- const ignored=documents.filter(r=>!r.incluir);
+ const ignored=documents.filter(r=>!r.incluir&&inPeriod(r));
  write('doc-auto-count',String(auto.length));
  write('doc-auto-total',brl(auto.reduce((sum,r)=>sum+cents(r.valor_registrado),0)/100));
  write('doc-card-count',String(cards.length));
@@ -146,10 +150,17 @@ function draw(){
  if($('doc-next'))$('doc-next').disabled=page>=pages-1;
  drawSummary();
 }
+function updateYears(){
+ const sel=$('doc-year');if(!sel)return;
+ const prior=sel.value||'todos';
+ const years=[...new Set(documents.map(monthOf).filter(m=>/^\d{4}-\d{2}$/.test(m)).map(m=>m.slice(0,4)))].sort().reverse();
+ sel.replaceChildren(new Option('Todos os anos','todos'),...years.map(y=>new Option(y,y)));
+ if(years.includes(prior))sel.value=prior;
+}
 function updateMonths(){
  const sel=$('doc-month');if(!sel)return;
  const value=sel.value||'todos';
- const months=[...new Set(documents.map(monthOf))]
+ const months=[...new Set(documents.filter(inYear).map(monthOf))]
   .sort((a,b)=>(b==='sem-mes'?'0000-00':b).localeCompare(a==='sem-mes'?'0000-00':a));
  sel.replaceChildren(new Option('Todos os meses','todos'),
    ...months.map(m=>new Option(m==='sem-mes'?'Sem mês':m.slice(5,7)+'/'+m.slice(0,4),m)));
@@ -199,7 +210,7 @@ async function refresh(){
       String(b.data_evento||b.vencimento||'').localeCompare(String(a.data_evento||a.vencimento||''))||
       b.linha_excel-a.linha_excel;
    });
-   updateMonths();draw();
+   updateYears();updateMonths();draw();
    const included=documents.filter(r=>r.incluir).length,ignored=documents.length-included;
    write('doc-status','Histórico conferido: '+documents.length+' documentos, '+included+
     ' incluídos e '+ignored+' excluídos. Todos preservados sem criar movimentos no caixa.');
@@ -212,6 +223,7 @@ async function refresh(){
 }
 function setup(){
  if(!$('doc-rows'))return;
+ $('doc-year')?.addEventListener('change',()=>{updateMonths();page=0;monthPage=0;draw()});
  for(const id of ['doc-type','doc-include','doc-month'])
   $(id)?.addEventListener('change',()=>{page=0;if(id==='doc-month')monthPage=0;draw()});
  $('doc-search')?.addEventListener('input',()=>{page=0;draw()});

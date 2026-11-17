@@ -860,6 +860,7 @@
               <option value="sem_data">Sem vencimento</option>
               <option value="conciliado">Conciliados</option>
             </select>
+            <select id="cp-year-filter" class="filter-select" aria-label="Filtrar contas a pagar por ano"><option value="todos">Todos os anos</option></select>
             <select id="cp-month-filter" class="filter-select" aria-label="Filtrar por mês">
               <option value="todos">Todos os meses</option>
             </select>
@@ -1096,6 +1097,7 @@
               <input id="pc-search" type="search" placeholder="Buscar compra, código, parcela..." aria-label="Buscar parcelas dos cartões">
             </label>
             <select id="pc-card" class="filter-select" aria-label="Filtrar cartão"><option value="todos">Todos os cartões</option></select>
+            <select id="pc-year" class="filter-select" aria-label="Filtrar parcelas por ano"><option value="todos">Todos os anos</option></select>
             <select id="pc-month" class="filter-select" aria-label="Filtrar mês da fatura"><option value="todos">Todos os meses</option></select>
             <select id="pc-status" class="filter-select" aria-label="Situação da fatura">
               <option value="todos">Todas as situações</option>
@@ -1138,6 +1140,10 @@
    <p class="page-description">Compras de autopeças e lançamentos da aba CARTÕES, lado a lado. As faturas e as saídas bancárias continuam sendo controladas separadamente.</p>
   </div>
   <span class="env-chip">DOCUMENTOS · CONSULTA</span>
+ </div>
+ <div class="data-toolbar fin-doc-filters" aria-label="Período dos gastos documentais">
+  <label>Ano dos gastos <select id="doc-year" class="filter-select" aria-label="Ano dos gastos em autopeças e cartões"><option value="todos">Todos os anos</option></select></label>
+  <p class="info-note">Os resumos de autopeças e cartões, o comparativo mensal e os registros respeitam o ano escolhido. A tabela de faturas tem seu próprio filtro anual.</p>
  </div>
  <div class="fin-expenses-direct-access">
   <div>
@@ -1413,7 +1419,10 @@
   <div class="data-toolbar fin-doc-match-filters">
    <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
     <input type="search" id="dc-fatura-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas históricas"></label>
+   <select id="dc-fatura-year" class="filter-select" aria-label="Filtrar faturas por ano"><option value="todos">Todos os anos</option></select>
+   <select id="dc-fatura-card" class="filter-select" aria-label="Filtrar faturas por cartão"><option value="todos">Todos os cartões</option></select>
   </div>
+  <p id="dc-fatura-period-summary" class="info-note" aria-live="polite">Selecione o ano para conferir o total documental de cada período.</p>
   <div class="table-wrap"><table class="data-table"><thead><tr>
    <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
    <th class="money">Compras</th><th class="money">Ajustes</th><th class="money">Total documental</th><th>Ação</th>
@@ -2567,11 +2576,11 @@ init();
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261117clean1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261116avulsosedit1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261116overviewdialogs2" defer></script>
-<script src="./financeiro-documentos.js?v=20261116pages1" defer></script>
-<script src="./financeiro-cartoes-parcelados.js?v=20261116cartoesparcelas1" defer></script>
-<script src="./financeiro-conciliacao-documental.js?v=20261116pages1" defer></script>
+<script src="./financeiro-documentos.js?v=20261117anofiltro1" defer></script>
+<script src="./financeiro-cartoes-parcelados.js?v=20261117anofiltro1" defer></script>
+<script src="./financeiro-conciliacao-documental.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261116agenda1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261116boletos1" defer></script>
 <script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
