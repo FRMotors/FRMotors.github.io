@@ -49,25 +49,25 @@ function statusOf(row,states){
 }
 function render(){
  const states=invoiceStates(),active=installments.filter(eligible);
- const total=active.reduce((sum,x)=>sum+cent(x.valor_registrado),0);
- write('pc-count',String(active.length));
- write('pc-total',money(total/100));
- write('pc-cards-count',String(new Set(active.map(x=>x.cartao_nome)).size));
- write('pc-declared-count',String(active.filter(x=>statusOf(x,states).status==='declarada').length));
- const select=$('pc-card'),months=$('pc-month');
- const card=select?.value||'todos',m=months?.value||'todos';
- const situation=$('pc-status')?.value||'todos';
+ const card=$('pc-card')?.value||'todos',year=$('pc-year')?.value||'todos';
+ const m=$('pc-month')?.value||'todos',situation=$('pc-status')?.value||'todos';
  const q=($('pc-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  const list=active.filter(x=>{
-  const status=statusOf(x,states).status;
+  const status=statusOf(x,states).status,period=String(x.mes_fatura||'');
   if(card!=='todos'&&card!==x.cartao_nome)return false;
-  if(m!=='todos'&&m!==x.mes_fatura?.slice(0,7))return false;
+  if(year!=='todos'&&period.slice(0,4)!==year)return false;
+  if(m!=='todos'&&m!==period.slice(0,7))return false;
   if(situation!=='todos'&&situation!==status)return false;
   return [x.descricao,x.cartao_nome,x.parcela,x.mes_fatura,x.data_evento,
    x.codigo_origem,x.valor_registrado].join(' ').toLocaleLowerCase('pt-BR').includes(q);
  }).sort((a,b)=>String(b.mes_fatura||'').localeCompare(String(a.mes_fatura||''))||
     String(b.data_evento||'').localeCompare(String(a.data_evento||''))||
     Number(b.linha_excel||0)-Number(a.linha_excel||0));
+ const total=list.reduce((sum,x)=>sum+cent(x.valor_registrado),0);
+ write('pc-count',String(list.length));
+ write('pc-total',money(total/100));
+ write('pc-cards-count',String(new Set(list.map(x=>x.cartao_nome)).size));
+ write('pc-declared-count',String(list.filter(x=>statusOf(x,states).status==='declarada').length));
  const pages=Math.max(1,Math.ceil(list.length/limit));
  page=Math.max(0,Math.min(page,pages-1));
  const current=list.slice(page*limit,(page+1)*limit);
@@ -89,13 +89,21 @@ function render(){
  write('pc-pagination',list.length+' lançamento(s) · página '+(page+1)+' de '+pages);
  if($('pc-previous'))$('pc-previous').disabled=page===0;
  if($('pc-next'))$('pc-next').disabled=page===pages-1;
- write('pc-status-message',active.length+' parcelas identificadas no histórico. Valores e meses vêm da planilha; a situação exibida é a da fatura. Nenhuma saída foi criada.');
+ write('pc-status-message','Exibindo '+list.length+' de '+active.length+' parcelas no período selecionado. Valor documental: '+money(total/100)+'. Não representa pagamento bancário.');
 }
 function rebuildFilters(){
- const cards=[...new Set(installments.filter(eligible).map(x=>x.cartao_nome))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
- const months=[...new Set(installments.filter(eligible).map(x=>x.mes_fatura?.slice(0,7)).filter(Boolean))].sort().reverse();
- const c=$('pc-card'),m=$('pc-month');
- const cv=c?.value||'todos',mv=m?.value||'todos';
+ const base=installments.filter(eligible);
+ const years=[...new Set(base.map(x=>String(x.mes_fatura||'').slice(0,4)).filter(x=>/^\d{4}$/.test(x)))].sort().reverse();
+ const y=$('pc-year'),prior=y?.value||'todos';
+ if(y){
+  y.replaceChildren(new Option('Todos os anos','todos'),...years.map(x=>new Option(x,x)));
+  if(years.includes(prior))y.value=prior;
+ }
+ const selectedYear=y?.value||'todos';
+ const cards=[...new Set(base.map(x=>x.cartao_nome))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const months=[...new Set(base.filter(x=>selectedYear==='todos'||String(x.mes_fatura||'').slice(0,4)===selectedYear)
+  .map(x=>x.mes_fatura?.slice(0,7)).filter(Boolean))].sort().reverse();
+ const c=$('pc-card'),m=$('pc-month'),cv=c?.value||'todos',mv=m?.value||'todos';
  if(c){
   c.replaceChildren(new Option('Todos os cartões','todos'),...cards.map(x=>new Option(x,x)));
   if(cards.includes(cv))c.value=cv;
@@ -140,6 +148,7 @@ async function refresh(){
 }
 function setup(){
  if(!$('pc-rows'))return;
+ $('pc-year')?.addEventListener('change',()=>{rebuildFilters();page=0;render()});
  ['pc-search','pc-card','pc-month','pc-status'].forEach(id=>{
   $(id)?.addEventListener(id==='pc-search'?'input':'change',()=>{page=0;render()});
  });
