@@ -833,6 +833,7 @@
             <div class="header-buttons fin-cp-actions">
               <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
                <button class="btn" type="button" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Compra parcelada</button>
+               <button class="btn" type="button" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Compra no crédito</button>
               <button class="btn" type="button" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
               <button class="btn" id="cp-sync" type="button"><span class="icon icon-sm" data-icon="refresh"></span> Sincronizar conciliações</button>
               <button class="btn" id="cp-refresh" type="button">Atualizar</button>
@@ -946,7 +947,7 @@
                 <label style="grid-column:1/-1">Descrição <input name="descricao" maxlength="250" placeholder="Referência ou número do boleto"></label>
                 <label style="grid-column:1/-1">Observações <textarea name="observacoes" rows="2" maxlength="2000" placeholder="Origem, número do documento ou justificativa"></textarea></label>
               </div>
-              <p class="info-note">Informe o valor do boleto. Se o banco aplicar desconto, registre apenas o desconto efetivo na baixa. Nenhuma saída bancária será criada aqui.</p>
+              <p class="info-note">Este cadastro cria <strong>um boleto avulso</strong>. Se a compra tiver várias parcelas ou for no cartão, use <button type="button" class="card-link" data-open="purchase" data-dismiss-dialog="op-new-dialog">Parcelar compra</button> ou <button type="button" class="card-link" data-open="purchase" data-purchase-mode="cartao_credito" data-dismiss-dialog="op-new-dialog">Compra no crédito</button>. Descontos efetivos são registrados na baixa.</p>
               <p id="op-new-status" class="info-note" role="status">Preencha os dados.</p>
               <div class="form-actions"><button type="button" class="btn" data-op-close="op-new-dialog">Cancelar</button>
                 <button id="op-new-submit" type="submit" class="btn btn-primary">Salvar boleto em aberto</button></div>
@@ -1075,7 +1076,8 @@
         </div>
           <div class="header-buttons pc-header-actions">
             <button type="button" class="btn" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
-            <button type="button" class="btn btn-primary" id="pc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar parcelas</button>
+            <button type="button" class="btn" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Nova compra no crédito</button>
+             <button type="button" class="btn btn-primary" id="pc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar parcelas</button>
           </div>
         </div>
         <div class="pc-kpis">
@@ -2152,8 +2154,8 @@
             <label>Categoria<input name="categoria" placeholder="Ex.: Autopeças" maxlength="100"></label>
             <label>Fornecedor<select name="fornecedor_id" id="supplier-select"><option value="">Não se aplica</option></select></label>
             <button type="button" class="btn" data-open="supplier"><span class="icon icon-sm" data-icon="plus"></span> Novo fornecedor</button>
-            <label>Meio<select name="meio_pagamento"><option value="">Não informado</option><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option></select></label>
-            <div style="grid-column:1/-1"><p class="form-note">Para quitar um boleto cadastrado pelo site, use <b>Dar baixa</b>. Não registre novamente pagamentos já importados pelo extrato.</p><div class="form-actions"><button type="button" class="btn" data-close-modal="move">Cancelar</button><button class="btn btn-primary" id="save-move" type="submit">Salvar lançamento</button></div><div id="move-status" class="status" role="status"></div></div>
+            <label>Meio<select name="meio_pagamento"><option value="">Não informado</option><option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito (compra parcelada)</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="outro">Outro</option></select></label>
+            <div style="grid-column:1/-1"><p class="form-note">Se a despesa foi no <b>cartão de crédito</b> ou será paga em parcelas, use <button type="button" id="move-to-credit-purchase" class="card-link">Cadastrar compra parcelada</button>. Ela não gera saída bancária até o pagamento. Para quitar boleto já cadastrado, use <b>Dar baixa</b>; não duplique pagamentos do extrato.</p><div class="form-actions"><button type="button" class="btn" data-close-modal="move">Cancelar</button><button class="btn btn-primary" id="save-move" type="submit">Salvar lançamento</button></div><div id="move-status" class="status" role="status"></div></div>
           </form>
         </div>
       </dialog>
@@ -2168,7 +2170,7 @@
             <label style="grid-column:1/-1">Descrição<input name="descricao" maxlength="250" placeholder="Ex.: Compra de peças e acessórios"></label>
             <label>Valor total (R$)<input name="valor_total" type="number" min="0.01" step="0.01" required placeholder="0,00"></label>
             <label>Forma de pagamento<select name="forma_pagamento" required><option value="boleto">Boleto</option><option value="cartao_credito">Cartão de crédito</option></select></label>
-            <label>Parcelas<select name="quantidade" id="installment-count" required><option value="1">1 parcela</option><option value="2">2 parcelas</option><option value="3">3 parcelas (30/60/90)</option><option value="4">4 parcelas</option><option value="6">6 parcelas</option><option value="10">10 parcelas</option><option value="12">12 parcelas</option></select></label>
+            <label>Número de parcelas (1 a 24)<input name="quantidade" id="installment-count" type="number" min="1" max="24" step="1" value="1" inputmode="numeric" required></label>
             <label>Primeiro vencimento<input name="vencimento" id="purchase-due" type="date" required></label>
             <div style="grid-column:1/-1"><p class="form-note">Revise cada parcela. Compras no cartão não geram saída bancária; o pagamento da fatura é controlado separadamente.</p><div id="installments" class="installments"></div><p class="info-note" id="installment-check" role="status"></p>
               <div class="form-actions"><button type="button" class="btn" data-close-modal="purchase">Cancelar</button><button id="save-purchase" class="btn btn-primary" type="submit">Salvar compra e parcelas</button></div><div id="purchase-status" class="status" role="status"></div>
@@ -2429,7 +2431,7 @@ async function saveMove(e){
  }catch(err){msg('move-status','Não foi possível salvar: '+err.message,true)}finally{b.disabled=false}
 }
 function addDaysLocal(iso,days){
- if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(iso))return '';
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(iso))return '';
  const [y,m,d]=iso.split('-').map(Number);
  const utc=new Date(Date.UTC(y,m-1,d));
  utc.setUTCDate(utc.getUTCDate()+days);
