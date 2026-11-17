@@ -1,4 +1,4 @@
-/* FR Motors Financeiro · enterprise UI controller. Somente dados fin_teste_*. */
+/* FR Motors Financeiro · enterprise UI controller. Operação oficial com histórico e conciliações separados. */
 (function(){
 'use strict';
 const byId=id=>document.getElementById(id);
@@ -35,7 +35,7 @@ function svg(name){return '<svg aria-hidden="true" viewBox="0 0 24 24">'+(iconPa
 function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(n=>{const name=n.getAttribute('data-icon');if(name in iconPaths)n.innerHTML=svg(name)})}
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
-const NAV_VIEWS=['overview','payables','purchases','imports','itau','history','operational','expenses'];
+const NAV_VIEWS=['overview','movements','payables','purchases','imports','itau','history','operational','expenses'];
 const SECTION_SLUGS={'vl-title-section':'payments','ag-title':'agenda'};
 const VIEWPORT_KEY='fr-financeiro-viewport-atual';
 const SIDEBAR_KEY='fr-financeiro-sidebar-desktop-recolhida';
@@ -82,7 +82,7 @@ function restoreViewportOnReload(){
 }
 function selectView(next,options={}){
  // Páginas legadas de demonstração não devem aparecer como financeiras operacionais.
- if(next==='movements')next='operational';
+ // Movimentações do site possuem uma visualização oficial própria.
  if(next==='settings')next='overview';
  if(!NAV_VIEWS.includes(next))next='overview';
  view=next;
@@ -237,22 +237,22 @@ function updateMoves(){
 }
 function updateDue(){
  const query=(byId('search-dues')?.value||'').trim().toLocaleLowerCase('pt-BR');
- const filtered=state.dues.filter(x=>[supplierName(x.fin_teste_compras?.fornecedor_id),x.fin_teste_compras?.descricao,x.vencimento].join(' ').toLocaleLowerCase('pt-BR').includes(query));
+ const filtered=state.dues.filter(x=>[supplierName(x.fin_compras?.fornecedor_id),x.fin_compras?.descricao,x.vencimento].join(' ').toLocaleLowerCase('pt-BR').includes(query));
  const today=todayLocal();
  if(byId('due'))byId('due').innerHTML=filtered.length?filtered.map(x=>{
-  const supplier=supplierName(x.fin_teste_compras?.fornecedor_id);
+  const supplier=supplierName(x.fin_compras?.fornecedor_id);
   return '<tr><td><span class="row-main">'+escapeHTML(dateBR(x.vencimento))+'</span></td>'+
-   '<td><span class="row-main">'+escapeHTML(supplier)+'</span><span class="row-sub">'+escapeHTML(x.fin_teste_compras?.descricao||'Compra de autopeças')+'</span></td>'+
+   '<td><span class="row-main">'+escapeHTML(supplier)+'</span><span class="row-sub">'+escapeHTML(x.fin_compras?.descricao||'Compra de autopeças')+'</span></td>'+
    '<td>Parcela '+escapeHTML(x.numero)+'</td><td class="money">'+currency(x.valor_cheio)+'</td>'+
    '<td>'+statusChip(x.status,x.vencimento)+'</td>'+
-   '<td style="text-align:right"><div class="table-actions"><button type="button" class="row-edit-button" data-edit-record="compra" data-edit-id="'+escapeHTML(x.fin_teste_compras?.id||'')+'">Editar</button><button type="button" class="muted-action" data-pay-id="'+escapeHTML(x.id)+'">Baixar</button></div></td></tr>';
+   '<td style="text-align:right"><div class="table-actions"><button type="button" class="row-edit-button" data-edit-record="compra" data-edit-id="'+escapeHTML(x.fin_compras?.id||'')+'">Editar</button><button type="button" class="muted-action" data-pay-id="'+escapeHTML(x.id)+'">Baixar</button></div></td></tr>';
  }).join(''):'<tr><td colspan="6">'+emptyMessage('Nenhuma parcela em aberto','Cadastre uma compra para criar os próximos compromissos.','calendar')+'</td></tr>';
  const upcoming=state.dues.slice(0,5);
  if(byId('upcoming-list'))byId('upcoming-list').innerHTML=upcoming.length?upcoming.map(x=>{
   const m=x.vencimento?.slice(5,7),day=x.vencimento?.slice(8,10);
   const label=new Intl.DateTimeFormat('pt-BR',{month:'short',timeZone:'UTC'}).format(new Date(x.vencimento+'T12:00:00Z')).replace('.','');
   return '<div class="upcoming-row"><div class="upcoming-date"><strong>'+escapeHTML(day)+'</strong><small>'+escapeHTML(label||m)+'</small></div>'+
-   '<div class="upcoming-info"><strong>'+escapeHTML(supplierName(x.fin_teste_compras?.fornecedor_id))+'</strong><span>'+escapeHTML(x.fin_teste_compras?.descricao||'Parcela '+x.numero)+'</span></div>'+
+   '<div class="upcoming-info"><strong>'+escapeHTML(supplierName(x.fin_compras?.fornecedor_id))+'</strong><span>'+escapeHTML(x.fin_compras?.descricao||'Parcela '+x.numero)+'</span></div>'+
    '<div class="upcoming-amount">'+currency(x.valor_cheio)+'</div></div>';
  }).join(''):emptyMessage('Nenhum vencimento','As parcelas cadastradas aparecerão aqui.','calendar');
  if(byId('dues-count'))byId('dues-count').textContent=filtered.length+' parcela(s)';
@@ -269,7 +269,7 @@ function updateDue(){
 function purchasesHTML(rows){
  if(!rows.length)return '<tr><td colspan="6">'+emptyMessage('Nenhuma compra cadastrada','Registre uma compra para acompanhar fornecedores e parcelas.','receipt')+'</td></tr>';
  return rows.map(x=>{
- const parts=x.fin_teste_parcelas||[];
+ const parts=x.fin_parcelas||[];
  const allPaid=parts.length>0&&parts.every(p=>p.status==='pago');
  const anyPaid=parts.some(p=>p.status==='pago');
  const badge=allPaid?statusChip('pago'):anyPaid?'<span class="state open">Parcial</span>':statusChip('aberto');
@@ -291,8 +291,8 @@ function exportMovements(){
  const cols=[['Data','Tipo','Descrição','Categoria','Fornecedor','Valor (R$)']].concat(rows.map(x=>[x.data_movimento,x.tipo,x.descricao,x.categoria||'',supplierName(x.fornecedor_id),Number(x.valor).toFixed(2).replace('.',',')]));
  const csv='\ufeff'+cols.map(row=>row.map(csvEscape).join(';')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
- const link=document.createElement('a');link.href=url;link.download='fr-motors-financeiro-testes.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),500);
- showToast('Exportação de testes preparada.');
+ const link=document.createElement('a');link.href=url;link.download='fr-motors-financeiro-movimentacoes.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),500);
+ showToast('Exportação de movimentações preparada.');
 }
 function sync(payload){
  state.moves=payload.moves||[];state.dues=payload.dues||[];state.purchases=payload.purchases||[];state.suppliers=payload.suppliers||[];
@@ -300,12 +300,12 @@ function sync(payload){
  const net=state.moves.reduce((v,x)=>v+(x.estado==='confirmado'?(x.tipo==='entrada'?Number(x.valor):-Number(x.valor)):0),0);
  if(byId('k-net'))byId('k-net').style.color=net<0?'var(--bad)':net>0?'var(--good)':'var(--ink)';
  if(byId('last-refresh'))byId('last-refresh').textContent='Atualizado '+new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(new Date());
- const card=byId('last-record');if(card)card.textContent='Base isolada • '+(state.moves.length+state.purchases.length)+' registros recentes';
+ const card=byId('last-record');if(card)card.textContent='Banco oficial • '+(state.moves.length+state.purchases.length)+' registros consultados';
 }
 function afterSaved(kind){
  const dlg=kind==='purchase'?'purchase':kind==='pay'?'pay':'move';
  closeModal(dlg);
- showToast(kind==='purchase'?'Compra e parcelas salvas.':kind==='pay'?'Pagamento confirmado na base de testes.':'Movimentação salva na base de testes.');
+ showToast(kind==='purchase'?'Compra oficial cadastrada.':kind==='pay'?'Boleto baixado no banco oficial.':'Movimentação oficial cadastrada.');
 }
 function changePeriod(name){
  const end=todayLocal();let start;
@@ -358,7 +358,7 @@ function setup(){
  window.addEventListener('pagehide',rememberViewport);
  const params=new URLSearchParams(window.location.search);
  const requestedView=params.get('view');
- const initialView=requestedView==='movements'?'operational':
+ const initialView=
   requestedView==='settings'?'overview':
   NAV_VIEWS.includes(requestedView)?requestedView:'overview';
  // Ao carregar, respeitar a aba do URL e não forçar a página de volta para o topo.
