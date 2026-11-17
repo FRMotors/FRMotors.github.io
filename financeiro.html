@@ -832,6 +832,7 @@
               <p>Compromissos da planilha e boletos cadastrados no aplicativo, com rastreabilidade e conciliações preservadas.</p></div>
             <div class="header-buttons fin-cp-actions">
               <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
+               <button class="btn" type="button" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Compra parcelada</button>
               <button class="btn" type="button" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
               <button class="btn" id="cp-sync" type="button"><span class="icon icon-sm" data-icon="refresh"></span> Sincronizar conciliações</button>
               <button class="btn" id="cp-refresh" type="button">Atualizar</button>
@@ -2232,12 +2233,12 @@
                 <p id="edit-installments-check" class="info-note" role="status"></p>
               </div>
               <div id="edit-linked-notice" class="form-note hidden" style="grid-column:1/-1" role="note">
-                Este lançamento está vinculado à baixa de um boleto. É possível corrigir descrição, data e meio de pagamento. Para alterar valor, tipo ou fornecedor, exclua a baixa e registre o pagamento novamente.
+                Registros vinculados ou conciliados não podem ser modificados por este formulário. Consulte a conferência financeira.
               </div>
             </div>
             <div id="edit-feedback" class="status" role="status"></div>
             <div class="edit-actions">
-              <button type="button" class="btn btn-danger" id="edit-delete-start"><span class="icon icon-sm" data-icon="alert"></span> Excluir registro</button>
+              <button type="button" class="btn btn-danger" id="edit-delete-start"><span class="icon icon-sm" data-icon="alert"></span> Cancelar registro</button>
               <div class="edit-actions-right">
                 <button type="button" class="btn" data-close-modal="edit">Cancelar</button>
                 <button type="submit" class="btn btn-primary" id="edit-save">Salvar alterações</button>
@@ -2246,10 +2247,10 @@
           </form>
           <div id="edit-confirm" class="edit-confirm hidden" role="alertdialog" aria-labelledby="edit-confirm-title" aria-describedby="edit-confirm-description">
             <strong id="edit-confirm-title">Excluir este registro?</strong>
-            <p id="edit-confirm-description">Esta ação não pode ser desfeita. O registro será preservado no histórico de auditoria.</p>
+            <p id="edit-confirm-description">O registro será marcado como cancelado e permanecerá no histórico de auditoria.</p>
             <div class="edit-actions-right">
               <button type="button" class="btn" id="edit-delete-cancel">Manter registro</button>
-              <button type="button" class="btn btn-danger" id="edit-delete-confirm">Sim, excluir registro</button>
+              <button type="button" class="btn btn-danger" id="edit-delete-confirm">Sim, cancelar registro</button>
             </div>
           </div>
         </div>
