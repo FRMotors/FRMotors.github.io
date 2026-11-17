@@ -54,3 +54,17 @@
 .sicoob-payment-item span:nth-child(2){overflow-wrap:anywhere}
 .sicoob-payment-item strong{text-align:right;white-space:nowrap}
 @media(max-width:520px){.sicoob-payment-item{grid-template-columns:75px minmax(0,1fr);gap:5px}.sicoob-payment-item strong{grid-column:2;justify-self:start;text-align:left}}
+
+/* V4.4.62 · duplicidades bancárias na conferência */
+#import-preview-body tr[data-duplicate="true"]{background:#fff9ef}
+#import-preview-body tr[data-duplicate="true"] .row-main{color:#846028}
+#import-preview-body tr[data-duplicate="true"] input[type=checkbox]{cursor:not-allowed}
+.import-duplicate-badge,.import-new-badge,.import-checking{
+ display:inline-block;max-width:145px;padding:5px 7px;border-radius:7px;
+ font-size:10px;font-weight:800;line-height:1.25;overflow-wrap:anywhere;
+}
+.import-duplicate-badge{background:#ffedce;border:1px solid #e6c782;color:#805321}
+.import-new-badge{background:#e5f5ee;border:1px solid #b8dfcb;color:#267054}
+.import-checking{background:#edf4fa;border:1px solid #cfdfe9;color:#50687e}
+.import-preview-table .data-table td:last-child{min-width:110px}
+@media(max-width:760px){.import-duplicate-badge,.import-new-badge,.import-checking{font-size:9px;padding:4px 6px}}
