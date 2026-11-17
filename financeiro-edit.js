@@ -93,7 +93,7 @@ async function open(kind,id){
  }
  selected={kind,id,linked:false,locked:false};
  $('edit-feedback').textContent='';
- $('edit-linked-notice').textContent='Este lançamento está vinculado à baixa de um boleto. É possível corrigir descrição, data e meio de pagamento. Para alterar valor, tipo ou fornecedor, exclua a baixa e registre o pagamento novamente.';
+ $('edit-linked-notice').textContent='Este lançamento possui vínculos financeiros e está bloqueado para edição. Consulte as conciliações antes de qualquer correção.';
  $('edit-linked-notice').classList.add('hidden');
  resetDeleteConfirm();
  toggleFields(kind);
@@ -112,8 +112,11 @@ async function open(kind,id){
   if(error){window.frFinanceUI?.showToast('Não foi possível conferir os vínculos: '+error.message,true);return}
   if(selected?.id!==id)return;
   selected.linked=(data||[]).length>0;
-  for(const field of ['edit-move-amount','edit-move-type','edit-move-supplier'])$(field).disabled=selected.linked;
-  $('edit-linked-notice').classList.toggle('hidden',!selected.linked);
+  selected.locked=selected.linked;
+  for(const field of ['edit-move-amount','edit-move-type','edit-move-supplier'])$(field).disabled=selected.locked;
+  $('edit-linked-notice').classList.toggle('hidden',!selected.locked);
+  $('edit-save').disabled=selected.locked;
+  $('edit-delete-start').disabled=selected.locked;
  }else{
   $('edit-purchase-date').value=record.data_compra||'';
   $('edit-purchase-amount').value=Number(record.valor_total).toFixed(2);
@@ -125,7 +128,7 @@ async function open(kind,id){
   fillParts(data);
   selected.locked=data.some(p=>p.status!=='aberto');
   if(selected.locked){
-    $('edit-linked-notice').textContent='Esta compra possui parcelas pagas. Para corrigir ou excluir a compra, primeiro abra Movimentações e exclua as baixas correspondentes. Os boletos serão reabertos automaticamente.';
+    $('edit-linked-notice').textContent='Esta compra tem parcelas pagas ou canceladas. As baixas e os registros anteriores precisam permanecer preservados; não é possível alterá-la aqui.';
     $('edit-linked-notice').classList.remove('hidden');
   }
   $('edit-save').disabled=selected.locked;
@@ -139,7 +142,7 @@ async function save(e){
  e.preventDefault();
  if(!selected||busy)return;
  const {kind,id}=selected;
- if(selected.locked)return showError('Exclua primeiro as baixas das parcelas pagas.');
+ if(selected.locked)return showError('Este registro tem vínculos ou parcelas finalizadas e não pode ser editado.');
  let payload;
  try{
   if(kind==='movimento'){
@@ -178,10 +181,10 @@ function beginDelete(){
  $('edit-delete-confirm').focus();
  const linked=selected.kind==='movimento'&&selected.linked;
  $('edit-confirm-description').textContent=linked?
-  'Esta baixa será excluída e o boleto correspondente voltará para Em aberto. A operação fica no histórico de auditoria.':
+  'Esta baixa possui vínculos e não pode ser cancelada por este formulário.':
   selected.kind==='compra'?
-  'A compra e todas as suas parcelas ainda não pagas serão excluídas dos testes. O histórico de auditoria guardará a operação.':
-  'Este lançamento de teste será excluído, e a operação ficará registrada no histórico de auditoria.';
+  'Esta compra e suas parcelas ainda não pagas serão CANCELADAS. Permanecerão no histórico e na auditoria.':
+  'Este lançamento será CANCELADO, não apagado. A auditoria preservará os dados anteriores.';
 }
 async function remove(){
  if(!selected||busy||selected.locked)return;
@@ -192,11 +195,9 @@ async function remove(){
     {p_id:id,p_acao:'cancelar',p_dados:{}});
   if(error)throw error;
   window.frFinanceUI?.closeModal('edit');
-  const reopened=Number(data?.parcelas_reabertas||0);
-  window.frFinanceUI?.showToast(reopened?
-    'Pagamento excluído e '+reopened+' parcela(s) reaberta(s).':'Registro de teste excluído.');
+  window.frFinanceUI?.showToast(kind==='compra'?'Compra cancelada com registro de auditoria.':'Movimentação cancelada com registro de auditoria.');
   await render();
- }catch(error){showError(error.message||'Não foi possível excluir o registro.')}
+ }catch(error){showError(error.message||'Não foi possível cancelar o registro.')}
  finally{toggleBusy(false)}
 }
 function init(){
