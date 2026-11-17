@@ -1537,7 +1537,21 @@
           </div>
         </div>
         <div id="hist-itau-status" class="status" role="status"></div>
-        <div class="hist-kpis" id="hist-itau-kpis" aria-label="Indicadores do Itaú"></div>
+        <section class="card hist-import-card" id="hist-itau-import-card" aria-labelledby="hist-itau-import-title">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Extratos bancários importados · conferência</p>
+              <h2 id="hist-itau-import-title">Último extrato Itaú recebido</h2>
+              <p id="hist-itau-import-source">Consultando a última importação...</p>
+            </div>
+            <button class="btn" type="button" data-view="imports">Ver importações</button>
+          </div>
+          <div id="hist-itau-import-kpis" class="hist-kpis hist-import-kpis" aria-label="Totais do extrato bancário mais recente"></div>
+          <p id="hist-itau-import-compare" class="hist-import-compare" role="status" aria-live="polite"></p>
+          <p class="hist-import-warning">Os totais acima representam somente os lançamentos selecionados no arquivo indicado. A importação fica separada do Fluxo de Caixa homologado até a conferência dos registros. Não é seguro somar extratos sobrepostos nem interpretar a diferença como saldo bancário.</p>
+        </section>
+        <p class="hist-homolog-label">Histórico homologado do Excel (não incorpora automaticamente os extratos PDF)</p>
+        <div class="hist-kpis" id="hist-itau-kpis" aria-label="Indicadores homologados do Itaú"></div>
         <div class="hist-two-col">
           <section class="card">
             <div class="card-head"><div><h2>Entradas e saídas por mês</h2><p>Movimentações efetivas registradas no Fluxo de Caixa Itaú</p></div>
@@ -2385,7 +2399,7 @@ init();
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 <script src="./financeiro-faturas.js?v=20261116parcelas1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
-<script src="./financeiro-historico.js?v=20261113receber1" defer></script>
+<script src="./financeiro-historico.js?v=20261117import-preview1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261116avulsosedit1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261116overviewdialogs2" defer></script>
