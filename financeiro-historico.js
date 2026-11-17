@@ -70,6 +70,191 @@ function overlappingImports(current,previous){
  });
  return {matches,unmatched};
 }
+/* Conciliação demonstrável: o saldo homologado é a base. Os PDFs são
+ * janelas sobrepostas, por isso cada ocorrência física é contada uma vez.
+ * A data do último movimento homologado define a janela de atualização. */
+function identityFromDescription(value){
+ const desc=String(value||'');
+ const doc=desc.match(/[0-9]{2}[.][0-9]{3}[.][0-9]{3}\/[0-9]{4}-[0-9]{2}|[0-9]{3}[.][0-9]{3}[.][0-9]{3}-[0-9]{2}/);
+ if(doc)return 'doc:'+doc[0].replace(/[^0-9]/g,'');
+ return 'texto:'+desc.toLowerCase().normalize('NFD')
+   .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+}
+function bankKey(r){
+ return [String(r.data_lancamento||'').slice(0,10),String(r.natureza||''),
+   Math.round(num(r.valor)*100),identityFromDescription(r.descricao)].join('|');
+}
+function officialKey(r){
+ return [String(r.data_movimento||r.data_lancamento||'').slice(0,10),
+   String(r.tipo||r.natureza||''),Math.round(num(r.valor)*100)].join('|');
+}
+async function fetchPages(makeQuery,max=12000){
+ const records=[],limit=400;
+ for(let offset=0;offset<max;offset+=limit){
+  const {data,error}=await makeQuery().range(offset,offset+limit-1);
+  if(error)throw error;
+  records.push(...(data||[]));
+  if(!data||data.length<limit)return records;
+ }
+ throw Error('Dados acima do limite de consulta; cálculo bloqueado para evitar saldo parcial.');
+}
+function uniqueBankMovements(files,lines){
+ const byFile=new Map();
+ files.forEach(f=>byFile.set(f.id,[]));
+ lines.forEach(r=>{if(byFile.has(r.importacao_id))byFile.get(r.importacao_id).push(r)});
+ const canonical=[],repeated=[],historicalCounts=new Map();
+ for(const file of files){
+  const occurrences=new Map();
+  const sorted=(byFile.get(file.id)||[]).slice().sort((a,b)=>
+   String(a.data_lancamento).localeCompare(String(b.data_lancamento))||
+   String(a.descricao).localeCompare(String(b.descricao))||
+   String(a.id).localeCompare(String(b.id)));
+  for(const r of sorted){
+   if(!['entrada','saida'].includes(r.natureza))continue;
+   const key=bankKey(r),number=(occurrences.get(key)||0)+1;
+   occurrences.set(key,number);
+   const row={...r,arquivo_nome:file.arquivo_nome};
+   if(number>(historicalCounts.get(key)||0))canonical.push(row);
+   else repeated.push(row);
+  }
+  for(const [key,n] of occurrences){
+   historicalCounts.set(key,Math.max(n,historicalCounts.get(key)||0));
+  }
+ }
+ return {canonical,repeated};
+}
+function reconcileBankBalance(base,canonical,official,cutoff){
+ const existing=new Map();
+ for(const r of official){
+  const key=officialKey(r);
+  existing.set(key,(existing.get(key)||0)+1);
+ }
+ const pending=[],already=[];
+ for(const r of canonical){
+  if(r.data_lancamento<cutoff)continue;
+  const key=officialKey(r);
+  if((existing.get(key)||0)>0){
+   existing.set(key,existing.get(key)-1);
+   already.push(r);
+  }else pending.push(r);
+ }
+ const addedIn=pending.filter(r=>r.natureza==='entrada')
+  .reduce((sum,r)=>sum+Math.round(num(r.valor)*100),0);
+ const addedOut=pending.filter(r=>r.natureza==='saida')
+  .reduce((sum,r)=>sum+Math.round(num(r.valor)*100),0);
+ return {balanceCents:Math.round(num(base)*100)+addedIn-addedOut,
+  addedIn,addedOut,pending,already};
+}
+async function renderItauReconciliation(){
+ const label=$('hist-itau-reconcile-source'),root=$('hist-itau-reconcile-kpis'),
+  difference=$('hist-itau-reconcile-diff'),note=$('hist-itau-reconcile-note'),
+  table=$('hist-itau-reconcile-rows');
+ if(!label||!root||!difference||!note||!table||!state.monthly.length)return;
+ label.textContent='Comparando importações com o último movimento homologado...';
+ try{
+  const [imports,latestResponse,refResponse,audits]=await Promise.all([
+   fetchPages(()=>db.from('fin_teste_importacoes')
+    .select('id,arquivo_nome,criado_em,conta_nome')
+    .eq('tipo','banco').order('criado_em',{ascending:true}).order('id',{ascending:true})),
+   db.from('fin_movimentos').select('data_movimento')
+    .eq('origem','fluxo_caixa_homologado').eq('estado','confirmado')
+    .order('data_movimento',{ascending:false}).limit(1).maybeSingle(),
+   db.from('fin_saldos_bancarios_referencia')
+    .select('data_referencia,saldo,origem').eq('conta','itau')
+    .order('data_referencia',{ascending:false}).limit(1).maybeSingle(),
+   db.from('fin_importacao_duplicidades_auditoria')
+    .select('id',{count:'exact',head:true})
+  ]);
+  if(latestResponse.error)throw latestResponse.error;
+  if(refResponse.error)throw refResponse.error;
+  if(audits.error)throw audits.error;
+  const cutoff=latestResponse.data?.data_movimento;
+  if(!cutoff)throw Error('Sem data final do caixa homologado; não é seguro somar lançamentos.');
+  const bankFiles=imports.filter(x=>String(x.conta_nome||'').normalize('NFD')
+   .replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()==='itau');
+  if(!bankFiles.length)throw Error('Nenhum PDF do Itaú importado.');
+  const lines=[];
+  for(let i=0;i<bankFiles.length;i+=30){
+   const ids=bankFiles.slice(i,i+30).map(x=>x.id);
+   const part=await fetchPages(()=>db.from('fin_teste_import_linhas')
+    .select('id,importacao_id,data_lancamento,descricao,natureza,valor')
+    .in('importacao_id',ids).order('data_lancamento',{ascending:true}).order('id',{ascending:true}));
+   lines.push(...part);
+  }
+  const official=await fetchPages(()=>db.from('fin_movimentos')
+   .select('data_movimento,tipo,valor').eq('origem','fluxo_caixa_homologado')
+   .eq('estado','confirmado').gte('data_movimento',cutoff)
+   .order('data_movimento',{ascending:true}).order('id',{ascending:true}));
+  const {canonical,repeated}=uniqueBankMovements(bankFiles,lines);
+  const baseline=state.monthly[state.monthly.length-1];
+  const rec=reconcileBankBalance(baseline.saldo_teorico_acumulado,canonical,official,cutoff);
+  const latestDate=canonical.map(r=>r.data_lancamento).sort().pop()||cutoff;
+  const reference=refResponse.data;
+  const projected=rec.balanceCents/100;
+  label.textContent='Saldo do Excel homologado até '+dateBR(cutoff)+
+   ' + movimentos ainda não contabilizados nos extratos até '+dateBR(latestDate);
+  root.innerHTML=
+   metric('Saldo histórico do Excel',money(baseline.saldo_teorico_acumulado),
+    'Base homologada; sem lançar os boletos novamente')+
+   metric('Entradas adicionais',money(rec.addedIn/100),
+    count(rec.pending.filter(r=>r.natureza==='entrada').length)+' lançamento(s)','positive')+
+   metric('Saídas adicionais',money(rec.addedOut/100),
+    count(rec.pending.filter(r=>r.natureza==='saida').length)+' lançamento(s)')+
+   metric('Saldo final reconciliado',money(projected),
+    'Estimativa após retirar repetições entre PDFs e movimentos já homologados',
+    projected<0?'negative':'positive');
+  const canCompare=reference&&reference.data_referencia>=cutoff&&
+    reference.data_referencia<=latestDate;
+  if(canCompare){
+   const projectionAtReference=rec.balanceCents-
+    rec.pending.filter(r=>r.data_lancamento>reference.data_referencia).reduce(
+     (sum,r)=>sum+(r.natureza==='entrada'?1:-1)*Math.round(num(r.valor)*100),0);
+   const delta=projectionAtReference-Math.round(num(reference.saldo)*100);
+   difference.textContent=(delta===0?'Conciliação conferida · diferença R$ 0,00. ':
+    'Diferença de conciliação: '+money(delta/100)+'. Revisar antes de considerar fechado. ')+
+    'Referência informada em '+dateBR(reference.data_referencia)+': '+money(reference.saldo)+
+    '. '+count(rec.pending.length)+' movimento(s) acrescentado(s), '+
+    count(repeated.length)+' repetição(ões) descartada(s) do cálculo.';
+   difference.classList.toggle('hist-reconcile-mismatch',delta!==0);
+   difference.classList.toggle('hist-reconcile-ok',delta===0);
+  }else{
+   difference.textContent='Saldo calculado até '+dateBR(latestDate)+'. '+
+    (reference?'Última referência bancária em '+dateBR(reference.data_referencia)+
+    ' ('+money(reference.saldo)+') fora da janela comparável.':
+    'Nenhum saldo bancário independente registrado para comparar.')+
+    ' Não é possível garantir diferença zero sem referência contemporânea.';
+   difference.classList.remove('hist-reconcile-ok');
+   difference.classList.add('hist-reconcile-mismatch');
+  }
+  note.textContent='Verificação automática: '+count(lines.length)+' registros originais em '+
+   count(bankFiles.length)+' arquivo(s); '+count(repeated.length)+
+   ' repetição(ões) entre PDFs não contabilizada(s), '+count(rec.already.length)+
+   ' movimento(s) já presente(s) no fluxo homologado a partir de '+dateBR(cutoff)+
+   ', '+count(rec.pending.length)+' lançamento(s) adicional(is). '+
+   count(audits.count||0)+' registro(s) antigo(s) marcado(s) como cancelado(s) com auditoria. '+
+   'Não há criação nem exclusão de pagamentos. Cartões são conferidos separadamente.';
+  const pendingRows=rec.pending.map(r=>({...r,decisao:'Acrescentado ao saldo',badge:'new'}));
+  const duplicateRows=repeated.map(r=>({...r,decisao:'Repetido · ignorado',badge:'duplicate'}));
+  const entries=[...pendingRows,...duplicateRows]
+   .sort((a,b)=>String(b.data_lancamento).localeCompare(String(a.data_lancamento))||
+    String(a.descricao).localeCompare(String(b.descricao))).slice(0,100);
+  table.innerHTML=entries.length?entries.map(r=>
+   '<tr><td>'+dateBR(r.data_lancamento)+'</td>'+
+   '<td><strong>'+safe(r.descricao)+'</strong><small class="hist-subline">'+safe(r.arquivo_nome)+'</small></td>'+
+   '<td>'+(r.natureza==='entrada'?'Entrada':'Saída')+'</td>'+
+   '<td class="money">'+money(r.valor)+'</td>'+
+   '<td><span class="hist-reconcile-flag '+r.badge+'">'+safe(r.decisao)+'</span></td></tr>'
+  ).join(''):'<tr><td colspan="5" class="hist-empty">Nenhum ajuste necessário neste período.</td></tr>';
+ }catch(e){
+  label.textContent='Não foi possível concluir a conciliação automática.';
+  root.innerHTML='';
+  difference.textContent='Conciliação indisponível: '+String(e.message||e);
+  difference.classList.add('hist-reconcile-mismatch');
+  note.textContent='O saldo não foi alterado. Atualize a página ou verifique o acesso à base financeira.';
+  table.innerHTML='<tr><td colspan="5" class="hist-empty">Dados de conciliação indisponíveis.</td></tr>';
+ }
+}
+
 async function refreshImportedItau(){
  const source=$('hist-itau-import-source'),kpis=$('hist-itau-import-kpis'),compare=$('hist-itau-import-compare');
  if(!source||!kpis||!compare)return;
@@ -153,6 +338,7 @@ async function refresh(){
     banks});
    ready=true;
    renderItau();renderOther();
+   await renderItauReconciliation();
    status('hist-itau-status','Histórico do Itaú atualizado. Fonte: '+lote.arquivo_nome+'.');
    status('hist-other-status','Fontes homologadas atualizadas. Nenhum lançamento operacional foi modificado.');
   }catch(e){ready=false;renderError('Não foi possível carregar a visualização: '+e.message);throw e}
@@ -166,6 +352,7 @@ function open(view){
   renderItau();
   // A última importação pode ter acontecido nesta mesma sessão.
   refreshImportedItau().catch(()=>{});
+  renderItauReconciliation().catch(()=>{});
  }else renderOther();
 }
 function period(){
