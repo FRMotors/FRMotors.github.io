@@ -49,23 +49,34 @@ function filterRows(){
  const q=($('cp-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  const filter=$('cp-status-filter')?.value||'todos';
  const month=$('cp-month-filter')?.value||'todos';
+ const year=$('cp-year-filter')?.value||'todos';
  const now=today(),next7=plusDays(now,7);
  return all.filter(r=>{
   const s=stateOf(r,now);
   const accepted=filter==='todos'||(filter==='aberto'&&s!=='conciliado'&&s!=='conciliado_fluxo')||
     (filter==='proximos7'&&s!=='conciliado'&&s!=='conciliado_fluxo'&&r.vencimento&&r.vencimento>=now&&r.vencimento<=next7)||
     (filter==='conciliado'&&(s==='conciliado'||s==='conciliado_fluxo'))||filter===s;
-  if(!accepted||(month!=='todos'&&(!r.vencimento||r.vencimento.slice(0,7)!==month)))return false;
+  if(!accepted||(year!=='todos'&&r.vencimento?.slice(0,4)!==year)||
+    (month!=='todos'&&r.vencimento?.slice(0,7)!==month))return false;
   const haystack=[r.fornecedor_nome,r.descricao,r.categoria,r.vencimento,r.linha_original,
    r.codigo_origem,r.observacoes].join(' ').toLocaleLowerCase('pt-BR');
   return haystack.includes(q);
  });
 }
+function updateYears(){
+ const control=$('cp-year-filter');if(!control)return;
+ const prev=control.value||'todos';
+ const years=[...new Set(all.map(r=>r.vencimento?.slice(0,4)).filter(x=>/^\d{4}$/.test(x)))].sort().reverse();
+ control.replaceChildren(new Option('Todos os anos','todos'),...years.map(y=>new Option(y,y)));
+ if(years.includes(prev))control.value=prev;
+}
 function updateMonths(){
  const control=$('cp-month-filter');
  if(!control)return;
  const existing=control.value||'todos';
- const months=[...new Set(all.map(r=>r.vencimento?.slice(0,7)).filter(Boolean))].sort();
+ const year=$('cp-year-filter')?.value||'todos';
+ const months=[...new Set(all.filter(r=>year==='todos'||r.vencimento?.slice(0,4)===year)
+  .map(r=>r.vencimento?.slice(0,7)).filter(Boolean))].sort();
  control.replaceChildren(new Option('Todos os meses','todos'),...months.map(m=>{
   const [y,mm]=m.split('-');return new Option(mm+'/'+y,m);
  }));
@@ -73,8 +84,10 @@ function updateMonths(){
 }
 function draw(){
  const now=today(),next7=plusDays(now,7);
- const open=all.filter(r=>!['conciliado','conciliado_fluxo'].includes(stateOf(r,now)));
- const reconciled=all.filter(r=>['conciliado','conciliado_fluxo'].includes(stateOf(r,now)));
+ const year=$('cp-year-filter')?.value||'todos';
+ const scoped=all.filter(r=>year==='todos'||r.vencimento?.slice(0,4)===year);
+ const open=scoped.filter(r=>!['conciliado','conciliado_fluxo'].includes(stateOf(r,now)));
+ const reconciled=scoped.filter(r=>['conciliado','conciliado_fluxo'].includes(stateOf(r,now)));
  const overdue=open.filter(r=>r.vencimento&&r.vencimento<now);
  const next=open.filter(r=>r.vencimento&&r.vencimento>=now&&r.vencimento<=next7);
  const undated=open.filter(r=>!r.vencimento);
@@ -155,7 +168,7 @@ async function refresh(){
    (manualFluxoRes.data||[]).forEach(x=>manualLinks.set(x.boleto_avulso_id,{...x,source:'fluxo'}));
    (manualExtratoRes.data||[]).forEach(x=>manualLinks.set(x.boleto_avulso_id,{...x,source:'extrato'}));
    suppliers=new Map((suppliersRes.data||[]).map(x=>[x.id,x]));
-   updateMonths();draw();
+   updateYears();updateMonths();draw();
    set('cp-load-status','Carteira operacional ativa: '+originals.length+' compromissos da planilha e '+
     added.length+' boletos cadastrados no aplicativo. Conciliações preservadas, sem criar saídas adicionais.');
   }catch(error){
@@ -233,7 +246,8 @@ async function reconcile(id){
 function init(){
  if(!$('cp-rows'))return;
  $('cp-search')?.addEventListener('input',()=>{page=0;draw()});
- $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data')$('cp-month-filter').value='todos';draw()});
+ $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data'){$('cp-month-filter').value='todos';$('cp-year-filter').value='todos';}draw()});
+ $('cp-year-filter')?.addEventListener('change',()=>{updateMonths();page=0;draw()});
  $('cp-month-filter')?.addEventListener('change',()=>{page=0;draw()});
  $('cp-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  $('cp-sync')?.addEventListener('click',()=>sync().catch(()=>{}));
