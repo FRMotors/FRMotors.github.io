@@ -361,28 +361,50 @@ function validateSource(){
  if($('import-col-amount').value===''&&$('import-col-debit').value===''&&$('import-col-credit').value==='')throw Error('Selecione a coluna de valor ou as colunas de débito/crédito.');
  return account;
 }
+function descriptionIdentity(desc){
+ const value=String(desc||'');
+ const id=value.match(/[0-9]{2}[.][0-9]{3}[.][0-9]{3}\/[0-9]{4}-[0-9]{2}|[0-9]{3}[.][0-9]{3}[.][0-9]{3}-[0-9]{2}/);
+ if(id)return 'doc:'+id[0].replace(/[^0-9]/g,'');
+ return 'texto:'+normalizedBankName(value).replace(/[^a-z0-9]+/g,'');
+}
 function duplicateKey(item){
- if(!item?.date||!item?.nature||!Number.isFinite(item.valor))return '';
- return [item.date,item.nature,Math.round(item.valor*100)].join('|');
+ const date=item?.date||item?.data_lancamento;
+ const nature=item?.nature||item?.natureza;
+ const description=item?.desc??item?.descricao;
+ const value=Number(item?.valor);
+ if(!date||!nature||!Number.isFinite(value)||!description)return '';
+ return [String(date).slice(0,10),String(nature),Math.round(value*100),descriptionIdentity(description)].join('|');
 }
 function normalizedBankName(s){
  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 }
-async function existingBankDuplicates(account){
+/* Os arquivos são janelas potencialmente sobrepostas. A maior ocorrência
+ * por arquivo, e não a soma das ocorrências de todos os arquivos, é o
+ * parâmetro para bloquear repetidos sem excluir duas compras reais iguais. */
+async function existingFinancialDuplicates(kind,account){
  const imports=await fetchAll(()=>db.from('fin_teste_importacoes')
-  .select('id,conta_nome').eq('tipo','banco').order('criado_em',{ascending:false}));
+  .select('id,conta_nome').eq('tipo',kind).order('criado_em',{ascending:false}));
  const ids=(imports||[]).filter(x=>normalizedBankName(x.conta_nome)===normalizedBankName(account)).map(x=>x.id);
- const result=new Map();
+ const perFile=new Map();
  for(let n=0;n<ids.length;n+=30){
   const part=await fetchAll(()=>db.from('fin_teste_import_linhas')
-   .select('id,importacao_id,data_lancamento,natureza,valor')
+   .select('id,importacao_id,data_lancamento,natureza,valor,descricao')
    .in('importacao_id',ids.slice(n,n+30)).order('id',{ascending:true}));
   for(const item of part){
-   const key=duplicateKey({date:item.data_lancamento,nature:item.natureza,valor:Number(item.valor)});
-   if(key)result.set(key,(result.get(key)||0)+1);
+   const key=duplicateKey(item);
+   if(!key)continue;
+   const fileMap=perFile.get(item.importacao_id)||new Map();
+   fileMap.set(key,(fileMap.get(key)||0)+1);
+   perFile.set(item.importacao_id,fileMap);
   }
  }
- return result;
+ const highest=new Map();
+ for(const fileMap of perFile.values()){
+  for(const [key,amount] of fileMap){
+   highest.set(key,Math.max(amount,highest.get(key)||0));
+  }
+ }
+ return highest;
 }
 function markRepeatedLines(){
  const counts=new Map();
@@ -390,7 +412,7 @@ function markRepeatedLines(){
   const key=duplicateKey(row);
   const seen=(counts.get(key)||0)+1;
   if(key)counts.set(key,seen);
-  const duplicate=selectedKind()==='banco'&&duplicateCheckReady&&key&&seen<=(duplicateInventory.get(key)||0);
+  const duplicate=duplicateCheckReady&&key&&seen<=(duplicateInventory.get(key)||0);
   const wasDuplicate=Boolean(row.duplicate);
   row.duplicate=Boolean(duplicate);
   if(row.duplicate){row.selected=false}
@@ -421,19 +443,17 @@ async function buildPreview(){
   if(!preview.length)throw Error('Nenhuma transação válida. Revise as colunas e o formato das datas.');
   if(preview.length>1500)throw Error('Foram identificadas mais de 1.500 transações; selecione um período menor.');
   $('import-preview-card').hidden=false;
-  if(selectedKind()==='banco'){
-   notice('import-read-status','Comparando os movimentos com extratos bancários já importados...');
-   drawPreview();
-   duplicateInventory=await existingBankDuplicates(account);
-   if(generation!==previewGeneration)return;
-  }
+  notice('import-read-status','Comparando lançamentos com arquivos já importados desta conta ou cartão...');
+  drawPreview();
+  duplicateInventory=await existingFinancialDuplicates(selectedKind(),account);
+  if(generation!==previewGeneration)return;
   duplicateCheckReady=true;
   markRepeatedLines();
   drawPreview();
   const duplicateCount=preview.filter(r=>r.duplicate).length;
   notice('import-read-status',duplicateCount?
-   'Verificação concluída: '+duplicateCount+' possível(is) repetição(ões) bloqueada(s). Apenas movimentos novos podem ser selecionados.':
-   'Verificação concluída. Nenhuma repetição identificada nos extratos desta conta.');
+   'Verificação concluída: '+duplicateCount+' repetição(ões) entre arquivos bloqueada(s). Apenas lançamentos novos podem ser selecionados.':
+   'Verificação concluída. Nenhuma repetição entre arquivos identificada nesta conta.');
  }catch(e){
   if(generation!==previewGeneration)return;
   duplicateCheckReady=false;
