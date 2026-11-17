@@ -63,3 +63,25 @@
 .hist-quick-actions .btn{min-height:40px;white-space:nowrap}
 @media(max-width:1150px){.hist-quicklink{align-items:stretch;flex-direction:column}.hist-quick-actions{width:100%}}
 @media(max-width:520px){.hist-quick-actions{display:grid;grid-template-columns:1fr}.hist-quick-actions .btn{width:100%;justify-content:center}}
+
+/* V4.4.61 | Extrato Itaú mais recente, separado do Excel homologado. */
+.hist-import-card{margin:12px 0 18px;overflow:hidden}
+.hist-import-card>.card-head{align-items:center;gap:12px}
+.hist-import-card>.card-head h2{font-size:17px;font-weight:820;margin:2px 0 5px}
+.hist-import-card>.card-head p:not(.eyebrow){margin:0;color:var(--muted);font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.hist-import-card .hist-import-kpis{padding:0 18px 12px;gap:10px;margin:0;grid-template-columns:repeat(4,minmax(0,1fr))}
+.hist-import-card .hist-import-kpis>.hist-kpi{min-width:0;padding:14px}
+.hist-import-card .hist-import-kpis .hist-kpi-value{font-size:clamp(15px,1.4vw,22px);overflow-wrap:anywhere;white-space:normal}
+.hist-import-compare{font-size:12px;font-weight:650;line-height:1.5;color:#295868;background:#eff7f8;border:1px solid #d9e9ed;border-radius:9px;margin:0 18px 11px;padding:10px 12px}
+.hist-import-warning{font-size:11px;line-height:1.5;color:#69818e;margin:0;padding:0 18px 16px}
+.hist-homolog-label{font-weight:800;color:#516879;font-size:11px;letter-spacing:.25px;margin:16px 0 9px;text-transform:uppercase}
+@media(max-width:960px){.hist-import-card .hist-import-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){
+ .hist-import-card>.card-head{align-items:stretch;flex-direction:column}
+ .hist-import-card>.card-head>.btn{width:100%}
+ .hist-import-card .hist-import-kpis{padding:0 12px 12px;gap:8px}
+ .hist-import-card .hist-import-kpis>.hist-kpi{padding:11px}
+ .hist-import-card .hist-import-kpis .hist-kpi-value{font-size:16px}
+ .hist-import-compare{margin:0 12px 10px;font-size:11px}
+ .hist-import-warning{padding:0 12px 14px}
+}
