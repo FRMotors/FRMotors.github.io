@@ -209,7 +209,7 @@ function filteredMoves(){
  });
 }
 function potentialCpfValueError(r){
- return Boolean(r.referencia_cliente?.startsWith('extrato:') &&
+ return Boolean(r.referencia_origem?.startsWith('extrato:') &&
    r.valor>=10000 && /\d{3}\.\d{3}\.\d{3}[-\u2212\u2013]\s*$/.test(r.descricao));
 }
 function movementsHTML(rows,showAll=false){
@@ -217,7 +217,7 @@ function movementsHTML(rows,showAll=false){
  return rows.map(r=>'<tr>'+
   '<td><span class="row-main">'+escapeHTML(dateBR(r.data_movimento))+'</span><span class="row-sub">'+escapeHTML(r.meio_pagamento||r.categoria||'Lançamento')+'</span></td>'+
   '<td><span class="row-main">'+escapeHTML(r.descricao)+'</span><span class="row-sub">'+escapeHTML(r.categoria||'Sem categoria')+(potentialCpfValueError(r)?' · <span class="review-badge">Revisar valor / CPF</span>':'')+'</span></td>'+
-  '<td>'+statusChip(r.tipo)+'</td>'+
+  '<td>'+(r.estado==='cancelado'?statusChip('cancelado'):statusChip(r.tipo))+'</td>'+
   '<td>'+escapeHTML(supplierName(r.fornecedor_id))+'</td>'+
   '<td class="money" style="color:'+(r.tipo==='entrada'?'#188369':'#344c5b')+'">'+(r.tipo==='entrada'?'+ ':'− ')+currency(r.valor)+'</td>'+
  '<td class="edit-cell">'+(r.origem==='app'&&r.referencia_origem?.startsWith('site-financeiro-mov-')&&r.estado==='confirmado'?'<button type="button" class="row-edit-button" data-edit-record="movimento" data-edit-id="'+escapeHTML(r.id)+'">Editar</button>':'<span class="row-sub">Histórico protegido</span>')+'</td>'+
@@ -290,7 +290,7 @@ function updatePurchases(){
 function csvEscape(v){const s=String(v??'');return '"'+s.replace(/"/g,'""')+'"'}
 function exportMovements(){
  const rows=filteredMoves();
- const cols=[['Data','Tipo','Descrição','Categoria','Fornecedor','Valor (R$)']].concat(rows.map(x=>[x.data_movimento,x.tipo,x.descricao,x.categoria||'',supplierName(x.fornecedor_id),Number(x.valor).toFixed(2).replace('.',',')]));
+ const cols=[['Data','Tipo','Descrição','Categoria','Fornecedor','Valor (R$)','Estado']].concat(rows.map(x=>[x.data_movimento,x.tipo,x.descricao,x.categoria||'',supplierName(x.fornecedor_id),Number(x.valor).toFixed(2).replace('.',','),x.estado]));
  const csv='\ufeff'+cols.map(row=>row.map(csvEscape).join(';')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
  const link=document.createElement('a');link.href=url;link.download='fr-motors-financeiro-movimentacoes.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),500);
