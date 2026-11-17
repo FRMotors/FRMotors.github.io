@@ -471,8 +471,8 @@ function drawPreview(){
   '<td><select data-import-nature="'+i+'" aria-label="Natureza linha '+r.index+'">'+opts.map(([value,label])=>
     '<option value="'+value+'"'+(r.nature===value?' selected':'')+'>'+label+'</option>').join('')+'</select></td>'+
   '<td class="money"><input class="import-edit-value" type="text" inputmode="decimal" data-import-value="'+i+'" aria-label="Valor em reais da linha '+r.index+'" value="'+esc(r.rawAmount)+'" title="Corrija o valor antes de importar" /></td>'+
-  '<td>'+(r.duplicate?'<span class="import-duplicate-badge" title="Mesmo dia, tipo e valor já importados nesta conta">Repetição bloqueada</span>':
-    !duplicateCheckReady&&kind==='banco'?'<span class="import-checking">Verificando...</span>':
+  '<td>'+(r.duplicate?'<span class="import-duplicate-badge" title="Mesmo dia, tipo, valor e identificação da operação, presente em outro arquivo desta conta ou cartão">Repetição bloqueada</span>':
+    !duplicateCheckReady?'<span class="import-checking">Verificando...</span>':
     '<span class="import-new-badge">Sem repetição</span>')+'</td></tr>').join('');
  updateCounts();
 }
@@ -488,10 +488,10 @@ function updateCounts(){
  $('import-total-selected').textContent=cash(selectedKind()==='banco'?net:-net);
  $('import-confirm').disabled=working||!duplicateCheckReady||rows.length===0||rows.length>1500||amountInvalid.length>0;
  $('import-select-all').checked=preview.some(r=>!r.duplicate)&&preview.filter(r=>!r.duplicate).every(r=>r.selected);
- $('import-preview-warning').textContent=!duplicateCheckReady&&selectedKind()==='banco'?
-  'Verificação de repetições pendente. Não é possível importar enquanto a conferência não for concluída.':
+ $('import-preview-warning').textContent=!duplicateCheckReady?
+  'Verificação de repetições pendente para esta conta ou cartão. Não é possível importar enquanto a conferência não for concluída.':
   amountInvalid.length?amountInvalid.length+' linha(s) com valor inválido. Corrija o valor antes de importar.':
-  repeats?repeats+' repetição(ões) bloqueada(s) automaticamente por data, tipo e valor; '+rows.length+' movimento(s) novo(s) selecionado(s).':
+  repeats?repeats+' repetição(ões) entre arquivos bloqueada(s) automaticamente por data, tipo, valor e identificação; '+rows.length+' lançamento(s) novo(s) selecionado(s).':
   rows.length?'Sem repetições identificadas nesta conta. Confira cada valor antes de salvar.':
   'Nenhuma linha nova selecionada para importar.';
 }
