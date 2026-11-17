@@ -4,11 +4,11 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261116sidebar-desktop57">
-<link rel="stylesheet" href="./financeiro-import.css?v=20261117dedup2">
+<link rel="stylesheet" href="./financeiro-import.css?v=20261117reconciliacao2">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
-<link rel="stylesheet" href="./financeiro-historico.css?v=20261117itau-import1">
+<link rel="stylesheet" href="./financeiro-historico.css?v=20261117reconciliacao2">
 <style>
 .fin-homolog-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 20px 18px}
 .fin-homolog-kpis .insight-card{min-width:0;padding:17px}
@@ -1537,6 +1537,18 @@
           </div>
         </div>
         <div id="hist-itau-status" class="status" role="status"></div>
+        <section class="card hist-reconcile-card" id="hist-itau-reconcile" aria-labelledby="hist-itau-reconcile-title">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Conciliação automática · Excel e extratos bancários</p>
+              <h2 id="hist-itau-reconcile-title">Saldo do Itaú reconciliado</h2>
+              <p id="hist-itau-reconcile-source">Conferindo os lançamentos novos e as repetições...</p>
+            </div>
+          </div>
+          <div id="hist-itau-reconcile-kpis" class="hist-kpis hist-reconcile-kpis"></div>
+          <p id="hist-itau-reconcile-diff" class="hist-import-compare" role="status" aria-live="polite">Calculando a diferença com o último saldo de referência...</p>
+          <p id="hist-itau-reconcile-note" class="hist-import-warning">Os lançamentos coincidentes não serão somados novamente. O histórico homologado e os arquivos originais permanecem preservados para auditoria.</p>
+        </section>
         <section class="card hist-import-card" id="hist-itau-import-card" aria-labelledby="hist-itau-import-title">
           <div class="card-head">
             <div>
@@ -2395,11 +2407,11 @@ init();
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
-<script src="./financeiro-import.js?v=20261117dedup2" defer></script>
+<script src="./financeiro-import.js?v=20261117reconciliacao2" defer></script>
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 <script src="./financeiro-faturas.js?v=20261116parcelas1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
-<script src="./financeiro-historico.js?v=20261117import-preview1" defer></script>
+<script src="./financeiro-historico.js?v=20261117reconciliacao2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261116avulsosedit1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261116overviewdialogs2" defer></script>
