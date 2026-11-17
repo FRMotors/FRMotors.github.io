@@ -147,9 +147,9 @@ function reconcileBankBalance(base,canonical,official,cutoff){
 }
 async function renderItauReconciliation(){
  const label=$('hist-itau-reconcile-source'),root=$('hist-itau-reconcile-kpis'),
-  difference=$('hist-itau-reconcile-diff'),note=$('hist-itau-reconcile-note'),
-  table=$('hist-itau-reconcile-rows');
- if(!label||!root||!difference||!note||!table||!state.monthly.length)return;
+  headline=$('hist-itau-reconcile-headline'),difference=$('hist-itau-reconcile-diff'),
+  note=$('hist-itau-reconcile-note'),table=$('hist-itau-reconcile-rows');
+ if(!label||!root||!headline||!difference||!note||!table||!state.monthly.length)return;
  label.textContent='Comparando importações com o último movimento homologado...';
  try{
   const [imports,latestResponse,refResponse,audits]=await Promise.all([
@@ -205,11 +205,13 @@ async function renderItauReconciliation(){
     projected<0?'negative':'positive');
   const canCompare=reference&&reference.data_referencia>=cutoff&&
     reference.data_referencia<=latestDate;
+  let comparisonCents=null;
   if(canCompare){
    const projectionAtReference=rec.balanceCents-
     rec.pending.filter(r=>r.data_lancamento>reference.data_referencia).reduce(
      (sum,r)=>sum+(r.natureza==='entrada'?1:-1)*Math.round(num(r.valor)*100),0);
    const delta=projectionAtReference-Math.round(num(reference.saldo)*100);
+   comparisonCents=delta;
    difference.textContent=(delta===0?'Conciliação conferida · diferença R$ 0,00. ':
     'Diferença de conciliação: '+money(delta/100)+'. Revisar antes de considerar fechado. ')+
     'Referência informada em '+dateBR(reference.data_referencia)+': '+money(reference.saldo)+
@@ -226,6 +228,14 @@ async function renderItauReconciliation(){
    difference.classList.remove('hist-reconcile-ok');
    difference.classList.add('hist-reconcile-mismatch');
   }
+  headline.innerHTML=
+   metric('Saldo reconciliado',money(projected),
+    'Calculado até '+dateBR(latestDate),projected<0?'negative':'positive')+
+   metric('Diferença do banco',comparisonCents===null?'A conferir':money(comparisonCents/100),
+    comparisonCents===null?'Sem referência comparável':'Comparado ao saldo informado em '+dateBR(reference.data_referencia),
+    comparisonCents===0?'positive':comparisonCents===null?'':'negative')+
+   metric('Lançamentos novos',count(rec.pending.length),
+    count(repeated.length)+' repetição(ões) ignorada(s)');
   note.textContent='Verificação automática: '+count(lines.length)+' registros originais em '+
    count(bankFiles.length)+' arquivo(s); '+count(repeated.length)+
    ' repetição(ões) entre PDFs não contabilizada(s), '+count(rec.already.length)+
@@ -247,7 +257,7 @@ async function renderItauReconciliation(){
   ).join(''):'<tr><td colspan="5" class="hist-empty">Nenhum ajuste necessário neste período.</td></tr>';
  }catch(e){
   label.textContent='Não foi possível concluir a conciliação automática.';
-  root.innerHTML='';
+  root.innerHTML='';headline.innerHTML='';
   difference.textContent='Conciliação indisponível: '+String(e.message||e);
   difference.classList.add('hist-reconcile-mismatch');
   note.textContent='O saldo não foi alterado. Atualize a página ou verifique o acesso à base financeira.';
