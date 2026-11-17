@@ -115,3 +115,68 @@
  .hist-reconcile-details>summary{padding:13px 12px}
  .hist-reconcile-details .table-wrap{padding:0 8px 10px}
 }
+
+/* V4.4.65 · Hierarquia visual limpa para Itaú e Importações. */
+[data-view-panel="itau"] .section-header,
+[data-view-panel="imports"] .section-header{margin-bottom:13px}
+[data-view-panel="itau"] .page-description,
+[data-view-panel="imports"] .page-description{max-width:740px}
+.fin-accordion-stack{display:grid;gap:11px;margin:15px 0 20px}
+.fin-accordion-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:24px 0 9px}
+.fin-accordion-head h2{font-size:16px;font-weight:820;letter-spacing:-.02em;margin:0;color:var(--ink)}
+.fin-accordion-head p{margin:0;font-size:11px;color:var(--muted);max-width:580px}
+.fin-collapse{background:var(--surface,#fff);border:1px solid var(--stroke,#dfe7ed);border-radius:12px;min-width:0;overflow:hidden}
+.fin-collapse>summary{position:relative;display:flex;flex-direction:column;justify-content:center;gap:3px;list-style:none;cursor:pointer;padding:14px 48px 14px 17px;min-height:62px;user-select:none}
+.fin-collapse>summary::-webkit-details-marker{display:none}
+.fin-collapse>summary::after{content:"";position:absolute;right:21px;top:calc(50% - 5px);width:9px;height:9px;border:solid #7e919f;border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .16s ease}
+.fin-collapse[open]>summary::after{transform:rotate(225deg);top:calc(50% - 1px)}
+.fin-collapse>summary:hover{background:#f8fbfc}
+.fin-collapse[open]>summary{border-bottom:1px solid var(--stroke,#dfe7ed)}
+.fin-collapse>summary span{font-size:13px;font-weight:820;color:#2a4756;line-height:1.35}
+.fin-collapse>summary small{font-size:11px;color:var(--muted,#6a7a89);font-weight:500;line-height:1.3}
+.fin-collapse-panel{padding:15px 16px;min-width:0}
+.fin-collapse-panel>.card{margin:0 0 12px}
+.fin-collapse-panel>.card:last-child{margin-bottom:0}
+.fin-collapse-panel>.content-grid{margin-top:0!important}
+.fin-collapse-panel>.content-grid>.card{min-width:0}
+.fin-collapse-panel>.fin-unificado-card{margin:0}
+.fin-collapse-panel>.pix-rules-card{margin:0}
+.fin-accordion-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}
+.fin-workflow-intro{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px 15px;border-bottom:1px solid var(--stroke,#dfe7ed);padding:0 2px 13px;margin:0 0 17px}
+.fin-workflow-intro strong{font-size:12px;font-weight:820;color:var(--ink)}
+.fin-workflow-intro span{font-size:11px;color:var(--muted);line-height:1.5;flex:1 1 320px}
+.hist-reconcile-card .hist-reconcile-headline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:2px 0 13px;padding:0 18px}
+.hist-reconcile-card .hist-reconcile-headline>.hist-kpi{min-width:0;padding:13px 14px;background:#fff}
+.hist-reconcile-card .hist-reconcile-headline .hist-kpi-label{margin-bottom:7px}
+.hist-reconcile-card .hist-reconcile-headline .hist-kpi-value{font-size:clamp(19px,2vw,28px);line-height:1.12;letter-spacing:-.035em;white-space:normal;overflow-wrap:anywhere}
+.hist-reconcile-card .hist-reconcile-headline .hist-kpi-caption{margin-top:7px}
+.hist-reconcile-card>.hist-import-compare{font-size:11px;line-height:1.45;padding:10px 12px}
+.fin-collapse-in-card{border-width:1px 0 0;border-radius:0;margin-top:13px;background:transparent}
+.fin-collapse-in-card>summary{padding-left:18px;min-height:57px}
+.fin-collapse-in-card[open]>summary{background:#fbfdfd}
+.fin-collapse-in-card>.fin-collapse-panel{padding:9px 0 15px}
+.fin-collapse-in-card .hist-reconcile-kpis{margin-top:0}
+.fin-collapse-in-card .hist-reconcile-details{margin-top:7px}
+[data-view-panel="itau"]>details.fin-collapse{margin:11px 0}
+[data-view-panel="itau"]>details.fin-collapse>.fin-collapse-panel .hist-homolog-label{margin-top:0}
+[data-view-panel="imports"] .fin-accordion-stack>.fin-collapse>.fin-collapse-panel>section.card{margin-top:0!important}
+@media(max-width:900px){
+ .hist-reconcile-card .hist-reconcile-headline{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hist-reconcile-card .hist-reconcile-headline>.hist-kpi:first-child{grid-column:1/-1}
+ .fin-accordion-head{display:block}
+ .fin-accordion-head p{margin-top:4px}
+}
+@media(max-width:560px){
+ .fin-collapse>summary{padding:12px 39px 12px 13px;min-height:60px}
+ .fin-collapse>summary span{font-size:12px}
+ .fin-collapse>summary small{font-size:10px}
+ .fin-collapse>summary::after{right:16px}
+ .fin-collapse-panel{padding:12px 10px}
+ .hist-reconcile-card .hist-reconcile-headline{padding:0 12px;gap:8px}
+ .hist-reconcile-card .hist-reconcile-headline>.hist-kpi{padding:11px}
+ .hist-reconcile-card .hist-reconcile-headline .hist-kpi-value{font-size:19px}
+ .fin-collapse-in-card>.fin-collapse-panel{padding:9px 0 12px}
+ .fin-accordion-tools>.btn{width:100%}
+ .fin-workflow-intro{margin-bottom:13px}
+}
+@media(prefers-reduced-motion:reduce){.fin-collapse>summary::after{transition:none}}
