@@ -369,9 +369,8 @@ function normalizedBankName(s){
  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 }
 async function existingBankDuplicates(account){
- const {data:imports,error}=await db.from('fin_teste_importacoes')
-  .select('id,conta_nome').eq('tipo','banco').order('criado_em',{ascending:false});
- if(error)throw error;
+ const imports=await fetchAll(()=>db.from('fin_teste_importacoes')
+  .select('id,conta_nome').eq('tipo','banco').order('criado_em',{ascending:false}));
  const ids=(imports||[]).filter(x=>normalizedBankName(x.conta_nome)===normalizedBankName(account)).map(x=>x.id);
  const result=new Map();
  for(let n=0;n<ids.length;n+=30){
@@ -395,7 +394,7 @@ function markRepeatedLines(){
   const wasDuplicate=Boolean(row.duplicate);
   row.duplicate=Boolean(duplicate);
   if(row.duplicate){row.selected=false}
-  else if(wasDuplicate&&!row.userToggled){row.selected=row.defaultSelected}
+  else if(wasDuplicate){row.selected=row.defaultSelected}
  }
 }
 async function buildPreview(){
@@ -443,6 +442,7 @@ async function buildPreview(){
  }
 }
 function drawPreview(){
+ if(duplicateCheckReady)markRepeatedLines();
  const body=$('import-preview-body'),kind=selectedKind(),opts=kind==='banco'?
    [['entrada','Entrada'],['saida','Saída']]:[['compra','Compra'],['estorno','Estorno']];
  body.innerHTML=preview.map((r,i)=>'<tr data-pidx="'+i+'" data-excluded="'+(!r.selected)+'" data-duplicate="'+Boolean(r.duplicate)+'"><td>'+
@@ -457,7 +457,6 @@ function drawPreview(){
  updateCounts();
 }
 function updateCounts(){
- if(duplicateCheckReady)markRepeatedLines();
  const rows=preview.filter(x=>x.selected);
  const repeats=preview.filter(x=>x.duplicate).length;
  const amountInvalid=rows.filter(r=>r.valor===null||!Number.isFinite(r.valor)||r.valor<=0);
