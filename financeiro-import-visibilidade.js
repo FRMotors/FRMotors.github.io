@@ -10,7 +10,7 @@ function normalize(value){
 }
 function priority(name){
  const tokens=normalize(name).split(/\s+/).filter(Boolean);
- return tokens.includes('sicoob')||tokens.includes('bradesco')||tokens.includes('brad');
+ return tokens.some(t=>t==='brad'||t.startsWith('bradesco')||t.startsWith('sicoob'));
 }
 let others=false;
 try{others=window.localStorage?.getItem(STORAGE_KEY)==='1'}catch(_){}
