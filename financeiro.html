@@ -560,7 +560,7 @@
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
-<link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118activecards2">
+<link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cartoes1">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
 <link rel="stylesheet" href="./financeiro-central-auditoria.css?v=20261118audit1">
 </head>
@@ -582,11 +582,10 @@
     <button type="button" data-view="movements"><span class="icon" data-icon="wallet"></span> Movimentações oficiais</button>
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
-    <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras parceladas</button>
-    <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Faturas dos cartões</button>
+    <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Cartões</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
-    <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
+
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-section-label">Histórico homologado</div>
@@ -700,12 +699,12 @@
        </section>
       </section>
 
-      <section class="view cb-view" data-view-panel="cardbills" hidden aria-label="Faturas dos cartões">
+      <section class="view cb-view" data-view-panel="cardbills" hidden aria-label="Cartões: faturas e compras parceladas">
        <div class="section-header cb-intro">
         <div>
          <p class="eyebrow">Controle documental · cartões de crédito</p>
-         <h1 class="page-heading">Faturas dos cartões</h1>
-         <p class="page-description">Veja quais faturas estão pagas, parcialmente conciliadas ou pendentes. Acesse os pagamentos e vencimentos nas telas já existentes.</p>
+         <h1 class="page-heading">Cartões</h1>
+         <p class="page-description">Consulte faturas, pagamentos vinculados e compras parceladas em um só lugar, com controles independentes e sem duplicar saídas do caixa.</p>
         </div>
         <div class="header-buttons">
          <button type="button" class="btn" data-view="expenses">Autopeças e cartões</button>
@@ -716,7 +715,7 @@
        <p id="cb-status" class="cb-status" role="status" aria-live="polite">Aguardando consulta...</p>
        <div class="cb-kpis" aria-label="Resumo da situação das faturas">
         <div class="cb-kpi">
-         <span>Faturas exibidas</span><strong id="cb-count">—</strong>
+         <span>Faturas na seleção</span><strong id="cb-count">—</strong>
          <small>Documentos dos cartões selecionados</small>
         </div>
         <div class="cb-kpi cb-kpi-risk">
@@ -814,6 +813,68 @@
         </div>
         <p class="cb-list-note">Use “Conferir pagamento” para acessar os vínculos bancários sem criar pagamentos duplicados. Use “Vencimento” para consultar ou informar a data real na agenda financeira.</p>
        </section>
+      <section class="fin-cards-installments" id="card-installments" aria-labelledby="pc-section-title">
+        <div class="section-header"><div>
+          <p class="eyebrow">Histórico de cartões · planilha homologada</p>
+          <h2 class="fin-cards-heading" id="pc-section-title">Compras parceladas</h2>
+          <p class="page-description">Parcelas de compras no cartão, com cartão, parcela atual/total e mês da fatura. Os pagamentos são controlados pela fatura, sem duplicar saídas do caixa.</p>
+        </div>
+          <div class="header-buttons pc-header-actions">
+            <button type="button" class="btn" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
+            <button type="button" class="btn" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Nova compra no crédito</button>
+             <button type="button" class="btn btn-primary" id="pc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar parcelas</button>
+          </div>
+        </div>
+        <div class="pc-kpis">
+          <section class="insight-card"><span>Parcelas identificadas</span><strong id="pc-count">—</strong><small>Registros de cartão incluídos</small></section>
+          <section class="insight-card"><span>Valor documental das parcelas</span><strong id="pc-total">—</strong><small>Não é uma nova despesa bancária</small></section>
+          <section class="insight-card"><span>Cartões identificados</span><strong id="pc-cards-count">—</strong><small>Nomes preservados da planilha</small></section>
+          <section class="insight-card"><span>Parcelas em faturas quitadas por confirmação</span><strong id="pc-declared-count">—</strong><small>Sem conciliação bancária individual</small></section>
+        </div>
+        <section class="card pc-card">
+          <div class="card-head"><div><h2>Parcelas dos cartões de crédito</h2>
+            <p>Dados homologados: cada linha representa a parcela registrada em uma fatura, inclusive parcelamentos e encargos quando identificados assim na origem. Não extrapolamos parcelas futuras ausentes do histórico.</p></div>
+          </div>
+          <div class="data-toolbar pc-toolbar">
+            <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+              <input id="pc-search" type="search" placeholder="Buscar compra, código, parcela..." aria-label="Buscar parcelas dos cartões">
+            </label>
+            <select id="pc-card" class="filter-select" aria-label="Filtrar cartão"><option value="todos">Todos os cartões</option></select>
+            <select id="pc-year" class="filter-select" aria-label="Filtrar parcelas por ano"><option value="todos">Todos os anos</option></select>
+            <select id="pc-month" class="filter-select" aria-label="Filtrar mês da fatura"><option value="todos">Todos os meses</option></select>
+            <select id="pc-status" class="filter-select" aria-label="Situação da fatura">
+              <option value="todos">Todas as situações</option>
+              <option value="declarada">Fatura quitada por confirmação</option>
+              <option value="integral">Fatura quitada por vínculo</option>
+              <option value="parcial">Fatura parcialmente paga</option>
+              <option value="nao-conciliada">Fatura sem quitação registrada</option>
+            </select>
+          </div>
+          <p id="pc-status-message" class="info-note pc-note" role="status" aria-live="polite">Aguardando consulta das parcelas dos cartões.</p>
+          <div class="table-wrap"><table class="data-table">
+            <thead><tr>
+              <th>Descrição e código</th><th>Cartão</th><th>Parcela</th>
+              <th>Mês da fatura</th><th>Data da compra</th>
+              <th class="money">Valor da parcela</th><th>Situação da fatura</th>
+            </tr></thead>
+            <tbody id="pc-rows"><tr><td colspan="7" class="empty">Carregando histórico de parcelas...</td></tr></tbody>
+          </table></div>
+          <div class="table-footer pc-paging">
+            <span id="pc-pagination">Aguardando consulta.</span>
+            <div><button type="button" class="btn" id="pc-previous" disabled>Anterior</button>
+              <button type="button" class="btn" id="pc-next" disabled>Próxima</button></div>
+          </div>
+        </section>
+        <p class="info-note pc-separator-note"><strong>Compras novas do site:</strong> as compras cadastradas pelo site ficam separadas das faturas históricas, evitando dupla contagem.</p>
+        <section class="card">
+          <div class="card-head"><div><h2>Compras cadastradas pelo site</h2><p>Novos registros oficiais, com auditoria e sem alterar compras antigas.</p></div>
+          <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button></div>
+          <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-purchases" type="search" placeholder="Buscar descrição, fornecedor ou data..." aria-label="Buscar compras"></label></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Data da compra</th><th>Descrição</th><th>Fornecedor</th><th class="money">Valor total</th><th>Situação</th><th class="edit-column">Ações</th></tr></thead><tbody id="purchases-rows"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
+          <div class="table-footer" id="purchase-count">0 compra(s)</div>
+        </section>
+      </section>
+
       </section>
 
       <section class="view cl-view" data-view-panel="classify" hidden aria-label="Central de Classificação de Despesas">
@@ -1267,7 +1328,7 @@
           <div class="real-dashboard-grid">
             <section class="real-dashboard-panel real-dashboard-cash">
               <div class="real-dashboard-panel-head">
-                <div><h3>Fluxo de Caixa homologado</h3><p>Acompanhe o mês mais recente, compare com o anterior e veja a evolução. Somente movimentações confirmadas.</p></div>
+                <div><h3>Fluxo de Caixa homologado</h3><p>Acompanhe o caixa confirmado do período escolhido e a evolução dos últimos meses. Somente movimentações confirmadas.</p></div>
                 <label class="real-dashboard-period"><span>Período do caixa</span><select id="real-cash-month" aria-label="Período do caixa homologado">
                   <option value="todos">Todo o histórico homologado</option></select></label>
               </div>
@@ -1277,17 +1338,6 @@
                 <div><span>Resultado do período</span><strong id="real-cash-net">—</strong></div>
               </div>
               <p class="real-dashboard-fine"><span id="real-cash-count">Aguardando...</span> O resultado representa entradas menos saídas, não o saldo bancário.</p>
-              <div class="real-cash-comparison" aria-label="Comparativo mensal do caixa homologado">
-               <div class="real-cash-comparison-head">
-                <h4>Comparativo com o mês anterior</h4><span id="real-compare-period">Aguardando dados...</span>
-               </div>
-               <div class="real-cash-compare-cards">
-                <div><small>Entradas</small><strong id="real-compare-in">—</strong><span id="real-compare-in-pct">—</span></div>
-                <div><small>Saídas</small><strong id="real-compare-out">—</strong><span id="real-compare-out-pct">—</span></div>
-                <div><small>Resultado</small><strong id="real-compare-net">—</strong><span id="real-compare-net-note">—</span></div>
-               </div>
-               <p id="real-compare-note" class="real-dashboard-fine">Variações de movimentações confirmadas, sem obrigações documentais.</p>
-              </div>
               <div class="real-trend" aria-label="Evolução mensal do caixa homologado">
                <div class="real-trend-heading">
                 <h4>Evolução dos últimos seis meses</h4>
@@ -1397,7 +1447,7 @@
           <div class="hist-quick-actions">
             <button type="button" class="btn btn-primary" data-view="itau"><span class="icon icon-sm" data-icon="bank"></span> Abrir painel Itaú</button>
             <button type="button" class="btn" data-view="history"><span class="icon icon-sm" data-icon="chart"></span> Outras fontes</button>
-             <a class="btn btn-teal" href="./financeiro.html?view=operational"><span class="icon icon-sm" data-icon="wallet"></span> Abrir Base migrada</a>
+             <a class="btn btn-teal" href="./financeiro.html?view=imports&amp;section=base-migrada#imports-base-migrada"><span class="icon icon-sm" data-icon="wallet"></span> Abrir Base migrada</a>
              <a class="btn" href="./financeiro.html?view=expenses"><span class="icon icon-sm" data-icon="receipt"></span> Autopeças e cartões</a>
           </div>
         </div>
@@ -1863,67 +1913,6 @@
         </dialog>
       </section>
 
-      <section class="view" data-view-panel="purchases" hidden aria-label="Compras parceladas">
-        <div class="section-header"><div>
-          <p class="eyebrow">Histórico de cartões · planilha homologada</p>
-          <h1 class="page-heading">Compras parceladas</h1>
-          <p class="page-description">Parcelas de compras no cartão, com cartão, parcela atual/total e mês da fatura. Os pagamentos são controlados pela fatura, sem duplicar saídas do caixa.</p>
-        </div>
-          <div class="header-buttons pc-header-actions">
-            <button type="button" class="btn" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
-            <button type="button" class="btn" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Nova compra no crédito</button>
-             <button type="button" class="btn btn-primary" id="pc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar parcelas</button>
-          </div>
-        </div>
-        <div class="pc-kpis">
-          <section class="insight-card"><span>Parcelas identificadas</span><strong id="pc-count">—</strong><small>Registros de cartão incluídos</small></section>
-          <section class="insight-card"><span>Valor documental das parcelas</span><strong id="pc-total">—</strong><small>Não é uma nova despesa bancária</small></section>
-          <section class="insight-card"><span>Cartões identificados</span><strong id="pc-cards-count">—</strong><small>Nomes preservados da planilha</small></section>
-          <section class="insight-card"><span>Parcelas em faturas quitadas por confirmação</span><strong id="pc-declared-count">—</strong><small>Sem conciliação bancária individual</small></section>
-        </div>
-        <section class="card pc-card">
-          <div class="card-head"><div><h2>Parcelas dos cartões de crédito</h2>
-            <p>Dados homologados: cada linha representa a parcela registrada em uma fatura, inclusive parcelamentos e encargos quando identificados assim na origem. Não extrapolamos parcelas futuras ausentes do histórico.</p></div>
-          </div>
-          <div class="data-toolbar pc-toolbar">
-            <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-              <input id="pc-search" type="search" placeholder="Buscar compra, código, parcela..." aria-label="Buscar parcelas dos cartões">
-            </label>
-            <select id="pc-card" class="filter-select" aria-label="Filtrar cartão"><option value="todos">Todos os cartões</option></select>
-            <select id="pc-year" class="filter-select" aria-label="Filtrar parcelas por ano"><option value="todos">Todos os anos</option></select>
-            <select id="pc-month" class="filter-select" aria-label="Filtrar mês da fatura"><option value="todos">Todos os meses</option></select>
-            <select id="pc-status" class="filter-select" aria-label="Situação da fatura">
-              <option value="todos">Todas as situações</option>
-              <option value="declarada">Fatura quitada por confirmação</option>
-              <option value="integral">Fatura quitada por vínculo</option>
-              <option value="parcial">Fatura parcialmente paga</option>
-              <option value="nao-conciliada">Fatura sem quitação registrada</option>
-            </select>
-          </div>
-          <p id="pc-status-message" class="info-note pc-note" role="status" aria-live="polite">Aguardando consulta das parcelas dos cartões.</p>
-          <div class="table-wrap"><table class="data-table">
-            <thead><tr>
-              <th>Descrição e código</th><th>Cartão</th><th>Parcela</th>
-              <th>Mês da fatura</th><th>Data da compra</th>
-              <th class="money">Valor da parcela</th><th>Situação da fatura</th>
-            </tr></thead>
-            <tbody id="pc-rows"><tr><td colspan="7" class="empty">Carregando histórico de parcelas...</td></tr></tbody>
-          </table></div>
-          <div class="table-footer pc-paging">
-            <span id="pc-pagination">Aguardando consulta.</span>
-            <div><button type="button" class="btn" id="pc-previous" disabled>Anterior</button>
-              <button type="button" class="btn" id="pc-next" disabled>Próxima</button></div>
-          </div>
-        </section>
-        <p class="info-note pc-separator-note"><strong>Compras novas do site:</strong> as compras cadastradas pelo site ficam separadas das faturas históricas, evitando dupla contagem.</p>
-        <section class="card">
-          <div class="card-head"><div><h2>Compras cadastradas pelo site</h2><p>Novos registros oficiais, com auditoria e sem alterar compras antigas.</p></div>
-          <button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button></div>
-          <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-purchases" type="search" placeholder="Buscar descrição, fornecedor ou data..." aria-label="Buscar compras"></label></div>
-          <div class="table-wrap"><table class="data-table"><thead><tr><th>Data da compra</th><th>Descrição</th><th>Fornecedor</th><th class="money">Valor total</th><th>Situação</th><th class="edit-column">Ações</th></tr></thead><tbody id="purchases-rows"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
-          <div class="table-footer" id="purchase-count">0 compra(s)</div>
-        </section>
-      </section>
 
 
 <section class="view" data-view-panel="expenses" hidden aria-label="Carteiras históricas de autopeças e cartões">
@@ -2886,42 +2875,12 @@
   
   </div>
 </details>
-  </div>
-<dialog class="fin-dialog" id="modal-import-card" aria-labelledby="card-edit-title">
-    <div class="dialog-head">
-      <div><h2 id="card-edit-title">Editar gasto importado</h2><p>Corrija os dados da fatura com segurança.</p></div>
-      <button type="button" id="card-edit-close" class="dialog-close" aria-label="Fechar edição do cartão"><span class="icon" data-icon="close"></span></button>
-    </div>
-    <div class="dialog-body">
-      <form id="card-edit-form" class="fields">
-        <label>Data do lançamento<input id="card-edit-date" type="date" required></label>
-        <label>Valor (R$)<input id="card-edit-value" type="number" min="0.01" step="0.01" required></label>
-        <label style="grid-column:1/-1">Descrição<input id="card-edit-description" type="text" maxlength="400" required></label>
-        <label>Natureza<select id="card-edit-nature"><option value="compra">Compra</option><option value="estorno">Estorno</option></select></label>
-        <div style="grid-column:1/-1">
-          <p class="form-note">A alteração será registrada no histórico de auditoria. O lançamento continuará separado do caixa bancário.</p>
-          <div id="card-edit-status" class="status" role="status"></div>
-          <div class="edit-actions">
-            <button type="button" id="card-edit-delete" class="btn btn-danger">Excluir lançamento</button>
-            <div class="edit-actions-right"><button type="button" class="btn" id="card-edit-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="card-edit-save">Salvar correção</button></div>
-          </div>
-        </div>
-      </form>
-      <div id="card-delete-confirm" class="edit-confirm hidden" role="alert">
-        <strong>Excluir este gasto de cartão?</strong>
-        <p>O lançamento deixará de aparecer na fatura importada. A exclusão ficará registrada no histórico.</p>
-        <div class="edit-actions-right">
-          <button type="button" class="btn" id="card-delete-cancel">Manter lançamento</button>
-          <button type="button" class="btn btn-danger" id="card-delete-confirm-button">Sim, excluir</button>
-        </div>
-      </div>
-    </div>
-  </dialog>
-</section>
-
-      <section class="view" data-view-panel="operational" hidden aria-label="Base financeira operacional migrada">
+<details class="fin-collapse" id="imports-base-migrada">
+  <summary><span>Base migrada</span><small>Recebimentos e pagamentos homologados, somente leitura</small></summary>
+  <div class="fin-collapse-panel">
+      <section class="fin-ops-embedded" id="imports-base-migrada-content" aria-label="Base financeira operacional migrada">
  <div class="section-header">
-  <div><p class="eyebrow">Migração controlada · histórico 2026</p><h1 class="page-heading">Base financeira migrada</h1>
+  <div><p class="eyebrow">Migração controlada · histórico 2026</p><h2 class="fin-cards-heading">Base financeira migrada</h2>
    <p class="page-description">Pagamentos e recebimentos efetivos da planilha homologada, sem duplicar compras e faturas.</p></div>
   <span class="env-chip">SOMENTE LEITURA</span>
  </div>
@@ -2960,6 +2919,42 @@
  </section>
  <p class="info-note">Boletos em aberto, despesas de cartões e compras de autopeças permanecem como histórico para vinculação posterior. O caixa da oficina e o painel de homologação não foram substituídos.</p>
 </section>
+
+  </div>
+</details>
+  </div>
+<dialog class="fin-dialog" id="modal-import-card" aria-labelledby="card-edit-title">
+    <div class="dialog-head">
+      <div><h2 id="card-edit-title">Editar gasto importado</h2><p>Corrija os dados da fatura com segurança.</p></div>
+      <button type="button" id="card-edit-close" class="dialog-close" aria-label="Fechar edição do cartão"><span class="icon" data-icon="close"></span></button>
+    </div>
+    <div class="dialog-body">
+      <form id="card-edit-form" class="fields">
+        <label>Data do lançamento<input id="card-edit-date" type="date" required></label>
+        <label>Valor (R$)<input id="card-edit-value" type="number" min="0.01" step="0.01" required></label>
+        <label style="grid-column:1/-1">Descrição<input id="card-edit-description" type="text" maxlength="400" required></label>
+        <label>Natureza<select id="card-edit-nature"><option value="compra">Compra</option><option value="estorno">Estorno</option></select></label>
+        <div style="grid-column:1/-1">
+          <p class="form-note">A alteração será registrada no histórico de auditoria. O lançamento continuará separado do caixa bancário.</p>
+          <div id="card-edit-status" class="status" role="status"></div>
+          <div class="edit-actions">
+            <button type="button" id="card-edit-delete" class="btn btn-danger">Excluir lançamento</button>
+            <div class="edit-actions-right"><button type="button" class="btn" id="card-edit-cancel">Cancelar</button><button type="submit" class="btn btn-primary" id="card-edit-save">Salvar correção</button></div>
+          </div>
+        </div>
+      </form>
+      <div id="card-delete-confirm" class="edit-confirm hidden" role="alert">
+        <strong>Excluir este gasto de cartão?</strong>
+        <p>O lançamento deixará de aparecer na fatura importada. A exclusão ficará registrada no histórico.</p>
+        <div class="edit-actions-right">
+          <button type="button" class="btn" id="card-delete-cancel">Manter lançamento</button>
+          <button type="button" class="btn btn-danger" id="card-delete-confirm-button">Sim, excluir</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</section>
+
 
 <section class="view" data-view-panel="settings" hidden aria-label="Configurações de testes">
         <div class="section-header"><div><p class="eyebrow">Administração</p><h1 class="page-heading">Configurações</h1><p class="page-description">Gerencie o ambiente de testes do módulo financeiro sem interferir nos dados reais da oficina.</p></div></div>
@@ -3390,7 +3385,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261118merged1"></script>
+<script src="./financeiro-pro-ui.js?v=20261118cartoes1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
@@ -3406,18 +3401,18 @@ init();
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-documentos.js?v=20261118prime1" defer></script>
-<script src="./financeiro-cartoes-parcelados.js?v=20261118prime1" defer></script>
+<script src="./financeiro-cartoes-parcelados.js?v=20261118cartoes1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
-<script src="./financeiro-resumo-operacional.js?v=20261118merged1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261118cartoes1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
 <script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
-<script src="./financeiro-faturas-cartoes.js?v=20261118activecards2" defer></script>
+<script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261118audit1" defer></script>
 </body></html>
