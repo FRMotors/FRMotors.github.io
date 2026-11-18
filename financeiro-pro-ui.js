@@ -111,6 +111,7 @@ function selectView(next,options={}){
   if(next==='expenses')window.frInvoicesAgendaUI?.refresh?.();
   if(next==='receivables')window.frReceberUI?.refresh?.();
    if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
+   if(next==='payables')window.frBoletoTrashUI?.refresh?.();
    if(next==='deadlines')window.frDeadlinesUI?.refresh?.();
    if(next==='forecast')window.frForecastUI?.refresh?.();
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
