@@ -85,11 +85,9 @@ function drawCash(){
  ).join('')||'<tr><td colspan="4" class="empty">Nenhum movimento homologado.</td></tr>';
 }
 function drawBills(){
- const today=ymd(),week=new Date(today+'T12:00:00Z');
- week.setUTCDate(week.getUTCDate()+7);
- const next7=week.toISOString().slice(0,10);
+ const today=ymd();
  const active=effectiveAccounts(),overdue=active.filter(x=>x.vencimento&&x.vencimento<today);
- const soon=active.filter(x=>x.vencimento&&x.vencimento>=today&&x.vencimento<=next7);
+ const soon=active.filter(x=>x.vencimento===today);
  const withoutDate=active.filter(x=>!x.vencimento);
  const total=active.reduce((s,x)=>s+cents(x.valor_referencia),0);
  put('real-bill-count',String(active.length));

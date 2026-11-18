@@ -1,0 +1,127 @@
+/* FR Motors | Central de Vencimentos | 2026-11-18 */
+.cv-home{
+ display:flex;align-items:center;justify-content:space-between;gap:18px;
+ padding:20px 23px;margin:0 0 18px;border:1px solid #cadfe2;
+ background:linear-gradient(112deg,#f1f9fa 0%,#fff 76%);border-radius:14px
+}
+.cv-home-main{display:flex;gap:13px;align-items:flex-start;min-width:0}
+.cv-home-icon{display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;
+ border-radius:12px;background:#e0f2f2;color:#0b707a}
+.cv-home-icon .icon svg{width:22px;height:22px}
+.cv-home h2{font-size:17px;line-height:1.35;margin:0 0 5px;color:#223d4b}
+.cv-home p{font-size:12px;color:#617988;margin:0;max-width:480px;line-height:1.55}
+.cv-home-side{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:flex-end}
+.cv-home-stat{display:flex;flex-direction:column;gap:2px;min-width:62px;text-align:center}
+.cv-home-stat strong{font-size:23px;font-weight:750;line-height:1;color:#b44d34}
+.cv-home-stat span{font-size:11px;color:#647784}
+.cv-home-stat.cv-home-stat-receive strong{color:#087c89}
+.cv-home .btn{white-space:nowrap}
+.cv-home-clear .cv-home-stat strong{color:#187567}
+.cv-deadlines .cv-intro{margin-bottom:20px}
+.cv-date-note{display:inline-flex;align-items:center;gap:6px;color:#647885;font-size:12px}
+.cv-date-note strong{color:#25475a;font-weight:700}
+.cv-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:18px}
+.cv-metric{border:1px solid #e2e9ec;background:#fff;box-shadow:0 2px 10px rgba(22,45,57,.025);
+ border-radius:13px;text-align:left;padding:17px;display:flex;flex-direction:column;align-items:flex-start;
+ gap:7px;min-width:0;cursor:pointer;transition:box-shadow .18s,border-color .18s,transform .18s}
+.cv-metric:hover{border-color:#acd1d5;box-shadow:0 8px 24px rgba(22,45,57,.075);transform:translateY(-2px)}
+.cv-metric:focus-visible,.cv-day:focus-visible,.cv-record-action:focus-visible{outline:3px solid #51b1ba;outline-offset:3px}
+.cv-metric-heading{font-size:11px;font-weight:700;color:#607785;text-transform:uppercase;letter-spacing:.045em}
+.cv-metric strong{font-size:27px;line-height:1.1;letter-spacing:-.03em;color:#263e4b}
+.cv-metric em{font-style:normal;font-size:14px;font-weight:700;color:#486371}
+.cv-metric small{font-size:11px;color:#7c8a91;line-height:1.5}
+.cv-metric.cv-metric-overdue{border-left:3px solid #d67b5a}
+.cv-metric.cv-metric-today{border-left:3px solid #cea35a}
+.cv-metric.cv-metric-receive strong{color:#0b7884}
+.cv-totalbar{border:1px solid #e1e9ec;background:#f7fafb;border-radius:12px;
+ display:flex;flex-wrap:wrap;align-items:center;gap:16px 30px;padding:14px 18px;margin-bottom:18px}
+.cv-totalbar-item{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12px;color:#687e8a}
+.cv-totalbar-item strong{font-size:16px;color:#234251}
+.cv-totalbar-item small{color:#768a95}
+.cv-totalbar-note{margin-left:auto;font-size:11px;color:#778791;max-width:265px;line-height:1.5}
+.cv-urgent-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-bottom:20px}
+.cv-urgent-column{min-width:0;overflow:hidden}
+.cv-urgent-column .card-head{align-items:flex-start}
+.cv-urgent-column .card-head p{font-size:12px;max-width:340px}
+.cv-urgent-stack{padding:6px 17px 18px;display:flex;flex-direction:column;gap:9px;max-height:530px;overflow-y:auto;scrollbar-width:thin}
+.cv-record{display:flex;justify-content:space-between;align-items:center;gap:13px;min-width:0;
+ padding:13px;border:1px solid #e4eaee;border-radius:11px;background:#fff}
+.cv-record-main{min-width:0;display:flex;flex-direction:column;gap:4px}
+.cv-record-main strong{font-size:12px;color:#203a49;line-height:1.45;overflow-wrap:anywhere}
+.cv-record-main small{font-size:11px;color:#71848e;line-height:1.45;overflow-wrap:anywhere}
+.cv-record-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#6e808b}
+.cv-state{display:inline-flex;align-items:center;border-radius:5px;padding:3px 7px;font-size:10px;font-weight:750}
+.cv-state-vencido{background:#fdf0e9;color:#a74d35}
+.cv-state-hoje{background:#fff4df;color:#89600d}
+.cv-state-programado{background:#e9f4f4;color:#0a7280}
+.cv-state-sem-data{background:#edf0f2;color:#596b75}
+.cv-record-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex-shrink:0}
+.cv-record-right b{font-size:12px;color:#294657;font-variant-numeric:tabular-nums}
+.cv-record-action{padding:6px 9px;min-height:30px!important;font-size:11px!important}
+.cv-empty{padding:23px 15px;display:flex;flex-direction:column;align-items:center;gap:6px;
+ color:#647c86;text-align:center;font-size:12px}
+.cv-empty strong{color:#345362;font-size:13px}
+.cv-calendar-section{margin-bottom:20px;overflow:hidden}
+.cv-calendar-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.cv-calendar-heading .card-head{margin:0}
+.cv-calendar-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cv-calendar-controls h3{font-size:15px;font-weight:750;min-width:150px;text-align:center;color:#274554;margin:0}
+.cv-calendar-controls button{min-height:34px}
+.cv-calendar-body{padding:0 18px 16px}
+.cv-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.cv-weekday{font-size:11px;text-align:center;color:#748793;padding:7px 0;font-weight:700}
+.cv-blank{min-height:68px}
+.cv-day{background:#fff;border:1px solid #e6edf0;border-radius:9px;min-height:75px;
+ display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:9px;
+ cursor:pointer;transition:background-color .15s,border-color .15s;min-width:0;color:#3a5764}
+.cv-day:hover{background:#f2fafa;border-color:#a7d4d7}
+.cv-day-number{font-size:12px;font-weight:750}
+.cv-day-counts{display:flex;flex-direction:column;gap:3px;width:100%;align-items:flex-start}
+.cv-dot{font-size:10px;padding:3px 5px;border-radius:5px;line-height:1.15;max-width:100%}
+.cv-dot-pay{background:#fff1e9;color:#a65e39}
+.cv-dot-receive{background:#e6f5f3;color:#147c7c}
+.cv-day.cv-day-today{border-color:#0f9397;box-shadow:inset 0 0 0 1px #0f9397}
+.cv-day.cv-day-selected{background:#eaf7f7;border-color:#0c7881;box-shadow:inset 0 0 0 1px #0c7881}
+.cv-day.cv-day-past:not(.cv-day-filled){opacity:.72}
+.cv-calendar-legend{display:flex;gap:15px;flex-wrap:wrap;padding:12px 3px 0;color:#6b808c;font-size:11px}
+.cv-calendar-legend span{display:inline-flex;gap:6px;align-items:center}
+.cv-legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.cv-legend-pay{background:#d58b58}.cv-legend-receive{background:#15948d}
+.cv-calendar-note{margin:9px 0 0;color:#71848d;font-size:11px;line-height:1.55}
+.cv-month-list{min-width:0}
+.cv-month-list .card-head{align-items:center;flex-wrap:wrap}
+.cv-list-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.cv-list-controls select{min-width:140px;max-width:220px}
+.cv-month-entries{display:grid;gap:8px;padding:12px 17px 18px;max-height:650px;overflow:auto}
+.cv-list-foot{padding:10px 18px;border-top:1px solid #edf1f3;font-size:11px;color:#758995}
+.cv-note{font-size:12px;line-height:1.55;color:#697f8b;margin-top:13px}
+@media(max-width:1100px){
+ .cv-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cv-totalbar-note{margin-left:0}
+}
+@media(max-width:760px){
+ .cv-home{align-items:flex-start;flex-direction:column;padding:15px}
+ .cv-home-side{width:100%;justify-content:space-between}
+ .cv-home-side .btn{flex:1}
+ .cv-urgent-layout{grid-template-columns:minmax(0,1fr)}
+ .cv-calendar-controls h3{min-width:120px}
+ .cv-calendar-body{padding:0 9px 13px}
+ .cv-calendar-grid{gap:3px}
+ .cv-blank{min-height:49px}
+ .cv-day{padding:5px;min-height:60px;border-radius:6px}
+ .cv-dot{font-size:9px;padding:2px 3px}
+ .cv-day-number{font-size:11px}
+ .cv-calendar-heading{align-items:flex-start}
+ .cv-calendar-controls{width:100%;justify-content:space-between}
+}
+@media(max-width:430px){
+ .cv-metrics{gap:8px}
+ .cv-metric{padding:13px 11px}
+ .cv-metric strong{font-size:24px}
+ .cv-metric-heading{font-size:10px}
+ .cv-record{padding:10px}
+ .cv-record-right b{font-size:11px}
+ .cv-day{min-height:56px}
+ .cv-dot{font-size:8px}
+ .cv-calendar-controls button{font-size:11px;padding:7px 8px}
+}
