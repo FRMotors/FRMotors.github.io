@@ -558,6 +558,7 @@
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
+<link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -573,6 +574,7 @@
     <button type="button" data-view="deadlines"><span class="icon" data-icon="calendar"></span> Central de vencimentos</button>
     <button type="button" data-view="forecast"><span class="icon" data-icon="chart"></span> Projeção de caixa</button>
     <button type="button" data-view="reports"><span class="icon" data-icon="chart"></span> Relatórios gerenciais</button>
+    <button type="button" data-view="classify"><span class="icon" data-icon="receipt"></span> Classificar despesas</button>
     <button type="button" data-view="movements"><span class="icon" data-icon="wallet"></span> Movimentações oficiais</button>
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
@@ -616,6 +618,118 @@
     <div id="access" class="loading-text" role="status">Verificando sessão e autorização financeira...</div>
     <div id="app" class="hidden">
 
+      <section class="view cl-view" data-view-panel="classify" hidden aria-label="Central de Classificação de Despesas">
+       <div class="section-header cl-intro">
+        <div>
+         <p class="eyebrow">Conferência financeira · qualidade da informação</p>
+         <h1 class="page-heading">Classificação de despesas</h1>
+         <p class="page-description">Complete categorias e vincule fornecedores de saídas já confirmadas. Valor, data, descrição bancária e situação do pagamento são preservados.</p>
+        </div>
+        <div class="header-buttons">
+         <button type="button" class="btn" data-view="reports">Relatórios gerenciais</button>
+         <button type="button" class="btn btn-primary" id="cl-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
+        </div>
+       </div>
+       <p class="cl-note"><strong>Sem mudanças automáticas.</strong> As categorias são escolhidas e confirmadas por você. Vincular um fornecedor não cria boleto nem conciliação. Algumas saídas, como transferências entre contas, podem não ter um fornecedor comercial. Cada edição é auditada e pode ser revista novamente.</p>
+       <p class="cl-status" id="cl-status" aria-live="polite" role="status">Aguardando consulta...</p>
+       <div class="cl-stats" aria-label="Estado das classificações">
+        <div class="cl-stat">
+         <span>Saídas confirmadas</span>
+         <strong id="cl-total">—</strong>
+         <small>Somente movimentações homologadas</small>
+        </div>
+        <div class="cl-stat cl-stat-warn">
+         <span>Sem categoria</span>
+         <strong id="cl-missing">—</strong>
+         <small><span id="cl-missing-money">—</span> a classificar</small>
+        </div>
+        <div class="cl-stat">
+         <span>Sem fornecedor associado</span>
+         <strong id="cl-nolink">—</strong>
+         <small>Nem toda saída exige fornecedor</small>
+        </div>
+        <div class="cl-stat cl-stat-good">
+         <span>Categoria e fornecedor definidos</span>
+         <strong id="cl-complete">—</strong>
+         <small><span id="cl-cat-count">—</span> categorias existentes na base</small>
+        </div>
+       </div>
+       <section class="card" aria-labelledby="cl-list-title">
+        <div class="card-head">
+         <div><h2 id="cl-list-title">Conferir lançamentos</h2>
+          <p>Registros da base homologada, sem alterar o valor do caixa. Use os filtros para priorizar as pendências.</p></div>
+        </div>
+        <div class="cl-controls">
+         <label class="cl-search-label" for="cl-search">Buscar movimentação
+          <input type="search" id="cl-search" placeholder="Descrição, categoria, valor ou fornecedor" autocomplete="off"></label>
+         <label for="cl-status-filter">Situação
+          <select id="cl-status-filter">
+           <option value="sem-categoria" selected>Sem categoria</option>
+           <option value="sem-fornecedor">Sem fornecedor</option>
+           <option value="classificadas">Com categoria</option>
+           <option value="todos">Todas as saídas</option>
+          </select></label>
+         <label for="cl-year">Ano
+          <select id="cl-year"><option value="todos">Todos os anos</option></select></label>
+        </div>
+        <div class="table-wrap"><table class="data-table cl-table">
+         <thead><tr><th>Data</th><th>Descrição do extrato</th><th class="money">Valor</th>
+          <th>Categoria</th><th>Fornecedor vinculado</th><th>Ação</th></tr></thead>
+         <tbody id="cl-rows"><tr><td colspan="6" class="empty">Consultando saídas...</td></tr></tbody>
+        </table></div>
+        <div class="cl-footer">
+         <span id="cl-range">Aguardando lançamentos</span>
+         <div><button type="button" class="btn" id="cl-prev" disabled>Anterior</button>
+          <button type="button" class="btn" id="cl-next" disabled>Próxima</button></div>
+        </div>
+       </section>
+       <section class="card cl-history" aria-labelledby="cl-history-title">
+        <div class="card-head"><div>
+         <h2 id="cl-history-title">Histórico de classificação</h2>
+         <p>Últimas alterações, com registro de categoria e fornecedor antes e depois de cada edição.</p>
+        </div></div>
+        <div class="cl-history-list" id="cl-history"><div class="cl-empty">Consultando auditoria...</div></div>
+        <p class="cl-history-foot" id="cl-history-count">Aguardando histórico</p>
+       </section>
+       <dialog id="cl-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="cl-edit-title" aria-describedby="cl-edit-summary">
+        <form id="cl-form">
+         <div class="dialog-head">
+          <div><h2 id="cl-edit-title">Classificar saída</h2>
+           <p>A edição é registrada com o usuário responsável. Data e valor não são alterados.</p></div>
+          <button type="button" class="dialog-close" id="cl-cancel" aria-label="Fechar sem salvar">&times;</button>
+         </div>
+         <div class="dialog-body">
+          <p id="cl-edit-summary" class="cl-dialog-summary">Aguardando seleção...</p>
+          <div class="cl-before-after">
+           <div><strong>Classificação atual</strong>
+            <p><span>Categoria</span><b id="cl-before-cat">—</b></p>
+            <p><span>Fornecedor</span><b id="cl-before-supplier">—</b></p></div>
+           <div><strong>Nova classificação</strong>
+            <p><span>Categoria</span><b id="cl-after-cat">—</b></p>
+            <p><span>Fornecedor</span><b id="cl-after-supplier">—</b></p></div>
+          </div>
+          <div class="cl-fields">
+           <label for="cl-category">Categoria do gasto
+            <select id="cl-category" required><option value="">Selecione uma categoria</option></select>
+            <input id="cl-new-category" type="text" maxlength="120" placeholder="Digite uma nova categoria" aria-label="Nova categoria" hidden>
+           </label>
+           <label for="cl-supplier">Fornecedor identificado (opcional)
+            <span class="cl-supplier-tools">
+             <select id="cl-supplier"><option value="">Sem fornecedor vinculado</option></select>
+             <button type="button" class="btn" data-open="supplier">Novo fornecedor</button>
+            </span>
+           </label>
+          </div>
+          <p class="cl-helper">Associe um fornecedor somente quando a identificação for segura. Você pode cadastrá-lo no formulário já existente. Se outro usuário editar este lançamento, será solicitado atualizar antes de salvar.</p>
+          <p id="cl-feedback" class="status" role="alert">Nenhuma alteração será feita antes da confirmação.</p>
+          <div class="form-actions">
+           <button type="button" class="btn" id="cl-cancel-footer">Cancelar</button>
+           <button type="submit" class="btn btn-primary" id="cl-save" disabled>Salvar classificação</button>
+          </div>
+         </div>
+        </form>
+       </dialog>
+      </section>
       <section class="view rg-view" data-view-panel="reports" hidden aria-label="Relatórios gerenciais">
        <div class="section-header rg-intro">
         <div>
@@ -625,6 +739,7 @@
         </div>
         <div class="header-buttons">
          <button type="button" class="btn" data-view="forecast">Ver projeções</button>
+         <button type="button" class="btn" data-view="classify"><span class="icon icon-sm" data-icon="receipt"></span> Classificar despesas</button>
          <button type="button" class="btn btn-primary" id="rg-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
         </div>
        </div>
@@ -3041,4 +3156,5 @@ init();
 <script src="./financeiro-projecao-caixa.js?v=20261118trash1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118reports1" defer></script>
+<script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 </body></html>
