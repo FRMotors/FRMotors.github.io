@@ -124,7 +124,8 @@ function draw(){
     '<td><span class="state '+statusClass+'">'+esc(statusLabel(st))+'</span></td>'+
     '<td><div class="cp-actions">'+(r.registro_tipo==='avulso'?
       (cashLink?'—':'<button class="row-edit-button" type="button" data-cp-manual-edit="'+esc(r.id)+'">Editar</button>'+
-       '<button class="row-edit-button" type="button" data-cp-manual-pay="'+esc(r.id)+'">Dar baixa</button>'):
+       '<button class="row-edit-button" type="button" data-cp-manual-pay="'+esc(r.id)+'">Dar baixa</button>'+
+        '<button class="row-edit-button" type="button" data-cp-archive-manual="'+esc(r.id)+'">Mover para lixeira</button>'):
       '<button class="row-edit-button" type="button" data-cp-edit="'+esc(r.id)+'">Editar</button>'+
       (r.situacao==='aberto'&&!cashLink?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Dar baixa</button>'+ '<button class="row-edit-button" type="button" data-cp-archive="'+esc(r.id)+'">Mover para lixeira</button>':''))+
     '</div></td></tr>';
@@ -257,8 +258,10 @@ function init(){
   const e=ev.target.closest('[data-cp-edit]'),r=ev.target.closest('[data-cp-reconcile]');
   const m=ev.target.closest('[data-cp-manual-pay]');
   const editManual=ev.target.closest('[data-cp-manual-edit]');
+   const archiveManual=ev.target.closest('[data-cp-archive-manual]');
   if(e)openEdit(e.dataset.cpEdit);
   else if(editManual)window.frBoletoUI?.openEdit?.(editManual.dataset.cpManualEdit);
+   else if(archiveManual)window.frBoletoUI?.requestDelete?.(archiveManual.dataset.cpArchiveManual);
   else if(r)reconcile(r.dataset.cpReconcile).catch(()=>{});
   else if(m)reconcile(m.dataset.cpManualPay).catch(()=>{});
  });
