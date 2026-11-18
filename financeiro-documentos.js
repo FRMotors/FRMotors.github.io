@@ -4,6 +4,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Não informado');
 const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
 const cents=v=>Math.round(Number(v)*100);
@@ -39,7 +40,7 @@ function filters(){
   if(include==='incluidos'&&!r.incluir)return false;
   if(include==='excluidos'&&r.incluir)return false;
   if(month!=='todos'&&monthOf(r)!==month)return false;
-  return [r.codigo_origem,r.descricao,r.fornecedor_nome,r.cartao_nome,r.parcela,r.situacao_origem,
+  return [r.codigo_origem,r.descricao,r.fornecedor_nome,r.cartao_nome,cardName(r.cartao_nome),r.parcela,r.situacao_origem,
    r.vencimento,r.mes_fatura,r.meio].join(' ').toLocaleLowerCase('pt-BR').includes(search);
  });
 }
@@ -84,7 +85,7 @@ function drawSummary(){
   '<td class="money">'+(r.discountCount?brl(r.discountQuote/100)+' <small>'+r.discountCount+' informados</small>':'—')+'</td>'+
   '<td class="money">'+(r.paidCount?brl(r.paid/100)+' <small>'+r.paidCount+' informados</small>':'—')+'</td></tr>'
  ).join(''):'<tr><td colspan="5" class="empty">Sem fornecedores na carteira incluída.</td></tr>';
- const summaries=summaryRows(cards,r=>r.cartao_nome);
+ const summaries=summaryRows(cards,r=>cardName(r.cartao_nome));
  const cardBody=$('doc-card-rows');
  if(cardBody)cardBody.innerHTML=summaries.length?summaries.map(r=>
   '<tr><td>'+escapeHTML(r.name)+'</td><td class="money">'+r.count+'</td>'+
@@ -134,7 +135,7 @@ function draw(){
    '<td>'+escapeHTML(groupName(r.grupo))+'</td>'+
    '<td>'+escapeHTML(r.fornecedor_nome||r.descricao||'Não informado')+
    '<small>'+escapeHTML(r.descricao||'')+'</small>'+more+'</td>'+
-   '<td>'+escapeHTML(r.cartao_nome||(card?'Não informado':r.meio||'Boleto'))+'</td>'+
+   '<td>'+escapeHTML(card?cardName(r.cartao_nome):(r.cartao_nome||r.meio||'Boleto'))+'</td>'+
    '<td>'+escapeHTML(dateBR(mainDate))+'<small>'+escapeHTML(card?'Mês fatura: ':'Vencimento: ')+escapeHTML(dateBR(referenceDate))+'</small></td>'+
    '<td class="money">'+brl(r.valor_registrado)+'</td>'+
    '<td class="money">'+(r.valor_cheio_documento===null?'—':brl(r.valor_cheio_documento))+'</td>'+
