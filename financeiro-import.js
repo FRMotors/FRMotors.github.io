@@ -556,33 +556,40 @@ async function fetchAll(makeQuery,max=6000){
  throw Error('Mais de '+max+' registros. Utilize intervalos menores.');
 }
 async function refreshHistory(){
- const {data,error}=await db.from('fin_teste_importacoes')
+ const all=await fetchAll(()=>db.from('fin_teste_importacoes')
   .select('id,tipo,conta_nome,arquivo_nome,linhas_selecionadas,criado_em')
-  .order('criado_em',{ascending:false}).limit(50);
- if(error)throw error;
- const rows=data||[];
+  .order('criado_em',{ascending:false}));
+ const visible=all.filter(r=>window.frImportVisibility?.isVisible?.(r.conta_nome)!==false);
+ const hidden=all.length-visible.length;
+ const rows=visible.slice(0,50);
  $('import-history-rows').innerHTML=rows.length?rows.map(r=>
   '<tr><td>'+esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(r.criado_em)))+'</td>'+
   '<td><span class="row-main">'+esc(r.arquivo_nome)+'</span></td>'+
   '<td>'+esc(r.tipo==='banco'?'Extrato bancário':'Fatura do cartão')+'</td>'+
   '<td>'+esc(r.conta_nome)+'</td>'+
   '<td class="money">'+esc(r.linhas_selecionadas)+'</td></tr>').join(''):
-  '<tr><td colspan="5" class="empty">Ainda não há arquivos importados.</td></tr>';
- $('import-history-count').textContent=rows.length+' arquivo(s) recente(s) · A mesma conta e o mesmo arquivo não geram lotes adicionais.';
+  '<tr><td colspan="5" class="empty">'+(hidden?
+   'Arquivos de outros bancos e cartões ocultos. Marque “Mostrar outros bancos e cartões” acima para consultá-los.':
+   'Ainda não há arquivos importados nesta seleção.')+'</td></tr>';
+ $('import-history-count').textContent=rows.length+' arquivo(s) exibido(s)'+
+  (hidden?' · '+hidden+' histórico(s) oculto(s)':'')+
+  ' · A origem e os arquivos permanecem preservados.';
 }
 async function refreshCards(){
  const all=await fetchAll(()=>db.from('fin_teste_cartao_lancamentos')
  .select('id,importacao_id,cartao_nome,data_lancamento,descricao,natureza,valor')
  .order('data_lancamento',{ascending:false}).order('id',{ascending:false}));
  cardRows=all;
+ const visible=all.filter(r=>window.frImportVisibility?.isVisible?.(r.cartao_nome)!==false);
+ const hidden=all.length-visible.length;
  const byFile=new Map();
  all.forEach(r=>{
   const key=r.importacao_id+'|'+duplicateKey(r);
   byFile.set(key,(byFile.get(key)||0)+1);
  });
- const flagged=all.filter(r=>(byFile.get(r.importacao_id+'|'+duplicateKey(r))||0)>1);
+ const flagged=visible.filter(r=>(byFile.get(r.importacao_id+'|'+duplicateKey(r))||0)>1);
  const body=$('import-card-rows');
- body.innerHTML=all.length?all.slice(0,100).map(r=>'<tr><td>'+esc(r.data_lancamento.split('-').reverse().join('/'))+'</td>'+
+ body.innerHTML=visible.length?visible.slice(0,100).map(r=>'<tr><td>'+esc(r.data_lancamento.split('-').reverse().join('/'))+'</td>'+
   '<td><span class="row-main">'+esc(r.descricao)+'</span>'+
    ((byFile.get(r.importacao_id+'|'+duplicateKey(r))||0)>1?
     '<span class="import-review-badge" title="Compras idênticas no mesmo extrato; confirme no PDF antes de corrigir.">Conferir repetição</span>':'')+
@@ -590,12 +597,15 @@ async function refreshCards(){
   '<td><span class="state '+(r.nature==='estorno'?'in':'out')+'">'+(r.nature==='estorno'?'Estorno':'Compra')+'</span></td>'+
   '<td class="money">'+(r.nature==='estorno'?'− ':'')+cash(r.valor)+'</td>'+
   '<td class="edit-cell"><button type="button" class="row-edit-button" data-card-edit="'+esc(r.id)+'">Editar</button></td></tr>').join(''):
-  '<tr><td colspan="6" class="empty">Nenhuma compra de cartão importada neste ambiente.</td></tr>';
- const purchases=all.filter(r=>r.nature==='compra').reduce((s,r)=>s+Number(r.valor),0);
- const refunds=all.filter(r=>r.nature==='estorno').reduce((s,r)=>s+Number(r.valor),0);
- $('import-card-count').textContent=all.length+' lançamento(s)';
- $('import-card-summary').textContent='Compras: '+cash(purchases)+' · Estornos: '+cash(refunds)+' · Líquido: '+cash(purchases-refunds)+
-  ' · Últimos 100 registros exibidos.'+
+  '<tr><td colspan="6" class="empty">'+(hidden?
+   'Lançamentos de outros cartões ocultos. Ative “Mostrar outros bancos e cartões” para consultá-los.':
+   'Nenhuma compra de cartão importada nesta seleção.')+'</td></tr>';
+ const purchases=visible.filter(r=>r.nature==='compra').reduce((s,r)=>s+Number(r.valor),0);
+ const refunds=visible.filter(r=>r.nature==='estorno').reduce((s,r)=>s+Number(r.valor),0);
+ $('import-card-count').textContent=visible.length+' lançamento(s) visível(is)';
+ $('import-card-summary').textContent='Compras visíveis: '+cash(purchases)+' · Estornos visíveis: '+cash(refunds)+
+  ' · Líquido visível: '+cash(purchases-refunds)+
+  ' · Últimos 100 registros visíveis exibidos.'+(hidden?' '+hidden+' lançamento(s) oculto(s).':'')+
   (flagged.length?' Atenção: '+flagged.length+' linha(s) com data, tipo, valor e descrição iguais dentro do mesmo PDF, preservadas para conferência.':'');
 }
 function cardStatus(message,bad=false){notice('card-edit-status',message,bad)}
