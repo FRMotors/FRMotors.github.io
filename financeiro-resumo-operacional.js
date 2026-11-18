@@ -179,7 +179,6 @@ function drawCash(){
   '<td class="money">'+brl(row.saidas/100)+'</td>'+
   '<td class="money">'+brl((row.entradas-row.saidas)/100)+'</td></tr>'
  ).join('')||'<tr><td colspan="4" class="empty">Nenhum movimento homologado.</td></tr>';
- renderComparison(selected);
  renderTrend(selected);
 }
 function drawBills(){
