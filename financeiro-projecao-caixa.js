@@ -219,7 +219,7 @@ async function refresh(){
   const {data:allowed,error:authErr}=await db.rpc('fluxo_caixa_autorizado');
   if(authErr||allowed!==true)throw Error('Usuário não autorizado a consultar o financeiro.');
   const [pay,manual,links,bankLinks,receivables,moves,invoices,declared,partials,confirmed,cardDates]=await Promise.all([
-   allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,descricao,vencimento,valor_referencia,situacao').order('id')),
+   allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,descricao,vencimento,valor_referencia,situacao').is('arquivado_em',null).order('id')),
    allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,vencimento,valor_referencia,excluido_em').order('id')),
    allRows(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id').order('id')),
    allRows(()=>db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id').order('id')),
