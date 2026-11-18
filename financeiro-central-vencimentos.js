@@ -200,10 +200,6 @@ function openSection(button){
 function init(){
  if(!$('cv-calendar'))return;
  $('cv-refresh')?.addEventListener('click',()=>refresh());
- $('cv-calendar-more')?.addEventListener('toggle',()=>{
-  const label=document.querySelector('.cv-calendar-toggle-label');
-  if(label)label.textContent=$('cv-calendar-more')?.open?'Fechar calendário':'Abrir calendário';
- });
  $('cv-prev')?.addEventListener('click',()=>{visibleMonth--;if(visibleMonth<0){visibleMonth=11;visibleYear--}selectedDate=null;render()});
  $('cv-next')?.addEventListener('click',()=>{visibleMonth++;if(visibleMonth>11){visibleMonth=0;visibleYear++}selectedDate=null;render()});
  $('cv-current')?.addEventListener('click',()=>{const t=today().split('-');visibleYear=Number(t[0]);visibleMonth=Number(t[1])-1;selectedDate=null;render()});
@@ -224,7 +220,6 @@ function init(){
   const now=today();visibleYear=Number(now.slice(0,4));visibleMonth=Number(now.slice(5,7))-1;
   selectedDate=selected.includes('today')?now:null;
   render();
-  if(selected.includes('today')&&$('cv-calendar-more'))$('cv-calendar-more').open=true;
   (selected.includes('today')?$('cv-list-title'):$(kind==='pagar'?'cv-pay-alerts':'cv-receive-alerts'))?.scrollIntoView({behavior:'smooth',block:'center'});
  });
  document.addEventListener('click',e=>{
