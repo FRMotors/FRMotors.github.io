@@ -6,6 +6,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'');
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brl=x=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(x)||0);
 const cents=x=>Math.round(Number(x)*100);
@@ -48,13 +49,13 @@ function allActive(){
    observacoes:agenda.get(f.id)?.observacoes||''};
  }).filter(x=>x.rest>0).sort((a,b)=>
   String(a.vencimento||'9999-99-99').localeCompare(String(b.vencimento||'9999-99-99'))||
-  a.mes_fatura.localeCompare(b.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
+  a.mes_fatura.localeCompare(b.mes_fatura)||cardName(a.cartao_nome).localeCompare(cardName(b.cartao_nome),'pt-BR'));
 }
 /* A carteira de boletos é documental. Se já há baixa vinculada, não aparece
  * novamente como vencimento pendente e nunca é somada como saída do caixa. */
 function allAgendaItems(){
  const cards=allActive().map(f=>({...f,kind:'cartao',agendaId:'cartao:'+f.id,
-  title:f.cartao_nome,details:'Fatura '+cmpMonth(f.mes_fatura),source:'Cartão'}));
+  title:cardName(f.cartao_nome),details:'Fatura '+cmpMonth(f.mes_fatura),source:'Cartão'}));
  const linkedCp=new Set(billLinks.filter(x=>x.conta_pagar_id).map(x=>x.conta_pagar_id));
  const linkedManual=new Set([
   ...billLinks.filter(x=>x.boleto_avulso_id).map(x=>x.boleto_avulso_id),
@@ -192,7 +193,7 @@ function edit(id){
  const f=allActive().find(x=>x.id===id);
  if(!f)return;
  working=id;
- out('ag-edit-title','Vencimento · '+f.cartao_nome+' · '+cmpMonth(f.mes_fatura));
+ out('ag-edit-title','Vencimento · '+cardName(f.cartao_nome)+' · '+cmpMonth(f.mes_fatura));
  out('ag-edit-summary','Valor da fatura: '+brl(f.valor_documental)+
   ' · Total vinculado: '+brl(f.paid/100)+' · Saldo a conferir: '+brl(f.rest/100));
  $('ag-date').value=f.vencimento||'';
