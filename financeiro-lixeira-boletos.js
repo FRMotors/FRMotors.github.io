@@ -161,6 +161,11 @@ function init(){
  document.addEventListener('click',e=>{const btn=e.target.closest('[data-cp-archive]');if(btn)archiveImported(btn.dataset.cpArchive)});
  $('trash-dialog-form')?.addEventListener('submit',commit);
  $('trash-dialog-cancel')?.addEventListener('click',()=>{if(!busy){pending=null;closeDialog()}});
+ $('trash-dialog-form')?.querySelector('[data-trash-cancel]')?.addEventListener('click',()=>{if(!busy){pending=null;closeDialog()}});
+ document.querySelector('[data-trash-go]')?.addEventListener('click',()=>{
+   $('trash-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
+   refresh();
+ });
  $('trash-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault();else pending=null});
  $('trash-dialog')?.addEventListener('close',()=>{if(!busy)pending=null});
  if(!document.querySelector('[data-view-panel="payables"]')?.hidden)refresh();
