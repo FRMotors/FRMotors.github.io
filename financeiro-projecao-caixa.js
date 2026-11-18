@@ -5,6 +5,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brlCents=c=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(c)||0)/100);
 const cents=v=>{const n=Number(v);return Number.isFinite(n)?Math.round(n*100):0;};
@@ -63,7 +64,7 @@ function cardPending(invoices,declarations,partials,fulls,deadlines){
  deadlines.forEach(x=>{if(x.vencimento)due.set(x.fatura_id,x.vencimento)});
  return invoices.filter(x=>!declared.has(x.id)).map(x=>{
   const total=cents(x.valor_documental),paidCents=Math.max(paid.get(x.id)||0,integral.get(x.id)||0);
-  return {id:x.id,name:x.cartao_nome,reference:x.mes_fatura,
+  return {id:x.id,name:cardName(x.cartao_nome),reference:x.mes_fatura,
    due:due.get(x.id)||null,amount:Math.max(0,total-paidCents)};
  }).filter(x=>x.amount>0);
 }
