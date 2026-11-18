@@ -1360,7 +1360,6 @@
               <button class="btn" type="button" data-trash-go="1"><span class="icon icon-sm" data-icon="receipt"></span> Lixeira / histórico</button>
               <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
                <button class="btn" type="button" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Compra parcelada</button>
-               <button class="btn" type="button" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Compra no crédito</button>
               <button class="btn" type="button" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
               <button class="btn" id="cp-sync" type="button"><span class="icon icon-sm" data-icon="refresh"></span> Sincronizar conciliações</button>
               <button class="btn" id="cp-refresh" type="button">Atualizar</button>
@@ -1475,7 +1474,7 @@
                 <label style="grid-column:1/-1">Descrição <input name="descricao" maxlength="250" placeholder="Referência ou número do boleto"></label>
                 <label style="grid-column:1/-1">Observações <textarea name="observacoes" rows="2" maxlength="2000" placeholder="Origem, número do documento ou justificativa"></textarea></label>
               </div>
-              <p class="info-note">Este cadastro cria <strong>um boleto avulso</strong>. Se a compra tiver várias parcelas ou for no cartão, use <button type="button" class="card-link" data-open="purchase" data-dismiss-dialog="op-new-dialog">Parcelar compra</button> ou <button type="button" class="card-link" data-open="purchase" data-purchase-mode="cartao_credito" data-dismiss-dialog="op-new-dialog">Compra no crédito</button>. Descontos efetivos são registrados na baixa.</p>
+              <p class="info-note">Este cadastro cria <strong>um boleto avulso</strong>. Se a compra tiver várias parcelas ou for no cartão, use <button type="button" class="card-link" data-open="purchase" data-dismiss-dialog="op-new-dialog">Parcelar compra</button>. Descontos efetivos são registrados na baixa.</p>
               <p id="op-new-status" class="info-note" role="status">Preencha os dados.</p>
               <div class="form-actions"><button type="button" class="btn" data-op-close="op-new-dialog">Cancelar</button>
                 <button id="op-new-submit" type="submit" class="btn btn-primary">Salvar boleto em aberto</button></div>
