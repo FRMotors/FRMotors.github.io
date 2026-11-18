@@ -102,6 +102,7 @@ function selectView(next,options={}){
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
   if(next==='operational')window.frOperationalUI?.open?.();
   if(next==='overview')window.frRealDashboard?.refresh?.();
+   if(next==='overview')window.frDeadlinesUI?.refresh?.();
   if(next==='overview')window.frCashDetailUI?.refresh?.();
   if(next==='purchases')window.frCardInstallmentsUI?.refresh?.();
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
@@ -310,6 +311,7 @@ function afterSaved(kind){
  const dlg=kind==='purchase'?'purchase':kind==='pay'?'pay':'move';
  closeModal(dlg);
  showToast(kind==='purchase'?'Compra oficial cadastrada.':kind==='pay'?'Boleto baixado no banco oficial.':'Movimentação oficial cadastrada.');
+  window.frDeadlinesUI?.refresh?.();
 }
 function changePeriod(name){
  const end=todayLocal();let start;
