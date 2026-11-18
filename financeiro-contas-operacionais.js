@@ -126,7 +126,7 @@ function draw(){
       (cashLink?'—':'<button class="row-edit-button" type="button" data-cp-manual-edit="'+esc(r.id)+'">Editar</button>'+
        '<button class="row-edit-button" type="button" data-cp-manual-pay="'+esc(r.id)+'">Dar baixa</button>'):
       '<button class="row-edit-button" type="button" data-cp-edit="'+esc(r.id)+'">Editar</button>'+
-      (r.situacao==='aberto'&&!cashLink?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Dar baixa</button>':''))+
+      (r.situacao==='aberto'&&!cashLink?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Dar baixa</button>'+ '<button class="row-edit-button" type="button" data-cp-archive="'+esc(r.id)+'">Mover para lixeira</button>':''))+
     '</div></td></tr>';
   }).join(''):
    '<tr><td colspan="9" class="empty">Nenhum compromisso corresponde aos filtros.</td></tr>';
@@ -146,7 +146,7 @@ async function refresh(){
    const [rows,manualRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes]=await Promise.all([
     db.from('fin_contas_pagar').select(
      'id,origem_chave,linha_origem_id,linha_excel,linha_original,codigo_origem,descricao,fornecedor_nome,fornecedor_id,categoria,vencimento,valor_referencia,valor_cheio_informado,desconto_efetivo,juros_efetivos,valor_pago,data_pagamento,situacao,observacoes'
-    ).order('vencimento',{ascending:true,nullsFirst:false}).order('linha_excel',{ascending:true}).limit(500),
+    ).is('arquivado_em',null).order('vencimento',{ascending:true,nullsFirst:false}).order('linha_excel',{ascending:true}).limit(500),
     db.from('fin_boletos_avulsos')
      .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em')
      .is('excluido_em',null).order('criado_em',{ascending:false}).limit(500),
