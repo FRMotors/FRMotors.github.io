@@ -633,7 +633,7 @@
          <button type="button" class="btn btn-primary" id="cb-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
         </div>
        </div>
-       <p class="cb-explanation"><strong>Não há duplicação do caixa.</strong> O total de cada fatura é documental; pagamentos bancários já conciliados entram apenas como abatimento do saldo documental. Faturas declaradas quitadas são identificadas separadamente de pagamentos efetivamente vinculados. A competência da fatura não é usada como vencimento.</p>
+       <p class="cb-explanation"><strong>Não há duplicação do caixa.</strong> O total de cada fatura é documental. Pagamentos bancários vinculados e pagamentos por outras contas informados por você abatem o saldo da fatura, mas <strong>pagamentos externos não criam movimentações no caixa</strong>. Quitações por confirmação histórica são identificadas separadamente. A competência da fatura não é usada como vencimento.</p>
        <p id="cb-status" class="cb-status" role="status" aria-live="polite">Aguardando consulta...</p>
        <div class="cb-kpis" aria-label="Resumo da situação das faturas">
         <div class="cb-kpi">
@@ -651,6 +651,10 @@
         <div class="cb-kpi cb-kpi-ok">
          <span>Quitadas por confirmação histórica</span><strong id="cb-declared">—</strong>
          <small>Não necessariamente conciliadas ao banco</small>
+        </div>
+        <div class="cb-kpi cb-kpi-ok">
+         <span>Quitadas com pagamentos externos</span><strong id="cb-external">—</strong>
+         <small>Inclui conta pessoal e pagamentos mistos, informados sem extrato</small>
         </div>
         <div class="cb-kpi">
          <span>Quitadas por vínculo bancário</span><strong id="cb-conciliated">—</strong>
@@ -688,6 +692,8 @@
            <option value="parcial">Parcialmente pagas</option>
            <option value="aberta">Sem pagamento comprovado</option>
            <option value="conciliada">Quitadas com vínculo bancário</option>
+           <option value="externa">Quitadas com pagamento externo</option>
+           <option value="mista">Quitadas por fontes mistas</option>
            <option value="declarada">Quitadas por confirmação</option>
           </select>
          </label>
@@ -709,7 +715,7 @@
          <table class="data-table cb-table">
           <thead><tr>
            <th>Cartão</th><th>Competência</th><th class="money">Valor da fatura</th>
-           <th class="money">Pago vinculado</th><th class="money">Saldo restante</th>
+           <th class="money">Pagamentos registrados</th><th class="money">Saldo restante</th>
            <th>Vencimento</th><th>Situação</th><th>Ações</th>
           </tr></thead>
           <tbody id="cb-rows"><tr><td colspan="8" class="cb-empty">Carregando faturas...</td></tr></tbody>
