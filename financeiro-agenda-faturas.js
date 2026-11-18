@@ -246,7 +246,7 @@ async function refresh(){
     queryAll(()=>db.from('fin_faturas_agenda')
      .select('fatura_id,vencimento,observacoes').order('registrado_em',{ascending:false})),
     queryAll(()=>db.from('fin_contas_pagar')
-     .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,observacoes,situacao')
+     .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,observacoes,situacao').is('arquivado_em',null)
      .order('vencimento',{ascending:true,nullsFirst:false})),
     queryAll(()=>db.from('fin_boletos_avulsos')
      .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,observacoes')
