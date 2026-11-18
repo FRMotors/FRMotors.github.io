@@ -1,0 +1,79 @@
+/* FR Motors · Central de classificação de despesas 2026 */
+.cl-view .cl-intro{margin-bottom:14px}
+.cl-view .cl-note{margin:0 0 17px;padding:15px 18px;background:#f4f9f9;border:1px solid #d9e8e9;
+ border-radius:12px;font-size:12px;line-height:1.65;color:#52717d}
+.cl-view .cl-note strong{color:#234b57}
+.cl-view .cl-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.cl-view .cl-stat{min-width:0;padding:17px;border:1px solid #e3eaee;border-radius:13px;
+ background:#fff;display:flex;flex-direction:column;gap:8px}
+.cl-view .cl-stat span{color:#6a7e87;font-size:12px;font-weight:650}
+.cl-view .cl-stat strong{font-size:26px;line-height:1.15;font-weight:800;color:#2d5363;letter-spacing:-.02em;overflow-wrap:anywhere}
+.cl-view .cl-stat small{font-size:11px;color:#7b8f98;line-height:1.5}
+.cl-view .cl-stat.cl-stat-warn{border-left:3px solid #cc9367}
+.cl-view .cl-stat.cl-stat-good{border-left:3px solid #36998c}
+.cl-view .cl-status{font-size:12px;color:#657e88;margin:0 0 12px;line-height:1.5}
+.cl-view .cl-controls{display:flex;align-items:flex-end;gap:11px;flex-wrap:wrap;padding:12px 17px 17px}
+.cl-view .cl-controls label{font-size:11px;font-weight:750;color:#5b7682;display:flex;gap:6px;flex-direction:column}
+.cl-view .cl-controls .cl-search-label{flex:1 1 230px}
+.cl-view .cl-controls input,.cl-view .cl-controls select{height:40px;border-radius:8px;
+ background:#fff;border:1px solid #cbdce0;color:#294a5a;padding:0 11px;font-size:12px;min-width:0}
+.cl-view .cl-controls select{min-width:165px;max-width:240px}
+.cl-view .cl-table{min-width:875px;width:100%}
+.cl-view .cl-table th,.cl-view .cl-table td{font-size:12px;vertical-align:middle}
+.cl-view .cl-table .money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cl-view .cl-table td strong{color:#254957;overflow-wrap:anywhere}
+.cl-view .cl-row-sub{display:block;font-size:10px;color:#86959c;margin-top:4px}
+.cl-view .cl-edit-btn{font-size:11px!important;min-height:32px!important;padding:6px 11px!important;white-space:nowrap}
+.cl-view .cl-tag{font-size:10px;font-weight:750;padding:5px 8px;border-radius:6px;white-space:nowrap;display:inline-block}
+.cl-view .cl-tag-warn{background:#fff0e1;color:#9c6235}
+.cl-view .cl-tag-good{background:#e7f3f0;color:#287b70}
+.cl-view .cl-footer{display:flex;gap:12px;align-items:center;justify-content:space-between;
+ padding:12px 17px;border-top:1px solid #ebf0f2;font-size:11px;color:#6d838e}
+.cl-view .cl-footer>div{display:flex;gap:7px}
+.cl-view .cl-footer .btn{min-height:32px}
+.cl-view .cl-history{margin-top:19px}
+.cl-view .cl-history-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:10px;padding:12px 17px 17px;max-height:540px;overflow-y:auto}
+.cl-view .cl-history-item{display:flex;justify-content:space-between;gap:10px;
+ border:1px solid #e2e9ec;border-radius:10px;padding:12px 14px;min-width:0;background:#fff}
+.cl-view .cl-history-item>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.cl-view .cl-history-item strong{font-size:12px;color:#294b59;overflow-wrap:anywhere}
+.cl-view .cl-history-item small{font-size:10px;color:#819198}
+.cl-view .cl-history-line{font-size:11px;color:#526e7a;overflow-wrap:anywhere}
+.cl-view .cl-history-badge{white-space:nowrap;font-size:10px;color:#19766f;font-weight:750;
+ height:max-content;padding:5px 7px;background:#e5f4f0;border-radius:5px}
+.cl-view .cl-empty{text-align:center;padding:23px;color:#718691;font-size:12px}
+.cl-view .cl-history-foot{font-size:11px;color:#768994;padding:0 17px 16px}
+#cl-dialog .cl-dialog-summary{border-radius:9px;background:#f4f8f9;border:1px solid #dfe9ec;
+ padding:12px 14px;color:#28505e;font-size:13px;font-weight:750;line-height:1.6;overflow-wrap:anywhere}
+#cl-dialog .cl-fields{display:grid;gap:14px;margin:12px 0 17px}
+#cl-dialog .cl-fields>label{display:flex;flex-direction:column;gap:7px;font-size:12px;
+ font-weight:750;color:#385c69}
+#cl-dialog .cl-fields select,#cl-dialog .cl-fields input{width:100%;border:1px solid #c9dcdf;
+ border-radius:8px;background:#fff;min-height:42px;padding:8px 11px;font-size:13px;color:#284c5a}
+#cl-dialog .cl-before-after{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+#cl-dialog .cl-before-after>div{border:1px solid #dde9eb;border-radius:8px;background:#f7fafb;padding:12px;min-width:0}
+#cl-dialog .cl-before-after strong{display:block;font-size:11px;color:#5c7883;margin-bottom:8px}
+#cl-dialog .cl-before-after p{margin:0 0 7px;font-size:12px;color:#325866;overflow-wrap:anywhere}
+#cl-dialog .cl-before-after p span{font-size:10px;color:#728a94;display:block}
+#cl-dialog #cl-feedback{font-size:12px;color:#607d89;line-height:1.6}
+#cl-dialog .cl-helper{font-size:11px;color:#69838e;line-height:1.6;margin:0}
+#cl-dialog .cl-supplier-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#cl-dialog .cl-supplier-tools select{flex:1;min-width:170px}
+#cl-dialog .cl-supplier-tools button{flex-shrink:0;min-height:38px;font-size:11px}
+.cl-view .btn:focus-visible,.cl-view select:focus-visible,#cl-dialog select:focus-visible,
+#cl-dialog button:focus-visible,#cl-dialog input:focus-visible{outline:3px solid #61aebb;outline-offset:2px}
+@media(max-width:1150px){
+ .cl-view .cl-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:770px){
+ .cl-view .cl-history-list{grid-template-columns:1fr}
+ .cl-view .cl-controls label{flex:1 1 160px}
+ .cl-view .cl-controls select{width:100%;max-width:none}
+}
+@media(max-width:450px){
+ .cl-view .cl-stats{gap:8px}
+ .cl-view .cl-stat{padding:11px}
+ .cl-view .cl-stat strong{font-size:20px}
+ #cl-dialog .cl-before-after{grid-template-columns:1fr}
+}
