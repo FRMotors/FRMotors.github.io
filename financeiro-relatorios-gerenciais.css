@@ -1,0 +1,117 @@
+/* FR Motors | Relatórios Gerenciais, sem contagem dupla entre bases */
+.rg-view .rg-intro{margin-bottom:17px}
+.rg-view .rg-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.rg-view .rg-toolbar label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:750;color:#607b87}
+.rg-view .rg-toolbar select{height:39px;border-radius:8px;border:1px solid #d5e3e6;
+ background:#fff;color:#294858;padding:0 12px;min-width:130px}
+.rg-view .rg-toolbar .btn{margin-top:17px}
+.rg-view .rg-status{font-size:12px;color:#6b818c;margin:0 0 12px;line-height:1.5}
+.rg-view .rg-note{border:1px solid #e0e7eb;border-radius:11px;background:#f7fafb;
+ font-size:12px;line-height:1.7;color:#57717e;padding:13px 16px;margin:0 0 16px}
+.rg-view .rg-note strong{color:#294b59}
+.rg-view .rg-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:18px}
+.rg-view .rg-metric{background:#fff;border:1px solid #e2e9ed;border-radius:13px;padding:17px;
+ min-width:0;display:flex;flex-direction:column;gap:7px;box-shadow:0 3px 11px rgba(12,53,70,.025)}
+.rg-view .rg-metric .rg-source{font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+ color:#64808b;font-weight:800}
+.rg-view .rg-metric h3{font-size:12px;color:#5b7380;margin:0;font-weight:700}
+.rg-view .rg-metric strong{font-size:25px;letter-spacing:-.025em;color:#244a59;overflow-wrap:anywhere;line-height:1.2}
+.rg-view .rg-metric small{font-size:11px;color:#718693}
+.rg-view .rg-metric.rg-income{border-left:3px solid #28a390}
+.rg-view .rg-metric.rg-expense{border-left:3px solid #d19470}
+.rg-view .rg-metric.rg-result{border-left:3px solid #7b9dab}
+.rg-view .rg-metric.rg-doc{background:#fafcfc}
+.rg-view .rg-metric.rg-doc strong{font-size:22px}
+.rg-view .rg-metric.rg-uncat strong{font-size:22px}
+.rg-view .rg-negative{color:#b54e3e!important}
+.rg-view .rg-annual{display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+ padding:18px;margin-bottom:18px}
+.rg-view .rg-annual-main{flex:1;min-width:250px}
+.rg-view .rg-annual h2{font-size:16px;color:#254655;margin:0 0 8px}
+.rg-view .rg-annual p{font-size:12px;color:#627986;line-height:1.6;margin:0}
+.rg-view .rg-annual-stats{display:flex;gap:17px;flex-wrap:wrap}
+.rg-view .rg-annual-stats span{display:flex;flex-direction:column;gap:5px;color:#647b87;font-size:11px}
+.rg-view .rg-annual-stats b{font-size:19px;color:#264858}
+.rg-view .rg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-bottom:17px}
+.rg-view .rg-rank{min-width:0}
+.rg-view .rg-rank-list{padding:10px 17px 17px;display:grid;gap:13px;max-height:430px;overflow:auto}
+.rg-view .rg-rank-row{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rg-view .rg-rank-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;
+ font-size:12px;color:#274a59;line-height:1.4;min-width:0}
+.rg-view .rg-rank-top span{overflow-wrap:anywhere;min-width:0}
+.rg-view .rg-rank-top b{font-size:11px;color:#8aa0a8;margin-right:5px}
+.rg-view .rg-rank-top strong{white-space:nowrap;color:#214b58;font-size:12px}
+.rg-view .rg-rank-track{height:8px;background:#eaf0f1;border-radius:6px;overflow:hidden}
+.rg-view .rg-rank-track>span{display:block;height:100%;background:#499ea3;border-radius:6px}
+.rg-view .rg-rank-suppliers .rg-rank-track>span{background:#c39b6e}
+.rg-view .rg-rank-cards .rg-rank-track>span{background:#7b9fb5}
+.rg-view .rg-rank-row small{font-size:10px;color:#85939a}
+.rg-view .rg-empty{text-align:center;color:#728892;font-size:12px;padding:20px 10px;line-height:1.7}
+.rg-view .rg-wide{min-width:0;margin-bottom:18px}
+.rg-view .rg-wide .card-head{align-items:flex-start;flex-wrap:wrap}
+.rg-view .rg-monthly-table{min-width:1020px;width:100%}
+.rg-view .rg-monthly-table th,.rg-view .rg-monthly-table td{font-size:11px;padding:10px}
+.rg-view .rg-monthly-table .money{text-align:right;font-variant-numeric:tabular-nums}
+.rg-view .rg-month-highlight{background:#edf8f8!important}
+.rg-view .rg-inline-tracks{display:grid;gap:3px;width:100%;min-width:100px}
+.rg-view .rg-month-track{height:6px;background:#edf2f3;display:block;border-radius:5px;overflow:hidden}
+.rg-view .rg-month-track>i{height:100%;display:block}
+.rg-view .rg-month-in{background:#38aa99}
+.rg-view .rg-month-out{background:#d6a072}
+.rg-view .rg-legend{display:flex;gap:17px;flex-wrap:wrap;font-size:11px;color:#67818b;padding:0 18px 13px}
+.rg-view .rg-legend span{display:inline-flex;align-items:center;gap:7px}
+.rg-view .rg-dot{display:inline-block;width:9px;height:9px;border-radius:50%}
+.rg-view .rg-dot-in{background:#38aa99}
+.rg-view .rg-dot-out{background:#d6a072}
+.rg-view .rg-source-note{padding:12px 17px;margin:0;border-top:1px solid #eef1f3;
+ font-size:11px;color:#6f8590;line-height:1.6}
+.rg-view .rg-detail-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.rg-view .rg-detail-actions .btn{font-size:11px}
+.rg-view .rg-cash-table{min-width:690px;width:100%}
+.rg-view .rg-cash-table td,.rg-view .rg-cash-table th{font-size:12px}
+.rg-view .rg-cash-table .money{text-align:right;font-variant-numeric:tabular-nums}
+.rg-view .rg-type{padding:4px 7px;border-radius:5px;font-size:10px;font-weight:750}
+.rg-view .rg-type.rg-in{background:#e5f6f1;color:#087869}
+.rg-view .rg-type.rg-out{background:#fff1e9;color:#9c5b3b}
+.rg-view .rg-page{display:flex;justify-content:space-between;gap:12px;align-items:center;
+ padding:10px 16px;border-top:1px solid #ecf1f2;color:#738a93;font-size:11px}
+.rg-view .rg-page>div{display:flex;gap:7px}
+.rg-view .rg-downloads{display:flex;gap:8px;flex-wrap:wrap}
+.rg-view .rg-downloads .btn{white-space:nowrap}
+.rg-view .btn:focus-visible,.rg-view select:focus-visible{outline:3px solid #45a3af;outline-offset:2px}
+@media(max-width:1130px){
+ .rg-view .rg-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rg-view .rg-grid{grid-template-columns:1fr}
+}
+@media(max-width:690px){
+ .rg-view .rg-metrics{gap:8px}
+ .rg-view .rg-metric{padding:12px}
+ .rg-view .rg-metric strong{font-size:19px}
+ .rg-view .rg-metric.rg-doc strong{font-size:19px}
+ .rg-view .rg-toolbar{gap:7px}
+ .rg-view .rg-toolbar label{flex:1;min-width:130px}
+ .rg-view .rg-toolbar .btn{flex:1}
+ .rg-view .rg-annual-stats{width:100%}
+ .rg-view .rg-annual-stats span{min-width:110px}
+ .rg-view .rg-downloads{width:100%}
+ .rg-view .rg-downloads .btn{flex:1}
+}
+@media(max-width:400px){
+ .rg-view .rg-metrics{grid-template-columns:1fr}
+}
+@media print{
+ body:has(.rg-view:not([hidden])) #main-content>.view:not(.rg-view),
+ body:has(.rg-view:not([hidden])) .sidebar,
+ body:has(.rg-view:not([hidden])) .topbar,
+ body:has(.rg-view:not([hidden])) .rg-toolbar,
+ body:has(.rg-view:not([hidden])) .rg-downloads,
+ body:has(.rg-view:not([hidden])) .rg-detail-actions,
+ body:has(.rg-view:not([hidden])) .rg-page{display:none!important}
+ .rg-view:not([hidden]){display:block!important;overflow:visible!important}
+ .rg-view .rg-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rg-view .rg-rank-list{max-height:none;overflow:visible}
+ .rg-view .rg-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .rg-view .rg-monthly-table{min-width:0}
+ .rg-view .rg-monthly-table th,.rg-view .rg-monthly-table td{font-size:8px;padding:5px}
+ .rg-view .card,.rg-view .rg-metric{break-inside:avoid}
+}
