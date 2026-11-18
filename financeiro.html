@@ -554,7 +554,8 @@
 }
 </style>
 <link rel="stylesheet" href="./financeiro-acabamento.css?v=20261117polish1">
-<link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118central1">
+<link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118merged2">
+<link rel="stylesheet" href="./financeiro-painel-mensal.css?v=20261118merged1">
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
@@ -1266,17 +1267,36 @@
           <div class="real-dashboard-grid">
             <section class="real-dashboard-panel real-dashboard-cash">
               <div class="real-dashboard-panel-head">
-                <div><h3>Fluxo de Caixa homologado</h3><p>Apenas movimentações confirmadas. Faturas e boletos não são lançados novamente.</p></div>
+                <div><h3>Fluxo de Caixa homologado</h3><p>Acompanhe o mês mais recente, compare com o anterior e veja a evolução. Somente movimentações confirmadas.</p></div>
                 <label class="real-dashboard-period"><span>Período do caixa</span><select id="real-cash-month" aria-label="Período do caixa homologado">
                   <option value="todos">Todo o histórico homologado</option></select></label>
               </div>
               <div class="real-dashboard-metrics">
-                <div><span>Entradas efetivas</span><strong id="real-cash-in">—</strong></div>
-                <div><span>Saídas efetivas</span><strong id="real-cash-out">—</strong></div>
-                <div><span>Resultado das movimentações</span><strong id="real-cash-net">—</strong></div>
+                <div><span>Entradas confirmadas</span><strong id="real-cash-in">—</strong></div>
+                <div><span>Saídas confirmadas</span><strong id="real-cash-out">—</strong></div>
+                <div><span>Resultado do período</span><strong id="real-cash-net">—</strong></div>
               </div>
-              <p class="real-dashboard-fine">O resultado não corresponde necessariamente ao saldo bancário. <span id="real-cash-count">Aguardando...</span></p>
-              <details class="real-dashboard-details"><summary>Evolução mensal do caixa homologado</summary>
+              <p class="real-dashboard-fine"><span id="real-cash-count">Aguardando...</span> O resultado representa entradas menos saídas, não o saldo bancário.</p>
+              <div class="real-cash-comparison" aria-label="Comparativo mensal do caixa homologado">
+               <div class="real-cash-comparison-head">
+                <h4>Comparativo com o mês anterior</h4><span id="real-compare-period">Aguardando dados...</span>
+               </div>
+               <div class="real-cash-compare-cards">
+                <div><small>Entradas</small><strong id="real-compare-in">—</strong><span id="real-compare-in-pct">—</span></div>
+                <div><small>Saídas</small><strong id="real-compare-out">—</strong><span id="real-compare-out-pct">—</span></div>
+                <div><small>Resultado</small><strong id="real-compare-net">—</strong><span id="real-compare-net-note">—</span></div>
+               </div>
+               <p id="real-compare-note" class="real-dashboard-fine">Variações de movimentações confirmadas, sem obrigações documentais.</p>
+              </div>
+              <div class="real-trend" aria-label="Evolução mensal do caixa homologado">
+               <div class="real-trend-heading">
+                <h4>Evolução dos últimos seis meses</h4>
+                <p id="real-trend-caption">Entradas, saídas e resultado acumulado dentro desta janela. Não é saldo bancário.</p>
+               </div>
+               <div class="real-trend-legend"><span class="real-dot real-dot-in"></span> Entradas <span class="real-dot real-dot-out"></span> Saídas</div>
+               <div id="real-trend-list" class="real-trend-list" role="list"><p class="real-trend-empty">Aguardando movimentações confirmadas...</p></div>
+              </div>
+              <details class="real-dashboard-details"><summary>Ver tabela mensal do caixa homologado</summary>
                 <div class="table-wrap"><table class="data-table"><thead><tr><th>Mês</th><th class="money">Entradas</th>
                 <th class="money">Saídas</th><th class="money">Resultado</th></tr></thead>
                 <tbody id="real-month-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
@@ -3370,7 +3390,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116sidebar-desktop57"></script>
+<script src="./financeiro-pro-ui.js?v=20261118merged1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
@@ -3391,9 +3411,9 @@ init();
 <script src="./financeiro-vinculos-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
-<script src="./financeiro-resumo-operacional.js?v=20261118trash1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261118merged1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
-<script src="./financeiro-central-vencimentos.js?v=20261118trash1" defer></script>
+<script src="./financeiro-central-vencimentos.js?v=20261118merged1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
