@@ -8,13 +8,13 @@ const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const text=value=>String(value??'').trim();
 const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value)||0);
-const num=value=>{const v=Number(value);return Number.isFinite(v)?v:null};
+const num=value=>{if(value===null||value===undefined||value==='')return null;const v=Number(value);return Number.isFinite(v)?v:null};
 const put=(id,value)=>{const e=$(id);if(e)e.textContent=String(value)};
 const obj=x=>x&&typeof x==='object'&&!Array.isArray(x)?x:{};
 const val=(x,key)=>obj(x)[key]??null;
 const label=x=>text(x)||'Não informado';
 const cap=(x,n=95)=>text(x).slice(0,n);
-const htmlDate=x=>{const d=new Date(String(x||'').replace(' ','T'));return Number.isFinite(+d)?d:null};
+const htmlDate=x=>{const raw=String(x||'').replace(' ','T').replace(/([+-]\d{2})$/,'$1:00');const d=new Date(raw);return Number.isFinite(+d)?d:null};
 const dtFmt=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'});
 const isoDateParts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
 function localDate(x){const d=htmlDate(x);if(!d)return '';const p=isoDateParts.formatToParts(d);const f=k=>p.find(v=>v.type===k)?.value||'';return f('year')+'-'+f('month')+'-'+f('day')}
