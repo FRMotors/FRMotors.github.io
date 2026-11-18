@@ -483,6 +483,21 @@ function renderOther(){
  renderCards();renderParts();renderBanks();renderOpen();
  selectTab(activeTab);
 }
+function consolidatedCardRows(items){
+ const groups=new Map();
+ for(const r of items){
+  const name=window.frCardNames?.canonical?.(r.fonte)||String(r.fonte||'');
+  const key=name+'|'+String(r.modalidade||'');
+  if(!groups.has(key))groups.set(key,{
+   ...r,fonte:name,qtd:0,total_incluido:0,total_excluido:0,qtd_excluida:0,sem_data:0
+  });
+  const target=groups.get(key);
+  for(const field of ['qtd','total_incluido','total_excluido','qtd_excluida','sem_data']){
+   target[field]+=num(r[field]);
+  }
+ }
+ return [...groups.values()].sort((a,b)=>num(b.total_incluido)-num(a.total_incluido));
+}
 function renderCards(){
  const credits=state.cards.filter(x=>x.modalidade==='cartao_credito');
  const cash=state.cards.filter(x=>x.modalidade==='pagamento_avista');
@@ -494,7 +509,8 @@ function renderCards(){
   count(state.cards.reduce((s,r)=>s+num(r.qtd_excluida),0))+' registros preservados fora dos indicadores elegíveis')+
  metric('Datas ausentes',count(state.cards.reduce((s,r)=>s+num(r.sem_data),0)),
   'Valores preservados; datas não foram inventadas');
- $('hist-cards-rows').innerHTML=state.cards.length?state.cards.map(r=>
+ const consolidated=consolidatedCardRows(state.cards);
+ $('hist-cards-rows').innerHTML=consolidated.length?consolidated.map(r=>
   '<tr><td><strong>'+safe(r.fonte)+'</strong>'+
    '<small class="hist-subline">'+(r.modalidade==='pagamento_avista'?'Pagamento à vista':'Crédito')+'</small></td>'+
   '<td class="money">'+count(r.qtd)+'</td><td class="money">'+money(r.total_incluido)+'</td>'+

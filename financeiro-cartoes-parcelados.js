@@ -4,6 +4,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'');
 const escapeHTML=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=x=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(x)||0);
 const cent=x=>Math.round(Number(x)*100);
@@ -35,7 +36,7 @@ function invoiceStates(){
   const declaredPaid=declaredSet.has(x.id);
   const paid=fullMap.get(x.id)??partialMap.get(x.id)??0;
   const total=cent(x.valor_documental);
-  const key=String(x.cartao_nome||'')+'|'+String(x.mes_fatura||'');
+  const key=cardName(x.cartao_nome)+'|'+String(x.mes_fatura||'');
   const status=declaredPaid?'declarada':paid>=total?'integral':paid>0?'parcial':'nao-conciliada';
   states.set(key,{status,paid,externalPaid:externalMap.get(x.id)||0,
    rest:declaredPaid?0:Math.max(0,total-paid),total});
@@ -48,7 +49,7 @@ function eligible(x){
   !['PIX','DÉBITO','DEBITO'].includes(String(x.cartao_nome||'').trim().toLocaleUpperCase('pt-BR'));
 }
 function statusOf(row,states){
- return states.get(String(row.cartao_nome||'')+'|'+String(row.mes_fatura||''))||
+ return states.get(cardName(row.cartao_nome)+'|'+String(row.mes_fatura||''))||
   {status:'nao-conciliada',paid:0,rest:null,total:null};
 }
 function render(){
@@ -58,11 +59,11 @@ function render(){
  const q=($('pc-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  const list=active.filter(x=>{
   const status=statusOf(x,states).status,period=String(x.mes_fatura||'');
-  if(card!=='todos'&&card!==x.cartao_nome)return false;
+  if(card!=='todos'&&card!==cardName(x.cartao_nome))return false;
   if(year!=='todos'&&period.slice(0,4)!==year)return false;
   if(m!=='todos'&&m!==period.slice(0,7))return false;
   if(situation!=='todos'&&situation!==status)return false;
-  return [x.descricao,x.cartao_nome,x.parcela,x.mes_fatura,x.data_evento,
+  return [x.descricao,x.cartao_nome,cardName(x.cartao_nome),x.parcela,x.mes_fatura,x.data_evento,
    x.codigo_origem,x.valor_registrado].join(' ').toLocaleLowerCase('pt-BR').includes(q);
  }).sort((a,b)=>String(b.mes_fatura||'').localeCompare(String(a.mes_fatura||''))||
     String(b.data_evento||'').localeCompare(String(a.data_evento||''))||
@@ -70,7 +71,7 @@ function render(){
  const total=list.reduce((sum,x)=>sum+cent(x.valor_registrado),0);
  write('pc-count',String(list.length));
  write('pc-total',money(total/100));
- write('pc-cards-count',String(new Set(list.map(x=>x.cartao_nome)).size));
+ write('pc-cards-count',String(new Set(list.map(x=>cardName(x.cartao_nome))).size));
  write('pc-declared-count',String(list.filter(x=>statusOf(x,states).status==='declarada').length));
  const pages=Math.max(1,Math.ceil(list.length/limit));
  page=Math.max(0,Math.min(page,pages-1));
@@ -86,7 +87,7 @@ function render(){
    'Fatura sem quitação registrada';
   return '<tr><td><strong>'+escapeHTML(x.descricao||'Lançamento sem descrição')+'</strong>'+
     '<small>'+escapeHTML(x.codigo_origem||'')+' · linha '+escapeHTML(x.linha_excel)+'</small></td>'+
-   '<td>'+escapeHTML(x.cartao_nome)+'</td>'+
+   '<td>'+escapeHTML(cardName(x.cartao_nome))+'</td>'+        
    '<td><strong>'+escapeHTML(x.parcela)+'</strong></td>'+
    '<td>'+escapeHTML(month(x.mes_fatura))+'</td>'+
    '<td>'+escapeHTML(date(x.data_evento))+'</td>'+
@@ -107,7 +108,7 @@ function rebuildFilters(){
   if(years.includes(prior))y.value=prior;
  }
  const selectedYear=y?.value||'todos';
- const cards=[...new Set(base.map(x=>x.cartao_nome))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const cards=[...new Set(base.map(x=>cardName(x.cartao_nome)))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const months=[...new Set(base.filter(x=>selectedYear==='todos'||String(x.mes_fatura||'').slice(0,4)===selectedYear)
   .map(x=>x.mes_fatura?.slice(0,7)).filter(Boolean))].sort().reverse();
  const c=$('pc-card'),m=$('pc-month'),cv=c?.value||'todos',mv=m?.value||'todos';

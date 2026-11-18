@@ -8,6 +8,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Cartão não informado');
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(v)||0)/100);
 const cents=v=>{const n=Number(v);return Number.isFinite(n)?Math.round(n*100):0};
@@ -118,7 +119,7 @@ function renderRankings(){
  const categories=aggregate(cash,r=>r.categoria||'Sem categoria','valor');
  const providers=aggregate(auto,r=>r.fornecedor_nome||'Fornecedor não informado','valor_registrado');
   const paidBySupplier=aggregate(cash,r=>suppliersById.get(r.fornecedor_id)||'Não identificado','valor');
- const credit=aggregate(cards,r=>r.cartao_nome||'Cartão não informado','valor_documental');
+ const credit=aggregate(cards,r=>cardName(r.cartao_nome),'valor_documental');
  drawBarRows('rg-categories',categories,'Nenhuma saída confirmada nesta seleção.');
  drawBarRows('rg-suppliers',providers,'Nenhuma compra documental de autopeças nesta seleção.');
   drawBarRows('rg-paid-suppliers',paidBySupplier,'Nenhuma saída confirmada nesta seleção.');
@@ -240,8 +241,8 @@ function csvDownload(type){
   data=scoped(parts,'data_evento').map(r=>[dateBR(r.data_evento),r.fornecedor_nome,r.descricao,asNumber(r.valor_registrado),'Sim','Autopeças (não somar ao caixa)']);
   name='autopecas_documentais';
  }else if(type==='cartoes'){
-  headers=['Competência','Cartão','Valor da fatura (R$)','Fonte'];
-  data=scoped(bills,'mes_fatura').map(r=>[dateBR(r.mes_fatura),r.cartao_nome,asNumber(r.valor_documental),'Fatura documental (não somar ao caixa)']);
+  headers=['Competência','Cartão consolidado','Nome original do cartão','Valor da fatura (R$)','Fonte'];
+  data=scoped(bills,'mes_fatura').map(r=>[dateBR(r.mes_fatura),cardName(r.cartao_nome),r.cartao_nome,asNumber(r.valor_documental),'Fatura documental (não somar ao caixa)']);
   name='faturas_documentais';
  }else return;
  const content='\ufeff'+[headers,...data].map(row=>row.map(safeField).join(';')).join('\r\n');
