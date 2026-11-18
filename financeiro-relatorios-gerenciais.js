@@ -20,7 +20,7 @@ const localYear=()=>{
  const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric'}).format(new Date());
  return Number(p);
 };
-let moves=[],parts=[],bills=[],loaded=false,loading=null,year=localYear(),month='todos',cashPage=0;
+let moves=[],parts=[],bills=[],suppliersById=new Map(),loaded=false,loading=null,year=localYear(),month='todos',cashPage=0;
 const rowPage=25;
 async function loadAll(builder,max=20000){
  const collected=[],size=400;
@@ -117,12 +117,15 @@ function renderRankings(){
  const cards=scoped(bills,'mes_fatura');
  const categories=aggregate(cash,r=>r.categoria||'Sem categoria','valor');
  const providers=aggregate(auto,r=>r.fornecedor_nome||'Fornecedor não informado','valor_registrado');
+  const paidBySupplier=aggregate(cash,r=>suppliersById.get(r.fornecedor_id)||'Não identificado','valor');
  const credit=aggregate(cards,r=>r.cartao_nome||'Cartão não informado','valor_documental');
  drawBarRows('rg-categories',categories,'Nenhuma saída confirmada nesta seleção.');
  drawBarRows('rg-suppliers',providers,'Nenhuma compra documental de autopeças nesta seleção.');
+  drawBarRows('rg-paid-suppliers',paidBySupplier,'Nenhuma saída confirmada nesta seleção.');
  drawBarRows('rg-cards',credit,'Nenhuma fatura documental nesta seleção.');
  put('rg-category-count',categories.length+' categoria(s) · caixa pago');
  put('rg-supplier-count',providers.length+' fornecedor(es) · autopeças documentais');
+  put('rg-paid-supplier-count',paidBySupplier.length+' grupo(s) · saídas de caixa realmente pagas');
  put('rg-card-count',credit.length+' cartão(ões) · total de faturas');
 }
 function renderMonthly(){
@@ -198,21 +201,22 @@ async function refresh(){
   put('rg-status','Consultando caixa confirmado, compras e faturas documentais...');
   const {data:access,error:accessError}=await db.rpc('fluxo_caixa_autorizado');
   if(accessError||access!==true)throw Error('Acesso financeiro não autorizado.');
-  const [bank,auto,invoices]=await Promise.all([
-   loadAll(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,categoria,valor,estado,origem')
+  const [bank,auto,invoices,providers]=await Promise.all([
+   loadAll(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,categoria,fornecedor_id,valor,estado,origem')
     .eq('estado','confirmado').eq('origem','fluxo_caixa_homologado').order('id')),
    loadAll(()=>db.from('fin_documentos_despesas')
     .select('id,grupo,incluir,data_evento,fornecedor_nome,descricao,valor_registrado')
     .eq('grupo','autopecas').eq('incluir',true).order('id')),
    loadAll(()=>db.from('fin_faturas_historicas')
-    .select('id,cartao_nome,mes_fatura,valor_documental').order('id'))
+    .select('id,cartao_nome,mes_fatura,valor_documental').order('id')),
+   loadAll(()=>db.from('fin_fornecedores').select('id,nome').order('id'))
   ]);
-  moves=bank;parts=auto;bills=invoices;loaded=true;loadYears();render();
+  moves=bank;parts=auto;bills=invoices;suppliersById=new Map(providers.map(x=>[x.id,x.nome]));loaded=true;loadYears();render();
  })().catch(e=>{
    loaded=false;
    const root=$('rg-months');if(root)root.innerHTML='<tr><td colspan="8" class="rg-empty">Não foi possível consultar a base.</td></tr>';
    ['rg-income','rg-expense','rg-net','rg-auto','rg-invoices','rg-uncat','rg-year-cash','rg-year-prior'].forEach(id=>put(id,'—'));
-   ['rg-categories','rg-suppliers','rg-cards'].forEach(id=>{if($(id))$(id).textContent='Dados indisponíveis';});
+   ['rg-categories','rg-suppliers','rg-paid-suppliers','rg-cards'].forEach(id=>{if($(id))$(id).textContent='Dados indisponíveis';});
    if($('rg-cash-rows'))$('rg-cash-rows').textContent='Dados indisponíveis';
    put('rg-status','Falha ao carregar relatórios: '+(e.message||e));
  }).finally(()=>{loading=null});
@@ -228,8 +232,8 @@ function csvDownload(type){
  let headers=[],data=[],name='relatorio';
  const asNumber=x=>(cents(x)/100).toFixed(2).replace('.',',');
  if(type==='caixa'){
-  headers=['Data','Tipo','Descrição','Categoria','Valor (R$)','Situação','Fonte'];
-  data=scoped(moves,'data_movimento').map(r=>[dateBR(r.data_movimento),r.tipo,r.descricao,r.categoria||'Sem categoria',asNumber(r.valor),'Confirmado','Movimento de caixa']);
+  headers=['Data','Tipo','Descrição','Categoria','Fornecedor vinculado','Valor (R$)','Situação','Fonte'];
+  data=scoped(moves,'data_movimento').map(r=>[dateBR(r.data_movimento),r.tipo,r.descricao,r.categoria||'Sem categoria',suppliersById.get(r.fornecedor_id)||'Não identificado',asNumber(r.valor),'Confirmado','Movimento de caixa']);
   name='caixa_confirmado';
  }else if(type==='autopecas'){
   headers=['Data documental','Fornecedor','Descrição','Valor documental (R$)','Incluir','Fonte'];
