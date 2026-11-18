@@ -23,7 +23,7 @@ const stateLabels={
  'parcial':'Parcialmente paga','aberta':'Sem pagamento comprovado'
 };
 let all=[],ready=false,loading=null,sort='pendentes',filter='todos',card='todos',year='todos',search='',page=0;
-const STEP=25;
+const STEP=5;
 const VISIBILITY_KEY='frmotors.faturas.mostrarCartoesAntigos.v1';
 let showOtherCards=false;
 try{showOtherCards=window.localStorage?.getItem(VISIBILITY_KEY)==='1'}catch(_){}
