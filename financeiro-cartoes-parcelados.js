@@ -11,7 +11,7 @@ const cent=x=>Math.round(Number(x)*100);
 const date=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Não informada';
 const month=x=>x?date(x).slice(3):'Não informado';
 const write=(id,value)=>{const el=$(id);if(el)el.textContent=value};
-const limit=40;
+const limit=15;
 let installments=[],invoices=[],declared=[],parts=[],full=[],busy=null,page=0;
 async function allRows(query,max=6000){
  const out=[],size=450;
@@ -163,7 +163,7 @@ function setup(){
  $('pc-previous')?.addEventListener('click',()=>{page--;render()});
  $('pc-next')?.addEventListener('click',()=>{page++;render()});
  $('pc-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
- if(!document.querySelector('[data-view-panel="purchases"]')?.hidden)refresh().catch(()=>{});
+ if(!document.querySelector('[data-view-panel="cardbills"]')?.hidden)refresh().catch(()=>{});
 }
 window.frCardInstallmentsUI={refresh};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
