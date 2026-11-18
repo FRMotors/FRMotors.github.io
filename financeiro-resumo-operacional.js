@@ -8,13 +8,17 @@ const $=id=>document.getElementById(id);
 const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cents=n=>Math.round(Number(n||0)*100);
 const brl=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
-const ymd=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const ymd=()=>{
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const get=k=>parts.find(x=>x.type===k)?.value||'';
+ return get('year')+'-'+get('month')+'-'+get('day');
+};
 const brDate=d=>d?String(d).slice(0,10).split('-').reverse().join('/'):'Sem vencimento';
 const brMonth=d=>d?String(d).slice(0,7).split('-').reverse().join('/'):'Mês não informado';
 const put=(id,value)=>{const node=$(id);if(node)node.textContent=value};
 const sourceMax=15000;
 let moves=[],accounts=[],manualBills=[],accountLinks=[],manualCashLinks=[],manualBankLinks=[];
-let invoices=[],declared=[],partials=[],integrals=[],agenda=[],fetching=null,hasData=false;
+let invoices=[],declared=[],partials=[],integrals=[],agenda=[],fetching=null,hasData=false,cashMonthInitialized=false;
 async function allRows(build,max=sourceMax){
  const result=[],size=450;
  for(let offset=0;offset<max;offset+=size){
@@ -59,30 +63,124 @@ function effectiveInvoices(){
  }).filter(x=>x.remaining>0).sort((a,b)=>
   a.mes_fatura.localeCompare(b.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
 }
+function monthShift(month,offset){
+ if(!/^\d{4}-\d{2}$/.test(month))return '';
+ const [year,m]=month.split('-').map(Number);
+ return new Date(Date.UTC(year,m-1+offset,1)).toISOString().slice(0,7);
+}
+function monthlyWindow(endMonth,count=6){
+ if(!endMonth)return [];
+ const byMonth=new Map(cashByMonth().map(x=>[x.month,x]));
+ return Array.from({length:count},(_,i)=>{
+  const month=monthShift(endMonth,i-count+1);
+  return byMonth.get(month)||{month,entradas:0,saidas:0,count:0};
+ });
+}
+function compareMonths(current,prior){
+ if(!current||!prior||!prior.count)return {available:false};
+ const incoming=current.entradas-prior.entradas,outgoing=current.saidas-prior.saidas;
+ const result=(current.entradas-current.saidas)-(prior.entradas-prior.saidas);
+ return {available:true,incoming,outgoing,result,
+  pctIn:prior.entradas>0?incoming/prior.entradas*100:null,
+  pctOut:prior.saidas>0?outgoing/prior.saidas*100:null};
+}
 function setupMonthOptions(){
  const el=$('real-cash-month');if(!el)return;
- const previous=el.value||'todos',available=cashByMonth();
+ const available=cashByMonth();
+ const prior=el.value||'todos';
  el.replaceChildren(new Option('Todo o histórico homologado','todos'),
   ...available.map(x=>new Option(brMonth(x.month),x.month)));
- if(available.some(x=>x.month===previous))el.value=previous;
+ if(!cashMonthInitialized){
+  const currentMonth=ymd().slice(0,7);
+  const initial=available.some(x=>x.month===currentMonth)?currentMonth:available[0]?.month||'todos';
+  el.value=initial;cashMonthInitialized=true;
+ }else el.value=prior==='todos'||available.some(x=>x.month===prior)?prior:available[0]?.month||'todos';
+}
+function monthDeltas(currentMonth){
+ const byMonth=new Map(cashByMonth().map(x=>[x.month,x]));
+ const ref=byMonth.get(currentMonth)||{month:currentMonth,entradas:0,saidas:0,count:0};
+ const prev=byMonth.get(monthShift(currentMonth,-1))||{month:monthShift(currentMonth,-1),entradas:0,saidas:0,count:0};
+ return {current:ref,previous:prev,change:compareMonths(ref,prev)};
+}
+function renderComparison(selected){
+ const anchor=selected==='todos'?cashByMonth()[0]?.month:selected;
+ if(!anchor){
+  for(const id of ['real-compare-in','real-compare-out','real-compare-net'])put(id,'—');
+  put('real-compare-period','Sem movimentações disponíveis');
+  put('real-compare-note','Ainda não há mês homologado para comparar.');
+  return;
+ }
+ const {current,previous,change}=monthDeltas(anchor);
+ put('real-compare-period',brMonth(anchor)+' × '+brMonth(previous.month));
+ if(!change.available){
+  ['real-compare-in','real-compare-out','real-compare-net'].forEach(id=>put(id,'—'));
+  ['real-compare-in-pct','real-compare-out-pct','real-compare-net-note'].forEach(id=>put(id,'Sem base anterior'));
+  put('real-compare-note','O mês anterior não tem registros confirmados. Não foi assumido que a empresa gastou R$ 0,00.');
+  return;
+ }
+ const signed=value=>(value>0?'+':value<0?'−':'')+brl(Math.abs(value)/100);
+ const percent=value=>value===null?'Base R$ 0,00 · sem percentual':
+  (value>0?'+':'')+value.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+ put('real-compare-in',signed(change.incoming));
+ put('real-compare-out',signed(change.outgoing));
+ put('real-compare-net',signed(change.result));
+ put('real-compare-in-pct',percent(change.pctIn)+' nas entradas');
+ put('real-compare-out-pct',percent(change.pctOut)+' nas saídas');
+ put('real-compare-net-note','Variação no resultado');
+ const inNode=$('real-compare-in'),outNode=$('real-compare-out'),netNode=$('real-compare-net');
+ if(inNode)inNode.classList.toggle('negative',change.incoming<0);
+ if(outNode)outNode.classList.toggle('negative',change.outgoing>0);
+ if(netNode)netNode.classList.toggle('negative',change.result<0);
+ put('real-compare-note',current.month===ymd().slice(0,7)?
+  'O mês atual está em andamento. Comparação simples, não ajustada pela quantidade de dias. Apenas movimentos confirmados.':
+  'Comparação de dois meses com registros confirmados, sem somar boletos ou faturas documentais.');
+}
+function renderTrend(selected){
+ const newest=cashByMonth()[0]?.month;
+ const end=selected==='todos'?newest:selected||newest;
+ const root=$('real-trend-list');if(!root)return;
+ if(!end){root.innerHTML='<p class="real-trend-empty">Nenhuma movimentação homologada disponível.</p>';return}
+ const months=monthlyWindow(end,6),max=Math.max(1,...months.flatMap(x=>[x.entradas,x.saidas]));
+ let net=0;
+ root.innerHTML=months.map(x=>{
+  net+=x.entradas-x.saidas;
+  const inWidth=x.entradas?Math.max(2,Math.round(x.entradas/max*100)):0;
+  const outWidth=x.saidas?Math.max(2,Math.round(x.saidas/max*100)):0;
+  const selectedMonth=selected===x.month;
+  return '<div class="real-trend-row'+(selectedMonth?' real-trend-selected':'')+'" role="listitem">'+
+   '<div class="real-trend-month">'+
+     (x.count?'<button type="button" data-real-month="'+escape(x.month)+'" title="Selecionar '+escape(brMonth(x.month))+'">'+escape(brMonth(x.month))+'</button>':
+      '<span>'+escape(brMonth(x.month))+'</span>')+
+     '<small>'+x.count+' mov.</small></div>'+
+   '<div class="real-trend-bars">'+
+    '<span class="real-trend-track"><i class="real-trend-in" style="width:'+inWidth+'%"></i></span>'+
+    '<span class="real-trend-track"><i class="real-trend-out" style="width:'+outWidth+'%"></i></span></div>'+
+   '<div class="real-trend-totals"><small>Entradas '+brl(x.entradas/100)+'</small>'+
+    '<small>Saídas '+brl(x.saidas/100)+'</small></div>'+
+   '<div class="real-trend-net '+(net<0?'negative':'')+'">'+
+     '<span>Acum. na janela</span><strong>'+brl(net/100)+'</strong></div></div>';
+ }).join('');
+ put('real-trend-caption','Evolução até '+brMonth(end)+'. O acumulado parte de zero na primeira coluna e não é saldo bancário real.');
 }
 function drawCash(){
  const selected=$('real-cash-month')?.value||'todos';
  const filtered=selected==='todos'?moves:moves.filter(m=>String(m.data_movimento||'').slice(0,7)===selected);
- const ins=filtered.filter(x=>x.tipo==='entrada').reduce((s,x)=>s+cents(x.valor),0);
- const outs=filtered.filter(x=>x.tipo==='saida').reduce((s,x)=>s+cents(x.valor),0);
+ const ins=filtered.filter(x=>x.tipo==='entrada').reduce((v,x)=>v+cents(x.valor),0);
+ const outs=filtered.filter(x=>x.tipo==='saida').reduce((v,x)=>v+cents(x.valor),0);
  put('real-cash-in',brl(ins/100));
  put('real-cash-out',brl(outs/100));
  put('real-cash-net',brl((ins-outs)/100));
- put('real-cash-count',filtered.length+' movimentações homologadas neste período');
- const net=$('real-cash-net');if(net)net.classList.toggle('negative',ins<outs);
- const monthly=cashByMonth().slice(0,6);
+ put('real-cash-count',filtered.length+' movimentação(ões) confirmada(s) no período selecionado.');
+ if($('real-cash-net'))$('real-cash-net').classList.toggle('negative',ins<outs);
+ const monthly=cashByMonth().slice(0,12);
  if($('real-month-rows'))$('real-month-rows').innerHTML=monthly.map(row=>
   '<tr><td>'+escape(brMonth(row.month))+'</td>'+
   '<td class="money">'+brl(row.entradas/100)+'</td>'+
   '<td class="money">'+brl(row.saidas/100)+'</td>'+
   '<td class="money">'+brl((row.entradas-row.saidas)/100)+'</td></tr>'
  ).join('')||'<tr><td colspan="4" class="empty">Nenhum movimento homologado.</td></tr>';
+ renderComparison(selected);
+ renderTrend(selected);
 }
 function drawBills(){
  const today=ymd();
@@ -164,8 +262,14 @@ async function refresh(){
    invoices=fs;declared=ds;partials=pp;integrals=ip;agenda=agendaRows;
    hasData=true;draw();
   }catch(e){
-   put('real-status','Não foi possível carregar os dados homologados: '+(e.message||e)+
-    '. Os indicadores antigos abaixo continuam pertencendo ao ambiente de testes.');
+   hasData=false;
+   put('real-status','Não foi possível consultar a base homologada: '+(e.message||e)+'. Nenhum total parcial foi exibido.');
+   for(const id of ['real-cash-in','real-cash-out','real-cash-net','real-compare-in','real-compare-out',
+    'real-compare-net','real-bill-value','real-card-value'])put(id,'—');
+   if($('real-trend-list'))$('real-trend-list').innerHTML=
+    '<p class="real-trend-empty">Evolução temporariamente indisponível. Tente atualizar.</p>';
+   if($('real-month-rows'))$('real-month-rows').innerHTML=
+    '<tr><td colspan="4" class="empty">Tabela indisponível.</td></tr>';
   }
  })();
  try{await fetching}finally{fetching=null}
@@ -176,6 +280,6 @@ function setup(){
  $('real-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  if(!document.querySelector('[data-view-panel="overview"]')?.hidden)refresh().catch(()=>{});
 }
-window.frRealDashboard={refresh};
+window.frRealDashboard={refresh,__test:{monthShift,monthlyWindow,compareMonths}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();

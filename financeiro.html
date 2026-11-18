@@ -554,7 +554,8 @@
 }
 </style>
 <link rel="stylesheet" href="./financeiro-acabamento.css?v=20261117polish1">
-<link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118central1">
+<link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118merged2">
+<link rel="stylesheet" href="./financeiro-painel-mensal.css?v=20261118merged1">
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
@@ -574,7 +575,6 @@
   <div class="sidebar-section-label">Painel de controle</div>
   <nav class="sidebar-links" aria-label="Seções do financeiro">
     <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
-    <button type="button" data-view="deadlines"><span class="icon" data-icon="calendar"></span> Central de vencimentos</button>
     <button type="button" data-view="forecast"><span class="icon" data-icon="chart"></span> Projeção de caixa</button>
     <button type="button" data-view="reports"><span class="icon" data-icon="chart"></span> Relatórios gerenciais</button>
     <button type="button" data-view="audit"><span class="icon" data-icon="shield"></span> Central de auditoria</button>
@@ -1096,7 +1096,7 @@
          <p class="page-description">Antecipe os pagamentos e recebimentos registrados nos próximos 30, 60 e 90 dias, sem confundi-los com dinheiro já movimentado.</p>
         </div>
         <div class="header-buttons">
-         <button type="button" class="btn" data-view="deadlines">Central de vencimentos</button>
+         <button type="button" class="btn" data-view="payables">Contas a pagar e vencimentos</button>
          <button type="button" class="btn btn-primary" id="fc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar projeção</button>
         </div>
        </div>
@@ -1227,95 +1227,6 @@
        </section>
        <p class="info-note">Fonte: banco operacional Supabase. A projeção não altera pagamentos, saldos ou documentos e não substitui a conciliação bancária.</p>
       </section>
-      <section class="view cv-deadlines" data-view-panel="deadlines" hidden aria-label="Central de vencimentos">
-        <div class="section-header cv-intro">
-         <div>
-          <p class="eyebrow">Agenda financeira · acompanhamento</p>
-          <h1 class="page-heading">Central de vencimentos</h1>
-          <p class="page-description">Tudo que precisa de atenção hoje e os boletos já vencidos, com calendário mensal para consultar as próximas datas.</p>
-         </div>
-         <div class="header-buttons">
-           <button class="btn" type="button" data-view="payables">Contas a pagar</button>
-           <button class="btn" type="button" data-view="receivables">Contas a receber</button>
-           <button class="btn btn-primary" type="button" id="cv-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
-         </div>
-        </div>
-        <p id="cv-status" class="info-note" role="status" aria-live="polite">Carregando boletos e recebíveis oficiais...</p>
-        <p class="cv-date-note">Data de referência: <strong id="cv-today-date">—</strong>. Alertas somente para hoje e compromissos vencidos.</p>
-        <div id="cv-metrics" class="cv-metrics" aria-label="Indicadores de vencimento">
-         <button type="button" class="cv-metric cv-metric-today" data-cv-alert-kind="pay-today">
-          <span class="cv-metric-heading">A pagar hoje</span><strong id="cv-pay-today-count">—</strong>
-          <em id="cv-pay-today-value">—</em><small>Boletos que vencem nesta data</small>
-         </button>
-         <button type="button" class="cv-metric cv-metric-overdue" data-cv-alert-kind="pay-overdue">
-          <span class="cv-metric-heading">A pagar vencidos</span><strong id="cv-pay-overdue-count">—</strong>
-          <em id="cv-pay-overdue-value">—</em><small>Boletos sem baixa confirmada</small>
-         </button>
-         <button type="button" class="cv-metric cv-metric-today cv-metric-receive" data-cv-alert-kind="receive-today">
-          <span class="cv-metric-heading">A receber hoje</span><strong id="cv-receive-today-count">—</strong>
-          <em id="cv-receive-today-value">—</em><small>Saldo ainda não recebido</small>
-         </button>
-         <button type="button" class="cv-metric cv-metric-overdue cv-metric-receive" data-cv-alert-kind="receive-overdue">
-          <span class="cv-metric-heading">A receber vencidos</span><strong id="cv-receive-overdue-count">—</strong>
-          <em id="cv-receive-overdue-value">—</em><small>Saldo restante de clientes</small>
-         </button>
-        </div>
-        <div class="cv-totalbar" aria-label="Visão de todos os compromissos">
-         <div class="cv-totalbar-item">A pagar em aberto: <strong id="cv-pay-total">—</strong><small>(<span id="cv-pay-total-count">—</span> boletos)</small></div>
-         <div class="cv-totalbar-item">A receber em aberto: <strong id="cv-receive-total">—</strong><small>(<span id="cv-receive-total-count">—</span> boletos)</small></div>
-         <div class="cv-totalbar-item">Sem vencimento: <strong id="cv-undated-count">—</strong></div>
-         <span class="cv-totalbar-note">Valores nominais de documentos. Não representam entradas ou saídas confirmadas no caixa.</span>
-        </div>
-        <div class="cv-urgent-layout">
-         <section class="card cv-urgent-column" aria-labelledby="cv-pay-heading">
-          <div class="card-head"><div><h2 id="cv-pay-heading">Boletos a pagar em atenção</h2>
-           <p>Somente vencidos e com vencimento hoje.</p></div>
-           <button type="button" class="card-link" data-view="payables">Abrir carteira</button>
-          </div>
-          <div id="cv-pay-alerts" class="cv-urgent-stack"><p>Consultando...</p></div>
-         </section>
-         <section class="card cv-urgent-column" aria-labelledby="cv-receive-heading">
-          <div class="card-head"><div><h2 id="cv-receive-heading">Contas a receber em atenção</h2>
-           <p>Boletos dos clientes ainda não recebidos.</p></div>
-           <button type="button" class="card-link" data-view="receivables">Abrir recebíveis</button>
-          </div>
-          <div id="cv-receive-alerts" class="cv-urgent-stack"><p>Consultando...</p></div>
-         </section>
-        </div>
-        <section class="card cv-calendar-section" aria-labelledby="cv-calendar-heading">
-         <div class="card-head cv-calendar-heading">
-          <div><h2 id="cv-calendar-heading">Calendário de boletos</h2>
-           <p>Consulte todas as datas de contas a pagar e a receber, inclusive as futuras.</p></div>
-          <div class="cv-calendar-controls">
-           <button type="button" class="btn" id="cv-prev" aria-label="Mês anterior">Anterior</button>
-           <h3 id="cv-month-title">Mês</h3>
-           <button type="button" class="btn" id="cv-next" aria-label="Mês seguinte">Próximo</button>
-           <button type="button" class="btn btn-teal" id="cv-current">Hoje</button>
-          </div>
-         </div>
-         <div class="cv-calendar-body">
-           <div id="cv-calendar" class="cv-calendar-grid" aria-label="Calendário de vencimentos de contas a pagar e receber"></div>
-           <div class="cv-calendar-legend"><span><i class="cv-legend-dot cv-legend-pay"></i> A pagar</span>
-            <span><i class="cv-legend-dot cv-legend-receive"></i> A receber</span></div>
-           <p id="cv-calendar-note" class="cv-calendar-note"></p>
-         </div>
-        </section>
-        <section class="card cv-month-list" aria-labelledby="cv-list-title">
-         <div class="card-head">
-           <div><h2 id="cv-list-title">Boletos do mês</h2><p>Selecione um compromisso para ir à página de gerenciamento correspondente.</p></div>
-           <div class="cv-list-controls">
-            <select id="cv-kind" class="filter-select" aria-label="Filtrar compromissos do calendário">
-             <option value="todos">A pagar e receber</option><option value="pagar">Somente a pagar</option>
-             <option value="receber">Somente a receber</option>
-            </select>
-            <button type="button" class="btn" id="cv-clear-day" hidden>Limpar dia</button>
-           </div>
-         </div>
-         <div id="cv-month-records" class="cv-month-entries"><p>Consultando...</p></div>
-         <div class="cv-list-foot" id="cv-list-count">Aguardando dados.</div>
-        </section>
-        <p class="cv-note">Faturas dos cartões de crédito continuam na <button type="button" class="card-link" data-jump-section="ag-title">Agenda de boletos e cartões</button>, com pagamentos e conciliações separados, evitando dupla contagem.</p>
-      </section>
       <section class="view" data-view-panel="overview" aria-label="Visão geral financeira">
         <div class="section-header">
           <div>
@@ -1342,7 +1253,7 @@
     <span class="cv-home-stat"><strong id="cv-home-today">—</strong><span>vencem hoje</span></span>
     <span class="cv-home-stat"><strong id="cv-home-overdue">—</strong><span>vencidos</span></span>
     <span class="cv-home-stat cv-home-stat-receive"><strong id="cv-home-receive">—</strong><span>a receber em atenção</span></span>
-    <button type="button" class="btn btn-teal" data-view="deadlines">Abrir central</button>
+    <button type="button" class="btn btn-teal" data-view="payables">Ver em Contas a pagar</button>
   </div>
  </section>
         <section class="card real-dashboard" id="real-dashboard" aria-labelledby="real-dashboard-title">
@@ -1356,17 +1267,36 @@
           <div class="real-dashboard-grid">
             <section class="real-dashboard-panel real-dashboard-cash">
               <div class="real-dashboard-panel-head">
-                <div><h3>Fluxo de Caixa homologado</h3><p>Apenas movimentações confirmadas. Faturas e boletos não são lançados novamente.</p></div>
+                <div><h3>Fluxo de Caixa homologado</h3><p>Acompanhe o mês mais recente, compare com o anterior e veja a evolução. Somente movimentações confirmadas.</p></div>
                 <label class="real-dashboard-period"><span>Período do caixa</span><select id="real-cash-month" aria-label="Período do caixa homologado">
                   <option value="todos">Todo o histórico homologado</option></select></label>
               </div>
               <div class="real-dashboard-metrics">
-                <div><span>Entradas efetivas</span><strong id="real-cash-in">—</strong></div>
-                <div><span>Saídas efetivas</span><strong id="real-cash-out">—</strong></div>
-                <div><span>Resultado das movimentações</span><strong id="real-cash-net">—</strong></div>
+                <div><span>Entradas confirmadas</span><strong id="real-cash-in">—</strong></div>
+                <div><span>Saídas confirmadas</span><strong id="real-cash-out">—</strong></div>
+                <div><span>Resultado do período</span><strong id="real-cash-net">—</strong></div>
               </div>
-              <p class="real-dashboard-fine">O resultado não corresponde necessariamente ao saldo bancário. <span id="real-cash-count">Aguardando...</span></p>
-              <details class="real-dashboard-details"><summary>Evolução mensal do caixa homologado</summary>
+              <p class="real-dashboard-fine"><span id="real-cash-count">Aguardando...</span> O resultado representa entradas menos saídas, não o saldo bancário.</p>
+              <div class="real-cash-comparison" aria-label="Comparativo mensal do caixa homologado">
+               <div class="real-cash-comparison-head">
+                <h4>Comparativo com o mês anterior</h4><span id="real-compare-period">Aguardando dados...</span>
+               </div>
+               <div class="real-cash-compare-cards">
+                <div><small>Entradas</small><strong id="real-compare-in">—</strong><span id="real-compare-in-pct">—</span></div>
+                <div><small>Saídas</small><strong id="real-compare-out">—</strong><span id="real-compare-out-pct">—</span></div>
+                <div><small>Resultado</small><strong id="real-compare-net">—</strong><span id="real-compare-net-note">—</span></div>
+               </div>
+               <p id="real-compare-note" class="real-dashboard-fine">Variações de movimentações confirmadas, sem obrigações documentais.</p>
+              </div>
+              <div class="real-trend" aria-label="Evolução mensal do caixa homologado">
+               <div class="real-trend-heading">
+                <h4>Evolução dos últimos seis meses</h4>
+                <p id="real-trend-caption">Entradas, saídas e resultado acumulado dentro desta janela. Não é saldo bancário.</p>
+               </div>
+               <div class="real-trend-legend"><span class="real-dot real-dot-in"></span> Entradas <span class="real-dot real-dot-out"></span> Saídas</div>
+               <div id="real-trend-list" class="real-trend-list" role="list"><p class="real-trend-empty">Aguardando movimentações confirmadas...</p></div>
+              </div>
+              <details class="real-dashboard-details"><summary>Ver tabela mensal do caixa homologado</summary>
                 <div class="table-wrap"><table class="data-table"><thead><tr><th>Mês</th><th class="money">Entradas</th>
                 <th class="money">Saídas</th><th class="money">Resultado</th></tr></thead>
                 <tbody id="real-month-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
@@ -1551,6 +1481,96 @@
           <div><p class="eyebrow">Compromissos da empresa</p><h1 class="page-heading">Contas a pagar</h1><p class="page-description">Gerencie os compromissos migrados, suas datas, descontos e conciliações, mantendo a planilha original protegida.</p></div>
           <span class="env-chip">OPERAÇÃO · 2026</span>
         </div>
+              <section class="cv-deadlines cv-embedded" id="cv-payables-deadlines" aria-label="Agenda de vencimentos de contas a pagar e receber">
+        <div class="cv-embedded-head">
+         <div><p class="eyebrow">Agenda integrada · Contas a pagar</p><h2>Vencimentos e calendário</h2>
+          <p>Contas a pagar e a receber que precisam de atenção. Alertas apenas para hoje e vencidos.</p></div>
+         <div class="header-buttons">
+          <button class="btn" type="button" data-cv-anchor="fin-cp-operacional">Ir à carteira</button>
+          <button class="btn" type="button" data-view="receivables">Contas a receber</button>
+          <button class="btn btn-primary" type="button" id="cv-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar vencimentos</button>
+         </div>
+        </div>
+        <p id="cv-status" class="info-note" role="status" aria-live="polite">Carregando boletos e recebíveis oficiais...</p>
+        <p class="cv-date-note">Data de referência: <strong id="cv-today-date">—</strong>. Alertas somente para hoje e compromissos vencidos.</p>
+        <div id="cv-metrics" class="cv-metrics" aria-label="Indicadores de vencimento">
+         <button type="button" class="cv-metric cv-metric-today" data-cv-alert-kind="pay-today">
+          <span class="cv-metric-heading">A pagar hoje</span><strong id="cv-pay-today-count">—</strong>
+          <em id="cv-pay-today-value">—</em><small>Boletos que vencem nesta data</small>
+         </button>
+         <button type="button" class="cv-metric cv-metric-overdue" data-cv-alert-kind="pay-overdue">
+          <span class="cv-metric-heading">A pagar vencidos</span><strong id="cv-pay-overdue-count">—</strong>
+          <em id="cv-pay-overdue-value">—</em><small>Boletos sem baixa confirmada</small>
+         </button>
+         <button type="button" class="cv-metric cv-metric-today cv-metric-receive" data-cv-alert-kind="receive-today">
+          <span class="cv-metric-heading">A receber hoje</span><strong id="cv-receive-today-count">—</strong>
+          <em id="cv-receive-today-value">—</em><small>Saldo ainda não recebido</small>
+         </button>
+         <button type="button" class="cv-metric cv-metric-overdue cv-metric-receive" data-cv-alert-kind="receive-overdue">
+          <span class="cv-metric-heading">A receber vencidos</span><strong id="cv-receive-overdue-count">—</strong>
+          <em id="cv-receive-overdue-value">—</em><small>Saldo restante de clientes</small>
+         </button>
+        </div>
+        <div class="cv-totalbar" aria-label="Visão de todos os compromissos">
+         <div class="cv-totalbar-item">A pagar em aberto: <strong id="cv-pay-total">—</strong><small>(<span id="cv-pay-total-count">—</span> boletos)</small></div>
+         <div class="cv-totalbar-item">A receber em aberto: <strong id="cv-receive-total">—</strong><small>(<span id="cv-receive-total-count">—</span> boletos)</small></div>
+         <div class="cv-totalbar-item">Sem vencimento: <strong id="cv-undated-count">—</strong></div>
+         <span class="cv-totalbar-note">Valores nominais de documentos. Não representam entradas ou saídas confirmadas no caixa.</span>
+        </div>
+        <div class="cv-urgent-layout">
+         <section class="card cv-urgent-column" aria-labelledby="cv-pay-heading">
+          <div class="card-head"><div><h2 id="cv-pay-heading">Boletos a pagar em atenção</h2>
+           <p>Somente vencidos e com vencimento hoje.</p></div>
+           <button type="button" class="card-link" data-view="payables">Abrir carteira</button>
+          </div>
+          <div id="cv-pay-alerts" class="cv-urgent-stack"><p>Consultando...</p></div>
+         </section>
+         <section class="card cv-urgent-column" aria-labelledby="cv-receive-heading">
+          <div class="card-head"><div><h2 id="cv-receive-heading">Contas a receber em atenção</h2>
+           <p>Boletos dos clientes ainda não recebidos.</p></div>
+           <button type="button" class="card-link" data-view="receivables">Abrir recebíveis</button>
+          </div>
+          <div id="cv-receive-alerts" class="cv-urgent-stack"><p>Consultando...</p></div>
+         </section>
+        </div>
+        <details class="cv-calendar-more" id="cv-calendar-more">
+         <summary><span><strong>Calendário mensal e compromissos por data</strong><small>Vencimentos futuros, boletos a pagar e a receber, tudo aqui.</small></span><span class="cv-calendar-toggle-label">Abrir calendário</span></summary>
+         <section class="card cv-calendar-section" aria-labelledby="cv-calendar-heading">
+         <div class="card-head cv-calendar-heading">
+          <div><h2 id="cv-calendar-heading">Calendário de boletos</h2>
+           <p>Consulte todas as datas de contas a pagar e a receber, inclusive as futuras.</p></div>
+          <div class="cv-calendar-controls">
+           <button type="button" class="btn" id="cv-prev" aria-label="Mês anterior">Anterior</button>
+           <h3 id="cv-month-title">Mês</h3>
+           <button type="button" class="btn" id="cv-next" aria-label="Mês seguinte">Próximo</button>
+           <button type="button" class="btn btn-teal" id="cv-current">Hoje</button>
+          </div>
+         </div>
+         <div class="cv-calendar-body">
+           <div id="cv-calendar" class="cv-calendar-grid" aria-label="Calendário de vencimentos de contas a pagar e receber"></div>
+           <div class="cv-calendar-legend"><span><i class="cv-legend-dot cv-legend-pay"></i> A pagar</span>
+            <span><i class="cv-legend-dot cv-legend-receive"></i> A receber</span></div>
+           <p id="cv-calendar-note" class="cv-calendar-note"></p>
+         </div>
+        </section>
+        <section class="card cv-month-list" aria-labelledby="cv-list-title">
+         <div class="card-head">
+           <div><h2 id="cv-list-title">Boletos do mês</h2><p>Selecione um compromisso para ir à página de gerenciamento correspondente.</p></div>
+           <div class="cv-list-controls">
+            <select id="cv-kind" class="filter-select" aria-label="Filtrar compromissos do calendário">
+             <option value="todos">A pagar e receber</option><option value="pagar">Somente a pagar</option>
+             <option value="receber">Somente a receber</option>
+            </select>
+            <button type="button" class="btn" id="cv-clear-day" hidden>Limpar dia</button>
+           </div>
+         </div>
+         <div id="cv-month-records" class="cv-month-entries"><p>Consultando...</p></div>
+         <div class="cv-list-foot" id="cv-list-count">Aguardando dados.</div>
+        </section>
+        </details>
+        <p class="cv-note">As faturas de cartão permanecem separadas em <button type="button" class="card-link" data-view="cardbills">Faturas dos cartões</button>. Os vencimentos da agenda não são somados ao caixa realizado.</p>
+      </section>
+ 
         <section class="card" id="fin-cp-operacional" aria-labelledby="fin-cp-title">
           <div class="card-head">
             <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
@@ -3370,7 +3390,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261116sidebar-desktop57"></script>
+<script src="./financeiro-pro-ui.js?v=20261118merged1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
@@ -3391,9 +3411,9 @@ init();
 <script src="./financeiro-vinculos-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
-<script src="./financeiro-resumo-operacional.js?v=20261118trash1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261118merged1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
-<script src="./financeiro-central-vencimentos.js?v=20261118trash1" defer></script>
+<script src="./financeiro-central-vencimentos.js?v=20261118merged1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>

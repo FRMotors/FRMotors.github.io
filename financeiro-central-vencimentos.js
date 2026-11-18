@@ -76,7 +76,7 @@ function renderOverview(now){
  put('cv-home-overdue',String(overdue.length));
  put('cv-home-receive',String(urgent.filter(x=>x.kind==='receber').length));
  put('cv-home-status',dueToday.length||overdue.length?
-  'Existem compromissos que precisam de atenção. Confira os detalhes na central.':
+  'Existem compromissos que precisam de atenção. Confira os detalhes em Contas a pagar.':
   'Nenhuma conta vencida ou com vencimento hoje entre os registros pendentes.');
  const strip=$('cv-home-banner');if(strip)strip.classList.toggle('cv-home-clear',!urgent.length);
 }
@@ -167,7 +167,7 @@ async function refresh(){
  })().catch(e=>{
    ready=false;
    put('cv-status','Não foi possível carregar a central: '+(e.message||e));
-   put('cv-home-status','Alertas indisponíveis. Abra a central ou tente atualizar.');
+   put('cv-home-status','Alertas indisponíveis. Abra Contas a pagar ou tente atualizar.');
    ['cv-home-today','cv-home-overdue','cv-home-receive',
     'cv-pay-today-count','cv-pay-overdue-count','cv-receive-today-count','cv-receive-overdue-count',
     'cv-pay-today-value','cv-pay-overdue-value','cv-receive-today-value','cv-receive-overdue-value',
@@ -195,10 +195,15 @@ function openSection(button){
  }
  const input=$(destination==='payables'?'cp-search':'ar-search');
  if(input){input.value=button.dataset.cvQuery||'';input.dispatchEvent(new Event('input',{bubbles:true}))}
+ if(destination==='payables')$('fin-cp-operacional')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function init(){
  if(!$('cv-calendar'))return;
  $('cv-refresh')?.addEventListener('click',()=>refresh());
+ $('cv-calendar-more')?.addEventListener('toggle',()=>{
+  const label=document.querySelector('.cv-calendar-toggle-label');
+  if(label)label.textContent=$('cv-calendar-more')?.open?'Fechar calendário':'Abrir calendário';
+ });
  $('cv-prev')?.addEventListener('click',()=>{visibleMonth--;if(visibleMonth<0){visibleMonth=11;visibleYear--}selectedDate=null;render()});
  $('cv-next')?.addEventListener('click',()=>{visibleMonth++;if(visibleMonth>11){visibleMonth=0;visibleYear++}selectedDate=null;render()});
  $('cv-current')?.addEventListener('click',()=>{const t=today().split('-');visibleYear=Number(t[0]);visibleMonth=Number(t[1])-1;selectedDate=null;render()});
@@ -219,10 +224,15 @@ function init(){
   const now=today();visibleYear=Number(now.slice(0,4));visibleMonth=Number(now.slice(5,7))-1;
   selectedDate=selected.includes('today')?now:null;
   render();
+  if(selected.includes('today')&&$('cv-calendar-more'))$('cv-calendar-more').open=true;
   (selected.includes('today')?$('cv-list-title'):$(kind==='pagar'?'cv-pay-alerts':'cv-receive-alerts'))?.scrollIntoView({behavior:'smooth',block:'center'});
  });
- document.addEventListener('click',e=>{const button=e.target.closest('[data-cv-open]');if(button)openSection(button)});
- const active=!document.querySelector('[data-view-panel="deadlines"]')?.hidden||
+ document.addEventListener('click',e=>{
+  const button=e.target.closest('[data-cv-open]');if(button)openSection(button);
+  const jump=e.target.closest('[data-cv-anchor]');
+  if(jump?.dataset.cvAnchor==='fin-cp-operacional')$('fin-cp-operacional')?.scrollIntoView({behavior:'smooth',block:'start'});
+ });
+ const active=!document.querySelector('[data-view-panel="payables"]')?.hidden||
   !document.querySelector('[data-view-panel="overview"]')?.hidden;
  if(active)refresh();
 }
