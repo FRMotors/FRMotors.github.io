@@ -15,10 +15,9 @@ const localDate=()=>{
 };
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const plusDays=(day,n)=>{const d=new Date(day+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
-const asInt=v=>Math.trunc(Number(v)||0);
 const put=(id,value)=>{if($(id))$(id).textContent=value};
 const sourceLabels={planilha:'Conta homologada',avulso:'Boleto do site',receber:'Boleto do cliente'};
-let items=[],movements=[],undatedCards=[],reference=null,loaded=false,loading=null,period=30,activeCategory='todos',recordsPage=0;
+let items=[],movements=[],pendingCards=[],reference=null,loaded=false,loading=null,period=30,activeCategory='todos',recordsPage=0;
 const PAGE=18;
 async function allRows(builder,max=12000){
  const result=[],size=450;
@@ -69,7 +68,7 @@ function cardPending(invoices,declarations,partials,fulls,deadlines){
  }).filter(x=>x.amount>0);
 }
 function compute(rows,now,days){
- const end=plusDays(now,days);
+ const end=plusDays(now,days-1);
  const scheduled=rows.filter(x=>x.due&&x.due>=now&&x.due<=end);
  const late=rows.filter(x=>x.due&&x.due<now);
  const nodate=rows.filter(x=>!x.due);
@@ -86,14 +85,10 @@ function history(rows,now,days){
  const inValue=sum('entrada'),outValue=sum('saida');
  return {from:start,to:plusDays(now,-1),count:historyRows.length,inValue,outValue,net:inValue-outValue};
 }
-function changeVisual(ratio,loss){
- const y=(ratio>0?0:Math.min(100,Math.abs(ratio))),pos=Math.min(100,Math.max(0,ratio));
- return {y,pos,loss};
-}
 function forecastColumns(now,days=period){
  const groups=[];
- for(let start=0;start<=days;start+=15){
-  const stop=Math.min(days,start+14);
+ for(let start=0;start<days;start+=15){
+  const stop=Math.min(days-1,start+14);
   const from=plusDays(now,start),to=plusDays(now,stop);
   const rows=items.filter(x=>x.due&&x.due>=from&&x.due<=to);
   const entry=rows.filter(x=>x.kind==='entrada').reduce((s,x)=>s+x.amount,0);
@@ -165,7 +160,7 @@ function renderDetailList(now,forecast){
  if($('fc-page-next'))$('fc-page-next').disabled=recordsPage>=numberPages-1;
 }
 function renderCoverage(forecast){
- const cardSum=undatedCards.reduce((s,x)=>s+x.amount,0);
+ const cardSum=pendingCards.reduce((s,x)=>s+x.amount,0);
  const noDateOut=forecast.nodate.filter(x=>x.kind==='saida'),
  noDateIn=forecast.nodate.filter(x=>x.kind==='entrada');
  put('fc-late-pay',brlCents(forecast.latePay));
@@ -175,11 +170,12 @@ function renderCoverage(forecast){
  put('fc-no-date-count',String(forecast.nodate.length));
  put('fc-no-date-pay',brlCents(noDateOut.reduce((s,x)=>s+x.amount,0)));
  put('fc-no-date-receive',brlCents(noDateIn.reduce((s,x)=>s+x.amount,0)));
- put('fc-cards-count',String(undatedCards.length));
+ put('fc-cards-count',String(pendingCards.length));
  put('fc-cards-total',brlCents(cardSum));
- if($('fc-cards-status'))$('fc-cards-status').textContent=undatedCards.length?
-  'As faturas históricas ainda precisam de vencimento e conciliação confirmados. São exibidas separadamente, sem somar novamente a contas a pagar.':
-  'Não há faturas de cartão com saldo pendente sem data informada.';
+ put('fc-cards-undated-count',String(pendingCards.filter(x=>!x.due).length));
+ if($('fc-cards-status'))$('fc-cards-status').textContent=pendingCards.length?
+  'Faturas históricas com saldo documental ficam fora da projeção principal para evitar dupla contagem. Confirme suas datas e conciliações na agenda de cartões.':
+  'Não há faturas de cartão com saldo documental pendente.';
 }
 function renderBank(){
  if(!reference){put('fc-bank-balance','Sem referência');put('fc-bank-description','Nenhum saldo de referência disponível.');return}
@@ -243,7 +239,7 @@ async function refresh(){
   }catch(_){bank=null}
   items=assemble(pay,manual,links,bankLinks,receivables);
   movements=moves;
-  undatedCards=cardPending(invoices,declared,partials,confirmed,cardDates).filter(x=>!x.due);
+  pendingCards=cardPending(invoices,declared,partials,confirmed,cardDates);
   reference=bank;loaded=true;render();
  })().catch(e=>{
   loaded=false;
