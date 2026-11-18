@@ -339,42 +339,66 @@ function open(type,id){
 async function submit(event){
  event.preventDefault();
  if(busy||!current||!$('vl-ack')?.checked)return;
- const key=$('vl-bank')?.value||'',bank=banks.find(x=>x.source+':'+x.id===key);
  const doc=selected(),reason=$('vl-reason')?.value.trim()||'';
- if(!doc||!bank)return;
- const invoice=current.tipo==='fatura',review=invoice&&$('vl-mode')?.value==='revisao';
- const expected=invoice?invoiceSummary(doc).balance:cent(doc.valor_pago_informado);
- const actual=cent(bank.valor);
- if(invoice&&invoiceSummary(doc).full)return;
- if(review?!(actual>expected&&actual!==cent(doc.valor_documental)):
-   !(actual>0&&actual<=expected))return;
- if(reason.length<(review?30:12)||reason.length>(review?1500:1000))return;
- busy=true;updateConfirm();
- try{
-  const req=review?
-   db.rpc('fin_fatura_registrar_revisao',{
+ if(!doc)return;
+ const invoice=current.tipo==='fatura',external=sourceIsExternal();
+ const summary=invoice?invoiceSummary(doc):null;
+ const review=invoice&&$('vl-mode')?.value==='revisao';
+ if(summary?.full)return;
+ const key=$('vl-bank')?.value||'',bank=banks.find(x=>x.source+':'+x.id===key);
+ const expected=invoice?summary.balance:cent(doc.valor_pago_informado);
+ let req;
+ if(external){
+  const valText=$('vl-external-value')?.value||'';
+  const val=valText!==''?cent(valText):NaN;
+  const date=$('vl-external-date')?.value||'',account=($('vl-external-account')?.value||'').trim();
+  if(!Number.isFinite(val)||val<=0||val>expected||
+    date<'2000-01-01'||date>todaySP()||account.length<3||account.length>100||
+    reason.length<12||reason.length>1000)return;
+  req=db.rpc('fin_fatura_registrar_pagamento_externo',{
+    p_fatura:doc.id,p_valor:val/100,p_data:date,p_conta:account,p_justificativa:reason
+  });
+ }else{
+  if(!bank)return;
+  const actual=cent(bank.valor);
+  if(review?!(actual>expected&&actual!==cent(doc.valor_documental)):
+    !(actual>0&&actual<=expected))return;
+  if(reason.length<(review?30:12)||reason.length>(review?1500:1000))return;
+  req=review?db.rpc('fin_fatura_registrar_revisao',{
     p_fatura:doc.id,p_origem:bank.source,p_movimento:bank.id,p_justificativa:reason
-   }):
-   invoice?db.rpc('fin_fatura_registrar_pagamento_parcial',{
+   }):invoice?db.rpc('fin_fatura_registrar_pagamento_parcial',{
     p_fatura:doc.id,p_origem:bank.source,p_movimento:bank.id,p_justificativa:reason
-   }):
-   db.rpc('fin_comprovar_documento_pagamento',{
+   }):db.rpc('fin_comprovar_documento_pagamento',{
     p_tipo:current.tipo,p_documento:doc.id,p_origem:bank.source,
     p_movimento:bank.id,p_justificativa:reason
    });
+ }
+ busy=true;updateConfirm();
+ try{
   const {data,error}=await req;
   if(error)throw error;
-  const status=review?'em_revisao':invoice?'pagamento_registrado':'vinculado';
+  const status=external?'pagamento_externo_registrado':review?'em_revisao':invoice?'pagamento_registrado':'vinculado';
   if(data?.resultado!==status)throw Error('O banco não confirmou a operação.');
   if($('vl-dialog')?.open)$('vl-dialog').close();
   current=null;
   await refresh();
-  await window.frDocsReconcileUI?.refresh?.();
-  window.frFinanceUI?.showToast(review?
-   'Pagamento possível anotado para revisão, sem baixa da fatura.':
-   invoice?(data.situacao==='quitada'?
-    'Último pagamento vinculado. Fatura totalmente conciliada, sem saída duplicada.':
-    'Pagamento parcial registrado. Saldo restante: '+money(data.saldo_restante)):
+  const updates=[
+   window.frDocsReconcileUI?.refresh?.(),
+   window.frCardBillsUI?.refresh?.(),
+   window.frInvoicesAgendaUI?.refresh?.(),
+   window.frCardInstallmentsUI?.refresh?.(),
+   window.frRealDashboard?.refresh?.(),
+   window.frForecastUI?.refresh?.()
+  ];
+  await Promise.allSettled(updates.filter(Boolean));
+  window.frFinanceUI?.showToast(external?
+    (data.situacao==='quitada'?
+     'Fatura quitada com pagamento externo informado, sem lançamento no caixa.':
+     'Pagamento externo registrado. Saldo restante: '+money(data.saldo_restante)+'. Sem nova saída no caixa.'):
+    review?'Pagamento possível anotado para revisão, sem baixa da fatura.':
+    invoice?(data.situacao==='quitada'?
+      'Último pagamento vinculado. Fatura totalmente conciliada, sem saída duplicada.':
+      'Pagamento parcial registrado. Saldo restante: '+money(data.saldo_restante)):
     'Pagamento da autopeça localizado e vinculado sem nova saída.');
  }catch(e){
   out('vl-error','Não foi possível registrar: '+(e.message||e));
