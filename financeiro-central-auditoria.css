@@ -1,0 +1,73 @@
+/* FR Motors · Central de Atividades e Auditoria financeira */
+.audit-view-page .audit-intro{margin-bottom:16px}
+.audit-view-page .audit-explainer{
+ border:1px solid #deebee;border-radius:12px;background:#f5fafb;color:#597984;
+ font-size:12px;line-height:1.65;margin:0 0 16px;padding:13px 16px
+}
+.audit-view-page .audit-explainer strong{color:#2c5a67}
+.audit-view-page .audit-status{color:#657e89;font-size:12px;line-height:1.6;margin:0 0 14px}
+.audit-view-page .audit-counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:18px}
+.audit-view-page .audit-counter{display:flex;flex-direction:column;gap:7px;padding:16px;
+ background:#fff;border:1px solid #e2eaee;border-radius:12px;min-width:0}
+.audit-view-page .audit-counter span{font-size:11px;font-weight:750;color:#617985}
+.audit-view-page .audit-counter strong{font-size:27px;font-weight:800;color:#244e5d;line-height:1.2}
+.audit-view-page .audit-counter small{font-size:10px;color:#85969e;line-height:1.55}
+.audit-view-page .audit-counter:first-child{border-left:3px solid #38a2a1}
+.audit-view-page .audit-card{overflow:hidden;margin-bottom:18px}
+.audit-view-page .audit-card .card-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.audit-view-page .audit-card .card-head p{font-size:12px;color:#758b95;line-height:1.5}
+.audit-view-page .audit-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:11px;padding:13px 17px 17px}
+.audit-view-page .audit-filters label{display:flex;flex-direction:column;gap:6px;color:#567483;
+ font-size:11px;font-weight:750;min-width:135px}
+.audit-view-page .audit-filters label.audit-search{flex:1 1 260px}
+.audit-view-page .audit-filters input,.audit-view-page .audit-filters select{
+ background:#fff;border:1px solid #cbdfe4;border-radius:8px;color:#294a58;
+ font-size:12px;height:40px;padding:0 11px;width:100%;min-width:0
+}
+.audit-view-page .audit-filters .btn{height:40px}
+.audit-view-page .audit-list{display:flex;flex-direction:column;gap:0;border-top:1px solid #edf2f3}
+.audit-view-page .audit-entry{display:flex;align-items:center;justify-content:space-between;gap:16px;
+ padding:16px 18px;border-bottom:1px solid #ebeff2;background:#fff}
+.audit-view-page .audit-entry:hover{background:#fbfdfd}
+.audit-view-page .audit-entry-main{display:grid;grid-template-columns:124px minmax(0,1fr);
+ align-items:start;gap:16px;min-width:0;flex:1}
+.audit-view-page .audit-entry-date{font-size:11px;color:#69828d;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:3px}
+.audit-view-page .audit-entry-content{display:flex;flex-direction:column;gap:5px;min-width:0}
+.audit-view-page .audit-entry-heading{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.audit-view-page .audit-entry-heading strong{color:#2a4e5d;font-size:13px}
+.audit-view-page .audit-subject{font-size:12px;color:#3e6472;margin:0;font-weight:650;overflow-wrap:anywhere}
+.audit-view-page .audit-details{font-size:11px;color:#67808a;line-height:1.55;margin:0;overflow-wrap:anywhere}
+.audit-view-page .audit-meta{font-size:10px;color:#92a0a6;margin:2px 0 0}
+.audit-view-page .audit-entry-side{display:flex;flex-direction:column;align-items:flex-end;gap:9px;min-width:130px}
+.audit-view-page .audit-amount{font-size:13px;color:#2e6572;white-space:nowrap;font-variant-numeric:tabular-nums}
+.audit-view-page .audit-view{font-size:11px!important;min-height:31px!important;padding:6px 11px!important;white-space:nowrap}
+.audit-view-page .audit-tag{font-size:10px;font-weight:750;border-radius:6px;padding:4px 7px;line-height:1.3;white-space:nowrap}
+.audit-view-page .audit-tag-boletos{background:#fef2e8;color:#9e6739}
+.audit-view-page .audit-tag-receber{background:#e7f6f0;color:#287d67}
+.audit-view-page .audit-tag-faturas{background:#eaf2fa;color:#386f9b}
+.audit-view-page .audit-tag-movimentos{background:#ebf0f2;color:#516e7d}
+.audit-view-page .audit-tag-importacoes{background:#efeefa;color:#7465a4}
+.audit-view-page .audit-empty{padding:27px 18px;text-align:center;font-size:12px;color:#7e929b}
+.audit-view-page .audit-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ flex-wrap:wrap;padding:13px 17px;color:#718894;font-size:11px}
+.audit-view-page .audit-footer>div{display:flex;gap:7px}
+.audit-view-page .audit-footer .btn{min-height:31px}
+.audit-view-page .audit-caveat{font-size:11px;color:#738993;line-height:1.65;
+ padding:0 17px 16px;margin:0}
+.audit-view-page button:focus-visible,.audit-view-page input:focus-visible,.audit-view-page select:focus-visible{
+ outline:3px solid #65bec5;outline-offset:2px
+}
+@media(max-width:1100px){
+ .audit-view-page .audit-counters{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:740px){
+ .audit-view-page .audit-entry{align-items:flex-start;flex-direction:column;padding:13px}
+ .audit-view-page .audit-entry-main{grid-template-columns:1fr;gap:4px;width:100%}
+ .audit-view-page .audit-entry-side{flex-direction:row;justify-content:space-between;align-items:center;width:100%;min-width:0}
+ .audit-view-page .audit-filters label{flex:1 1 150px}
+ .audit-view-page .audit-filters label.audit-search{flex:1 1 100%}
+}
+@media(max-width:390px){
+ .audit-view-page .audit-counters{grid-template-columns:1fr}
+ .audit-view-page .audit-counters .audit-counter{padding:12px}
+}

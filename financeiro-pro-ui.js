@@ -35,7 +35,7 @@ function svg(name){return '<svg aria-hidden="true" viewBox="0 0 24 24">'+(iconPa
 function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(n=>{const name=n.getAttribute('data-icon');if(name in iconPaths)n.innerHTML=svg(name)})}
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
-const NAV_VIEWS=['overview','movements','receivables','payables','purchases','imports','itau','history','operational','expenses','deadlines','forecast','reports','classify','cardbills'];
+const NAV_VIEWS=['overview','movements','receivables','payables','purchases','imports','itau','history','operational','expenses','deadlines','forecast','reports','classify','cardbills','audit'];
 const SECTION_SLUGS={'vl-title-section':'payments','ag-title':'agenda'};
 const VIEWPORT_KEY='fr-financeiro-viewport-atual';
 const SIDEBAR_KEY='fr-financeiro-sidebar-desktop-recolhida';
@@ -93,7 +93,7 @@ function selectView(next,options={}){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',deadlines:'Central de vencimentos',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Faturas dos cartões'};
+ const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',deadlines:'Central de vencimentos',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Faturas dos cartões',audit:'Central de auditoria'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
@@ -117,6 +117,7 @@ function selectView(next,options={}){
    if(next==='reports')window.frManagerReportsUI?.refresh?.();
    if(next==='classify')window.frClassificationUI?.refresh?.();
    if(next==='cardbills')window.frCardBillsUI?.refresh?.();
+    if(next==='audit')window.frAuditUI?.refresh?.();
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
  if(!options.preserveScroll)window.scrollTo({top:0,behavior:'auto'});
 }
@@ -321,6 +322,7 @@ function afterSaved(kind){
   window.frManagerReportsUI?.refresh?.();
   window.frClassificationUI?.refresh?.();
   window.frCardBillsUI?.refresh?.();
+  window.frAuditUI?.refresh?.();
 }
 function changePeriod(name){
  const end=todayLocal();let start;
