@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261116sidebar-desktop57">
-<link rel="stylesheet" href="./financeiro-import.css?v=20261117reconciliacao3">
+<link rel="stylesheet" href="./financeiro-import.css?v=20261118visibilidade1">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
@@ -2428,6 +2428,16 @@
     </div>
   </div>
   
+  <div class="import-visibility-box" aria-label="Preferências de visualização das importações">
+    <div>
+      <strong>Bancos e cartões em uso: Bradesco e Sicoob</strong>
+      <p id="import-visibility-hint">Mostrando apenas Bradesco e Sicoob. Os históricos de outras instituições continuam guardados.</p>
+    </div>
+    <label class="import-visibility-toggle" for="import-show-other-banks">
+      <input id="import-show-other-banks" type="checkbox">
+      <span>Mostrar outros bancos e cartões</span>
+    </label>
+  </div>
   <div class="fin-workflow-intro">
     <strong>Importar com segurança</strong>
     <span>Escolha o banco ou cartão, envie o arquivo e revise os lançamentos. Repetições entre arquivos são verificadas antes de salvar.</span>
@@ -3280,9 +3290,10 @@ init();
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-recebiveis.js?v=20261117ar1" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
-<script src="./financeiro-import.js?v=20261117reconciliacao3" defer></script>
+<script src="./financeiro-import-visibilidade.js?v=20261118visibilidade1" defer></script>
+<script src="./financeiro-import.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
-<script src="./financeiro-faturas.js?v=20261116parcelas1" defer></script>
+<script src="./financeiro-faturas.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261117clean1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
