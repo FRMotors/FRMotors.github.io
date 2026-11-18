@@ -177,11 +177,31 @@ function candidateOptions(){
 function updateBankOptions(){
  const select=$('vl-bank');if(!select)return;
  const doc=selected(),invoice=Boolean(doc&&current.tipo==='fatura');
+ const external=invoice&&$('vl-source')?.value==='externo';
+ const reviewOption=$('vl-mode')?.querySelector('option[value="revisao"]');
+ if(reviewOption)reviewOption.disabled=external;
+ if(external&&$('vl-mode')?.value==='revisao')$('vl-mode').value='pagamento';
+ if($('vl-external-fields'))$('vl-external-fields').hidden=!external;
+ if($('vl-bank-search-wrap'))$('vl-bank-search-wrap').hidden=external;
+ if($('vl-bank-wrap'))$('vl-bank-wrap').hidden=external;
+ select.required=!external;
+ if($('vl-bank-search'))$('vl-bank-search').disabled=external;
+ for(const id of ['vl-external-value','vl-external-date','vl-external-account']){
+  const input=$(id);if(input){input.disabled=!external;input.required=external}
+ }
+ out('vl-reason-label-text',external?'Observação do pagamento externo':'Justificativa da conferência');
+ out('vl-ack-text',external?
+  'Confirmo que este pagamento já foi realizado por outra conta e que os dados são verdadeiros. Entendo que ele não terá conciliação bancária nem criará saída no caixa.':
+  'Conferi a saída e confirmo que ela corresponde ao documento. Sei que não será criado um segundo pagamento no caixa.');
+ if(external){
+  out('vl-bank-info','Não precisa selecionar extrato. Informe abaixo o valor efetivamente pago, a data e de onde veio o pagamento.');
+  updateConfirm();
+  return;
+ }
  const expected=invoice?invoiceSummary(doc).balance:doc?cent(doc.valor_pago_informado):0;
  const {options,total}=candidateOptions(),previous=select.value;
  select.replaceChildren(new Option('Selecione uma saída já confirmada',''),
   ...options.map(b=>{
-   const amount=cent(b.valor);
    const suffix=invoice?' · saldo '+money(expected/100):'';
    return new Option(money(b.valor)+' · '+brdate(b.data_movimento)+' · '+
     String(b.descricao||'').slice(0,43)+' · '+(b.source==='fluxo'?'Fluxo':'Extrato')+suffix,b.source+':'+b.id);
@@ -190,9 +210,8 @@ function updateBankOptions(){
  const review=invoice&&$('vl-mode')?.value==='revisao';
  out('vl-bank-info',total?
   total+' saída(s) disponíveis nesta origem'+(total>options.length?' (mostrando '+options.length+', use a pesquisa para localizar outras)':'')+
-  '. '+(review?'A anotação NÃO é um pagamento confirmado.':
-    'Cada saída selecionada será somada como um pagamento individual, nunca duplicada no caixa.'):
-  'Nenhuma saída disponível com esses critérios. Pesquise data, valor ou descrição, ou confira se o extrato foi importado.');
+  '. '+(review?'A anotação NÃO é um pagamento confirmado.':'Cada saída selecionada será somada como um pagamento individual, nunca duplicada no caixa.'):
+  'Nenhuma saída disponível com esses critérios. Se a fatura já foi paga por outra conta, selecione a opção sem extrato acima.');
  updateConfirm();
 }
 function renderHistory(){
