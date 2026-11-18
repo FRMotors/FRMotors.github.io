@@ -555,6 +555,7 @@
 </style>
 <link rel="stylesheet" href="./financeiro-acabamento.css?v=20261117polish1">
 <link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118central1">
+<link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -568,6 +569,7 @@
   <nav class="sidebar-links" aria-label="Seções do financeiro">
     <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
     <button type="button" data-view="deadlines"><span class="icon" data-icon="calendar"></span> Central de vencimentos</button>
+    <button type="button" data-view="forecast"><span class="icon" data-icon="chart"></span> Projeção de caixa</button>
     <button type="button" data-view="movements"><span class="icon" data-icon="wallet"></span> Movimentações oficiais</button>
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
@@ -610,6 +612,145 @@
   <main class="content" id="main-content">
     <div id="access" class="loading-text" role="status">Verificando sessão e autorização financeira...</div>
     <div id="app" class="hidden">
+      <section class="view fc-projection" data-view-panel="forecast" hidden aria-label="Projeção documental de fluxo de caixa">
+       <div class="section-header">
+        <div>
+         <p class="eyebrow">Planejamento financeiro · documentos oficiais</p>
+         <h1 class="page-heading">Projeção de caixa</h1>
+         <p class="page-description">Antecipe os pagamentos e recebimentos registrados nos próximos 30, 60 e 90 dias, sem confundi-los com dinheiro já movimentado.</p>
+        </div>
+        <div class="header-buttons">
+         <button type="button" class="btn" data-view="deadlines">Central de vencimentos</button>
+         <button type="button" class="btn btn-primary" id="fc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar projeção</button>
+        </div>
+       </div>
+       <p id="fc-status" class="fc-status" role="status" aria-live="polite">Aguardando consulta da base financeira...</p>
+       <div class="fc-hero">
+        <div class="fc-hero-content">
+         <span class="fc-hero-icon"><span class="icon" data-icon="chart"></span></span>
+         <div><h2>O que já tem vencimento registrado?</h2>
+          <p>A projeção utiliza apenas boletos pendentes e contas a receber com data confirmada. Não prevê novas vendas, receitas recorrentes, juros ou pagamentos não documentados.</p>
+         </div>
+        </div>
+        <button type="button" class="btn" data-view="payables">Conferir compromissos</button>
+       </div>
+       <div class="fc-period-switch" aria-label="Horizontes de projeção">
+        <button type="button" class="fc-horizon active" id="fc-horizon-30" aria-pressed="true">
+         <span class="fc-horizon-caption">Próximos 30 dias</span>
+         <strong id="fc-30-net">—</strong>
+         <div class="fc-horizon-columns"><span>Recebimentos <b id="fc-30-in">—</b></span>
+          <span>Pagamentos <b id="fc-30-out">—</b></span></div>
+         <small class="fc-horizon-count" id="fc-30-counts">Aguardando...</small>
+        </button>
+        <button type="button" class="fc-horizon" id="fc-horizon-60" aria-pressed="false">
+         <span class="fc-horizon-caption">Próximos 60 dias</span>
+         <strong id="fc-60-net">—</strong>
+         <div class="fc-horizon-columns"><span>Recebimentos <b id="fc-60-in">—</b></span>
+          <span>Pagamentos <b id="fc-60-out">—</b></span></div>
+         <small class="fc-horizon-count" id="fc-60-counts">Aguardando...</small>
+        </button>
+        <button type="button" class="fc-horizon" id="fc-horizon-90" aria-pressed="false">
+         <span class="fc-horizon-caption">Próximos 90 dias</span>
+         <strong id="fc-90-net">—</strong>
+         <div class="fc-horizon-columns"><span>Recebimentos <b id="fc-90-in">—</b></span>
+          <span>Pagamentos <b id="fc-90-out">—</b></span></div>
+         <small class="fc-horizon-count" id="fc-90-counts">Aguardando...</small>
+        </button>
+       </div>
+       <div class="fc-main">
+        <section class="card">
+         <div class="card-head"><div>
+          <h2 id="fc-period-title">Compromissos com vencimento nos próximos 30 dias</h2>
+          <p>Entradas e saídas previstas, sem duplicação de registros quitados.</p>
+         </div></div>
+         <div class="fc-main-summary">
+          <p class="fc-period-line">Período considerado: <strong id="fc-current-range">—</strong></p>
+          <div class="fc-impact">
+           <div><span>Recebimentos previstos</span><strong id="fc-current-in">—</strong></div>
+           <div><span>Pagamentos previstos</span><strong id="fc-current-out">—</strong></div>
+           <div><span>Compromissos datados</span><strong id="fc-current-count">—</strong></div>
+          </div>
+          <div class="fc-summary-net">
+           <span>Diferença prevista entre recebimentos e pagamentos</span>
+           <strong id="fc-current-net">—</strong>
+          </div>
+          <p class="fc-summary-footer">A diferença acima não é o saldo da conta bancária. Boletos vencidos aparecem separadamente até que uma nova data seja confirmada.</p>
+         </div>
+        </section>
+        <section class="card">
+         <div class="card-head"><div><h2>Últimos 30 dias realizados</h2>
+          <p>Movimentações oficialmente confirmadas, para comparação histórica.</p></div></div>
+         <div class="fc-past">
+          <div class="fc-past-title">Fluxo de caixa efetivo</div>
+          <p class="fc-past-description" id="fc-hist-period">Consultando histórico...</p>
+          <div class="fc-past-metric"><span>Entradas confirmadas</span><strong id="fc-hist-in">—</strong></div>
+          <div class="fc-past-metric"><span>Saídas confirmadas</span><strong id="fc-hist-out">—</strong></div>
+          <div class="fc-past-metric"><span>Resultado registrado</span><strong id="fc-hist-net">—</strong></div>
+          <p class="fc-summary-footer">Valores realizados não são extrapolados automaticamente para meses futuros.</p>
+         </div>
+        </section>
+       </div>
+       <div class="fc-two-col">
+        <section class="card fc-chart">
+         <div class="card-head"><div><h2>Distribuição dos vencimentos</h2>
+          <p>Janelas de até 15 dias dentro do horizonte selecionado.</p></div></div>
+         <div class="fc-legend"><span><i class="fc-legend-dot fc-legend-in"></i> Contas a receber</span>
+          <span><i class="fc-legend-dot fc-legend-out"></i> Contas a pagar</span></div>
+         <div id="fc-bars" class="fc-bars"><p class="fc-empty">Consultando datas de vencimento...</p></div>
+        </section>
+        <section class="card fc-simulator">
+         <div class="card-head"><div><h2>Simular saldo de caixa</h2>
+          <p>Preenchimento opcional. O saldo informado é hipotético e fica somente na tela.</p></div></div>
+         <div class="fc-scenario-body">
+          <label class="fc-input-label" for="fc-initial">Saldo inicial consolidado (R$)
+           <input id="fc-initial" type="number" step="0.01" placeholder="Ex.: 2500,00" autocomplete="off" inputmode="decimal">
+          </label>
+          <label class="fc-check-row" for="fc-include-overdue">
+           <input id="fc-include-overdue" type="checkbox">
+           <span>Incluir vencidos como ajuste imediato na simulação (hipótese, não data real de pagamento ou recebimento).</span>
+          </label>
+          <div class="fc-scenario-total">
+           <span>Saldo final simulado no período</span>
+           <strong id="fc-scenario-value">Informe um valor</strong>
+          </div>
+          <p id="fc-scenario-note" class="fc-scenario-note">Nenhum saldo simulado será salvo no banco.</p>
+         </div>
+        </section>
+       </div>
+       <section class="card fc-coverage" aria-labelledby="fc-coverage-title">
+        <div class="card-head"><div><h2 id="fc-coverage-title">Pendências fora da projeção</h2>
+         <p>Itens que exigem atenção, mas não têm data futura válida ou precisam de conciliação documental.</p></div></div>
+        <div class="fc-coverage-grid">
+         <div class="fc-coverage-box"><span>Boletos a pagar vencidos</span><strong id="fc-late-pay">—</strong>
+          <small><span id="fc-late-pay-count">—</span> registro(s) · sem baixa confirmada</small></div>
+         <div class="fc-coverage-box"><span>Contas a receber vencidas</span><strong id="fc-late-receive">—</strong>
+          <small><span id="fc-late-receive-count">—</span> registro(s) · saldo restante</small></div>
+         <div class="fc-coverage-box"><span>Compromissos sem vencimento</span><strong id="fc-no-date-count">—</strong>
+          <small>A pagar: <span id="fc-no-date-pay">—</span>. A receber: <span id="fc-no-date-receive">—</span>.</small></div>
+         <div class="fc-coverage-box"><span>Faturas de cartão a conferir</span><strong id="fc-cards-total">—</strong>
+          <small><span id="fc-cards-count">—</span> fatura(s) pendente(s), <span id="fc-cards-undated-count">—</span> sem data, tratadas em separado</small></div>
+        </div>
+        <p id="fc-cards-status" class="fc-coverage-note">Faturas documentais não somadas às contas, para evitar dupla contagem.</p>
+        <div class="fc-bank-reference"><strong id="fc-bank-balance">—</strong>
+         <span id="fc-bank-description">Saldo bancário de referência. Somente informativo.</span></div>
+        <p class="fc-coverage-note">Importante: um saldo bancário isolado, como Itaú, não equivale ao caixa consolidado da oficina. Faturas de cartão com ou sem vencimento ficam na agenda financeira até reconciliação; a projeção principal não assume pagamentos sem confirmação.</p>
+       </section>
+       <section class="card fc-list" aria-labelledby="fc-list-title">
+        <div class="card-head"><div><h2 id="fc-list-title">Compromissos que formam a projeção</h2>
+         <p>Somente documentos com vencimento no horizonte selecionado. Toque em um registro para abrir a carteira correspondente.</p></div>
+         <div class="fc-list-control"><select id="fc-kind" class="filter-select" aria-label="Filtrar a projeção">
+          <option value="todos">A pagar e receber</option><option value="saida">Somente a pagar</option>
+          <option value="entrada">Somente a receber</option>
+         </select></div>
+        </div>
+        <div id="fc-records" class="fc-record-list"><p class="fc-empty">Aguardando consulta...</p></div>
+        <div class="fc-pagination"><span id="fc-record-count">Aguardando registros.</span>
+         <div><button type="button" class="btn" id="fc-page-prev" disabled>Anterior</button>
+          <button type="button" class="btn" id="fc-page-next" disabled>Próxima</button></div>
+        </div>
+       </section>
+       <p class="info-note">Fonte: banco operacional Supabase. A projeção não altera pagamentos, saldos ou documentos e não substitui a conciliação bancária.</p>
+      </section>
       <section class="view cv-deadlines" data-view-panel="deadlines" hidden aria-label="Central de vencimentos">
         <div class="section-header cv-intro">
          <div>
@@ -710,6 +851,7 @@
             <button type="button" class="btn btn-teal" data-view="imports"><span class="icon icon-sm" data-icon="download"></span> Importar arquivo</button>
             <button type="button" class="btn" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
             <button type="button" class="btn" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
+             <button type="button" class="btn btn-teal" data-view="forecast"><span class="icon icon-sm" data-icon="chart"></span> Projeção de caixa</button>
           </div>
         </div>
 <section class="cv-home" id="cv-home-banner" aria-label="Alertas de vencimento">
@@ -2691,4 +2833,5 @@ init();
 <script src="./financeiro-resumo-operacional.js?v=20261116real1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
 <script src="./financeiro-central-vencimentos.js?v=20261118central1" defer></script>
+<script src="./financeiro-projecao-caixa.js?v=20261118forecast1" defer></script>
 </body></html>
