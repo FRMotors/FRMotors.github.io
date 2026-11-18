@@ -35,7 +35,7 @@ function svg(name){return '<svg aria-hidden="true" viewBox="0 0 24 24">'+(iconPa
 function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(n=>{const name=n.getAttribute('data-icon');if(name in iconPaths)n.innerHTML=svg(name)})}
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
-const NAV_VIEWS=['overview','movements','receivables','payables','purchases','imports','itau','history','operational','expenses','forecast','reports','classify','cardbills','audit'];
+const NAV_VIEWS=['overview','movements','receivables','payables','imports','itau','history','expenses','forecast','reports','classify','cardbills','audit'];
 const SECTION_SLUGS={'vl-title-section':'payments','ag-title':'agenda'};
 const VIEWPORT_KEY='fr-financeiro-viewport-atual';
 const SIDEBAR_KEY='fr-financeiro-sidebar-desktop-recolhida';
@@ -85,6 +85,11 @@ function selectView(next,options={}){
  // Movimentações do site possuem uma visualização oficial própria.
  if(next==='settings')next='overview';
  if(next==='deadlines')next='payables'; // link legado, página unificada
+ if(next==='purchases')next='cardbills'; // link antigo de compras parceladas
+ if(next==='operational'){
+  next='imports'; // Base migrada agora está em Importações
+  const accordion=byId('imports-base-migrada');if(accordion)accordion.open=true;
+ }
  if(!NAV_VIEWS.includes(next))next='overview';
  view=next;
  if(options.syncUrl!==false)syncNavigationUrl(next);
@@ -94,18 +99,18 @@ function selectView(next,options={}){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Faturas dos cartões',audit:'Central de auditoria'};
+ const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Cartões',audit:'Central de auditoria'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
  if(next==='imports')window.frImportUI?.refresh?.();
  if(next==='imports')window.frPixRulesUI?.refresh?.();
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
-  if(next==='operational')window.frOperationalUI?.open?.();
+  
   if(next==='overview')window.frRealDashboard?.refresh?.();
    if(next==='overview')window.frDeadlinesUI?.refresh?.();
   if(next==='overview')window.frCashDetailUI?.refresh?.();
-  if(next==='purchases')window.frCardInstallmentsUI?.refresh?.();
+  
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='expenses')window.frDocsReconcileUI?.refresh?.();
   if(next==='expenses')window.frDocumentLinksUI?.refresh?.();
@@ -117,7 +122,11 @@ function selectView(next,options={}){
    if(next==='forecast')window.frForecastUI?.refresh?.();
    if(next==='reports')window.frManagerReportsUI?.refresh?.();
    if(next==='classify')window.frClassificationUI?.refresh?.();
-   if(next==='cardbills')window.frCardBillsUI?.refresh?.();
+   if(next==='cardbills'){
+  window.frCardBillsUI?.refresh?.();
+  window.frCardInstallmentsUI?.refresh?.();
+ }
+ if(next==='imports'&&byId('imports-base-migrada')?.open)window.frOperationalUI?.open?.();
     if(next==='audit')window.frAuditUI?.refresh?.();
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
  if(!options.preserveScroll)window.scrollTo({top:0,behavior:'auto'});
@@ -346,6 +355,9 @@ function setup(){
  applyIcons();
  initSidebar();
  document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>selectView(btn.dataset.view)));
+ byId('imports-base-migrada')?.addEventListener('toggle',e=>{
+  if(e.target.open)window.frOperationalUI?.open?.();
+ });
  document.querySelectorAll('[data-jump-section]').forEach(btn=>btn.addEventListener('click',()=>{
   selectView('expenses');
   const id=btn.dataset.jumpSection;
@@ -379,6 +391,7 @@ function setup(){
  byId('refresh-data')?.addEventListener('click',()=>{
   if(view==='cardbills'){
     window.frCardBillsUI?.refresh?.();
+    window.frCardInstallmentsUI?.refresh?.();
   }else if(view==='classify'){
     window.frClassificationUI?.refresh?.();
   }else if(view==='reports'){
@@ -403,8 +416,13 @@ function setup(){
  const initialView=
   requestedView==='settings'?'overview':
   requestedView==='deadlines'?'payables':
+  requestedView==='purchases'?'cardbills':
+  requestedView==='operational'?'imports':
   NAV_VIEWS.includes(requestedView)?requestedView:'overview';
  // Ao carregar, respeitar a aba do URL e não forçar a página de volta para o topo.
+ if(initialView==='imports'&&(requestedView==='operational'||params.get('section')==='base-migrada')){
+  const base=byId('imports-base-migrada');if(base)base.open=true;
+ }
  selectView(initialView,{syncUrl:false,preserveScroll:true});
  if(requestedView!==initialView)syncNavigationUrl(initialView);
  const restored=restoreViewportOnReload();
