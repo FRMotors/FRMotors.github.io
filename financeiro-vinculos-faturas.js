@@ -1,5 +1,5 @@
-/* FR Motors | Vínculo manual de faturas e exceções com saídas já confirmadas.
- * Não insere nem modifica movimentos. Somente RPC autorizada e conferência explícita. */
+/* FR Motors | Pagamentos de faturas via extratos ou declarações de outra conta.
+ * Não insere nem modifica movimentos; origem externa não é conciliação bancária. */
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -7,6 +7,12 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=x=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(x)||0);
 const cent=x=>Math.round(Number(x)*100);
 const brdate=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Sem data';
+const todaySP=()=>{
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const x=k=>parts.find(p=>p.type===k)?.value||'';
+ return x('year')+'-'+x('month')+'-'+x('day');
+};
+const sourceIsExternal=()=>current?.tipo==='fatura'&&$('vl-source')?.value==='externo'&&$('vl-mode')?.value!=='revisao';
 const out=(id,t)=>{if($(id))$(id).textContent=t};
 let invoices=[],autos=[],comprovs=[],parts=[],revisions=[],declared=[],banks=[],busy=false,loading=null,current=null;
 let reservedFlow=new Set(),reservedExt=new Set(),autoRefs=new Set();
@@ -37,11 +43,13 @@ function invoiceSummary(f){
  const declaration=byDeclaration().get(f.id)||null;
  const list=byParts().get(f.id)||[];
  const paid=older?cent(older.valor_conferido):list.reduce((sum,x)=>sum+cent(x.valor_pago),0);
+ const externalPaid=list.filter(x=>x.origem==='externo').reduce((sum,x)=>sum+cent(x.valor_pago),0);
+ const bankPaid=Math.max(0,paid-externalPaid);
  const total=cent(f.valor_documental);
  // Quitação por declaração NÃO é um pagamento bancário conciliado.
  const displayPaid=declaration?total:paid;
  const balance=Math.max(0,total-displayPaid);
- return {total,paid,displayPaid,balance,parts:list,full:balance===0,
+ return {total,paid,externalPaid,bankPaid,displayPaid,balance,parts:list,full:balance===0,
   partial:!declaration&&paid>0&&balance>0,isDeclared:Boolean(declaration),declaration};
 }
 
@@ -78,10 +86,12 @@ function draw(){
  if($('vl-invoices'))$('vl-invoices').innerHTML=visibleInvoices.length?visibleInvoices.map(f=>{
   const x=summaries.get(f.id),rev=revs.get(f.id);
   const status=x.isDeclared?'<span class="state paid">Quitada por confirmação</span><small>Sem conciliação bancária</small>':
-   x.full?'<span class="state paid">Quitada pelo(s) vínculo(s)</span>':
-   x.partial?'<span class="state open">Parcialmente paga</span>':
+   x.full&&x.externalPaid>0&&x.bankPaid===0?'<span class="state paid">Quitada por pagamento externo informado</span><small>Sem extrato vinculado</small>':
+   x.full&&x.externalPaid>0?'<span class="state paid">Quitada por pagamentos mistos</span><small>Inclui pagamento externo informado</small>':
+   x.full?'<span class="state paid">Quitada por vínculo(s) bancário(s)</span>':
+   x.partial?'<span class="state open">Parcialmente paga</span>'+(x.externalPaid>0?'<small>Inclui pagamento externo informado</small>':''):
    rev?'<span class="state open">Em revisão, não quitada</span>':
-   '<span class="state open">Sem pagamento vinculado</span>';
+   '<span class="state open">Sem pagamento registrado</span>';
   return '<tr><td><strong>'+esc(f.cartao_nome)+'</strong></td>'+
    '<td>'+brdate(f.mes_fatura).slice(3)+'</td>'+
    '<td class="money">'+f.quantidade_lancamentos+'</td>'+
@@ -212,11 +222,14 @@ function renderHistory(){
  body.innerHTML=payments.map((p,i)=>
   '<tr><td>'+(i+1)+'</td><td>'+brdate(p.data_pagamento)+'</td>'+
   '<td class="money"><strong>'+money(p.valor_pago)+'</strong></td>'+
-  '<td>'+esc(p.origem==='fluxo'?'Fluxo de Caixa':'Extrato')+'</td>'+
+  '<td>'+esc(p.origem==='externo'?'Outra conta informada · '+(p.conta_origem_externa||'Origem não informada'):
+    p.origem==='fluxo'?'Fluxo de Caixa':'Extrato bancário')+'</td>'+
   '<td><small>'+esc(p.justificativa||'Conciliação anterior')+'</small></td></tr>'
  ).join('');
  out('vl-invoice-summary','Total da fatura: '+money(f.valor_documental)+
-  ' · Pago: '+money(summary.paid/100)+' · Saldo restante: '+money(summary.balance/100)+
+  ' · Pagamentos registrados: '+money(summary.paid/100)+
+  (summary.externalPaid?' (inclui '+money(summary.externalPaid/100)+' informado sem extrato)':'')+
+  ' · Saldo restante: '+money(summary.balance/100)+
   (summary.full?' · QUITADA':summary.partial?' · PAGAMENTO PARCIAL':' · A CONFERIR'));
 }
 function updateConfirm(){
@@ -267,6 +280,10 @@ function open(type,id){
  if($('vl-mode'))$('vl-mode').value='pagamento';
  if($('vl-mode-wrap'))$('vl-mode-wrap').hidden=!invoice||Boolean(summary?.full);
  if($('vl-ext-option'))$('vl-ext-option').disabled=!invoice;
+ if($('vl-personal-option'))$('vl-personal-option').disabled=!invoice;
+ if($('vl-external-value'))$('vl-external-value').value=invoice?(summary.balance/100).toFixed(2):'';
+ if($('vl-external-date')){$('vl-external-date').value=todaySP();$('vl-external-date').max=todaySP()}
+ if($('vl-external-account'))$('vl-external-account').value='Conta pessoal';
  if($('vl-bank-search'))$('vl-bank-search').value='';
  if($('vl-reason'))$('vl-reason').value='';
  if($('vl-ack'))$('vl-ack').checked=false;
@@ -351,7 +368,7 @@ async function refresh(force=false){
     getAll(()=>db.from('fin_comprovacoes_documentais').select(fields)
      .order('conferido_em',{ascending:false})),
     getAll(()=>db.from('fin_faturas_pagamentos_parciais')
-     .select('id,fatura_id,origem,movimento_fluxo_id,movimento_extrato_id,valor_pago,data_pagamento,justificativa')
+     .select('id,fatura_id,origem,movimento_fluxo_id,movimento_extrato_id,valor_pago,data_pagamento,justificativa,conta_origem_externa')
      .order('confirmado_em',{ascending:false})),
     getAll(()=>db.from('fin_revisoes_faturas_historicas')
      .select('id,fatura_id,origem,valor_documental,valor_movimento,diferenca,data_movimento,justificativa,situacao')
@@ -386,9 +403,11 @@ async function refresh(force=false){
    draw();
    const fullyPaid=invoices.filter(x=>invoiceSummary(x).full).length;
    const partiallyPaid=invoices.filter(x=>invoiceSummary(x).partial).length;
+   const finishedExternal=invoices.filter(x=>{const v=invoiceSummary(x);return v.full&&!v.isDeclared&&v.externalPaid>0}).length;
    out('vl-load-status',invoices.length+' faturas, '+declared.length+
-    ' quitadas por confirmação histórica (sem saída bancária identificada), '+
-    (fullyPaid-declared.length)+' quitadas por conciliação, '+partiallyPaid+
+    ' quitadas por confirmação histórica, '+
+    (fullyPaid-declared.length-finishedExternal)+' quitadas apenas por conciliação bancária, '+
+    finishedExternal+' quitadas com pagamento externo informado, '+partiallyPaid+
     ' parcialmente pagas, '+byReview().size+
     ' em revisão e '+autos.filter(x=>!autoRefs.has(x.id)&&!byAuto().has(x.id)).length+
     ' exceções de autopeças. Nenhuma movimentação adicional foi criada.');
@@ -423,6 +442,9 @@ function init(){
  $('vl-bank-search')?.addEventListener('input',()=>updateBankOptions());
  $('vl-bank')?.addEventListener('change',()=>{if($('vl-ack'))$('vl-ack').checked=false;updateConfirm()});
  $('vl-reason')?.addEventListener('input',updateConfirm);
+ $('vl-external-value')?.addEventListener('input',updateConfirm);
+ $('vl-external-date')?.addEventListener('change',updateConfirm);
+ $('vl-external-account')?.addEventListener('change',updateConfirm);
  $('vl-ack')?.addEventListener('change',updateConfirm);
  $('vl-form')?.addEventListener('submit',submit);
  $('vl-close')?.addEventListener('click',()=>{if(!busy&&$('vl-dialog')?.open)$('vl-dialog').close()});
