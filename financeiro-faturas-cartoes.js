@@ -24,6 +24,21 @@ const stateLabels={
 };
 let all=[],ready=false,loading=null,sort='pendentes',filter='todos',card='todos',year='todos',search='',page=0;
 const STEP=25;
+const VISIBILITY_KEY='frmotors.faturas.mostrarCartoesAntigos.v1';
+let showOtherCards=false;
+try{showOtherCards=window.localStorage?.getItem(VISIBILITY_KEY)==='1'}catch(_){}
+/* A preferência altera somente o que é apresentado, nunca os dados do banco. */
+function activeCard(name){
+ const normalized=cardName(name).trim().toLocaleUpperCase('pt-BR');
+ return normalized==='BRADESCO PRIME'||normalized==='SICOOB'||normalized.startsWith('SICOOB ');
+}
+function inScope(){return all.filter(x=>showOtherCards||activeCard(x.card));}
+function setShowOtherCards(value){
+ showOtherCards=Boolean(value);
+ try{window.localStorage?.setItem(VISIBILITY_KEY,showOtherCards?'1':'0')}catch(_){}
+ if($('cb-show-other-cards'))$('cb-show-other-cards').checked=showOtherCards;
+ page=0;render();
+}
 async function fetchAll(builder,max=5000){
  const rows=[],size=350;
  for(let offset=0;offset<max;offset+=size){
@@ -69,7 +84,7 @@ function compare(a,b){
  String(b.period).localeCompare(String(a.period))||a.card.localeCompare(b.card,'pt-BR');
 }
 function visible(){
- return all.filter(x=>{
+ return inScope().filter(x=>{
   if(card!=='todos'&&x.card!==card)return false;
   if(year!=='todos'&&String(x.period||'').slice(0,4)!==year)return false;
   if(filter==='pendentes'&&x.remaining===0)return false;
@@ -82,22 +97,22 @@ function visible(){
  }).sort(compare);
 }
 function renderMetrics(){
- const pending=all.filter(x=>x.remaining>0);
- put('cb-count',String(all.length));
+ const scope=inScope(),pending=scope.filter(x=>x.remaining>0);
+ put('cb-count',String(scope.length));
  put('cb-open',String(pending.length));
  put('cb-outstanding',money(sum(pending,'remaining')));
- put('cb-declared',String(all.filter(x=>x.status==='declarada').length));
- put('cb-conciliated',String(all.filter(x=>x.status==='conciliada').length));
- put('cb-external',String(all.filter(x=>x.status==='externa'||x.status==='mista').length));
- put('cb-partial',String(all.filter(x=>x.status==='parcial').length));
+ put('cb-declared',String(scope.filter(x=>x.status==='declarada').length));
+ put('cb-conciliated',String(scope.filter(x=>x.status==='conciliada').length));
+ put('cb-external',String(scope.filter(x=>x.status==='externa'||x.status==='mista').length));
+ put('cb-partial',String(scope.filter(x=>x.status==='parcial').length));
  put('cb-undated',String(pending.filter(x=>!x.due).length));
  put('cb-pending-note',pending.length?
   'O saldo é documental e não deve ser somado às saídas já confirmadas no caixa.':
   'Não há fatura com saldo documental pendente.');
 }
 function renderCards(){
- const map=new Map();
- all.forEach(f=>{
+ const map=new Map(),scope=inScope();
+ scope.forEach(f=>{
   let x=map.get(f.card);
   if(!x){x={card:f.card,items:0,pending:0,total:0,remaining:0};map.set(f.card,x)}
   x.items++;x.total+=f.total;x.remaining+=f.remaining;if(f.remaining>0)x.pending++;
@@ -110,11 +125,19 @@ function renderCards(){
    '<span class="cb-card-sub">'+x.items+' fatura(s) · '+x.pending+' pendente(s)</span>'+
    '<strong>'+money(x.remaining)+'</strong>'+
    '<small>Saldo documental pendente</small></button>'
- ).join('')||'<div class="cb-empty">Nenhuma fatura histórica disponível.</div>';
+ ).join('')||'<div class="cb-empty">Nenhuma fatura dos cartões selecionados.</div>';
+ const hidden=all.filter(x=>!activeCard(x.card));
+ const hiddenCards=new Set(hidden.map(x=>x.card)).size;
+ put('cb-visibility-hint',showOtherCards?
+  'Exibindo todos os cartões históricos. Desmarque para voltar aos cartões em uso.':
+  'Exibindo apenas BRADESCO PRIME e SICOOB. '+hiddenCards+' cartão(ões) e '+hidden.length+
+  ' fatura(s) antiga(s) oculto(s), sem exclusão de dados.');
+ if($('cb-show-other-cards'))$('cb-show-other-cards').checked=showOtherCards;
 }
 function renderFilters(){
- const cards=[...new Set(all.map(x=>x.card))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
- const y=[...new Set(all.map(x=>String(x.period||'').slice(0,4)).filter(x=>/^\d{4}$/.test(x)))].sort().reverse();
+ const scope=inScope();
+ const cards=[...new Set(scope.map(x=>x.card))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const y=[...new Set(scope.map(x=>String(x.period||'').slice(0,4)).filter(x=>/^\d{4}$/.test(x)))].sort().reverse();
  const cardInput=$('cb-card'),yearInput=$('cb-year');
  if(cardInput){
   cardInput.replaceChildren(new Option('Todos os cartões','todos'),...cards.map(x=>new Option(x,x)));
@@ -165,10 +188,10 @@ function renderRows(){
 }
 function render(){
  if(!ready)return;
- renderMetrics();renderCards();renderFilters();renderRows();
+ renderFilters();renderMetrics();renderCards();renderRows();
  put('cb-status','Atualizado às '+
   new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}).format(new Date())+
-  '. Somente consulta. Valores documentais não são lançamentos adicionais no caixa.');
+  '. Exibindo '+inScope().length+' de '+all.length+' fatura(s). Filtro visual, sem alterar o caixa.');
 }
 async function refresh(){
  if(loading)return loading;
@@ -237,6 +260,10 @@ function exportCSV(){
 }
 function init(){
  if(!$('cb-rows'))return;
+ if($('cb-show-other-cards')){
+  $('cb-show-other-cards').checked=showOtherCards;
+  $('cb-show-other-cards').addEventListener('change',e=>setShowOtherCards(e.target.checked));
+ }
  $('cb-refresh')?.addEventListener('click',()=>refresh());
  $('cb-filter')?.addEventListener('change',e=>{filter=e.target.value;page=0;renderRows()});
  $('cb-sort')?.addEventListener('change',e=>{sort=e.target.value;page=0;renderRows()});
@@ -260,6 +287,6 @@ function init(){
  $('cb-export')?.addEventListener('click',exportCSV);
  if(!document.querySelector('[data-view-panel="cardbills"]')?.hidden)refresh();
 }
-window.frCardBillsUI={refresh,__test:{buildInvoiceStates,visible,monthBR,money,cents}};
+window.frCardBillsUI={refresh,__test:{buildInvoiceStates,visible,monthBR,money,cents,activeCard,inScope,setShowOtherCards}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

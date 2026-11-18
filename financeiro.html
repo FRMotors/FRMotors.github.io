@@ -559,7 +559,7 @@
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
-<link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cardbills1">
+<link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118activecards2">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
 </head>
 <body>
@@ -637,8 +637,8 @@
        <p id="cb-status" class="cb-status" role="status" aria-live="polite">Aguardando consulta...</p>
        <div class="cb-kpis" aria-label="Resumo da situação das faturas">
         <div class="cb-kpi">
-         <span>Faturas históricas</span><strong id="cb-count">—</strong>
-         <small>Documentos registrados na base</small>
+         <span>Faturas exibidas</span><strong id="cb-count">—</strong>
+         <small>Documentos dos cartões selecionados</small>
         </div>
         <div class="cb-kpi cb-kpi-risk">
          <span>Saldo documental pendente</span><strong id="cb-outstanding">—</strong>
@@ -669,15 +669,20 @@
        <section class="card cb-card-summary" aria-labelledby="cb-card-summary-title">
         <div class="card-head">
          <div><h2 id="cb-card-summary-title">Resumo por cartão</h2>
-          <p>Nomes preservados exatamente como foram registrados. Clique em um cartão para filtrar o detalhamento.</p>
+          <p>Cartões ativos: BRADESCO PRIME e SICOOB. Os nomes históricos de BRAD. PRIME aparecem unificados. Clique em um cartão para filtrar.</p>
          </div>
+         <label class="cb-visibility-toggle" for="cb-show-other-cards">
+          <input id="cb-show-other-cards" type="checkbox">
+          <span>Mostrar cartões antigos</span>
+         </label>
         </div>
+        <p class="cb-visibility-hint" id="cb-visibility-hint" role="status" aria-live="polite">Mostrando apenas BRADESCO PRIME e SICOOB. Os demais continuam preservados.</p>
         <div id="cb-card-summary" class="cb-card-grid"><p class="cb-empty">Consultando cartões...</p></div>
        </section>
        <section class="card" aria-labelledby="cb-detail-title">
         <div class="card-head">
          <div><h2 id="cb-detail-title">Histórico detalhado de faturas</h2>
-          <p>Pagamentos parciais, saldo restante e vencimento informado, com acesso à conciliação bancária existente.</p>
+          <p>Faturas dos cartões exibidos, com pagamentos parciais, saldo e vencimento. Ative “Mostrar cartões antigos” para consultar todos os históricos.</p>
          </div>
          <button type="button" class="btn" id="cb-export">Exportar CSV</button>
         </div>
@@ -3288,7 +3293,7 @@ init();
 <script src="./financeiro-pro-ui.js?v=20261116sidebar-desktop57"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
-<script src="./financeiro-nomes-cartoes.js?v=20261118prime1" defer></script>
+<script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
 <script src="./financeiro-recebiveis.js?v=20261117ar1" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import-visibilidade.js?v=20261118visibilidade1" defer></script>
@@ -3313,5 +3318,5 @@ init();
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
-<script src="./financeiro-faturas-cartoes.js?v=20261118prime1" defer></script>
+<script src="./financeiro-faturas-cartoes.js?v=20261118activecards2" defer></script>
 </body></html>

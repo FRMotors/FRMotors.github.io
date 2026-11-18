@@ -73,3 +73,19 @@
  .cb-view .cb-kpis{grid-template-columns:1fr}
  .cb-view .cb-card-grid{grid-template-columns:1fr}
 }
+/* Faturas | exibir cartões antigos somente quando solicitado */
+.cb-view .cb-card-summary .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cb-view .cb-visibility-toggle{display:inline-flex;align-items:center;justify-content:center;gap:10px;
+ background:#f8fcfc;border:1px solid #cee2e3;border-radius:9px;padding:10px 13px;cursor:pointer;
+ color:#345c66;font-size:12px;font-weight:750;line-height:1.4;white-space:normal}
+.cb-view .cb-visibility-toggle:hover{background:#f1faf9;border-color:#80bdc0}
+.cb-view .cb-visibility-toggle input{width:17px;height:17px;margin:0;accent-color:#13898c;flex-shrink:0}
+.cb-view .cb-visibility-toggle:focus-within{outline:3px solid #81c5c7;outline-offset:2px}
+.cb-view .cb-visibility-hint{margin:0;padding:0 17px 10px;font-size:11px;color:#68828c;line-height:1.6}
+.cb-view .cb-card-grid:has(>.cb-card-item:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:670px){
+ .cb-view .cb-visibility-toggle{width:100%;justify-content:flex-start}
+}
+@media(max-width:380px){
+ .cb-view .cb-card-grid:has(>.cb-card-item:nth-child(2):last-child){grid-template-columns:minmax(0,1fr)}
+}
