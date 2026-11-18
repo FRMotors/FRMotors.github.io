@@ -157,7 +157,7 @@ async function refresh(){
   const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
   if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
   const [cp,manual,links,bank,rec]=await Promise.all([
-   fetchAll(()=>db.from('fin_contas_pagar').select('id,codigo_origem,fornecedor_nome,descricao,valor_referencia,vencimento,situacao').order('id')),
+   fetchAll(()=>db.from('fin_contas_pagar').select('id,codigo_origem,fornecedor_nome,descricao,valor_referencia,vencimento,situacao').is('arquivado_em',null).order('id')),
    fetchAll(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,valor_referencia,vencimento,excluido_em').order('id')),
    fetchAll(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id').order('id')),
    fetchAll(()=>db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id').order('id')),
