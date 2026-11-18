@@ -262,8 +262,14 @@ async function refresh(){
    invoices=fs;declared=ds;partials=pp;integrals=ip;agenda=agendaRows;
    hasData=true;draw();
   }catch(e){
-   put('real-status','Não foi possível carregar os dados homologados: '+(e.message||e)+
-    '. Os indicadores antigos abaixo continuam pertencendo ao ambiente de testes.');
+   hasData=false;
+   put('real-status','Não foi possível consultar a base homologada: '+(e.message||e)+'. Nenhum total parcial foi exibido.');
+   for(const id of ['real-cash-in','real-cash-out','real-cash-net','real-compare-in','real-compare-out',
+    'real-compare-net','real-bill-value','real-card-value'])put(id,'—');
+   if($('real-trend-list'))$('real-trend-list').innerHTML=
+    '<p class="real-trend-empty">Evolução temporariamente indisponível. Tente atualizar.</p>';
+   if($('real-month-rows'))$('real-month-rows').innerHTML=
+    '<tr><td colspan="4" class="empty">Tabela indisponível.</td></tr>';
   }
  })();
  try{await fetching}finally{fetching=null}
