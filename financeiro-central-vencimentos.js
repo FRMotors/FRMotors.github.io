@@ -15,7 +15,6 @@ function today(){
  const val=k=>parts.find(p=>p.type===k)?.value||'';
  return val('year')+'-'+val('month')+'-'+val('day');
 }
-const paidStates=new Set(['conciliado_extrato','conciliado_fluxo','pago','quitado','liquidado']);
 let records=[],ready=false,loading=null,selectedDate=null,category='todos';
 const start=today().split('-');
 let visibleYear=Number(start[0]),visibleMonth=Number(start[1])-1;
@@ -70,7 +69,7 @@ function recordMarkup(r,now,compact=false){
   '<button type="button" class="btn cv-record-action" data-cv-open="'+nav+'" data-cv-query="'+esc(r.lookup)+'">Ver detalhes</button>'+
   '</div></div>';
 }
-function renderOverview(now,pay,receive){
+function renderOverview(now){
  const urgent=records.filter(x=>x.due&&x.due<=now);
  const dueToday=urgent.filter(x=>x.due===now),overdue=urgent.filter(x=>x.due<now);
  put('cv-home-today',String(dueToday.length));
@@ -143,7 +142,7 @@ function render(){
  put('cv-pay-total',money(sum(pay)));put('cv-pay-total-count',String(pay.length));
  put('cv-receive-total',money(sum(receive)));put('cv-receive-total-count',String(receive.length));
  put('cv-undated-count',String(records.filter(x=>!x.due).length));
- renderOverview(now,pay,receive);
+ renderOverview(now);
  renderAlertColumn('cv-pay-alerts',pay,now,'Nenhum boleto a pagar vence hoje ou está atrasado.');
  renderAlertColumn('cv-receive-alerts',receive,now,'Nenhum boleto a receber vence hoje ou está atrasado.');
  renderCalendar(now);renderMonthList(now);
@@ -166,8 +165,16 @@ async function refresh(){
   ]);
   records=createRecords(cp,manual,links,bank,rec);ready=true;render();
  })().catch(e=>{
+   ready=false;
    put('cv-status','Não foi possível carregar a central: '+(e.message||e));
    put('cv-home-status','Alertas indisponíveis. Abra a central ou tente atualizar.');
+   ['cv-home-today','cv-home-overdue','cv-home-receive',
+    'cv-pay-today-count','cv-pay-overdue-count','cv-receive-today-count','cv-receive-overdue-count',
+    'cv-pay-today-value','cv-pay-overdue-value','cv-receive-today-value','cv-receive-overdue-value',
+    'cv-pay-total','cv-receive-total','cv-pay-total-count','cv-receive-total-count'].forEach(id=>put(id,'—'));
+   if($('cv-pay-alerts'))$('cv-pay-alerts').textContent='Dados temporariamente indisponíveis.';
+   if($('cv-receive-alerts'))$('cv-receive-alerts').textContent='Dados temporariamente indisponíveis.';
+   if($('cv-month-records'))$('cv-month-records').textContent='Não foi possível consultar os registros.';
  }).finally(()=>{loading=null});
  return loading;
 }
