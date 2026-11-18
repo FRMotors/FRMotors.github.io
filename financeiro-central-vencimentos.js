@@ -219,10 +219,15 @@ function init(){
   const now=today();visibleYear=Number(now.slice(0,4));visibleMonth=Number(now.slice(5,7))-1;
   selectedDate=selected.includes('today')?now:null;
   render();
+  if(selected.includes('today')&&$('cv-calendar-more'))$('cv-calendar-more').open=true;
   (selected.includes('today')?$('cv-list-title'):$(kind==='pagar'?'cv-pay-alerts':'cv-receive-alerts'))?.scrollIntoView({behavior:'smooth',block:'center'});
  });
- document.addEventListener('click',e=>{const button=e.target.closest('[data-cv-open]');if(button)openSection(button)});
- const active=!document.querySelector('[data-view-panel="deadlines"]')?.hidden||
+ document.addEventListener('click',e=>{
+  const button=e.target.closest('[data-cv-open]');if(button)openSection(button);
+  const jump=e.target.closest('[data-cv-anchor]');
+  if(jump?.dataset.cvAnchor==='fin-cp-operacional')$('fin-cp-operacional')?.scrollIntoView({behavior:'smooth',block:'start'});
+ });
+ const active=!document.querySelector('[data-view-panel="payables"]')?.hidden||
   !document.querySelector('[data-view-panel="overview"]')?.hidden;
  if(active)refresh();
 }
