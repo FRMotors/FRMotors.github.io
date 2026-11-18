@@ -76,7 +76,7 @@ function renderOverview(now){
  put('cv-home-overdue',String(overdue.length));
  put('cv-home-receive',String(urgent.filter(x=>x.kind==='receber').length));
  put('cv-home-status',dueToday.length||overdue.length?
-  'Existem compromissos que precisam de atenção. Confira os detalhes na central.':
+  'Existem compromissos que precisam de atenção. Confira os detalhes em Contas a pagar.':
   'Nenhuma conta vencida ou com vencimento hoje entre os registros pendentes.');
  const strip=$('cv-home-banner');if(strip)strip.classList.toggle('cv-home-clear',!urgent.length);
 }
@@ -167,7 +167,7 @@ async function refresh(){
  })().catch(e=>{
    ready=false;
    put('cv-status','Não foi possível carregar a central: '+(e.message||e));
-   put('cv-home-status','Alertas indisponíveis. Abra a central ou tente atualizar.');
+   put('cv-home-status','Alertas indisponíveis. Abra Contas a pagar ou tente atualizar.');
    ['cv-home-today','cv-home-overdue','cv-home-receive',
     'cv-pay-today-count','cv-pay-overdue-count','cv-receive-today-count','cv-receive-overdue-count',
     'cv-pay-today-value','cv-pay-overdue-value','cv-receive-today-value','cv-receive-overdue-value',
