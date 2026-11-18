@@ -18,6 +18,7 @@ const dayBR=()=>{
 const put=(id,v)=>{const n=$(id);if(n)n.textContent=v};
 const stateLabels={
  'declarada':'Quitada por declaração','conciliada':'Quitada por vínculo bancário',
+ 'externa':'Quitada por pagamento externo informado','mista':'Quitada por pagamentos mistos',
  'parcial':'Parcialmente paga','aberta':'Sem pagamento comprovado'
 };
 let all=[],ready=false,loading=null,sort='pendentes',filter='todos',card='todos',year='todos',search='',page=0;
@@ -34,18 +35,26 @@ async function fetchAll(builder,max=5000){
 }
 function buildInvoiceStates(invoices,declarations,partials,fullPayments,agendas){
  const declared=new Set(declarations.map(x=>x.fatura_id));
- const partial=new Map(),integral=new Map(),due=new Map();
- partials.forEach(x=>partial.set(x.fatura_id,(partial.get(x.fatura_id)||0)+cents(x.valor_pago)));
+ const partial=new Map(),external=new Map(),integral=new Map(),due=new Map();
+ partials.forEach(x=>{
+  partial.set(x.fatura_id,(partial.get(x.fatura_id)||0)+cents(x.valor_pago));
+  if(x.origem==='externo')external.set(x.fatura_id,(external.get(x.fatura_id)||0)+cents(x.valor_pago));
+ });
  fullPayments.forEach(x=>integral.set(x.fatura_id,cents(x.valor_conferido)));
  agendas.forEach(x=>due.set(x.fatura_id,{vencimento:x.vencimento||null,observacoes:x.observacoes||''}));
  return invoices.map(x=>{
   const total=cents(x.valor_documental),isDeclared=declared.has(x.id);
   const paid=integral.has(x.id)?integral.get(x.id):partial.get(x.id)||0;
+  const externalPaid=external.get(x.id)||0;
+  const bankPaid=Math.max(0,paid-externalPaid);
   const remaining=isDeclared?0:Math.max(0,total-paid);
-  const status=isDeclared?'declarada':remaining===0?'conciliada':paid>0?'parcial':'aberta';
+  const status=isDeclared?'declarada':
+   remaining===0&&externalPaid>0&&bankPaid===0?'externa':
+   remaining===0&&externalPaid>0?'mista':
+   remaining===0?'conciliada':paid>0?'parcial':'aberta';
   return {
    id:x.id,card:x.cartao_nome||'Cartão não identificado',period:x.mes_fatura,
-   transactions:x.quantidade_lancamentos||0,total,paid,remaining,status,
+   transactions:x.quantidade_lancamentos||0,total,paid,bankPaid,externalPaid,remaining,status,
    due:due.get(x.id)?.vencimento||null,notes:due.get(x.id)?.observacoes||''
   };
  });
@@ -64,7 +73,7 @@ function visible(){
   if(year!=='todos'&&String(x.period||'').slice(0,4)!==year)return false;
   if(filter==='pendentes'&&x.remaining===0)return false;
   if(filter==='sem-vencimento'&&!(x.remaining>0&&!x.due))return false;
-  if(['declarada','conciliada','parcial','aberta'].includes(filter)&&x.status!==filter)return false;
+  if(['declarada','conciliada','externa','mista','parcial','aberta'].includes(filter)&&x.status!==filter)return false;
   if(search&&![
    x.card,x.period,monthBR(x.period),x.due,x.notes,stateLabels[x.status],x.total/100
   ].join(' ').toLocaleLowerCase('pt-BR').includes(search))return false;
@@ -78,6 +87,7 @@ function renderMetrics(){
  put('cb-outstanding',money(sum(pending,'remaining')));
  put('cb-declared',String(all.filter(x=>x.status==='declarada').length));
  put('cb-conciliated',String(all.filter(x=>x.status==='conciliada').length));
+ put('cb-external',String(all.filter(x=>x.status==='externa'||x.status==='mista').length));
  put('cb-partial',String(all.filter(x=>x.status==='parcial').length));
  put('cb-undated',String(pending.filter(x=>!x.due).length));
  put('cb-pending-note',pending.length?
@@ -129,13 +139,15 @@ function renderRows(){
   const dueBadge=f.remaining>0&&!f.due?'<span class="cb-label cb-warn">Informar vencimento</span>':
    overdue?'<span class="cb-label cb-danger">Vencido</span>':
    todayDue?'<span class="cb-label cb-today">Vence hoje</span>':'';
-  const statusClass=f.status==='declarada'?'cb-declared':f.status==='conciliada'?'cb-paid':
+  const statusClass=f.status==='declarada'?'cb-declared':
+    ['conciliada','externa','mista'].includes(f.status)?'cb-paid':
     f.status==='parcial'?'cb-partial':'cb-unpaid';
   return '<tr>'+
    '<td><strong>'+esc(f.card)+'</strong><small>'+f.transactions+' lançamento(s)</small></td>'+
    '<td>'+esc(monthBR(f.period))+'</td>'+
    '<td class="money">'+money(f.total)+'</td>'+
-   '<td class="money">'+(f.status==='declarada'&&f.paid===0?'—':money(f.paid))+'</td>'+
+   '<td class="money">'+(f.status==='declarada'&&f.paid===0?'—':money(f.paid))+
+    (f.externalPaid>0?'<small>'+money(f.externalPaid)+' declarado sem extrato</small>':'')+'</td>'+
    '<td class="money"><strong>'+money(f.remaining)+'</strong></td>'+
    '<td>'+esc(dueLabel)+dueBadge+'</td>'+
    '<td><span class="cb-label '+statusClass+'">'+esc(stateLabels[f.status])+'</span>'+
@@ -171,7 +183,7 @@ async function refresh(){
    fetchAll(()=>db.from('fin_faturas_quitacoes_declaradas')
     .select('fatura_id').order('registrado_em',{ascending:true})),
    fetchAll(()=>db.from('fin_faturas_pagamentos_parciais')
-    .select('fatura_id,valor_pago').order('confirmado_em',{ascending:true})),
+    .select('fatura_id,origem,valor_pago').order('confirmado_em',{ascending:true})),
    fetchAll(()=>db.from('fin_comprovacoes_documentais')
     .select('fatura_id,valor_conferido').not('fatura_id','is',null)
     .order('conferido_em',{ascending:true})),
@@ -182,7 +194,7 @@ async function refresh(){
  })().catch(e=>{
   ready=false;all=[];
   put('cb-status','Não foi possível consultar faturas: '+(e.message||e));
-  for(const id of ['cb-count','cb-open','cb-outstanding','cb-declared','cb-conciliated','cb-partial','cb-undated'])put(id,'—');
+  for(const id of ['cb-count','cb-open','cb-outstanding','cb-declared','cb-conciliated','cb-external','cb-partial','cb-undated'])put(id,'—');
   if($('cb-rows'))$('cb-rows').innerHTML='<tr><td colspan="8" class="cb-empty">Dados indisponíveis. Clique em Atualizar para tentar novamente.</td></tr>';
   if($('cb-card-summary'))$('cb-card-summary').textContent='Não foi possível consultar os cartões.';
  }).finally(()=>{loading=null});
