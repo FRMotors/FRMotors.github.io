@@ -200,6 +200,10 @@ function openSection(button){
 function init(){
  if(!$('cv-calendar'))return;
  $('cv-refresh')?.addEventListener('click',()=>refresh());
+ $('cv-calendar-more')?.addEventListener('toggle',()=>{
+  const label=document.querySelector('.cv-calendar-toggle-label');
+  if(label)label.textContent=$('cv-calendar-more')?.open?'Fechar calendário':'Abrir calendário';
+ });
  $('cv-prev')?.addEventListener('click',()=>{visibleMonth--;if(visibleMonth<0){visibleMonth=11;visibleYear--}selectedDate=null;render()});
  $('cv-next')?.addEventListener('click',()=>{visibleMonth++;if(visibleMonth>11){visibleMonth=0;visibleYear++}selectedDate=null;render()});
  $('cv-current')?.addEventListener('click',()=>{const t=today().split('-');visibleYear=Number(t[0]);visibleMonth=Number(t[1])-1;selectedDate=null;render()});
