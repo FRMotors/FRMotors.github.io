@@ -4,6 +4,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Cartão não identificado');
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const cents=v=>{const n=Number(v);return Number.isFinite(n)?Math.round(n*100):0};
 const money=c=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(c)||0)/100);
@@ -53,7 +54,7 @@ function buildInvoiceStates(invoices,declarations,partials,fullPayments,agendas)
    remaining===0&&externalPaid>0?'mista':
    remaining===0?'conciliada':paid>0?'parcial':'aberta';
   return {
-   id:x.id,card:x.cartao_nome||'Cartão não identificado',period:x.mes_fatura,
+   id:x.id,card:cardName(x.cartao_nome),originalCard:x.cartao_nome||'',period:x.mes_fatura,
    transactions:x.quantidade_lancamentos||0,total,paid,bankPaid,externalPaid,remaining,status,
    due:due.get(x.id)?.vencimento||null,notes:due.get(x.id)?.observacoes||''
   };
@@ -75,7 +76,7 @@ function visible(){
   if(filter==='sem-vencimento'&&!(x.remaining>0&&!x.due))return false;
   if(['declarada','conciliada','externa','mista','parcial','aberta'].includes(filter)&&x.status!==filter)return false;
   if(search&&![
-   x.card,x.period,monthBR(x.period),x.due,x.notes,stateLabels[x.status],x.total/100
+   x.card,x.originalCard,x.period,monthBR(x.period),x.due,x.notes,stateLabels[x.status],x.total/100
   ].join(' ').toLocaleLowerCase('pt-BR').includes(search))return false;
   return true;
  }).sort(compare);
@@ -224,9 +225,9 @@ function csvCell(v){
 function exportCSV(){
  if(!ready)return;
  const rows=visible();
- const columns=[['Cartão','Competência','Valor documental (R$)','Pagamento bancário vinculado (R$)','Saldo documental (R$)',
+ const columns=[['Cartão consolidado','Nome original do cartão','Competência','Valor documental (R$)','Pagamento bancário vinculado (R$)','Saldo documental (R$)',
   'Vencimento informado','Situação']];
- rows.forEach(x=>columns.push([x.card,dateBR(x.period),(x.total/100).toFixed(2).replace('.',','),
+ rows.forEach(x=>columns.push([x.card,x.originalCard,dateBR(x.period),(x.total/100).toFixed(2).replace('.',','),
   x.status==='declarada'&&x.paid===0?'':(x.paid/100).toFixed(2).replace('.',','),
   (x.remaining/100).toFixed(2).replace('.',','),dateBR(x.due),stateLabels[x.status]]));
  const blob=new Blob(['\ufeff'+columns.map(x=>x.map(csvCell).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
