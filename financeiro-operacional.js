@@ -59,7 +59,7 @@ async function load(){
     db.from('fin_importacoes').select('nome_arquivo,linhas_importadas,estado,finalizado_em')
      .eq('fonte','arquivo_financeiro_unificado_homologado')
      .order('finalizado_em',{ascending:false}).limit(1).maybeSingle(),
-    db.from('fin_contas_pagar').select('id',{count:'exact',head:true}).eq('situacao','aberto'),
+    db.from('fin_contas_pagar').select('id',{count:'exact',head:true}).eq('situacao','aberto').is('arquivado_em',null),
     db.from('fin_legacy_registros').select('id',{count:'exact',head:true}).eq('situacao','ignorar'),
     db.from('fin_teste_excel_abertos_vinculos').select('id',{count:'exact',head:true}),
     db.from('fin_boletos_avulsos').select('id',{count:'exact',head:true}).is('excluido_em',null),
