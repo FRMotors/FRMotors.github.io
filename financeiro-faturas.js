@@ -36,14 +36,19 @@ function badge(stats){
  if(stats.paid>0)return '<span class="state open">Parcial</span>';
  return '<span class="state open">Em aberto</span>';
 }
+const visibleImports=()=>rows.imports.filter(item=>window.frImportVisibility?.isVisible?.(item.conta_nome)!==false);
 function showList(){
  const root=$('invoice-list');
  if(!root)return;
- if(!rows.imports.length){
-  root.innerHTML='<div class="empty-state"><strong>Nenhuma fatura importada</strong><p>Importe uma fatura de cartão para confirmar o valor e acompanhar a quitação.</p></div>';
+ const filtered=visibleImports();
+ if(!filtered.length){
+  const hidden=rows.imports.length;
+  root.innerHTML='<div class="empty-state"><strong>Nenhuma fatura visível</strong><p>'+
+   (hidden?'Há '+hidden+' fatura(s) de outros bancos/cartões oculta(s). Marque “Mostrar outros bancos e cartões” acima para consultá-las.':
+   'Importe uma fatura de cartão para confirmar o valor e acompanhar a quitação.')+'</p></div>';
   return;
  }
- root.innerHTML=rows.imports.map(item=>{
+ root.innerHTML=filtered.map(item=>{
   const s=stats(item.id),active=selected===item.id;
   return '<button type="button" class="invoice-row'+(active?' selected':'')+'" data-select-invoice="'+esc(item.id)+'" aria-pressed="'+active+'">'+
    '<span><strong>'+esc(item.conta_nome)+'</strong><small>'+esc(item.arquivo_nome)+'</small>'+
@@ -67,7 +72,10 @@ function detail(){
     '<span>Confirme o valor total da fatura antes de conciliar pagamentos. Compras do cartão não correspondem necessariamente ao total devido.</span>');
  const docSelect=$('invoice-document-payment'),oldDoc=docSelect.value;
  docSelect.replaceChildren(new Option('Selecione o valor que aparece na fatura',''),
-  ...rows.documents.map(doc=>{
+  ...rows.documents.filter(doc=>{
+   const origin=rows.imports.find(i=>i.id===doc.importacao_id);
+   return origin&&window.frImportVisibility?.isVisible?.(origin.conta_nome)!==false;
+  }).map(doc=>{
    const origin=rows.imports.find(i=>i.id===doc.importacao_id);
    return new Option(dateBR(doc.data_pagamento)+' · '+format(doc.valor)+' · '+
     (origin?.conta_nome||'Cartão')+' · '+doc.descricao.slice(0,42),doc.id);
@@ -192,8 +200,11 @@ async function refresh(){
   const bank=allBankMoves.filter(m=>m.referencia_cliente?.startsWith('extrato:')||
     m.referencia_cliente?.startsWith('fatura_manual:'));
   rows={imports,faturas,payments,cardMoves,bank,boletoLinks,excelLinks,avulsoLinks,partialLinks,historicalLinks,documents};
-  if(selected&&!imports.some(x=>x.id===selected))selected=null;
-  if(!selected&&imports.length)selected=imports[0].id;
+  const shown=visibleImports();
+  if(selected&&!shown.some(x=>x.id===selected)){
+   selected=null;documentUsed=null;manualRequestKey=null;
+  }
+  if(!selected&&shown.length)selected=shown[0].id;
   detail();
  })().catch(e=>{say('Não foi possível atualizar faturas: '+e.message,true);throw e})
  .finally(()=>{refreshing=null});
