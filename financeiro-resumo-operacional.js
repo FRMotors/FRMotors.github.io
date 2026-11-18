@@ -141,7 +141,7 @@ async function refresh(){
     allRows(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,estado,origem,valor')
      .eq('origem','fluxo_caixa_homologado').eq('estado','confirmado')
      .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
-    allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,descricao,situacao,vencimento,valor_referencia')
+    allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,descricao,situacao,vencimento,valor_referencia').is('arquivado_em',null)
      .order('id',{ascending:true})),
     allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,vencimento,valor_referencia,excluido_em')
      .is('excluido_em',null).order('criado_em',{ascending:false})),

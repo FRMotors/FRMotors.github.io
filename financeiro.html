@@ -556,6 +556,7 @@
 <link rel="stylesheet" href="./financeiro-acabamento.css?v=20261117polish1">
 <link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118central1">
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
+<link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -1078,6 +1079,7 @@
             <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
               <p>Compromissos da planilha e boletos cadastrados no aplicativo, com rastreabilidade e conciliações preservadas.</p></div>
             <div class="header-buttons fin-cp-actions">
+              <button class="btn" type="button" data-trash-go="1"><span class="icon icon-sm" data-icon="receipt"></span> Lixeira / histórico</button>
               <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
                <button class="btn" type="button" data-open="purchase"><span class="icon icon-sm" data-icon="receipt"></span> Compra parcelada</button>
                <button class="btn" type="button" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Compra no crédito</button>
@@ -1273,17 +1275,17 @@
         <dialog id="op-delete-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="op-delete-title" aria-describedby="op-delete-description">
           <form id="op-delete-form">
             <div class="dialog-head">
-              <div><h2 id="op-delete-title">Excluir boleto cadastrado?</h2>
+              <div><h2 id="op-delete-title">Mover boleto para a lixeira?</h2>
                 <p>Esta ação é permitida somente para boletos adicionados manualmente que não tenham pagamentos vinculados.</p></div>
               <button type="button" class="dialog-close" id="op-delete-cancel" aria-label="Cancelar exclusão">&times;</button>
             </div>
             <div class="dialog-body">
               <p id="op-delete-description" class="fin-op-delete-summary">Confira fornecedor, valor e vencimento antes de confirmar.</p>
-              <p class="info-note">O boleto será retirado das listas, mas sua exclusão ficará registrada para auditoria. Nenhum pagamento ou boleto da planilha homologada será apagado.</p>
+              <p class="info-note">O boleto será retirado das listas ativas e poderá ser restaurado na Lixeira de Boletos. Nenhum pagamento será apagado.</p>
               <p id="op-delete-status" class="status" role="alert"></p>
               <div class="form-actions">
                 <button type="button" class="btn" data-op-close="op-delete-dialog">Manter boleto</button>
-                <button type="submit" class="btn fin-op-delete-button" id="op-delete-submit">Confirmar exclusão</button>
+                <button type="submit" class="btn fin-op-delete-button" id="op-delete-submit">Mover para lixeira</button>
               </div>
             </div>
           </form>
@@ -1313,6 +1315,55 @@
             <p class="info-note" id="cp-edit-message" role="alert"></p>
             <div class="form-actions"><button type="submit" class="btn btn-primary" id="cp-save">Salvar alterações</button></div>
           </form>
+        </dialog>
+        <section class="card fin-trash" id="trash-panel" aria-labelledby="trash-title">
+         <div class="card-head">
+          <div class="fin-trash-intro">
+           <span class="fin-trash-label">Histórico preservado</span>
+           <h2 id="trash-title">Lixeira de Boletos</h2>
+           <p>Boletos retirados da carteira permanecem aqui, com valor, vencimento e data da exclusão. Você pode restaurar quando precisar. Os pagamentos já conciliados são protegidos.</p>
+          </div>
+          <button class="btn" id="trash-refresh" type="button"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar lixeira</button>
+         </div>
+         <div class="fin-trash-metrics">
+          <strong id="trash-count">—</strong><span id="trash-count-detail">Carregando históricos de boletos...</span>
+         </div>
+         <div class="fin-trash-toolbar">
+          <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+           <input id="trash-search" type="search" placeholder="Buscar fornecedor, descrição ou vencimento" aria-label="Buscar boletos na lixeira"></label>
+          <select id="trash-type" class="filter-select" aria-label="Tipo de boleto arquivado">
+           <option value="todos">Todos os boletos</option>
+           <option value="importado">Da planilha</option>
+           <option value="manual">Cadastrados pelo site</option>
+          </select>
+         </div>
+         <p id="trash-status" class="fin-trash-status" role="status" aria-live="polite">Aguardando consulta...</p>
+         <div class="table-wrap"><table class="data-table">
+          <thead><tr><th>Fornecedor e descrição</th><th>Origem</th><th>Vencimento</th><th class="money">Valor</th><th>Arquivado em</th><th>Ação</th></tr></thead>
+          <tbody id="trash-rows"><tr><td colspan="6" class="empty">Aguardando histórico...</td></tr></tbody>
+         </table></div>
+         <div class="fin-trash-footer">
+          <p>Restaurar devolve a conta para os pendentes e calendários sem criar pagamento. Boletos da planilha continuam preservados na origem e todas as alterações são auditadas.</p>
+          <button id="trash-more" type="button" class="btn" hidden>Ver todos</button>
+         </div>
+        </section>
+        <dialog id="trash-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="trash-dialog-title" aria-describedby="trash-dialog-summary">
+         <form id="trash-dialog-form">
+          <div class="dialog-head">
+           <div><h2 id="trash-dialog-title">Mover boleto para a lixeira?</h2>
+            <p>Confira os dados. Nenhum pagamento será alterado.</p></div>
+           <button type="button" class="dialog-close" id="trash-dialog-cancel" aria-label="Cancelar">×</button>
+          </div>
+          <div class="dialog-body">
+           <p id="trash-dialog-summary">Aguardando seleção...</p>
+           <p id="trash-dialog-note">Operação auditada e reversível.</p>
+           <p id="trash-dialog-feedback" role="alert"></p>
+           <div class="form-actions">
+            <button type="button" class="btn" data-trash-cancel="1">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="trash-dialog-submit">Confirmar</button>
+           </div>
+          </div>
+         </form>
         </dialog>
       </section>
 
@@ -2822,16 +2873,17 @@ init();
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-historico.js?v=20261117clean1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261117anofiltro1" defer></script>
-<script src="./financeiro-baixas-operacionais.js?v=20261116overviewdialogs2" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
+<script src="./financeiro-baixas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-documentos.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261116agenda1" defer></script>
-<script src="./financeiro-agenda-faturas.js?v=20261116boletos1" defer></script>
-<script src="./financeiro-operacional.js?v=20261116delete1" defer></script>
-<script src="./financeiro-resumo-operacional.js?v=20261116real1" defer></script>
+<script src="./financeiro-agenda-faturas.js?v=20261118trash1" defer></script>
+<script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
-<script src="./financeiro-central-vencimentos.js?v=20261118central1" defer></script>
-<script src="./financeiro-projecao-caixa.js?v=20261118forecast1" defer></script>
+<script src="./financeiro-central-vencimentos.js?v=20261118trash1" defer></script>
+<script src="./financeiro-projecao-caixa.js?v=20261118trash1" defer></script>
+<script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 </body></html>
