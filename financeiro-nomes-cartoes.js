@@ -10,7 +10,7 @@ function normalized(text){
 function canonical(text){
  const original=String(text??'').trim();
  const key=normalized(original);
- return /^(BRAD|BRADESCO) PRIME$/.test(key)?'Bradesco Prime':original;
+ return /^(BRAD|BRADESCO) PRIME$/.test(key)?'BRADESCO PRIME':original;
 }
 function same(a,b){return normalized(canonical(a))===normalized(canonical(b))}
 function searchText(text){return canonical(text)+' '+String(text??'')}
