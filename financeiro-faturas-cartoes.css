@@ -1,0 +1,75 @@
+/* FR Motors | Painel de faturas de cartões | 2026-11-18 */
+.cb-view .cb-intro{margin-bottom:15px}
+.cb-view .cb-explanation{border:1px solid #dce9ec;background:#f6fafb;color:#53737e;
+ border-radius:11px;font-size:12px;line-height:1.65;padding:14px 17px;margin:0 0 16px}
+.cb-view .cb-explanation strong{color:#275365}
+.cb-view .cb-status{font-size:12px;color:#627d8b;line-height:1.5;margin:0 0 13px}
+.cb-view .cb-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.cb-view .cb-kpi{border:1px solid #e3ebee;background:#fff;border-radius:13px;min-width:0;
+ padding:16px;display:flex;flex-direction:column;gap:7px}
+.cb-view .cb-kpi span{color:#657e89;font-size:11px;font-weight:750}
+.cb-view .cb-kpi strong{font-size:25px;font-weight:800;letter-spacing:-.025em;color:#285363;line-height:1.15;overflow-wrap:anywhere}
+.cb-view .cb-kpi small{font-size:10px;color:#85949c;line-height:1.5}
+.cb-view .cb-kpi.cb-kpi-risk{border-left:3px solid #d79a75}
+.cb-view .cb-kpi.cb-kpi-risk strong{color:#a85a3b}
+.cb-view .cb-kpi.cb-kpi-ok{border-left:3px solid #48a99f}
+.cb-view .cb-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px 17px 18px}
+.cb-view .cb-card-item{text-align:left;background:#fff;border:1px solid #e1ebed;border-radius:11px;
+ min-width:0;padding:14px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+ transition:box-shadow .18s,border-color .18s}
+.cb-view .cb-card-item:hover{border-color:#91c9ce;box-shadow:0 5px 22px rgba(42,83,94,.085)}
+.cb-view .cb-card-item .cb-card-title{color:#315563;font-size:12px;font-weight:800;overflow-wrap:anywhere}
+.cb-view .cb-card-item .cb-card-sub{color:#798e98;font-size:11px}
+.cb-view .cb-card-item strong{font-size:19px;font-weight:800;color:#247c84;letter-spacing:-.025em}
+.cb-view .cb-card-item small{font-size:10px;color:#8799a1}
+.cb-view .cb-card-summary{margin-bottom:18px;overflow:hidden}
+.cb-view .cb-card-summary .card-head p{max-width:750px}
+.cb-view .cb-controls{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;padding:12px 17px 15px}
+.cb-view .cb-controls label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:700;
+ color:#64818c;min-width:120px}
+.cb-view .cb-controls .cb-search-label{flex:1 1 200px}
+.cb-view .cb-controls select,.cb-view .cb-controls input{border:1px solid #d1e0e4;background:#fff;color:#294a57;
+ font-size:12px;border-radius:8px;min-height:38px;padding:8px 10px;max-width:100%;min-width:0}
+.cb-view .cb-controls select{min-width:160px}
+.cb-view .cb-table{min-width:1060px;width:100%}
+.cb-view .cb-table td,.cb-view .cb-table th{font-size:12px;vertical-align:middle}
+.cb-view .cb-table td strong{color:#304f5e;font-weight:750}
+.cb-view .cb-table .money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cb-view .cb-table td small{display:block;color:#8397a1;font-size:10px;margin-top:4px}
+.cb-view .cb-label{display:inline-block;font-size:10px;font-weight:750;padding:5px 7px;
+ border-radius:5px;line-height:1.4;white-space:nowrap}
+.cb-view .cb-label.cb-warn{background:#fff0db;color:#926b28}
+.cb-view .cb-label.cb-danger{background:#ffede7;color:#a74738}
+.cb-view .cb-label.cb-today{background:#fff2d9;color:#946c1e}
+.cb-view .cb-label.cb-declared{background:#e7f2fb;color:#3e719b}
+.cb-view .cb-label.cb-paid{background:#e6f6f1;color:#1f796b}
+.cb-view .cb-label.cb-partial{background:#fff3dc;color:#997129}
+.cb-view .cb-label.cb-unpaid{background:#f2f5f6;color:#627780}
+.cb-view .cb-row-actions{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:132px}
+.cb-view .cb-action{font-size:11px!important;min-height:31px!important;padding:6px 9px!important}
+.cb-view .cb-footer{display:flex;align-items:center;justify-content:space-between;
+ gap:12px;padding:12px 17px;border-top:1px solid #edf1f2;color:#71858f;font-size:11px}
+.cb-view .cb-footer>div{display:flex;gap:7px}
+.cb-view .cb-empty{text-align:center;color:#788c96;font-size:12px;padding:20px;line-height:1.6}
+.cb-view .cb-list-note{font-size:11px;color:#6b818a;line-height:1.65;margin:0;padding:0 17px 16px}
+.cb-view button:focus-visible,.cb-view input:focus-visible,.cb-view select:focus-visible{
+ outline:3px solid #56b3bd;outline-offset:2px}
+@media(max-width:1120px){
+ .cb-view .cb-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cb-view .cb-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:670px){
+ .cb-view .cb-kpis{gap:8px}
+ .cb-view .cb-kpi{padding:12px}
+ .cb-view .cb-kpi strong{font-size:21px}
+ .cb-view .cb-card-grid{padding:10px;gap:8px}
+ .cb-view .cb-card-item{padding:11px}
+ .cb-view .cb-card-item strong{font-size:16px}
+ .cb-view .cb-controls label{flex:1 1 130px}
+ .cb-view .cb-controls select{width:100%;min-width:0}
+ .cb-view .cb-controls .cb-search-label{flex:1 1 100%}
+}
+@media(max-width:380px){
+ .cb-view .cb-kpis{grid-template-columns:1fr}
+ .cb-view .cb-card-grid{grid-template-columns:1fr}
+}
