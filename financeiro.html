@@ -557,6 +557,7 @@
 <link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118central1">
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
+<link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -571,6 +572,7 @@
     <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
     <button type="button" data-view="deadlines"><span class="icon" data-icon="calendar"></span> Central de vencimentos</button>
     <button type="button" data-view="forecast"><span class="icon" data-icon="chart"></span> Projeção de caixa</button>
+    <button type="button" data-view="reports"><span class="icon" data-icon="chart"></span> Relatórios gerenciais</button>
     <button type="button" data-view="movements"><span class="icon" data-icon="wallet"></span> Movimentações oficiais</button>
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
@@ -613,6 +615,157 @@
   <main class="content" id="main-content">
     <div id="access" class="loading-text" role="status">Verificando sessão e autorização financeira...</div>
     <div id="app" class="hidden">
+
+      <section class="view rg-view" data-view-panel="reports" hidden aria-label="Relatórios gerenciais">
+       <div class="section-header rg-intro">
+        <div>
+         <p class="eyebrow">Gestão financeira · análise histórica</p>
+         <h1 class="page-heading">Relatórios gerenciais</h1>
+         <p class="page-description">Compare meses e anos, acompanhe categorias, fornecedores de autopeças e faturas de cartão, sempre com a origem de cada valor identificada.</p>
+        </div>
+        <div class="header-buttons">
+         <button type="button" class="btn" data-view="forecast">Ver projeções</button>
+         <button type="button" class="btn btn-primary" id="rg-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
+        </div>
+       </div>
+       <div class="rg-toolbar">
+        <label for="rg-year">Ano
+         <select id="rg-year" aria-label="Ano dos relatórios"><option value="2026">2026</option></select>
+        </label>
+        <label for="rg-month">Período do ano
+         <select id="rg-month" aria-label="Mês dos relatórios">
+          <option value="todos">Ano inteiro</option>
+          <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+          <option value="03">Março</option><option value="04">Abril</option>
+          <option value="05">Maio</option><option value="06">Junho</option>
+          <option value="07">Julho</option><option value="08">Agosto</option>
+          <option value="09">Setembro</option><option value="10">Outubro</option>
+          <option value="11">Novembro</option><option value="12">Dezembro</option>
+         </select>
+        </label>
+        <button type="button" class="btn" id="rg-print"><span class="icon icon-sm" data-icon="download"></span> Imprimir / salvar PDF</button>
+       </div>
+       <p id="rg-status" class="rg-status" role="status" aria-live="polite">Aguardando consulta dos registros oficiais...</p>
+       <p class="rg-note"><strong>Fontes separadas para não duplicar gastos.</strong> Caixa realizado: somente movimentações confirmadas no Supabase. Autopeças: compras da carteira documental incluídas no relatório. Cartões: totais históricos das faturas por competência, independentemente da quitação. Não some as três fontes como se fossem pagamentos distintos.</p>
+
+       <div class="rg-metrics">
+        <section class="rg-metric rg-income" aria-label="Entradas realizadas">
+         <span class="rg-source">Caixa confirmado</span>
+         <h3>Entradas realizadas</h3><strong id="rg-income">—</strong>
+         <small id="rg-income-count">Consultando...</small>
+        </section>
+        <section class="rg-metric rg-expense" aria-label="Saídas realizadas">
+         <span class="rg-source">Caixa confirmado</span>
+         <h3>Saídas realizadas</h3><strong id="rg-expense">—</strong>
+         <small id="rg-expense-count">Consultando...</small>
+        </section>
+        <section class="rg-metric rg-result" aria-label="Resultado de caixa">
+         <span class="rg-source">Caixa confirmado</span>
+         <h3>Resultado realizado</h3><strong id="rg-net">—</strong>
+         <small>Entradas confirmadas menos saídas confirmadas</small>
+        </section>
+        <section class="rg-metric rg-doc" aria-label="Compras documentais de autopeças">
+         <span class="rg-source">Documento · não somar ao caixa</span>
+         <h3>Compras de autopeças</h3><strong id="rg-auto">—</strong>
+         <small id="rg-auto-count">Consultando...</small>
+        </section>
+        <section class="rg-metric rg-doc" aria-label="Faturas documentais dos cartões">
+         <span class="rg-source">Documento · não somar ao caixa</span>
+         <h3>Faturas de cartões</h3><strong id="rg-invoices">—</strong>
+         <small id="rg-invoices-count">Consultando...</small>
+        </section>
+        <section class="rg-metric rg-uncat" aria-label="Saídas sem categoria">
+         <span class="rg-source">Qualidade da classificação</span>
+         <h3>Saídas sem categoria</h3><strong id="rg-uncat">—</strong>
+         <small><span id="rg-uncat-value">—</span> nas movimentações confirmadas</small>
+        </section>
+       </div>
+       <section class="card rg-annual" aria-labelledby="rg-annual-title">
+        <div class="rg-annual-main">
+         <h2 id="rg-annual-title">Comparativo anual</h2>
+         <p id="rg-year-change">Consultando disponibilidade da base...</p>
+        </div>
+        <div class="rg-annual-stats">
+         <span>Saídas confirmadas · ano atual selecionado <b id="rg-year-cash">—</b></span>
+         <span>Saídas confirmadas · ano anterior <b id="rg-year-prior">—</b></span>
+        </div>
+       </section>
+       <section class="card rg-wide" aria-labelledby="rg-month-title">
+        <div class="card-head">
+         <div><h2 id="rg-month-title">Evolução mensal</h2><p>Comparativo dos 12 meses de <span id="rg-selected-period">2026</span> com as despesas confirmadas do ano anterior.</p></div>
+        </div>
+        <div class="rg-legend">
+         <span><i class="rg-dot rg-dot-in"></i> Entradas pagas/recebidas no caixa</span>
+         <span><i class="rg-dot rg-dot-out"></i> Saídas efetivas do caixa</span>
+        </div>
+        <div class="table-wrap">
+         <table class="data-table rg-monthly-table">
+          <thead><tr><th scope="col">Mês</th><th class="money">Entradas reais</th><th class="money">Saídas reais</th>
+           <th class="money">Resultado</th><th>Movimentação relativa</th>
+           <th class="money">Autopeças (doc.)</th><th class="money">Cartões (faturas)</th><th class="money">Saídas ano anterior</th></tr></thead>
+          <tbody id="rg-months"><tr><td colspan="8" class="rg-empty">Consultando a base...</td></tr></tbody>
+         </table>
+        </div>
+        <p class="rg-source-note" id="rg-months-note">A tabela separa valores pagos de documentos. Os dados de meses sem registros são exibidos sem inferências.</p>
+       </section>
+
+       <div class="rg-grid">
+        <section class="card rg-rank" aria-labelledby="rg-category-title">
+         <div class="card-head"><div><h2 id="rg-category-title">Saídas por categoria</h2>
+          <p>Classificação das movimentações realmente pagas, não dos boletos em aberto.</p></div>
+         </div>
+         <div id="rg-categories" class="rg-rank-list"><p class="rg-empty">Consultando categorias...</p></div>
+         <p id="rg-category-count" class="rg-source-note">—</p>
+        </section>
+        <section class="card rg-rank rg-rank-suppliers" aria-labelledby="rg-suppliers-title">
+         <div class="card-head"><div><h2 id="rg-suppliers-title">Fornecedores de autopeças</h2>
+          <p>Compras documentais por fornecedor, somente linhas incluídas da carteira de autopeças.</p></div>
+         </div>
+         <div id="rg-suppliers" class="rg-rank-list"><p class="rg-empty">Consultando fornecedores...</p></div>
+         <p id="rg-supplier-count" class="rg-source-note">—</p>
+        </section>
+       </div>
+       <section class="card rg-wide rg-rank-cards" aria-labelledby="rg-cards-title">
+        <div class="card-head"><div><h2 id="rg-cards-title">Faturas por cartão</h2>
+         <p>Valor das faturas históricas, agrupado por cartão e competência. Não equivale a pagamentos ou limite utilizado em tempo real.</p></div>
+         <button type="button" class="card-link" data-view="expenses">Abrir carteiras de cartões</button>
+        </div>
+        <div id="rg-cards" class="rg-rank-list"><p class="rg-empty">Consultando faturas...</p></div>
+        <p id="rg-card-count" class="rg-source-note">—</p>
+       </section>
+
+       <section class="card rg-wide" aria-labelledby="rg-detail-title">
+        <div class="card-head">
+         <div><h2 id="rg-detail-title">Movimentações confirmadas no período</h2>
+          <p>Histórico auditável do caixa, sem boletos abertos ou despesas apenas documentais.</p></div>
+         <div class="rg-detail-actions">
+          <button type="button" class="btn" data-view="movements">Abrir movimentações</button>
+         </div>
+        </div>
+        <div class="table-wrap">
+         <table class="data-table rg-cash-table">
+          <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="money">Valor</th></tr></thead>
+          <tbody id="rg-cash-rows"><tr><td colspan="5" class="rg-empty">Consultando histórico...</td></tr></tbody>
+         </table>
+        </div>
+        <div class="rg-page">
+         <span id="rg-cash-pagination">Aguardando registros</span>
+         <div><button type="button" class="btn" id="rg-prev" disabled>Anterior</button>
+          <button type="button" class="btn" id="rg-next" disabled>Próxima</button></div>
+        </div>
+       </section>
+       <section class="card rg-wide" aria-labelledby="rg-export-title">
+        <div class="card-head"><div><h2 id="rg-export-title">Exportar relatórios</h2>
+         <p>Três arquivos separados e identificados pela fonte para evitar somar despesas mais de uma vez.</p></div></div>
+        <div class="rg-downloads" style="padding:0 17px 17px">
+         <button type="button" class="btn" data-rg-export="caixa">Exportar caixa (CSV)</button>
+         <button type="button" class="btn" data-rg-export="autopecas">Exportar autopeças (CSV)</button>
+         <button type="button" class="btn" data-rg-export="cartoes">Exportar cartões (CSV)</button>
+        </div>
+       </section>
+       <p class="info-note">Os indicadores usam apenas dados oficiais disponíveis nas respectivas fontes. A ausência de registros de um período não demonstra ausência de gastos. Relatório somente leitura.</p>
+      </section>
+
       <section class="view fc-projection" data-view-panel="forecast" hidden aria-label="Projeção documental de fluxo de caixa">
        <div class="section-header">
         <div>
@@ -853,6 +1006,7 @@
             <button type="button" class="btn" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
             <button type="button" class="btn" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
              <button type="button" class="btn btn-teal" data-view="forecast"><span class="icon icon-sm" data-icon="chart"></span> Projeção de caixa</button>
+              <button type="button" class="btn" data-view="reports"><span class="icon icon-sm" data-icon="chart"></span> Relatórios</button>
           </div>
         </div>
 <section class="cv-home" id="cv-home-banner" aria-label="Alertas de vencimento">
@@ -2886,4 +3040,5 @@ init();
 <script src="./financeiro-central-vencimentos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118trash1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
+<script src="./financeiro-relatorios-gerenciais.js?v=20261118reports1" defer></script>
 </body></html>
