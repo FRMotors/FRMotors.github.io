@@ -3,6 +3,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'');
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const money=x=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(x)||0);
 const cent=x=>Math.round(Number(x)*100);
@@ -53,7 +54,7 @@ function invoiceSummary(f){
   partial:!declaration&&paid>0&&balance>0,isDeclared:Boolean(declaration),declaration};
 }
 
-function refName(f){return f.cartao_nome+' · '+brdate(f.mes_fatura).slice(3)}
+function refName(f){return cardName(f.cartao_nome)+' · '+brdate(f.mes_fatura).slice(3)}
 function dateDiff(a,b){return Math.abs(new Date(a+'T12:00:00Z').getTime()-new Date(b+'T12:00:00Z').getTime())/86400000}
 function draw(){
  const refs=byInvoice(),manualAutos=byAuto(),revs=byReview();
@@ -77,9 +78,9 @@ function draw(){
   if(filter==='conferidos'&&!x.full)return false;
   if(filter==='parciais'&&!x.partial)return false;
   if(filter==='revisao'&&!revs.has(f.id))return false;
-  return [f.cartao_nome,f.mes_fatura,f.valor_documental].join(' ')
+  return [f.cartao_nome,cardName(f.cartao_nome),f.mes_fatura,f.valor_documental].join(' ')
     .toLocaleLowerCase('pt-BR').includes(q);
- }).sort((a,b)=>b.mes_fatura.localeCompare(a.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
+ }).sort((a,b)=>b.mes_fatura.localeCompare(a.mes_fatura)||cardName(a.cartao_nome).localeCompare(cardName(b.cartao_nome),'pt-BR'));
  const invoicePages=Math.max(1,Math.ceil(list.length/INVOICE_PAGE_SIZE));
  invoicePage=Math.max(0,Math.min(invoicePage,invoicePages-1));
  const visibleInvoices=list.slice(invoicePage*INVOICE_PAGE_SIZE,(invoicePage+1)*INVOICE_PAGE_SIZE);
@@ -92,7 +93,7 @@ function draw(){
    x.partial?'<span class="state open">Parcialmente paga</span>'+(x.externalPaid>0?'<small>Inclui pagamento externo informado</small>':''):
    rev?'<span class="state open">Em revisão, não quitada</span>':
    '<span class="state open">Sem pagamento registrado</span>';
-  return '<tr><td><strong>'+esc(f.cartao_nome)+'</strong></td>'+
+  return '<tr><td><strong>'+esc(cardName(f.cartao_nome))+'</strong></td>'+
    '<td>'+brdate(f.mes_fatura).slice(3)+'</td>'+
    '<td class="money">'+f.quantidade_lancamentos+'</td>'+
    '<td class="money"><strong>'+money(f.valor_documental)+'</strong></td>'+
