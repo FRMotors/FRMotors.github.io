@@ -166,7 +166,7 @@ function updateManualList(){
    '<td>'+(l?'—':'<div class="fin-op-manual-actions">'+
     '<button type="button" class="btn" data-op-edit-manual="'+esc(x.id)+'">Editar</button>'+
     '<button type="button" class="btn" data-op-pay-manual="'+esc(x.id)+'">Dar baixa</button>'+
-    '<button type="button" class="btn fin-op-delete-button" data-op-delete-manual="'+esc(x.id)+'">Excluir</button>'+
+    '<button type="button" class="btn fin-op-delete-button" data-op-delete-manual="'+esc(x.id)+'">Mover para lixeira</button>'+
    '</div>')+'</td></tr>';
  }).join(''):'<tr><td colspan="5" class="empty">Nenhum boleto adicional registrado aqui. Use “Novo boleto” para incluir um compromisso esquecido.</td></tr>';
  write('op-manual-count',String(avulsos.filter(x=>!linked.has(x.id)).length)+' pendente(s) · '+avulsos.length+' cadastrado(s)');
@@ -178,7 +178,7 @@ async function load(){
   const {data:allowed,error:accessError}=await db.rpc('fluxo_caixa_autorizado');
   if(accessError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
   const [cp,extra,linked,bank,used,vendors,testBank,usedTestParcels,usedTestExcel,usedTestCards,paidImported,paidParts,paidExact,autoRefs,pixRefs]=await Promise.all([
-   allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,fornecedor_id,descricao,valor_referencia,vencimento,situacao,linha_origem_id').order('vencimento',{ascending:true})),
+   allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,fornecedor_id,descricao,valor_referencia,vencimento,situacao,linha_origem_id').is('arquivado_em',null).order('vencimento',{ascending:true})),
    allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,observacoes,criado_em').is('excluido_em',null).order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id,movimento_id,valor_pago,data_pagamento,desconto,juros').order('criado_em',{ascending:false})),
    allRows(()=>db.from('fin_movimentos').select('id,descricao,valor,data_movimento,meio_pagamento,estado,origem')
@@ -356,7 +356,7 @@ function requestDelete(id){
  write('op-delete-description',
   doc.fornecedor_nome+' · '+brl(doc.valor_referencia)+' · vencimento '+dateBR(doc.vencimento)+
   (doc.descricao?' · '+doc.descricao:''));
- write('op-delete-status','O boleto sairá das listas. O registro da exclusão ficará disponível para auditoria.');
+ write('op-delete-status','O boleto ficará na Lixeira de Boletos e poderá ser restaurado sem perder seu histórico.');
  openDialog('op-delete-dialog');
 }
 async function confirmDelete(e){
@@ -375,12 +375,17 @@ async function confirmDelete(e){
   const result=await Promise.allSettled([
    load(),
    window.frOperationalUI?.refresh?.()||Promise.resolve(),
-   window.frOperationalPayablesUI?.refresh?.()||Promise.resolve()
+   window.frOperationalPayablesUI?.refresh?.()||Promise.resolve(),
+   window.frBoletoTrashUI?.refresh?.()||Promise.resolve(),
+   window.frDeadlinesUI?.refresh?.()||Promise.resolve(),
+   window.frForecastUI?.refresh?.()||Promise.resolve(),
+   window.frRealDashboard?.refresh?.()||Promise.resolve(),
+   window.frInvoicesAgendaUI?.refresh?.()||Promise.resolve()
   ]);
   const failure=result.find(x=>x.status==='rejected');
   window.frFinanceUI?.showToast(failure?
-    'Boleto excluído com sucesso. Atualize a página para rever a lista.':
-    'Boleto excluído da carteira. Pagamentos e planilha original preservados.',Boolean(failure));
+    'Boleto movido para a lixeira. Atualize a página para rever a lista.':
+    'Boleto movido para a lixeira. Pode ser restaurado sem afetar o caixa.',Boolean(failure));
  }catch(error){
   write('op-delete-status','Não foi possível excluir: '+(error.message||error));
  }finally{
