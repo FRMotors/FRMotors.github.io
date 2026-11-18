@@ -89,3 +89,8 @@
 @media(max-width:380px){
  .cb-view .cb-card-grid:has(>.cb-card-item:nth-child(2):last-child){grid-template-columns:minmax(0,1fr)}
 }
+
+/* Cartões unificados: faturas e parcelas na mesma página. */
+.cb-view .fin-cards-installments{margin-top:28px;padding-top:26px;border-top:1px solid var(--stroke)}
+.cb-view .fin-cards-heading,.fin-ops-embedded .fin-cards-heading{margin:0;font-size:clamp(22px,2.4vw,29px);line-height:1.2;font-weight:800}
+.fin-ops-embedded{padding:16px 0 8px}
