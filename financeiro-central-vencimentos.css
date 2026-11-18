@@ -43,7 +43,7 @@
 .cv-urgent-column{min-width:0;overflow:hidden}
 .cv-urgent-column .card-head{align-items:flex-start}
 .cv-urgent-column .card-head p{font-size:12px;max-width:340px}
-.cv-urgent-stack{padding:6px 17px 18px;display:flex;flex-direction:column;gap:9px}
+.cv-urgent-stack{padding:6px 17px 18px;display:flex;flex-direction:column;gap:9px;max-height:530px;overflow-y:auto;scrollbar-width:thin}
 .cv-record{display:flex;justify-content:space-between;align-items:center;gap:13px;min-width:0;
  padding:13px;border:1px solid #e4eaee;border-radius:11px;background:#fff}
 .cv-record-main{min-width:0;display:flex;flex-direction:column;gap:4px}
