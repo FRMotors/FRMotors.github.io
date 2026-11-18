@@ -24,8 +24,11 @@ async function allRows(query,max=6000){
 }
 function invoiceStates(){
  const declaredSet=new Set(declared.map(x=>x.fatura_id));
- const partialMap=new Map();
- parts.forEach(x=>partialMap.set(x.fatura_id,(partialMap.get(x.fatura_id)||0)+cent(x.valor_pago)));
+ const partialMap=new Map(),externalMap=new Map();
+ parts.forEach(x=>{
+  partialMap.set(x.fatura_id,(partialMap.get(x.fatura_id)||0)+cent(x.valor_pago));
+  if(x.origem==='externo')externalMap.set(x.fatura_id,(externalMap.get(x.fatura_id)||0)+cent(x.valor_pago));
+ });
  const fullMap=new Map(full.filter(x=>x.fatura_id).map(x=>[x.fatura_id,cent(x.valor_conferido)]));
  const states=new Map();
  invoices.forEach(x=>{
@@ -34,7 +37,8 @@ function invoiceStates(){
   const total=cent(x.valor_documental);
   const key=String(x.cartao_nome||'')+'|'+String(x.mes_fatura||'');
   const status=declaredPaid?'declarada':paid>=total?'integral':paid>0?'parcial':'nao-conciliada';
-  states.set(key,{status,paid,rest:declaredPaid?0:Math.max(0,total-paid),total});
+  states.set(key,{status,paid,externalPaid:externalMap.get(x.id)||0,
+   rest:declaredPaid?0:Math.max(0,total-paid),total});
  });
  return states;
 }
@@ -74,7 +78,10 @@ function render(){
  if($('pc-rows'))$('pc-rows').innerHTML=current.length?current.map(x=>{
   const st=statusOf(x,states);
   const desc=st.status==='declarada'?'Fatura quitada por confirmação (sem vínculo bancário)':
+   st.status==='integral'&&st.externalPaid>0?
+    'Fatura quitada com pagamento externo informado'+(st.paid>st.externalPaid?' e pagamento bancário':''):
    st.status==='integral'?'Fatura quitada por vínculo bancário':
+   st.status==='parcial'&&st.externalPaid>0?'Fatura parcialmente paga, incluindo pagamento de outra conta informado':
    st.status==='parcial'?'Fatura parcialmente paga':
    'Fatura sem quitação registrada';
   return '<tr><td><strong>'+escapeHTML(x.descricao||'Lançamento sem descrição')+'</strong>'+
@@ -132,7 +139,7 @@ async function refresh(){
     allRows(()=>db.from('fin_faturas_quitacoes_declaradas')
      .select('fatura_id').order('registrado_em',{ascending:false})),
     allRows(()=>db.from('fin_faturas_pagamentos_parciais')
-     .select('fatura_id,valor_pago').order('confirmado_em',{ascending:false})),
+     .select('fatura_id,origem,valor_pago').order('confirmado_em',{ascending:false})),
     allRows(()=>db.from('fin_comprovacoes_documentais')
      .select('fatura_id,valor_conferido').not('fatura_id','is',null)
      .order('conferido_em',{ascending:false}))

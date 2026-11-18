@@ -560,6 +560,7 @@
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cardbills1">
+<link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -632,7 +633,7 @@
          <button type="button" class="btn btn-primary" id="cb-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
         </div>
        </div>
-       <p class="cb-explanation"><strong>Não há duplicação do caixa.</strong> O total de cada fatura é documental; pagamentos bancários já conciliados entram apenas como abatimento do saldo documental. Faturas declaradas quitadas são identificadas separadamente de pagamentos efetivamente vinculados. A competência da fatura não é usada como vencimento.</p>
+       <p class="cb-explanation"><strong>Não há duplicação do caixa.</strong> O total de cada fatura é documental. Pagamentos bancários vinculados e pagamentos por outras contas informados por você abatem o saldo da fatura, mas <strong>pagamentos externos não criam movimentações no caixa</strong>. Quitações por confirmação histórica são identificadas separadamente. A competência da fatura não é usada como vencimento.</p>
        <p id="cb-status" class="cb-status" role="status" aria-live="polite">Aguardando consulta...</p>
        <div class="cb-kpis" aria-label="Resumo da situação das faturas">
         <div class="cb-kpi">
@@ -650,6 +651,10 @@
         <div class="cb-kpi cb-kpi-ok">
          <span>Quitadas por confirmação histórica</span><strong id="cb-declared">—</strong>
          <small>Não necessariamente conciliadas ao banco</small>
+        </div>
+        <div class="cb-kpi cb-kpi-ok">
+         <span>Quitadas com pagamentos externos</span><strong id="cb-external">—</strong>
+         <small>Inclui conta pessoal e pagamentos mistos, informados sem extrato</small>
         </div>
         <div class="cb-kpi">
          <span>Quitadas por vínculo bancário</span><strong id="cb-conciliated">—</strong>
@@ -687,6 +692,8 @@
            <option value="parcial">Parcialmente pagas</option>
            <option value="aberta">Sem pagamento comprovado</option>
            <option value="conciliada">Quitadas com vínculo bancário</option>
+           <option value="externa">Quitadas com pagamento externo</option>
+           <option value="mista">Quitadas por fontes mistas</option>
            <option value="declarada">Quitadas por confirmação</option>
           </select>
          </label>
@@ -708,7 +715,7 @@
          <table class="data-table cb-table">
           <thead><tr>
            <th>Cartão</th><th>Competência</th><th class="money">Valor da fatura</th>
-           <th class="money">Pago vinculado</th><th class="money">Saldo restante</th>
+           <th class="money">Pagamentos registrados</th><th class="money">Saldo restante</th>
            <th>Vencimento</th><th>Situação</th><th>Ações</th>
           </tr></thead>
           <tbody id="cb-rows"><tr><td colspan="8" class="cb-empty">Carregando faturas...</td></tr></tbody>
@@ -2006,7 +2013,7 @@
    <div class="dialog-body">
     <p class="vl-modal-summary" id="vl-invoice-summary" role="status"></p>
     <div class="vl-history" id="vl-history-wrapper" hidden>
-     <h3>Pagamentos já vinculados</h3>
+     <h3>Histórico de pagamentos e declarações</h3>
      <div class="table-wrap"><table class="data-table">
       <thead><tr><th>Nº</th><th>Pago em</th><th class="money">Valor</th><th>Origem</th><th>Conferência</th></tr></thead>
       <tbody id="vl-history-rows"></tbody>
@@ -2024,28 +2031,49 @@
        <select id="vl-source" required>
         <option value="fluxo">Fluxo de Caixa homologado</option>
         <option value="extrato" id="vl-ext-option">Extrato bancário importado</option>
+        <option value="externo" id="vl-personal-option">Outra conta / conta pessoal (sem extrato)</option>
        </select>
       </label>
-      <label>Buscar saída por descrição, data ou valor
+      <label id="vl-bank-search-wrap">Buscar saída por descrição, data ou valor
        <input id="vl-bank-search" type="search" placeholder="Ex.: SICOOB, 12/08 ou 250,00">
       </label>
-      <label>Saída bancária já confirmada
+      <label id="vl-bank-wrap">Saída bancária já confirmada
        <select id="vl-bank" required><option value="">Selecione uma saída...</option></select>
       </label>
      </div>
+     <div id="vl-external-fields" hidden class="vl-external-fields" aria-label="Dados do pagamento externo informado">
+      <p class="vl-external-warning"><strong>Pagamento por outra conta, sem extrato:</strong> use somente se a fatura já foi paga. O valor reduz o saldo documental, mas <strong>não lança saída no caixa da FR Motors</strong> e não constitui conciliação bancária.</p>
+      <div class="vl-external-grid">
+       <label for="vl-external-value">Valor pago (R$)
+        <input id="vl-external-value" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00">
+       </label>
+       <label for="vl-external-date">Data em que foi pago
+        <input id="vl-external-date" type="date">
+       </label>
+       <label for="vl-external-account">Origem do pagamento
+        <select id="vl-external-account">
+         <option value="Conta pessoal">Conta pessoal</option>
+         <option value="Outra conta da oficina">Outra conta da oficina (não importada)</option>
+         <option value="Conta de terceiro">Conta de terceiro</option>
+         <option value="Outro meio externo">Outro meio externo</option>
+        </select>
+       </label>
+      </div>
+      <p class="info-note">Não é necessário informar banco, CPF, agência ou número da conta. A justificativa abaixo identifica o pagamento para consulta e auditoria.</p>
+     </div>
      <p class="info-note" id="vl-bank-info" role="status">Selecione a origem.</p>
      <p class="info-note" id="vl-match-check">O valor aplicado será exatamente o da saída escolhida.</p>
-     <label class="vl-reason-label">Justificativa da conferência
+     <label class="vl-reason-label"><span id="vl-reason-label-text">Justificativa da conferência</span>
       <textarea id="vl-reason" rows="3" required minlength="12" maxlength="1500" placeholder="Ex.: Primeira parcela da fatura, pagamento identificado no extrato e valor conferido."></textarea>
      </label>
      <label class="vl-ack"><input type="checkbox" id="vl-ack" required>
-      Conferi a saída e confirmo que ela corresponde ao documento. Sei que não será criado um segundo pagamento no caixa.</label>
+      <span id="vl-ack-text">Conferi a saída e confirmo que ela corresponde ao documento. Sei que não será criado um segundo pagamento no caixa.</span></label>
      <p class="status" id="vl-error" role="alert"></p>
      <div class="form-actions">
       <button type="button" class="btn" id="vl-cancel">Cancelar</button>
       <button type="submit" class="btn btn-primary" id="vl-submit" disabled>Registrar pagamento</button>
      </div>
-     <p class="info-note">Cada saída bancária só pode ser usada uma vez. Um pagamento parcial reduz o saldo e a fatura só será considerada quitada quando a soma dos pagamentos vinculados alcançar o total. Anotações de revisão não contam como pagamento.</p>
+     <p class="info-note">Pagamentos por outras contas são registrados por declaração, sem extrato e sem criar movimentação de caixa. Você pode pagar parcial ou integralmente. Registros bancários continuam exigindo uma saída real e não podem ser usados duas vezes. Revisões não contam como pagamento.</p>
     </div>
     <div id="vl-readonly-close" class="form-actions" hidden>
      <button type="button" class="btn" id="vl-close-history">Fechar histórico</button>
@@ -3261,9 +3289,9 @@ init();
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-documentos.js?v=20261117anofiltro1" defer></script>
-<script src="./financeiro-cartoes-parcelados.js?v=20261117anofiltro1" defer></script>
+<script src="./financeiro-cartoes-parcelados.js?v=20261118external1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261117anofiltro1" defer></script>
-<script src="./financeiro-vinculos-faturas.js?v=20261116agenda1" defer></script>
+<script src="./financeiro-vinculos-faturas.js?v=20261118external1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261118trash1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-resumo-operacional.js?v=20261118trash1" defer></script>
@@ -3273,5 +3301,5 @@ init();
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118reports1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
-<script src="./financeiro-faturas-cartoes.js?v=20261118cardbills1" defer></script>
+<script src="./financeiro-faturas-cartoes.js?v=20261118external1" defer></script>
 </body></html>

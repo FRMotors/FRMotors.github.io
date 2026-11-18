@@ -1,0 +1,23 @@
+/* FR Motors | Pagamentos de faturas informados de contas pessoais/externas */
+#vl-external-fields[hidden],#vl-bank-wrap[hidden],#vl-bank-search-wrap[hidden]{display:none!important}
+.vl-external-fields{border:1px solid #bfdedc;background:#f4fbf9;border-radius:11px;
+ padding:15px;margin:8px 0 11px}
+.vl-external-warning{font-size:12px;color:#456874;line-height:1.65;margin:0 0 13px}
+.vl-external-warning strong{color:#235a62}
+.vl-external-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.vl-external-grid label{min-width:0;display:flex;flex-direction:column;gap:6px;color:#3e6472;font-size:12px;font-weight:750}
+.vl-external-grid label:last-child{grid-column:1/-1}
+.vl-external-grid input,.vl-external-grid select{
+ width:100%;background:#fff;color:#294b57;border:1px solid #c4dfe2;border-radius:8px;
+ min-height:40px;padding:9px 11px;font:inherit;box-sizing:border-box
+}
+.vl-external-grid input:focus-visible,.vl-external-grid select:focus-visible{
+ outline:3px solid #6bbfc1;outline-offset:2px
+}
+.vl-external-fields .info-note{font-size:11px;line-height:1.6;margin:10px 0 0;color:#657f87}
+#vl-mode-wrap:has(option[value="revisao"]:disabled) select{border-color:#c8e1df}
+@media(max-width:520px){
+ .vl-external-fields{padding:12px}
+ .vl-external-grid{grid-template-columns:minmax(0,1fr)}
+ .vl-external-grid label:last-child{grid-column:auto}
+}
