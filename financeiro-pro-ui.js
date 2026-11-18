@@ -35,7 +35,7 @@ function svg(name){return '<svg aria-hidden="true" viewBox="0 0 24 24">'+(iconPa
 function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(n=>{const name=n.getAttribute('data-icon');if(name in iconPaths)n.innerHTML=svg(name)})}
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
-const NAV_VIEWS=['overview','movements','receivables','payables','purchases','imports','itau','history','operational','expenses','deadlines','forecast','reports','classify','cardbills','audit'];
+const NAV_VIEWS=['overview','movements','receivables','payables','purchases','imports','itau','history','operational','expenses','forecast','reports','classify','cardbills','audit'];
 const SECTION_SLUGS={'vl-title-section':'payments','ag-title':'agenda'};
 const VIEWPORT_KEY='fr-financeiro-viewport-atual';
 const SIDEBAR_KEY='fr-financeiro-sidebar-desktop-recolhida';
@@ -84,6 +84,7 @@ function selectView(next,options={}){
  // Páginas legadas de demonstração não devem aparecer como financeiras operacionais.
  // Movimentações do site possuem uma visualização oficial própria.
  if(next==='settings')next='overview';
+ if(next==='deadlines')next='payables'; // link legado, página unificada
  if(!NAV_VIEWS.includes(next))next='overview';
  view=next;
  if(options.syncUrl!==false)syncNavigationUrl(next);
@@ -93,7 +94,7 @@ function selectView(next,options={}){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',deadlines:'Central de vencimentos',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Faturas dos cartões',audit:'Central de auditoria'};
+ const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Faturas dos cartões',audit:'Central de auditoria'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
@@ -112,7 +113,7 @@ function selectView(next,options={}){
   if(next==='receivables')window.frReceberUI?.refresh?.();
    if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
    if(next==='payables')window.frBoletoTrashUI?.refresh?.();
-   if(next==='deadlines')window.frDeadlinesUI?.refresh?.();
+   if(next==='payables')window.frDeadlinesUI?.refresh?.();
    if(next==='forecast')window.frForecastUI?.refresh?.();
    if(next==='reports')window.frManagerReportsUI?.refresh?.();
    if(next==='classify')window.frClassificationUI?.refresh?.();
@@ -384,8 +385,10 @@ function setup(){
     window.frManagerReportsUI?.refresh?.();
   }else if(view==='forecast'){
     window.frForecastUI?.refresh?.();
-  }else if(view==='deadlines'){
+  }else if(view==='payables'){
     window.frDeadlinesUI?.refresh?.();
+    window.frOperationalPayablesUI?.refresh?.();
+    window.frBoletoTrashUI?.refresh?.();
   }else if(view==='itau'||view==='history'){
     window.frHistoryUI?.refresh?.().then(()=>showToast('Histórico atualizado.')).catch(e=>showToast('Erro ao atualizar histórico: '+e.message,true));
   }else if(typeof render==='function')render().then(()=>showToast('Dados atualizados.')).catch(e=>showToast('Erro ao atualizar: '+e.message,true));
@@ -399,6 +402,7 @@ function setup(){
  const requestedView=params.get('view');
  const initialView=
   requestedView==='settings'?'overview':
+  requestedView==='deadlines'?'payables':
   NAV_VIEWS.includes(requestedView)?requestedView:'overview';
  // Ao carregar, respeitar a aba do URL e não forçar a página de volta para o topo.
  selectView(initialView,{syncUrl:false,preserveScroll:true});
