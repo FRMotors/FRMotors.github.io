@@ -129,15 +129,16 @@ async function refresh(){
   put('cl-status','Consultando despesas e auditorias...');
   const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
   if(authError||allowed!==true)throw Error('Acesso ao financeiro não autorizado.');
-  const [mov,forn,log]=await Promise.all([
+  const [mov,forn,auditResult]=await Promise.all([
    rowsAll(()=>db.from('fin_movimentos').select(
     'id,data_movimento,tipo,descricao,categoria,fornecedor_id,valor,meio_pagamento,estado,origem,atualizado_em'
    ).eq('tipo','saida').eq('estado','confirmado').eq('origem','fluxo_caixa_homologado').order('id')),
    rowsAll(()=>db.from('fin_fornecedores').select('id,nome,ativo').order('nome')),
-   rowsAll(()=>db.from('fin_site_auditoria').select('id,registro_id,acao,antes,depois,usuario_id,criado_em')
-    .eq('entidade','movimento').eq('acao','classificar_saida').order('id',{ascending:false}),5000)
+   db.from('fin_site_auditoria').select('id,registro_id,acao,antes,depois,usuario_id,criado_em')
+    .eq('entidade','movimento').eq('acao','classificar_saida').order('id',{ascending:false}).limit(50)
   ]);
-  all=mov;suppliers=forn;history=log.slice(0,50);ready=true;render();
+  if(auditResult.error)throw auditResult.error;
+  all=mov;suppliers=forn;history=auditResult.data||[];ready=true;render();
  })().catch(e=>{
   ready=false;all=[];history=[];
   put('cl-status','Não foi possível carregar a central: '+(e.message||e));
@@ -230,6 +231,7 @@ function init(){
  $('cl-supplier')?.addEventListener('change',updatePreview);
  $('cl-form')?.addEventListener('submit',commit);
  $('cl-cancel')?.addEventListener('click',()=>{if(!busy)closeEdit()});
+ $('cl-cancel-footer')?.addEventListener('click',()=>{if(!busy)closeEdit()});
  $('cl-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault();else active=null});
  $('cl-dialog')?.addEventListener('close',()=>{if(!busy)active=null});
  $('modal-supplier')?.addEventListener('close',()=>refreshSuppliers());
