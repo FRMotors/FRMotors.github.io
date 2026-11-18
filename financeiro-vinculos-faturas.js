@@ -252,44 +252,59 @@ function renderHistory(){
   (summary.full?' · QUITADA':summary.partial?' · PAGAMENTO PARCIAL':' · A CONFERIR'));
 }
 function updateConfirm(){
- const selectedValue=$('vl-bank')?.value||'';
- const item=selectedValue&&banks.find(x=>x.source+':'+x.id===selectedValue);
- const doc=selected(),just=$('vl-reason')?.value.trim()||'';
+ const doc=selected();
  if(!doc||!current){if($('vl-submit'))$('vl-submit').disabled=true;return}
  const invoice=current.tipo==='fatura',mode=$('vl-mode')?.value||'pagamento';
  const summary=invoice?invoiceSummary(doc):null;
+ const external=sourceIsExternal();
+ const key=$('vl-bank')?.value||'',item=key&&banks.find(x=>x.source+':'+x.id===key);
+ const reason=$('vl-reason')?.value.trim()||'';
  const expected=invoice?summary.balance:cent(doc.valor_pago_informado);
  const actual=item?cent(item.valor):null;
  const review=invoice&&mode==='revisao';
- const valid=Boolean(item&&(review?(actual>summary.balance&&actual!==summary.total):actual>0&&actual<=expected));
+ const amountText=$('vl-external-value')?.value||'';
+ const amount=amountText!==''?cent(amountText):NaN;
+ const paymentDay=$('vl-external-date')?.value||'';
+ const account=($('vl-external-account')?.value||'').trim();
+ const validExternal=external&&Number.isFinite(amount)&&amount>0&&amount<=expected&&
+  paymentDay>='2000-01-01'&&paymentDay<=todaySP()&&account.length>=3&&account.length<=100;
+ const validBank=Boolean(item&&(review?(actual>summary.balance&&actual!==summary.total):
+  actual>0&&actual<=expected));
  const minChars=review?30:12,maxChars=review?1500:1000;
- const can=Boolean(!busy&&!summary?.full&&valid&&just.length>=minChars&&just.length<=maxChars&&$('vl-ack')?.checked);
+ const can=Boolean(!busy&&!summary?.full&&(external?validExternal:validBank)&&
+  reason.length>=minChars&&reason.length<=maxChars&&$('vl-ack')?.checked);
  if($('vl-submit')){
   $('vl-submit').disabled=!can;
   $('vl-submit').hidden=Boolean(summary?.full);
-  $('vl-submit').textContent=review?'Registrar hipótese para revisão':
-    (invoice?'Registrar pagamento de '+(item?money(item.valor):'saída selecionada'):'Confirmar correspondência');
+  $('vl-submit').textContent=external?'Confirmar pagamento externo de '+(validExternal?money(amount/100):'outra conta'):
+   review?'Registrar hipótese para revisão':
+   invoice?'Registrar pagamento de '+(item?money(item.valor):'saída selecionada'):'Confirmar correspondência';
  }
  if(invoice&&summary){
   out('vl-invoice-summary',summary.isDeclared?
-    'Total da fatura: '+money(summary.total/100)+
-    ' · Quitado por confirmação: '+money(summary.displayPaid/100)+
-    ' · Saldo restante: '+money(0)+
-    ' · SEM SAÍDA BANCÁRIA VINCULADA':
-    'Total da fatura: '+money(summary.total/100)+
-    ' · Pago no banco: '+money(summary.paid/100)+' · Saldo restante: '+money(summary.balance/100)+
-    (summary.full?' · QUITADA':summary.partial?' · PARCIAL':''));
+   'Total da fatura: '+money(summary.total/100)+
+   ' · Quitado por confirmação: '+money(summary.displayPaid/100)+
+   ' · Saldo restante: '+money(0)+' · SEM SAÍDA BANCÁRIA VINCULADA':
+   'Total da fatura: '+money(summary.total/100)+
+   ' · Pagamentos registrados: '+money(summary.paid/100)+
+   (summary.externalPaid?' (inclui '+money(summary.externalPaid/100)+' informado sem extrato)':'')+
+   ' · Saldo restante: '+money(summary.balance/100)+
+   (summary.full?' · QUITADA':summary.partial?' · PARCIAL':''));
  }
- out('vl-match-check',item?
-  (review?'Pagamento '+money(item.valor)+' superior ao saldo '+money(expected/100)+
-     '. Será anotado para REVISÃO e NÃO contará como pago. Justifique a diferença (mínimo 30 caracteres).':
+ out('vl-match-check',external?
+   !validExternal?'Informe um valor positivo até o saldo restante, a data em que pagou e a origem.':
+   'Pagamento externo informado: '+money(amount/100)+'. Saldo da fatura após a baixa: '+
+    money((expected-amount)/100)+'. '+(amount===expected?'A fatura ficará quitada.':'A fatura continuará parcialmente paga.')+
+    ' Nenhuma saída será lançada no caixa da oficina.':
+ item?(review?'Pagamento '+money(item.valor)+' superior ao saldo '+money(expected/100)+
+   '. Será anotado para REVISÃO e NÃO contará como pago. Justifique a diferença (mínimo 30 caracteres).':
    invoice?'Registrar '+money(item.valor)+' desta saída. Saldo após o pagamento: '+
      money((expected-actual)/100)+'. '+(expected===actual?'A fatura ficará quitada.':'A fatura continuará parcialmente paga.'):
-    'Valor da compra: '+money(expected/100)+' · saída confirmada: '+money(actual/100)+
-    '. A exceção exige data e fornecedor idênticos no Fluxo.'):
-  invoice&&summary.isDeclared?'Esta fatura foi declarada quitada sem conciliação. Consulte a anotação histórica.':
-   invoice&&summary.full?'Esta fatura já está integralmente conciliada; consulte o histórico.':
-   'Selecione uma saída existente. Para faturas, são aceitos vários pagamentos até completar o saldo.');
+     'Valor da compra: '+money(expected/100)+' · saída confirmada: '+money(actual/100)+
+     '. A exceção exige data e fornecedor idênticos no Fluxo.'):
+ invoice&&summary.isDeclared?'Esta fatura foi declarada quitada sem conciliação. Consulte a anotação histórica.':
+ invoice&&summary.full?'Esta fatura já está integralmente quitada; consulte o histórico.':
+ 'Selecione uma saída existente ou escolha “Outra conta / conta pessoal (sem extrato)”.');
 }
 function open(type,id){
  current={tipo:type,id};
