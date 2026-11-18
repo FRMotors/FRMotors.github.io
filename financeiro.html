@@ -559,6 +559,7 @@
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
+<link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cardbills1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -579,6 +580,7 @@
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="purchases"><span class="icon" data-icon="receipt"></span> Compras parceladas</button>
+    <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Faturas dos cartões</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
     <button type="button" data-view="operational"><span class="icon" data-icon="wallet"></span> Base migrada</button>
@@ -617,6 +619,111 @@
   <main class="content" id="main-content">
     <div id="access" class="loading-text" role="status">Verificando sessão e autorização financeira...</div>
     <div id="app" class="hidden">
+
+      <section class="view cb-view" data-view-panel="cardbills" hidden aria-label="Faturas dos cartões">
+       <div class="section-header cb-intro">
+        <div>
+         <p class="eyebrow">Controle documental · cartões de crédito</p>
+         <h1 class="page-heading">Faturas dos cartões</h1>
+         <p class="page-description">Veja quais faturas estão pagas, parcialmente conciliadas ou pendentes. Acesse os pagamentos e vencimentos nas telas já existentes.</p>
+        </div>
+        <div class="header-buttons">
+         <button type="button" class="btn" data-view="expenses">Autopeças e cartões</button>
+         <button type="button" class="btn btn-primary" id="cb-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
+        </div>
+       </div>
+       <p class="cb-explanation"><strong>Não há duplicação do caixa.</strong> O total de cada fatura é documental; pagamentos bancários já conciliados entram apenas como abatimento do saldo documental. Faturas declaradas quitadas são identificadas separadamente de pagamentos efetivamente vinculados. A competência da fatura não é usada como vencimento.</p>
+       <p id="cb-status" class="cb-status" role="status" aria-live="polite">Aguardando consulta...</p>
+       <div class="cb-kpis" aria-label="Resumo da situação das faturas">
+        <div class="cb-kpi">
+         <span>Faturas históricas</span><strong id="cb-count">—</strong>
+         <small>Documentos registrados na base</small>
+        </div>
+        <div class="cb-kpi cb-kpi-risk">
+         <span>Saldo documental pendente</span><strong id="cb-outstanding">—</strong>
+         <small><span id="cb-open">—</span> fatura(s) com saldo restante</small>
+        </div>
+        <div class="cb-kpi cb-kpi-risk">
+         <span>Sem vencimento informado</span><strong id="cb-undated">—</strong>
+         <small>Entre faturas com saldo pendente</small>
+        </div>
+        <div class="cb-kpi cb-kpi-ok">
+         <span>Quitadas por confirmação histórica</span><strong id="cb-declared">—</strong>
+         <small>Não necessariamente conciliadas ao banco</small>
+        </div>
+        <div class="cb-kpi">
+         <span>Quitadas por vínculo bancário</span><strong id="cb-conciliated">—</strong>
+         <small>Pagamento vinculado ao documento</small>
+        </div>
+        <div class="cb-kpi">
+         <span>Parcialmente pagas</span><strong id="cb-partial">—</strong>
+         <small>Ainda resta parte da fatura</small>
+        </div>
+       </div>
+       <p id="cb-pending-note" class="cb-explanation">Os saldos documentais não constituem novas saídas do caixa.</p>
+       <section class="card cb-card-summary" aria-labelledby="cb-card-summary-title">
+        <div class="card-head">
+         <div><h2 id="cb-card-summary-title">Resumo por cartão</h2>
+          <p>Nomes preservados exatamente como foram registrados. Clique em um cartão para filtrar o detalhamento.</p>
+         </div>
+        </div>
+        <div id="cb-card-summary" class="cb-card-grid"><p class="cb-empty">Consultando cartões...</p></div>
+       </section>
+       <section class="card" aria-labelledby="cb-detail-title">
+        <div class="card-head">
+         <div><h2 id="cb-detail-title">Histórico detalhado de faturas</h2>
+          <p>Pagamentos parciais, saldo restante e vencimento informado, com acesso à conciliação bancária existente.</p>
+         </div>
+         <button type="button" class="btn" id="cb-export">Exportar CSV</button>
+        </div>
+        <div class="cb-controls">
+         <label for="cb-search" class="cb-search-label">Pesquisar
+          <input type="search" id="cb-search" placeholder="Cartão, competência ou vencimento"></label>
+         <label for="cb-filter">Situação
+          <select id="cb-filter">
+           <option value="todos">Todas as faturas</option>
+           <option value="pendentes">Com saldo pendente</option>
+           <option value="sem-vencimento">Pendentes sem vencimento</option>
+           <option value="parcial">Parcialmente pagas</option>
+           <option value="aberta">Sem pagamento comprovado</option>
+           <option value="conciliada">Quitadas com vínculo bancário</option>
+           <option value="declarada">Quitadas por confirmação</option>
+          </select>
+         </label>
+         <label for="cb-card">Cartão
+          <select id="cb-card"><option value="todos">Todos os cartões</option></select>
+         </label>
+         <label for="cb-year">Competência
+          <select id="cb-year"><option value="todos">Todos os anos</option></select>
+         </label>
+         <label for="cb-sort">Ordenar
+          <select id="cb-sort">
+           <option value="pendentes">Pendentes primeiro</option>
+           <option value="recentes">Competência mais recente</option>
+           <option value="cartoes">Nome do cartão</option>
+          </select>
+         </label>
+        </div>
+        <div class="table-wrap">
+         <table class="data-table cb-table">
+          <thead><tr>
+           <th>Cartão</th><th>Competência</th><th class="money">Valor da fatura</th>
+           <th class="money">Pago vinculado</th><th class="money">Saldo restante</th>
+           <th>Vencimento</th><th>Situação</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="cb-rows"><tr><td colspan="8" class="cb-empty">Carregando faturas...</td></tr></tbody>
+         </table>
+        </div>
+        <div class="cb-footer">
+         <span id="cb-page-count">Aguardando dados...</span>
+         <div>
+          <button type="button" class="btn" id="cb-prev" disabled>Anterior</button>
+          <button type="button" class="btn" id="cb-next" disabled>Próxima</button>
+         </div>
+        </div>
+        <p class="cb-list-note">Use “Conferir pagamento” para acessar os vínculos bancários sem criar pagamentos duplicados. Use “Vencimento” para consultar ou informar a data real na agenda financeira.</p>
+       </section>
+      </section>
 
       <section class="view cl-view" data-view-panel="classify" hidden aria-label="Central de Classificação de Despesas">
        <div class="section-header cl-intro">
@@ -1725,7 +1832,8 @@
    <span>Acompanhe o valor total, as parcelas pagas e o saldo restante.</span>
   </div>
   <div class="fin-agenda-shortcuts">
-   <button type="button" class="btn" data-jump-section="ag-title"><span class="icon icon-sm" data-icon="calendar"></span> Agenda de vencimentos</button>
+   <button type="button" class="btn" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Resumo de faturas</button>
+    <button type="button" class="btn" data-jump-section="ag-title"><span class="icon icon-sm" data-icon="calendar"></span> Agenda de vencimentos</button>
    <button type="button" class="btn btn-primary" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
   </div>
  </div>
@@ -3165,4 +3273,5 @@ init();
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118reports1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
+<script src="./financeiro-faturas-cartoes.js?v=20261118cardbills1" defer></script>
 </body></html>
