@@ -195,6 +195,7 @@ function openSection(button){
  }
  const input=$(destination==='payables'?'cp-search':'ar-search');
  if(input){input.value=button.dataset.cvQuery||'';input.dispatchEvent(new Event('input',{bubbles:true}))}
+ if(destination==='payables')$('fin-cp-operacional')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function init(){
  if(!$('cv-calendar'))return;
