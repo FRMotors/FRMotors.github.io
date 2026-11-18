@@ -493,6 +493,6 @@ function init(){
   else if(del)requestDelete(del.dataset.opDeleteManual);
  });
 }
-window.frBoletoUI={openPay,openAdd,openEdit,refresh:load};
+window.frBoletoUI={openPay,openAdd,openEdit,requestDelete,refresh:load};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
