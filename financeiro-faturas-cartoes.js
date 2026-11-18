@@ -135,11 +135,11 @@ function renderRows(){
    '<td><strong>'+esc(f.card)+'</strong><small>'+f.transactions+' lançamento(s)</small></td>'+
    '<td>'+esc(monthBR(f.period))+'</td>'+
    '<td class="money">'+money(f.total)+'</td>'+
-   '<td class="money">'+(f.status==='declarada'?'—':money(f.paid))+'</td>'+
+   '<td class="money">'+(f.status==='declarada'&&f.paid===0?'—':money(f.paid))+'</td>'+
    '<td class="money"><strong>'+money(f.remaining)+'</strong></td>'+
    '<td>'+esc(dueLabel)+dueBadge+'</td>'+
    '<td><span class="cb-label '+statusClass+'">'+esc(stateLabels[f.status])+'</span>'+
-    (f.status==='declarada'?'<small>Sem vínculo bancário confirmado</small>':'')+'</td>'+
+    (f.status==='declarada'?'<small>Quitação declarada; confira os vínculos</small>':'')+'</td>'+
    '<td><div class="cb-row-actions">'+
     '<button type="button" class="btn cb-action" data-cb-action="pay" data-cb-id="'+esc(f.id)+'">'+
      (f.remaining>0?'Conferir pagamento':'Ver histórico')+'</button>'+
@@ -215,7 +215,7 @@ function exportCSV(){
  const columns=[['Cartão','Competência','Valor documental (R$)','Pagamento bancário vinculado (R$)','Saldo documental (R$)',
   'Vencimento informado','Situação']];
  rows.forEach(x=>columns.push([x.card,dateBR(x.period),(x.total/100).toFixed(2).replace('.',','),
-  x.status==='declarada'?'':(x.paid/100).toFixed(2).replace('.',','),
+  x.status==='declarada'&&x.paid===0?'':(x.paid/100).toFixed(2).replace('.',','),
   (x.remaining/100).toFixed(2).replace('.',','),dateBR(x.due),stateLabels[x.status]]));
  const blob=new Blob(['\ufeff'+columns.map(x=>x.map(csvCell).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');
