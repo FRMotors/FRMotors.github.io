@@ -561,6 +561,7 @@
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118activecards2">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
+<link rel="stylesheet" href="./financeiro-central-auditoria.css?v=20261118audit1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -576,6 +577,7 @@
     <button type="button" data-view="deadlines"><span class="icon" data-icon="calendar"></span> Central de vencimentos</button>
     <button type="button" data-view="forecast"><span class="icon" data-icon="chart"></span> Projeção de caixa</button>
     <button type="button" data-view="reports"><span class="icon" data-icon="chart"></span> Relatórios gerenciais</button>
+    <button type="button" data-view="audit"><span class="icon" data-icon="shield"></span> Central de auditoria</button>
     <button type="button" data-view="classify"><span class="icon" data-icon="receipt"></span> Classificar despesas</button>
     <button type="button" data-view="movements"><span class="icon" data-icon="wallet"></span> Movimentações oficiais</button>
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
@@ -620,6 +622,83 @@
   <main class="content" id="main-content">
     <div id="access" class="loading-text" role="status">Verificando sessão e autorização financeira...</div>
     <div id="app" class="hidden">
+
+
+      <section class="view audit-view-page" data-view-panel="audit" hidden aria-label="Central de Atividades e Auditoria Financeira">
+       <div class="section-header audit-intro">
+        <div>
+         <p class="eyebrow">Segurança operacional · rastreabilidade</p>
+         <h1 class="page-heading">Central de auditoria</h1>
+         <p class="page-description">Acompanhe o histórico registrado de alterações, pagamentos, arquivamentos e restaurações financeiras, em ordem cronológica.</p>
+        </div>
+        <div class="header-buttons">
+         <button type="button" class="btn" data-view="reports">Relatórios gerenciais</button>
+         <button type="button" class="btn btn-primary" id="audit-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar histórico</button>
+        </div>
+       </div>
+       <p class="audit-explainer"><strong>Histórico operacional, somente leitura.</strong> As informações vêm dos registros de auditoria e de pagamentos existentes no Supabase, sujeitos às permissões financeiras. A central não altera dados e não cria eventos. A identificação do operador pode aparecer abreviada. Atividades sem registro nas fontes consultadas não podem ser reconstruídas ou atribuídas a um usuário.</p>
+       <p class="audit-status" id="audit-status" role="status" aria-live="polite">Aguardando consulta segura das fontes...</p>
+       <div class="audit-counters" aria-label="Resumo das atividades registradas">
+        <div class="audit-counter">
+         <span>Eventos identificados</span><strong id="audit-events-total">—</strong>
+         <small id="audit-source-count">Aguardando fontes</small>
+        </div>
+        <div class="audit-counter">
+         <span>Registros de pagamentos</span><strong id="audit-payment-count">—</strong>
+         <small>Conciliações e baixas com registro existente</small>
+        </div>
+        <div class="audit-counter">
+         <span>Edições e classificações</span><strong id="audit-change-count">—</strong>
+         <small>Alterações rastreáveis na base</small>
+        </div>
+        <div class="audit-counter">
+         <span>Arquivamentos e restaurações</span><strong id="audit-trash-count">—</strong>
+         <small>Histórico preservado dos compromissos</small>
+        </div>
+       </div>
+       <section class="card audit-card" aria-labelledby="audit-list-title">
+        <div class="card-head">
+         <div>
+          <h2 id="audit-list-title">Histórico de atividades</h2>
+          <p>Filtre os eventos registrados. Os valores são referências da operação, não novos lançamentos de caixa.</p>
+         </div>
+         <button type="button" class="btn" id="audit-export">Exportar CSV</button>
+        </div>
+        <div class="audit-filters">
+         <label class="audit-search" for="audit-search">Buscar
+          <input type="search" id="audit-search" placeholder="Descrição, fornecedor, tipo ou atividade" autocomplete="off">
+         </label>
+         <label for="audit-type">Tipo
+          <select id="audit-type">
+           <option value="todos">Todas as atividades</option>
+           <option value="boletos">Contas a pagar</option>
+           <option value="receber">Contas a receber</option>
+           <option value="faturas">Cartões e faturas</option>
+           <option value="movimentos">Movimentações</option>
+           <option value="importacoes">Importações</option>
+          </select>
+         </label>
+         <label for="audit-from">De
+          <input type="date" id="audit-from" aria-label="Data inicial do histórico">
+         </label>
+         <label for="audit-to">Até
+          <input type="date" id="audit-to" aria-label="Data final do histórico">
+         </label>
+         <button type="button" class="btn" id="audit-clear">Limpar filtros</button>
+        </div>
+        <div class="audit-list" id="audit-activity-list" aria-live="polite">
+         <p class="audit-empty">Consultando eventos de auditoria...</p>
+        </div>
+        <div class="audit-footer">
+         <span id="audit-list-count">Aguardando consulta...</span>
+         <div>
+          <button type="button" class="btn" id="audit-prev" disabled>Anterior</button>
+          <button type="button" class="btn" id="audit-next" disabled>Próxima</button>
+         </div>
+        </div>
+        <p class="audit-caveat">Os registros de uma mesma ação podem existir mais de uma vez por mecanismos de auditoria do banco; duplicatas exatas são agrupadas somente nesta tela. Os arquivos originais e o histórico de auditoria permanecem intactos. Isso não substitui uma auditoria de login, permissões ou acessos de todos os usuários.</p>
+       </section>
+      </section>
 
       <section class="view cb-view" data-view-panel="cardbills" hidden aria-label="Faturas dos cartões">
        <div class="section-header cb-intro">
@@ -1250,6 +1329,7 @@
             <button type="button" class="btn" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
              <button type="button" class="btn btn-teal" data-view="forecast"><span class="icon icon-sm" data-icon="chart"></span> Projeção de caixa</button>
               <button type="button" class="btn" data-view="reports"><span class="icon icon-sm" data-icon="chart"></span> Relatórios</button>
+              <button type="button" class="btn" data-view="audit"><span class="icon icon-sm" data-icon="shield"></span> Auditoria</button>
           </div>
         </div>
 <section class="cv-home" id="cv-home-banner" aria-label="Alertas de vencimento">
@@ -3319,4 +3399,5 @@ init();
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261118activecards2" defer></script>
+<script src="./financeiro-central-auditoria.js?v=20261118audit1" defer></script>
 </body></html>
