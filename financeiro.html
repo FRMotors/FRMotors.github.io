@@ -1065,7 +1065,11 @@
         </div>
         <div class="rg-cat-filters">
          <label>Fonte dos dados
-          <select id="rg-cat-source"><option value="imported">Extratos bancários importados</option><option value="official">Caixa homologado (histórico)</option></select>
+          <select id="rg-cat-source">
+           <option value="imported">Extratos bancários importados</option>
+           <option value="official">Caixa homologado (histórico)</option>
+           <option value="combined">Consolidado: extratos + caixa homologado</option>
+          </select>
          </label>
          <label id="rg-cat-account-wrap">Conta bancária
           <select id="rg-cat-account"><option value="">Todas as contas importadas</option></select>
@@ -1073,7 +1077,7 @@
          <a class="btn rg-cat-edit-link" href="./financeiro.html?view=imports&amp;section=editar-categorias#imports-editar-categorias">Editar categorias</a>
         </div>
         <p id="rg-cat-status" class="rg-cat-status" role="status" aria-live="polite">Aguardando consulta...</p>
-        <p id="rg-cat-provenance" class="rg-cat-note">As fontes permanecem separadas para evitar contagem duplicada.</p>
+        <p id="rg-cat-provenance" class="rg-cat-note">Selecione as fontes separadas ou consolidadas; lançamentos coincidentes serão descontados automaticamente.</p>
         <div id="rg-cat-metrics" class="rg-cat-metrics" aria-label="Indicadores por categoria"></div>
         <div class="rg-cat-charts">
          <div class="rg-cat-chart-card"><h3>Despesas por categoria</h3><p>Participação nos pagamentos da fonte selecionada.</p><div id="rg-cat-outbars" class="rg-cat-bars"></div></div>
@@ -1096,7 +1100,7 @@
           <tbody id="rg-cat-movements"><tr><td colspan="6" class="rg-cat-empty">Consultando...</td></tr></tbody></table></div>
          <div class="rg-cat-pager"><button class="btn" type="button" id="rg-cat-prev" disabled>Anterior</button><span id="rg-cat-page">Aguardando...</span><button class="btn" type="button" id="rg-cat-next" disabled>Próxima</button></div>
         </div>
-        <p class="rg-cat-bottom-note">Os extratos podem conter lançamentos já presentes no caixa homologado. Alterne a fonte para comparar, não some os totais. Cartões e autopeças documentais não são contabilizados aqui novamente.</p>
+        <p class="rg-cat-bottom-note">No modo Consolidado, o caixa homologado é mantido e apenas movimentos bancários novos após o fechamento são acrescentados. Repetições entre PDFs e no fechamento são identificadas e excluídas. O sistema mostra correspondências incertas para revisão. Não equivale ao saldo bancário. Cartões e autopeças documentais não são somados novamente.</p>
        </section>
        <section class="card rg-annual" aria-labelledby="rg-annual-title">
         <div class="rg-annual-main">
@@ -3525,8 +3529,9 @@ init();
 <script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
-<script src="./financeiro-categorias-core.js?v=20261119cat1" defer></script>
-<script src="./financeiro-categorias-relatorio.js?v=20261119cat1" defer></script>
+<script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
+<script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
+<script src="./financeiro-categorias-relatorio.js?v=20261119cat2" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
