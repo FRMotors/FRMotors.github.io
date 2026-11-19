@@ -38,3 +38,20 @@ test('Nova importação do Itaú solicita atualização do relatório',()=>{
  assert.match(importer,/bankItau\?\(window\.frHistoryUI\?\.refresh\?\.\(\)/);
  assert.match(importer,/updates\[3\]\?\.status==='rejected'/);
 });
+
+test('Conciliação do Itaú respeita aprovações de pares, sem confundir com saldo bancário',()=>{
+ assert.match(script,/fin_conciliacao_confirmacoes/);
+ assert.match(script,/core\.reviewWeakMatches\(rec\.weakMatches,confirmations\)/);
+ assert.match(script,/state\.weakMatchCount=waiting\.length/);
+ assert.match(script,/state\.approvedMatchCount=approved\.length/);
+ assert.match(script,/badge:isApproved\(r\)\?'confirmed':'review'/);
+ assert.match(script,/check\?\.status!=='conferido'\|\|state\.weakMatchCount>0/);
+});
+test('Histórico mensal substitui menu duplicado e prévia de quarenta movimentos',()=>{
+ assert.doesNotMatch(html,/> Movimentações oficiais<\/button>/);
+ assert.doesNotMatch(html,/id="hist-itau-transactions"/);
+ assert.match(html,/id="hist-itau-mensal"/);
+ assert.match(html,/data-view-panel="movements"/); // View fica preservada para integrações existentes.
+ assert.doesNotMatch(script,/fetchTransactions\(/);
+ assert.match(script,/window\.frItauMonthsUI\?\.refresh\?\.\(/);
+});
