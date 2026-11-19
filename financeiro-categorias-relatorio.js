@@ -154,7 +154,7 @@ function render(){
    reconciliation.innerHTML=
     '<span><strong>'+count(audit.officialCount)+'</strong> homologados</span>'+
     '<span><strong>'+count(audit.addedCount)+'</strong> novos dos extratos</span>'+
-    '<span><strong>'+count(audit.ignoredBeforeCutoff+audit.matchedOnCutoff+audit.repeatedInPDFs)+'</strong> sobreposições evitadas</span>'+
+    '<span><strong>'+count(audit.ignoredBeforeCutoff+audit.matchedOnCutoff+audit.repeatedInPDFs+audit.cancelledIgnored)+'</strong> não somados novamente</span>'+
     '<span class="'+(audit.weakMatches.length?'rg-cat-audit-attention':'')+'"><strong>'+
      count(audit.weakMatches.length)+'</strong> correspondência(s) a conferir</span>';
   }else reconciliation.innerHTML='';
@@ -165,7 +165,8 @@ function render(){
   ' + somente movimentações bancárias não repetidas após o corte. '+
   (audit?audit.addedCount+' nova(s); '+audit.ignoredBeforeCutoff+' anterior(es) ao corte não somada(s); '+
    audit.matchedOnCutoff+' correspondência(s) no dia do corte; '+
-   audit.repeatedInPDFs+' repetição(ões) entre PDFs ignorada(s). ':'')+
+   audit.repeatedInPDFs+' repetição(ões) entre PDFs ignorada(s); '+
+   audit.cancelledIgnored+' movimentação(ões) cancelada(s) excluída(s). ':'')+
   (audit?.weakMatches?.length?audit.weakMatches.length+
    ' correspondência(s) por data, tipo e valor com descrição diferente exigem conferência. ':'')+
   'Movimentos coincidentes mantêm a categoria homologada. O resultado é uma prévia consolidada, não saldo bancário confirmado. '+
@@ -225,6 +226,7 @@ async function refresh(){
   // Somente após validar todas as fontes substituímos os dados exibidos.
   const a=core.sourceRowsOfficial(official),b=core.sourceRowsImported(files,lines,movements);
   const combination=consolidatedCore.combineSources(a,b);
+  combination.cancelledIgnored=lines.length-b.length;
   state.official=a;state.imported=b;state.combined=combination.rows;state.combination=combination;
   state.files=files;state.loaded=true;
   accountOptions();render();
