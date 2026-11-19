@@ -1,16 +1,17 @@
 /* FR Motors | Análise financeira por categoria e conta bancária.
- * Fonte selecionável: extratos confirmados OU caixa homologado, nunca a soma de ambos.
+ * Fontes separadas ou consolidação cuidadosa: banco novo após o caixa homologado.
  * Somente leitura. Mudanças de classificação são lidas do Supabase a cada atualização. */
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
 const core=window.frCategoryCore;
+const consolidatedCore=window.frCategoryCombinedCore;
 const safe=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
 const count=n=>new Intl.NumberFormat('pt-BR').format(n);
 const percent=(n,total)=>total?new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:1}).format(n/total):'0%';
 const dateBR=value=>String(value||'').slice(0,10).split('-').reverse().join('/');
-const state={official:[],imported:[],files:[],loaded:false,loading:null,detailPage:0,detailLimit:20,categoryKey:'',detailSearch:'',generation:0};
+const state={official:[],imported:[],combined:[],combination:null,files:[],loaded:false,loading:null,detailPage:0,detailLimit:20,categoryKey:'',detailSearch:'',generation:0};
 const elements={
  source:'rg-cat-source',account:'rg-cat-account',status:'rg-cat-status',note:'rg-cat-provenance',
  kpis:'rg-cat-metrics',inBars:'rg-cat-inbars',outBars:'rg-cat-outbars',
@@ -40,11 +41,14 @@ function filters(){
  return {source,year,month,account};
 }
 function sourceRows(){
- return filters().source==='official'?state.official:state.imported;
+ const kind=filters().source;
+ if(kind==='official')return state.official;
+ if(kind==='combined')return state.combined;
+ return state.imported;
 }
 function grouped(){
  const f=filters();
- return core.summarize(f.source==='official'?state.official:state.imported,f);
+ return core.summarize(sourceRows(),f);
 }
 function accountOptions(){
  const control=el('account');if(!control)return;
@@ -138,15 +142,26 @@ function render(){
  if(!state.loaded||!core)return;
  const f=filters(),summary=grouped();
  const sourceSelect=el('account');
- if(sourceSelect)sourceSelect.disabled=f.source==='official';
+ if(sourceSelect)sourceSelect.disabled=f.source!=='imported';
  const accountWrap=$('rg-cat-account-wrap');
- if(accountWrap)accountWrap.hidden=f.source==='official';
+ if(accountWrap)accountWrap.hidden=f.source!=='imported';
  const labelledPeriod=f.month==='todos'?String(f.year):f.month+'/'+f.year;
- const note=f.source==='official'?
-  'CAIXA HOMOLOGADO: movimentações confirmadas da origem oficial, sem vínculo individual de conta bancária nesta base. '+
-  'Os extratos importados não estão somados aqui.':
-  'EXTRATOS IMPORTADOS: somente movimentações confirmadas provenientes dos arquivos bancários, sem cancelamentos. '+
-  'Pode haver operações que também constam do histórico homologado. As fontes nunca são somadas entre si.';
+ const audit=state.combination;
+ const note=f.source==='combined'?
+  'CONSOLIDADO: todo o caixa homologado até '+(audit?.cutoff||'sem fechamento')+
+  ' + somente movimentações bancárias não repetidas após o corte. '+
+  (audit?audit.addedCount+' nova(s); '+audit.ignoredBeforeCutoff+' anterior(es) ao corte não somada(s); '+
+   audit.matchedOnCutoff+' correspondência(s) no dia do corte; '+
+   audit.repeatedInPDFs+' repetição(ões) entre PDFs ignorada(s). ':'')+
+  (audit?.weakMatches?.length?audit.weakMatches.length+
+   ' correspondência(s) por data, tipo e valor com descrição diferente exigem conferência. ':'')+
+  'Movimentos coincidentes mantêm a categoria homologada. O resultado é uma prévia consolidada, não saldo bancário confirmado. '+
+  'O filtro por conta fica indisponível porque a base homologada não informa a conta.':
+  f.source==='official'?
+   'CAIXA HOMOLOGADO: movimentações confirmadas da origem oficial, sem vínculo individual de conta bancária nesta base. '+
+   'Os extratos importados não estão somados aqui.':
+   'EXTRATOS IMPORTADOS: somente movimentações confirmadas provenientes dos arquivos bancários, sem cancelamentos. '+
+   'Pode haver operações que também constam do histórico homologado. Nesta visão não são combinadas com o histórico oficial.';
  if(el('note'))el('note').textContent=note;
  if(el('kpis'))el('kpis').innerHTML=
   metric('Receitas',money(summary.incoming),count(summary.entries)+' entradas','income')+
@@ -157,13 +172,14 @@ function render(){
  bars(el('outBars'),summary.outGroups,summary.outgoing,'Nenhuma saída nesta seleção.');
  categoryOptions(summary);resultRows(summary);detailRows(summary);
  setStatus('Análise de '+labelledPeriod+' · '+count(summary.rows.length)+' movimento(s) · '+summary.allGroups.length+
-  ' categoria(s) agrupada(s). '+(f.source==='official'?'Caixa homologado.':'Extratos importados, sem movimentos cancelados.'));
+  ' categoria(s) agrupada(s). '+(f.source==='combined'?'Consolidado sem duplicações identificadas.':
+   f.source==='official'?'Caixa homologado.':'Extratos importados, sem movimentos cancelados.'));
 }
 async function refresh(){
  if(state.loading)return state.loading;
  state.loading=(async()=>{
   setStatus('Consultando categorias e movimentações no Supabase...');
-  if(!core)throw Error('Motor de categorias indisponível. Recarregue a página.');
+  if(!core||!consolidatedCore)throw Error('Motor de categorias ou conciliação indisponível. Recarregue a página.');
   if(typeof db==='undefined'||!db)throw Error('Sem conexão com o banco financeiro.');
   const access=await db.rpc('fluxo_caixa_autorizado');
   if(access.error||access.data!==true)throw Error('Acesso financeiro não autorizado.');
@@ -192,10 +208,12 @@ async function refresh(){
   }
   // Somente após validar todas as fontes substituímos os dados exibidos.
   const a=core.sourceRowsOfficial(official),b=core.sourceRowsImported(files,lines,movements);
-  state.official=a;state.imported=b;state.files=files;state.loaded=true;
+  const combination=consolidatedCore.combineSources(a,b);
+  state.official=a;state.imported=b;state.combined=combination.rows;state.combination=combination;
+  state.files=files;state.loaded=true;
   accountOptions();render();
  })().catch(err=>{
-  state.loaded=false;state.official=[];state.imported=[];state.files=[];
+  state.loaded=false;state.official=[];state.imported=[];state.combined=[];state.combination=null;state.files=[];
   for(const name of ['kpis','inBars','outBars','table','details']){
    const node=el(name);if(node)node.innerHTML='';
   }
