@@ -61,7 +61,7 @@ begin
  values (m.id,regra.id,raw_desc,m.descricao,m.categoria,
  regra.descricao_padrao,regra.categoria_padrao,m.meio_pagamento,v_meio,p_modo);
  return true;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.fin_teste_importar_extrato(p_tipo text, p_conta text, p_nome text, p_hash text, p_linhas jsonb)
  RETURNS jsonb
@@ -214,5 +214,4 @@ BEGIN
  END LOOP;
  RETURN jsonb_build_object('importadas',v_inseridos,'duplicadas',v_ignorados,
    'total',v_total,'importacao_id',v_importacao);
-END $function$
-
+END $function$;
