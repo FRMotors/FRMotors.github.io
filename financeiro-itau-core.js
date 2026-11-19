@@ -96,6 +96,27 @@ function reconcile(base,canonical,official,cutoff){
  return {baseCents,addedIn,addedOut,pending,already,weakMatches,
   balanceCents:baseCents+addedIn-addedOut};
 }
+// Reconcilia o aviso da tela Itaú com as confirmações auditadas no consolidado.
+// Apenas a aprovação do PAR EXATO retira a pendência; reabrir restaura o alerta.
+function reviewWeakMatches(weakMatches,confirmations){
+ if(!Array.isArray(weakMatches)||!Array.isArray(confirmations))
+  throw Error('Verificações de correspondências não carregadas.');
+ const byLine=new Map();
+ for(const approval of confirmations){
+  if(!approval?.linha_id)throw Error('Confirmação sem identificação bancária.');
+  if(approval.situacao==='conferido')byLine.set(approval.linha_id,approval);
+ }
+ const approved=[],waiting=[];
+ for(const match of weakMatches){
+  if(!match?.bank?.id||!match?.official?.id)
+   throw Error('Par de conciliação sem IDs para conferência.');
+  const saved=byLine.get(match.bank.id);
+  if(saved?.movimento_homologado_id===match.official.id)
+   approved.push(match);
+  else waiting.push(match);
+ }
+ return {approved,waiting};
+}
 function signedCents(r){return (r.natureza==='entrada'?1:-1)*amountRow(r)}
 function projectionOnDate(baseCents,pending,day){
  if(!validDate(day))throw Error('Data da referência bancária inválida.');
@@ -155,7 +176,7 @@ function buildMonthly(monthly,pending,cutoff){
  });
 }
 const api=Object.freeze({cents,validDate,accountIsItau,descriptionIdentity,canonicalBank,
- reconcile,projectionOnDate,compareBankReference,ensureSnapshotMatches,buildMonthly});
+ reconcile,reviewWeakMatches,projectionOnDate,compareBankReference,ensureSnapshotMatches,buildMonthly});
 if(typeof module==='object'&&module.exports)module.exports=api;
 if(root)root.frItauCore=api;
 })(typeof window!=='undefined'?window:typeof globalThis!=='undefined'?globalThis:null);
