@@ -278,6 +278,12 @@ async function refresh(){
    ready=true;
    renderOther();
    await renderItauReconciliation();
+   // A navegação mensal consome a mesma lista de PDFs já conciliados, sem criar outra baixa.
+   // Um erro na listagem não modifica o cálculo principal do Itaú.
+   await window.frItauMonthsUI?.refresh?.({
+    pending:state.importedPending,
+    cutoff:state.officialCutoff
+   });
    renderItau();
    const check=state.referenceCheck;
    const hasRisk=check?.status!=='conferido'||state.weakMatchCount>0;
