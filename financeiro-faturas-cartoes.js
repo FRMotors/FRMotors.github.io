@@ -178,7 +178,7 @@ function renderRows(){
     (f.status==='declarada'?'<small>Quitação declarada; confira os vínculos</small>':'')+'</td>'+
    '<td><div class="cb-row-actions">'+
     '<button type="button" class="btn cb-action" data-cb-action="pay" data-cb-id="'+esc(f.id)+'">'+
-     (f.remaining>0?'Conferir pagamento':'Ver histórico')+'</button>'+
+     (f.remaining>0?'Pagar fatura / adicionar pagamento':'Ver pagamentos')+'</button>'+
     (f.remaining>0?'<button type="button" class="btn cb-action" data-cb-action="agenda" data-cb-id="'+esc(f.id)+'">Vencimento</button>':'')+
     '</div></td></tr>';
  }).join(''):'<tr><td colspan="8" class="cb-empty">Nenhuma fatura corresponde aos filtros.</td></tr>';
@@ -225,9 +225,9 @@ async function refresh(){
  return loading;
 }
 async function openExisting(f,action){
- if(typeof window.frFinanceUI?.selectView!=='function')throw Error('Navegação do financeiro indisponível.');
- window.frFinanceUI.selectView('expenses');
  if(action==='pay'){
+  // A ação pertence à aba Cartões. O modal de pagamento é movido ao body
+  // na inicialização, portanto não é necessário navegar para Autopeças.
   if(typeof window.frDocumentLinksUI?.openInvoice!=='function')throw Error('Módulo de conciliação indisponível.');
   await window.frDocumentLinksUI.refresh?.(true);
   await window.frDocumentLinksUI.openInvoice(f.id);
