@@ -478,7 +478,9 @@ async function refresh(force=false){
  try{await loading}finally{loading=null}
 }
 function init(){
- if(!$('vl-invoices'))return;
+ if(!$('vl-dialog'))return;
+ // O modal fica no body para abrir mesmo quando a origem Autopeças está oculta.
+ if($('vl-dialog').parentElement!==document.body)document.body.appendChild($('vl-dialog'));
  $('vl-search')?.addEventListener('input',()=>{invoicePage=0;draw()});
  $('vl-filter-status')?.addEventListener('change',()=>{invoicePage=0;draw()});
  $('vl-invoice-prev')?.addEventListener('click',()=>{invoicePage--;draw()});
@@ -519,6 +521,13 @@ async function openInvoiceFromAgenda(id){
  if(!invoices.some(x=>x.id===id))throw Error('Fatura não encontrada. Atualize a conferência.');
  open('fatura',id);
 }
-window.frDocumentLinksUI={refresh,openInvoice:openInvoiceFromAgenda};
+async function openAutoFromReconciliation(id){
+ if(loading)await loading;
+ if(!autos.some(x=>x.id===id))await refresh();
+ if(!autos.some(x=>x.id===id))throw Error('Compra não encontrada na lista de revisão. Atualize a conciliação documental.');
+ if(autoRefs.has(id))throw Error('Esta compra já possui correspondência automática. Atualize os dados.');
+ open('autopecas_excecao',id);
+}
+window.frDocumentLinksUI={refresh,openInvoice:openInvoiceFromAgenda,openAuto:openAutoFromReconciliation};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
