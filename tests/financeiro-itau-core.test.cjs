@@ -129,3 +129,10 @@ test('Linhas inválidas e valores negativos bloqueiam o cálculo',()=>{
  assert.throws(()=>core.canonicalBank(f,[sample('f','1','2026-11-32','saida',12,'Inválido')]),/Linha inválida/);
  assert.throws(()=>core.canonicalBank(f,[sample('f','2','2026-11-19','saida',-12,'Inválido')]),/valor zerado ou negativo/);
 });
+
+test('Reconhece conta Itaú com apelidos, sem confundir cartão Itaucard',()=>{
+ assert.equal(core.accountIsItau('Itaú Conta Corrente 5834'),true);
+ assert.equal(core.accountIsItau('BANCO ITAU - 996323'),true);
+ assert.equal(core.accountIsItau('Itaucard'),false);
+ assert.equal(core.accountIsItau('Bradesco Prime'),false);
+});
