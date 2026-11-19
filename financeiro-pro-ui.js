@@ -120,7 +120,7 @@ function selectView(next,options={}){
    if(next==='payables')window.frBoletoTrashUI?.refresh?.();
    if(next==='payables')window.frDeadlinesUI?.refresh?.();
    if(next==='forecast')window.frForecastUI?.refresh?.();
-   if(next==='reports')window.frManagerReportsUI?.refresh?.();
+   if(next==='reports'){window.frManagerReportsUI?.refresh?.();window.frCategoryReportUI?.refresh?.();}
    if(next==='classify')window.frClassificationUI?.refresh?.();
    if(next==='cardbills'){
   window.frCardBillsUI?.refresh?.();
@@ -330,6 +330,7 @@ function afterSaved(kind){
   window.frDeadlinesUI?.refresh?.();
   window.frForecastUI?.refresh?.();
   window.frManagerReportsUI?.refresh?.();
+  window.frCategoryReportUI?.refresh?.();
   window.frClassificationUI?.refresh?.();
   window.frCardBillsUI?.refresh?.();
   window.frAuditUI?.refresh?.();
@@ -396,6 +397,7 @@ function setup(){
     window.frClassificationUI?.refresh?.();
   }else if(view==='reports'){
     window.frManagerReportsUI?.refresh?.();
+    window.frCategoryReportUI?.refresh?.();
   }else if(view==='forecast'){
     window.frForecastUI?.refresh?.();
   }else if(view==='payables'){
