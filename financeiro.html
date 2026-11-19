@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
 <link rel="stylesheet" href="./financeiro-historico.css?v=20261117clean1">
+<link rel="stylesheet" href="./financeiro-itau-mensal.css?v=20261119month1">
 <style>
 .fin-homolog-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 20px 18px}
 .fin-homolog-kpis .insight-card{min-width:0;padding:17px}
@@ -2436,6 +2437,69 @@
             </div>
           </details>
         </section>
+        <section class="card hist-itau-mes-card" id="hist-itau-mensal" aria-labelledby="hist-itau-mes-title">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Movimentações por competência · todos os meses disponíveis</p>
+              <h2 id="hist-itau-mes-title">Movimentações do Itaú mês a mês</h2>
+              <p>Escolha qualquer mês do histórico, veja todos os lançamentos e navegue entre as páginas. Homologados e extratos em conferência são identificados separadamente.</p>
+            </div>
+            <button class="btn" type="button" id="hist-itau-mes-refresh">Atualizar movimentações</button>
+          </div>
+          <div class="hist-itau-mes-filters">
+            <label for="hist-itau-mes-select">Mês do histórico
+              <select id="hist-itau-mes-select" aria-label="Escolher mês dos lançamentos Itaú"><option value="">Carregando meses...</option></select>
+            </label>
+            <div class="hist-itau-mes-navigation" aria-label="Navegar por meses">
+              <button class="btn" type="button" id="hist-itau-mes-older" disabled>Mês anterior</button>
+              <button class="btn" type="button" id="hist-itau-mes-newer" disabled>Mês seguinte</button>
+            </div>
+            <label for="hist-itau-mes-type">Tipo
+              <select id="hist-itau-mes-type">
+                <option value="todos">Entradas e saídas</option>
+                <option value="entrada">Somente entradas</option>
+                <option value="saida">Somente saídas</option>
+              </select>
+            </label>
+            <label for="hist-itau-mes-origin">Situação
+              <select id="hist-itau-mes-origin">
+                <option value="todos">Homologados + extratos em conferência</option>
+                <option value="homologado">Somente homologados</option>
+                <option value="previa">Somente extratos em conferência</option>
+              </select>
+            </label>
+            <label for="hist-itau-mes-search">Pesquisar movimentação
+              <input type="search" id="hist-itau-mes-search" autocomplete="off" placeholder="PIX, pessoa, fornecedor, categoria...">
+            </label>
+          </div>
+          <p id="hist-itau-mes-status" role="status" aria-live="polite" class="hist-itau-mes-status">Consultando meses disponíveis...</p>
+          <div id="hist-itau-mes-totals" class="hist-itau-mes-metrics" aria-label="Totais das movimentações do mês"></div>
+          <p id="hist-itau-mes-explanation" class="hist-itau-mes-note">Somente as movimentações homologadas compõem o histórico oficial. Extratos novos aparecem como prévia, sem gerar uma nova baixa.</p>
+          <div class="hist-itau-mes-actions">
+            <label for="hist-itau-mes-page-size">Lançamentos por página
+              <select id="hist-itau-mes-page-size"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select>
+            </label>
+            <button type="button" class="btn" id="hist-itau-mes-export">Exportar mês selecionado (CSV)</button>
+          </div>
+          <div class="table-wrap hist-itau-mes-table">
+            <table class="data-table">
+              <thead>
+                <tr><th>Data</th><th>Descrição / referência</th><th>Tipo</th><th>Categoria / meio</th><th>Situação</th><th class="money">Valor</th></tr>
+              </thead>
+              <tbody id="hist-itau-mes-rows">
+                <tr><td colspan="6" class="hist-empty">Aguardando a consulta dos lançamentos...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="hist-itau-mes-pages">
+            <span id="hist-itau-mes-pages">Aguardando movimentações</span>
+            <div>
+              <button class="btn" type="button" id="hist-itau-mes-page-prev" disabled>Página anterior</button>
+              <button class="btn" type="button" id="hist-itau-mes-page-next" disabled>Próxima página</button>
+            </div>
+          </div>
+          <p class="hist-itau-mes-footnote">Os números correspondem aos lançamentos disponíveis nesta base do Itaú, não a um saldo de conta. Pagamentos e recebimentos ainda não homologados permanecem identificados como prévia e não são somados novamente ao caixa oficial.</p>
+        </section>
         <details class="fin-collapse" id="itau-detalhes-extrato">
   <summary><span>Extrato bancário mais recente</span><small>Arquivo recebido, totais brutos e comparação com o anterior</small></summary>
   <div class="fin-collapse-panel">
@@ -3527,7 +3591,9 @@ init();
 <script src="./financeiro-faturas.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-itau-core.js?v=20261119audit1" defer></script>
-<script src="./financeiro-historico.js?v=20261119audit1" defer></script>
+<script src="./financeiro-itau-mensal-core.js?v=20261119month1" defer></script>
+<script src="./financeiro-itau-mensal.js?v=20261119month1" defer></script>
+<script src="./financeiro-historico.js?v=20261119month1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261118trash1" defer></script>
