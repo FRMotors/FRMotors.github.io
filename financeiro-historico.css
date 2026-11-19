@@ -105,6 +105,7 @@
 .hist-reconcile-flag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:7px;display:inline-block}
 .hist-reconcile-flag.new{color:#23634b;background:#e4f5eb}
 .hist-reconcile-flag.duplicate{color:#825b25;background:#fff0d5}
+.hist-reconcile-flag.review{color:#7a501a;background:#fff3d9;border:1px solid #e4c79b}
 @media(max-width:960px){.hist-reconcile-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){
  .hist-reconcile-card>.card-head{align-items:stretch;flex-direction:column}
