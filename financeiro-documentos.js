@@ -14,7 +14,7 @@ const write=(id,text)=>{const node=$(id);if(node)node.textContent=text};
 const groupName=g=>g==='autopecas'?'Autopeças':'Cartões / outros meios';
 const monthOf=r=>(r.grupo==='cartoes'?r.mes_fatura:r.vencimento)?.slice(0,7)||'sem-mes';
 const inYear=r=>{const y=$('doc-year')?.value||'todos';return y==='todos'||monthOf(r).slice(0,4)===y;};
-let documents=[],liveMatches=new Map(),page=0,monthPage=0,loading=null;
+let documents=[],liveMatches=new Map(),supplierCatalogue=[],selectedSuppliers=new Set(),selectionKey=null,selectionLoaded=false,page=0,monthPage=0,loading=null;
 const PAGE_SIZE=35;
 const MONTH_PAGE_SIZE=12;
 const fields='id,grupo,codigo_origem,linha_excel,data_evento,vencimento,data_compra,mes_fatura,descricao,fornecedor_nome,cartao_nome,parcela,meio,valor_registrado,valor_cheio_documento,valor_com_desconto_informado,valor_pago_informado,data_pagamento_informada,situacao_origem,incluir,revisao_origem';
@@ -129,51 +129,135 @@ async function fetchAccounts(){
  }
  throw Error('Lista de contas a pagar incompleta. Não é possível validar os estados.');
 }
+async function fetchSupplierRegistry(){
+ const {data,error}=await db.from('fin_fornecedores').select('id,nome').order('nome',{ascending:true});
+ if(error)throw error;
+ return data||[];
+}
 function supplierYear(){return $('doc-by-supplier-year')?.value||''}
+function choiceStorage(){
+ if(!selectionKey||typeof window==='undefined')return null;
+ try{return window.localStorage||null}catch{return null}
+}
+function restoreSupplierSelection(userId){
+ const nextKey=userId?'fr-motors:fornecedores-analisados:v2:'+String(userId):null;
+ if(selectionLoaded&&selectionKey===nextKey)return;
+ selectionLoaded=true;selectionKey=nextKey;
+ selectedSuppliers=statusCore.defaultSupplierKeys(supplierCatalogue);
+ const storage=choiceStorage();
+ try{
+  const stored=storage?.getItem(selectionKey);
+  if(stored!==null&&stored!==undefined){
+   const parsed=JSON.parse(stored);
+   if(Array.isArray(parsed)&&parsed.every(v=>typeof v==='string'))
+    selectedSuppliers=new Set(parsed);
+  }
+ }catch{
+  write('doc-supplier-choice-storage','Preferências carregadas apenas nesta sessão: armazenamento do navegador indisponível.');
+ }
+}
+function saveSupplierSelection(){
+ const storage=choiceStorage();
+ if(storage)try{
+  storage.setItem(selectionKey,JSON.stringify([...selectedSuppliers]));
+  write('doc-supplier-choice-storage','Seleção salva neste navegador, para a conta conectada. Não altera compras nem dá baixa em boletos.');
+ }catch{
+  write('doc-supplier-choice-storage','Seleção aplicada nesta sessão; o navegador não permitiu salvar preferências.');
+ }
+ else write('doc-supplier-choice-storage','Seleção aplicada nesta sessão. Não altera lançamentos financeiros.');
+ renderChoice();renderSupplierYears();
+}
 function refreshSupplierYears(){
  const control=$('doc-by-supplier-year');if(!control||!statusCore)return;
  const before=control.value;
- const years=[...new Set(documents.filter(r=>r.grupo==='autopecas'&&r.incluir===true)
-  .map(r=>String(r.vencimento||r.data_evento||'').slice(0,4))
+ const years=[...new Set(documents.filter(r=>r.incluir===true)
+  .map(r=>String(r.grupo==='cartoes'?(r.mes_fatura||r.data_evento):(r.vencimento||r.data_evento)||'').slice(0,4))
   .filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
  control.innerHTML=years.map(y=>'<option value="'+escapeHTML(y)+'">'+escapeHTML(y)+'</option>').join('');
  const current=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric'}).format(new Date());
  control.value=years.includes(before)?before:years.includes(current)?current:years[0]||'';
 }
 function supplierRows(){
- const yr=supplierYear();if(!statusCore||!yr)return [];
+ const year=supplierYear();if(!statusCore||!year)return [];
  const search=statusCore.fold($('doc-by-supplier-search')?.value||'');
- return statusCore.monthlySuppliers(documents,yr).filter(r=>!search||statusCore.fold(r.name).includes(search));
+ return statusCore.monthlySuppliers(documents,year,selectedSuppliers).filter(r=>
+  !search||statusCore.fold(r.name).includes(search));
+}
+const supplierSource=group=>group==='autopecas'?'Autopeças · boletos':
+ group==='cartoes'?'Cartões · compras':'Cadastro · sem documentos';
+function choiceRows(){
+ const search=statusCore.fold($('doc-supplier-choice-search')?.value||'');
+ const category=$('doc-supplier-choice-filter')?.value||'todos';
+ return supplierCatalogue.filter(s=>{
+  if(search&&!statusCore.fold([s.name,supplierSource(s.group)].join(' ')).includes(search))return false;
+  if(category==='selecionados'&&!selectedSuppliers.has(s.key))return false;
+  if(category==='fora'&&selectedSuppliers.has(s.key))return false;
+  if(['autopecas','cartoes','cadastro'].includes(category)&&s.group!==category)return false;
+  return true;
+ });
+}
+function renderChoice(){
+ const list=$('doc-supplier-choice-list');if(!list||!statusCore)return;
+ const shown=choiceRows();
+ const chosen=supplierCatalogue.filter(s=>selectedSuppliers.has(s.key));
+ write('doc-supplier-selected-count',chosen.length+' de '+supplierCatalogue.length+' marcados');
+ write('doc-supplier-choice-count','Catálogo completo: '+supplierCatalogue.length+' nomes por origem · '+
+  chosen.length+' selecionados · '+(supplierCatalogue.length-chosen.length)+
+  ' não selecionados. Exibindo '+shown.length+' conforme os filtros. Nomes da carteira Cartões devem ser revisados antes de incluir.');
+ list.innerHTML=shown.length?shown.map(s=>
+  '<label class="fin-doc-supplier-choice">'+
+   '<input type="checkbox" data-supplier-key="'+escapeHTML(s.key)+'"'+
+    (selectedSuppliers.has(s.key)?' checked':'')+'>'+
+   '<span><strong>'+escapeHTML(s.name)+'</strong><small>'+escapeHTML(supplierSource(s.group))+
+   ' · '+s.included+' incluídos / '+s.count+' registros'+
+   (s.master?' · sem documentos associados':'')+'</small></span></label>'
+ ).join(''):'<div class="empty">Nenhum fornecedor corresponde ao filtro. Limpe a pesquisa para ver todos.</div>';
+}
+function applySupplierMode(mode){
+ if(mode==='none')selectedSuppliers=new Set();
+ else if(mode==='all')selectedSuppliers=new Set(supplierCatalogue.map(s=>s.key));
+ else if(mode==='auto')selectedSuppliers=new Set(supplierCatalogue.filter(s=>s.group==='autopecas').map(s=>s.key));
+ else selectedSuppliers=statusCore.defaultSupplierKeys(supplierCatalogue);
+ saveSupplierSelection();
 }
 function renderSupplierYears(){
  const tbody=$('doc-by-supplier-rows'),tfoot=$('doc-by-supplier-foot');
  if(!tbody||!tfoot)return;
- const rows=supplierRows(),months=Array(12).fill(0);
- let grand=0,records=0;
- for(const row of rows){
-  row.months.forEach((v,i)=>months[i]+=v);
-  grand+=row.total;records+=row.count;
+ const rows=supplierRows(),auto=Array(12).fill(0),cards=Array(12).fill(0);
+ let autoSum=0,cardSum=0,autoCount=0,cardCount=0;
+ for(const r of rows){
+  const target=r.group==='cartoes'?cards:auto;
+  r.months.forEach((v,i)=>target[i]+=v);
+  if(r.group==='cartoes'){cardSum+=r.total;cardCount+=r.count}
+  else {autoSum+=r.total;autoCount+=r.count}
  }
  tbody.innerHTML=rows.length?rows.map(r=>
   '<tr><th scope="row">'+escapeHTML(r.name)+'</th>'+
+  '<td>'+escapeHTML(supplierSource(r.group))+'</td>'+
   r.months.map(v=>'<td class="money">'+(v?brl(v/100):'—')+'</td>').join('')+
   '<td class="money"><strong>'+brl(r.total/100)+'</strong></td><td class="money">'+r.count+'</td></tr>'
- ).join(''):'<tr><td colspan="15" class="empty">Nenhuma compra documental neste ano para o filtro.</td></tr>';
- tfoot.innerHTML='<tr><th scope="row">Total</th>'+months.map(v=>
-  '<td class="money">'+brl(v/100)+'</td>').join('')+
-  '<td class="money"><strong>'+brl(grand/100)+'</strong></td><td class="money">'+records+'</td></tr>';
- write('doc-by-supplier-note',rows.length+' fornecedores · '+records+' documentos incluídos · '+brl(grand/100)+
-  ' em '+supplierYear()+'. Referência: vencimento do documento, não data da baixa.');
+ ).join(''):'<tr><td colspan="16" class="empty">Nenhum lançamento encontrado para os fornecedores selecionados neste ano.</td></tr>';
+ function summaryRow(title,arr,total,qty){
+  return '<tr><th scope="row">'+title+'</th><td>Fonte documental separada</td>'+
+   arr.map(v=>'<td class="money">'+brl(v/100)+'</td>').join('')+
+   '<td class="money"><strong>'+brl(total/100)+'</strong></td><td class="money">'+qty+'</td></tr>';
+ }
+ tfoot.innerHTML=summaryRow('Subtotal Autopeças',auto,autoSum,autoCount)+
+  summaryRow('Subtotal Cartões',cards,cardSum,cardCount);
+ write('doc-by-supplier-note',rows.length+' fornecedor(es) com lançamentos em '+supplierYear()+
+  ' · '+selectedSuppliers.size+' selecionados no catálogo. Autopeças: '+brl(autoSum/100)+
+  ' ('+autoCount+' registros); Cartões: '+brl(cardSum/100)+' ('+cardCount+
+  ' registros). Não some origens sem conferir possíveis compras repetidas. Cartões usam competência da fatura; Autopeças usam vencimento.');
 }
 function exportSupplierYears(){
  if(!statusCore||!supplierYear())return;
- const header=['Fornecedor','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez','Total (R$)','Registros'];
- const body=supplierRows().map(r=>[r.name,...r.months.map(v=>(v/100).toFixed(2).replace('.',',')),
-  (r.total/100).toFixed(2).replace('.',','),r.count]);
+ const header=['Fornecedor','Origem','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez','Total (R$)','Registros'];
+ const body=supplierRows().map(r=>[r.name,supplierSource(r.group),...r.months.map(v=>
+  (v/100).toFixed(2).replace('.',',')),(r.total/100).toFixed(2).replace('.',','),r.count]);
  const csv='\ufeff'+[header,...body].map(row=>row.map(csvQuoted).join(';')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
  const anchor=document.createElement('a');anchor.href=url;
- anchor.download='FR_Motors_Autopecas_Por_Fornecedor_'+supplierYear()+'.csv';
+ anchor.download='FR_Motors_Fornecedor_Origem_Mensal_'+supplierYear()+'.csv';
  document.body.append(anchor);anchor.click();anchor.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1600);
 }
@@ -271,7 +355,10 @@ async function refresh(){
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
    if(!statusCore)throw Error('Módulo de conciliação documental indisponível. Recarregue.');
-   const [rows,accounts]=await Promise.all([fetchAll(),fetchAccounts()]);
+   const [rows,accounts,registered]=await Promise.all([fetchAll(),fetchAccounts(),fetchSupplierRegistry()]);
+   supplierCatalogue=statusCore.supplierCatalogue(rows,registered);
+   const user=await db.auth?.getUser?.();
+   restoreSupplierSelection(user?.data?.user?.id||null);
    liveMatches=statusCore.matchLiveDocs(rows,accounts);
    documents=rows.sort((a,b)=>{
     const m1=monthOf(a)==='sem-mes'?'0000-00':monthOf(a);
@@ -280,7 +367,7 @@ async function refresh(){
       String(b.data_evento||b.vencimento||'').localeCompare(String(a.data_evento||a.vencimento||''))||
       b.linha_excel-a.linha_excel;
    });
-   updateYears();updateMonths();refreshSupplierYears();draw();renderSupplierYears();
+   updateYears();updateMonths();refreshSupplierYears();draw();renderChoice();renderSupplierYears();
    const included=documents.filter(r=>r.incluir).length,ignored=documents.length-included;
    write('doc-status','Histórico conferido: '+documents.length+' documentos, '+included+
     ' incluídos e '+ignored+' excluídos. '+liveMatches.size+' documento(s) associados ao operacional, sem alterar os lançamentos financeiros.');
@@ -307,6 +394,20 @@ function setup(){
  $('doc-by-supplier-year')?.addEventListener('change',renderSupplierYears);
  $('doc-by-supplier-search')?.addEventListener('input',renderSupplierYears);
  $('doc-by-supplier-export')?.addEventListener('click',exportSupplierYears);
+ $('doc-supplier-choice-search')?.addEventListener('input',renderChoice);
+ $('doc-supplier-choice-filter')?.addEventListener('change',renderChoice);
+ $('doc-supplier-choice-list')?.addEventListener('change',event=>{
+  const input=event.target.closest?.('input[data-supplier-key]');
+  if(!input)return;
+  if(input.checked)selectedSuppliers.add(input.dataset.supplierKey);
+  else selectedSuppliers.delete(input.dataset.supplierKey);
+  saveSupplierSelection();
+ });
+ $('doc-supplier-pick-default')?.addEventListener('click',()=>applySupplierMode('default'));
+ $('doc-supplier-pick-auto')?.addEventListener('click',()=>applySupplierMode('auto'));
+ $('doc-supplier-pick-all')?.addEventListener('click',()=>applySupplierMode('all'));
+ $('doc-supplier-pick-none')?.addEventListener('click',()=>applySupplierMode('none'));
+
  $('doc-export')?.addEventListener('click',exportCsv);
 }
 window.frDocumentsUI={refresh};
