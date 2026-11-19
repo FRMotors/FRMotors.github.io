@@ -50,3 +50,12 @@
 @media(max-width:1080px){.rg-cat-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.rg-cat-charts{grid-template-columns:1fr}}
 @media(max-width:560px){.rg-cat-filters,.rg-cat-charts,.rg-cat-metrics{padding-left:14px;padding-right:14px}.rg-cat-status,.rg-cat-note{margin-left:14px;margin-right:14px}.rg-cat-table-heading{padding-left:14px;padding-right:14px}.rg-cat-detail-controls{padding:0 14px 14px}.rg-cat-bottom-note{padding:12px 14px}.rg-cat-pager{flex-wrap:wrap;justify-content:center}.rg-cat-chart-card{padding:12px}.rg-cat-metric{padding:12px}}
 @media print{.rg-cat-filters .btn,.rg-cat-table-heading .btn,.rg-cat-pager{display:none!important}}
+
+/* Contadores da consolidação entre histórico e extratos. */
+.rg-cat-audit{display:flex;flex-wrap:wrap;gap:8px;margin:0 22px 17px}
+.rg-cat-audit[hidden]{display:none!important}
+.rg-cat-audit span{border:1px solid #d8e5ea;border-radius:10px;padding:9px 12px;background:#f8fbfc;color:#4c6a78;font-size:11px}
+.rg-cat-audit span strong{font-size:14px;color:#254a5c;font-variant-numeric:tabular-nums;margin-right:3px}
+.rg-cat-audit .rg-cat-audit-attention{background:#fff5df;border-color:#e8ce94;color:#8c6117}
+.rg-cat-audit .rg-cat-audit-attention strong{color:#8c6117}
+@media(max-width:560px){.rg-cat-audit{margin:0 14px 14px}.rg-cat-audit span{flex:1 1 135px}}
