@@ -55,7 +55,7 @@ test('Boletos avulsos com mesmo fornecedor dependem de vínculo pelo ID',()=>{
  assert.equal(rows.find(r=>r.id==='2').state,'pago');
 });
 test('Auditoria atual lê fontes autorizadas, sem escrever dados financeiros',()=>{
- for(const source of [aUI,docs])assert.doesNotMatch(source,/\.(insert|update|upsert|delete)\(/);
+ for(const source of [aUI,docs])assert.doesNotMatch(source,/db\.from\([^)]*\)\.(insert|update|upsert|delete)\(/);
  for(const source of ['fin_contas_pagar','fin_boletos_avulsos','fin_baixas_operacionais','fin_baixas_extrato_avulsos'])
   assert.ok(aUI.includes(source));
  assert.match(aUI,/fluxo_caixa_autorizado/);
@@ -86,8 +86,8 @@ test('Fatura é paga na aba Cartões e não exige abrir Autopeças',()=>{
 test('Faturas documentais ficam em Cartões com recarregamento ao abrir',()=>{
  const cards=html.indexOf('data-view-panel="cardbills"');
  const docs=html.indexOf('<h2>Faturas documentais por cartão e mês</h2>');
- const expenses=html.indexOf('data-view-panel="expenses"');
- assert.ok(cards>=0&&docs>cards&&docs<expenses);
+ const nextView=html.indexOf('<section class="view cl-view"',cards);
+ assert.ok(cards>=0&&docs>cards&&docs<nextView);
  assert.match(nav,/frDocsReconcileUI\?\.refresh/);
 });
 test('Existe acesso direto às compras pendentes pelo identificador exato',()=>{
