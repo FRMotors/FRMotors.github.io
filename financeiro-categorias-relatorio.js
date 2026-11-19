@@ -11,7 +11,7 @@ const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL
 const count=n=>new Intl.NumberFormat('pt-BR').format(n);
 const percent=(n,total)=>total?new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:1}).format(n/total):'0%';
 const dateBR=value=>String(value||'').slice(0,10).split('-').reverse().join('/');
-const state={official:[],imported:[],combined:[],combination:null,files:[],loaded:false,loading:null,detailPage:0,detailLimit:20,categoryKey:'',detailSearch:'',generation:0};
+const state={official:[],imported:[],combined:[],combination:null,confirmations:new Map(),savingMatch:null,files:[],loaded:false,loading:null,detailPage:0,detailLimit:20,categoryKey:'',detailSearch:'',generation:0};
 const elements={
  source:'rg-cat-source',account:'rg-cat-account',status:'rg-cat-status',note:'rg-cat-provenance',
  kpis:'rg-cat-metrics',inBars:'rg-cat-inbars',outBars:'rg-cat-outbars',
@@ -138,6 +138,93 @@ function detailRows(summary){
  if(el('prev'))el('prev').disabled=state.detailPage===0;
  if(el('next'))el('next').disabled=state.detailPage>=totalPages-1;
 }
+function approvedMatch(item){
+ const approval=state.confirmations.get(item.bank.id);
+ return approval?.situacao==='conferido'&&
+  approval.movimento_homologado_id===item.official.id;
+}
+function unresolvedMatches(){
+ return (state.combination?.weakMatches||[]).filter(item=>!approvedMatch(item));
+}
+function renderMatches(){
+ const panel=$('rg-cat-match-panel'),counter=$('rg-cat-match-count'),body=$('rg-cat-match-rows');
+ if(!panel||!counter||!body)return;
+ const isCombined=filters().source==='combined';
+ const matches=state.combination?.weakMatches||[];
+ const pending=unresolvedMatches();
+ panel.hidden=!isCombined;
+ counter.textContent=pending.length+' pendente(s) · '+(matches.length-pending.length)+' conferida(s)';
+ if(!isCombined)return;
+ body.innerHTML=matches.length?matches.map((item,index)=>{
+  const yes=approvedMatch(item),bank=item.bank,official=item.official;
+  const approval=state.confirmations.get(bank.id),saving=state.savingMatch===bank.id;
+  const stamp=yes&&approval?.confirmado_em?
+   new Date(approval.confirmado_em).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'';
+  const noteId='rg-cat-match-note-'+index;
+  return '<tr data-match-line="'+safe(bank.id)+'">'+
+   '<td><strong>'+safe(dateBR(bank.date))+'</strong><small class="rg-cat-sub">'+money(bank.value)+' · '+
+    safe(bank.type==='entrada'?'Entrada':'Saída')+'</small></td>'+
+   '<td><strong>'+safe(bank.bankDescription)+'</strong>'+
+    '<small class="rg-cat-sub">Conta: '+safe(bank.account)+' · '+safe(bank.file||'Arquivo importado')+'</small></td>'+
+   '<td><strong>'+safe(official.description)+'</strong>'+
+    '<small class="rg-cat-sub">Categoria: '+safe(official.category)+'</small></td>'+
+   '<td><span class="rg-cat-match-state '+(yes?'approved':'review')+'">'+
+    (yes?'Conferido':'Pendente de conferência')+'</span>'+
+    (yes?'<small class="rg-cat-sub">Aprovado em '+safe(stamp)+'</small>':'')+'</td>'+
+   '<td><label for="'+noteId+'" class="rg-cat-match-note-label">Observação opcional</label>'+
+    '<input id="'+noteId+'" data-match-note="'+safe(bank.id)+'" maxlength="500" placeholder="Ex.: confirmei no extrato" '+
+     'value="'+safe(yes?(approval?.observacao||''):'')+'"'+(saving?' disabled':'')+'>'+
+    '<button type="button" class="btn '+(yes?'':'btn-primary')+' rg-cat-match-action" '+
+     'data-match-action="'+(yes?'reabrir':'confirmar')+'" data-match-line="'+safe(bank.id)+'" '+
+     'data-match-official="'+safe(official.id)+'"'+(saving?' disabled':'')+'>'+
+      (saving?'Salvando...':yes?'Reabrir conferência':'Confirmar correspondência')+
+    '</button></td></tr>';
+ }).join(''):'<tr><td colspan="5" class="rg-cat-empty">Nenhuma correspondência com descrição diferente neste fechamento.</td></tr>';
+}
+async function saveMatch(lineId,officialId,confirm){
+ if(state.savingMatch||state.loading||!state.loaded)return;
+ if(filters().source!=='combined')return;
+ const match=(state.combination?.weakMatches||[]).find(item=>
+  item.bank.id===lineId&&item.official.id===officialId);
+ if(!match){setMatchStatus('A correspondência mudou. Atualize o relatório antes de confirmar.',true);return}
+ const current=approvedMatch(match);
+ if(confirm===current)return;
+ const noteInput=Array.from($('rg-cat-match-rows')?.querySelectorAll?.('[data-match-note]')||[])
+  .find(input=>input.dataset.matchNote===lineId);
+ const observation=String(noteInput?.value||'').trim();
+ if(observation.length>500){setMatchStatus('A observação deve ter no máximo 500 caracteres.',true);return}
+ const prompt=confirm?
+  'Você conferiu que as duas descrições representam a mesma movimentação de '+money(match.bank.value)+
+  ' em '+dateBR(match.bank.date)+'? Esta confirmação não é uma baixa financeira.':
+  'Reabrir a conferência desta correspondência? O histórico da aprovação será preservado.';
+ if(typeof window.confirm==='function'&&!window.confirm(prompt))return;
+ state.savingMatch=lineId;renderMatches();
+ setMatchStatus(confirm?'Registrando conferência...':'Reabrindo conferência...');
+ try{
+  const {data,error}=await db.rpc('fin_conciliacao_correspondencia_confirmar',{
+   p_linha_id:lineId,p_movimento_homologado_id:officialId,
+   p_confirmar:confirm,p_observacao:observation||null
+  });
+  if(error)throw error;
+  if(!data||data.linha_id!==lineId||data.movimento_homologado_id!==officialId||
+   data.situacao!==(confirm?'conferido':'reaberto'))
+   throw Error('O servidor não confirmou a atualização de conciliação.');
+  state.savingMatch=null;
+  await refresh();
+  if(!state.loaded)throw Error('A gravação foi recebida, mas o relatório não pôde ser atualizado. Recarregue a página.');
+  setMatchStatus(confirm?
+   'Correspondência conferida e registrada. Nenhum pagamento, valor ou saldo foi alterado.':
+   'Conferência reaberta. O histórico de aprovação foi preservado.');
+ }catch(err){
+  state.savingMatch=null;renderMatches();
+  setMatchStatus('Falha na conferência: '+String(err.message||err),true);
+ }
+}
+function setMatchStatus(text,bad=false){
+ const el=$('rg-cat-match-status');
+ if(!el)return;
+ el.textContent=text;el.className='rg-cat-match-status'+(bad?' error':'');
+}
 function render(){
  if(!state.loaded||!core)return;
  const f=filters(),summary=grouped();
@@ -146,6 +233,8 @@ function render(){
  const accountWrap=$('rg-cat-account-wrap');
  if(accountWrap)accountWrap.hidden=f.source!=='imported';
  const labelledPeriod=f.month==='todos'?String(f.year):f.month+'/'+f.year;
+ const pending=unresolvedMatches().length;
+ const reviewed=(state.combination?.weakMatches.length||0)-pending;
  const reconciliation=$('rg-cat-combined-audit');
  if(reconciliation){
   const audit=state.combination;
@@ -155,8 +244,8 @@ function render(){
     '<span><strong>'+count(audit.officialCount)+'</strong> homologados</span>'+
     '<span><strong>'+count(audit.addedCount)+'</strong> novos dos extratos</span>'+
     '<span><strong>'+count(audit.ignoredBeforeCutoff+audit.matchedOnCutoff+audit.repeatedInPDFs+audit.cancelledIgnored)+'</strong> não somados novamente</span>'+
-    '<span class="'+(audit.weakMatches.length?'rg-cat-audit-attention':'')+'"><strong>'+
-     count(audit.weakMatches.length)+'</strong> correspondência(s) a conferir</span>';
+    '<span class="'+(pending?'rg-cat-audit-attention':'')+'"><strong>'+
+     count(pending)+'</strong> pendente(s) · '+count(reviewed)+' conferida(s)</span>';
   }else reconciliation.innerHTML='';
  }
  const audit=state.combination;
@@ -167,8 +256,8 @@ function render(){
    audit.matchedOnCutoff+' correspondência(s) no dia do corte; '+
    audit.repeatedInPDFs+' repetição(ões) entre PDFs ignorada(s); '+
    audit.cancelledIgnored+' movimentação(ões) cancelada(s) excluída(s). ':'')+
-  (audit?.weakMatches?.length?audit.weakMatches.length+
-   ' correspondência(s) por data, tipo e valor com descrição diferente exigem conferência. ':'')+
+  (pending?pending+' correspondência(s) por data, tipo e valor com descrição diferente exigem conferência. ': 
+   reviewed?reviewed+' correspondência(s) com descrição diferente já conferida(s) manualmente. ':'')+
   'Movimentos coincidentes mantêm a categoria homologada. O resultado é uma prévia consolidada, não saldo bancário confirmado. '+
   'O filtro por conta fica indisponível porque a base homologada não informa a conta.':
   f.source==='official'?
@@ -184,13 +273,13 @@ function render(){
   metric('A classificar',money(summary.pendingClassAmount),count(summary.pendingClass)+' linha(s) genérica(s) ou sem categoria','review');
  bars(el('inBars'),summary.inGroups,summary.incoming,'Nenhuma entrada nesta seleção.');
  bars(el('outBars'),summary.outGroups,summary.outgoing,'Nenhuma saída nesta seleção.');
- categoryOptions(summary);resultRows(summary);detailRows(summary);
+ categoryOptions(summary);resultRows(summary);detailRows(summary);renderMatches();
  setStatus('Análise de '+labelledPeriod+' · '+count(summary.rows.length)+' movimento(s) · '+summary.allGroups.length+
   ' categoria(s) agrupada(s). '+(f.source==='combined'?
    'Consolidado em prévia: '+state.combination.addedCount+' movimentos bancários adicionais'+
-   (state.combination.weakMatches.length?'; '+state.combination.weakMatches.length+' correspondência(s) exigem revisão.':'.'):
+   (pending?'; '+pending+' correspondência(s) exigem revisão.':'; correspondências conferidas.'):
    f.source==='official'?'Caixa homologado.':'Extratos importados, sem movimentos cancelados.'),
-  f.source==='combined'&&state.combination.weakMatches.length>0);
+  f.source==='combined'&&pending>0);
 }
 async function refresh(){
  if(state.loading)return state.loading;
@@ -200,11 +289,14 @@ async function refresh(){
   if(typeof db==='undefined'||!db)throw Error('Sem conexão com o banco financeiro.');
   const access=await db.rpc('fluxo_caixa_autorizado');
   if(access.error||access.data!==true)throw Error('Acesso financeiro não autorizado.');
-  const [official,files]=await Promise.all([
+  const [official,files,confirmedMatches]=await Promise.all([
    all(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,categoria,valor,estado,origem')
     .eq('estado','confirmado').eq('origem','fluxo_caixa_homologado').order('id')),
    all(()=>db.from('fin_teste_importacoes').select('id,tipo,conta_nome,arquivo_nome,criado_em')
-    .eq('tipo','banco').order('id'))
+    .eq('tipo','banco').order('id')),
+   all(()=>db.from('fin_conciliacao_confirmacoes')
+    .select('linha_id,movimento_homologado_id,situacao,confirmado_em,confirmado_por,observacao')
+    .order('linha_id'))
   ]);
   const lines=[];
   for(let i=0;i<files.length;i+=30){
@@ -228,10 +320,12 @@ async function refresh(){
   const combination=consolidatedCore.combineSources(a,b);
   combination.cancelledIgnored=lines.length-b.length;
   state.official=a;state.imported=b;state.combined=combination.rows;state.combination=combination;
+  state.confirmations=new Map(confirmedMatches.map(row=>[row.linha_id,row]));
   state.files=files;state.loaded=true;
   accountOptions();render();
  })().catch(err=>{
-  state.loaded=false;state.official=[];state.imported=[];state.combined=[];state.combination=null;state.files=[];
+  state.loaded=false;state.official=[];state.imported=[];state.combined=[];state.combination=null;state.confirmations=new Map();state.files=[];
+  const matchBody=$('rg-cat-match-rows');if(matchBody)matchBody.innerHTML='<tr><td colspan="5">Conciliação indisponível. Atualize o relatório.</td></tr>';
   for(const name of ['kpis','inBars','outBars','table','details']){
    const node=el(name);if(node)node.innerHTML='';
   }
@@ -283,6 +377,12 @@ function init(){
  el('prev')?.addEventListener('click',()=>{state.detailPage--;detailRows(grouped())});
  el('next')?.addEventListener('click',()=>{state.detailPage++;detailRows(grouped())});
  $('rg-cat-reload')?.addEventListener('click',refresh);
+ $('rg-cat-match-rows')?.addEventListener('click',event=>{
+  const button=event.target.closest('[data-match-action]');
+  if(!button)return;
+  saveMatch(button.dataset.matchLine,button.dataset.matchOfficial,
+   button.dataset.matchAction==='confirmar');
+ });
  $('rg-refresh')?.addEventListener('click',refresh);
  $('rg-cat-export-summary')?.addEventListener('click',()=>exportCSV('summary'));
  $('rg-cat-export-movements')?.addEventListener('click',()=>exportCSV('movements'));
@@ -291,6 +391,6 @@ function init(){
  });
  if(!document.querySelector('[data-view-panel="reports"]')?.hidden)refresh();
 }
-window.frCategoryReportUI={refresh,render};
+window.frCategoryReportUI={refresh,render,__test:{approvedMatch,unresolvedMatches,saveMatch}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
