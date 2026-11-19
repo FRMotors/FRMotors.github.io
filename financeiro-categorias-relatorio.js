@@ -146,6 +146,19 @@ function render(){
  const accountWrap=$('rg-cat-account-wrap');
  if(accountWrap)accountWrap.hidden=f.source!=='imported';
  const labelledPeriod=f.month==='todos'?String(f.year):f.month+'/'+f.year;
+ const reconciliation=$('rg-cat-combined-audit');
+ if(reconciliation){
+  const audit=state.combination;
+  reconciliation.hidden=f.source!=='combined';
+  if(f.source==='combined'&&audit){
+   reconciliation.innerHTML=
+    '<span><strong>'+count(audit.officialCount)+'</strong> homologados</span>'+
+    '<span><strong>'+count(audit.addedCount)+'</strong> novos dos extratos</span>'+
+    '<span><strong>'+count(audit.ignoredBeforeCutoff+audit.matchedOnCutoff+audit.repeatedInPDFs)+'</strong> sobreposições evitadas</span>'+
+    '<span class="'+(audit.weakMatches.length?'rg-cat-audit-attention':'')+'"><strong>'+
+     count(audit.weakMatches.length)+'</strong> correspondência(s) a conferir</span>';
+  }else reconciliation.innerHTML='';
+ }
  const audit=state.combination;
  const note=f.source==='combined'?
   'CONSOLIDADO: todo o caixa homologado até '+(audit?.cutoff||'sem fechamento')+
@@ -172,8 +185,11 @@ function render(){
  bars(el('outBars'),summary.outGroups,summary.outgoing,'Nenhuma saída nesta seleção.');
  categoryOptions(summary);resultRows(summary);detailRows(summary);
  setStatus('Análise de '+labelledPeriod+' · '+count(summary.rows.length)+' movimento(s) · '+summary.allGroups.length+
-  ' categoria(s) agrupada(s). '+(f.source==='combined'?'Consolidado sem duplicações identificadas.':
-   f.source==='official'?'Caixa homologado.':'Extratos importados, sem movimentos cancelados.'));
+  ' categoria(s) agrupada(s). '+(f.source==='combined'?
+   'Consolidado em prévia: '+state.combination.addedCount+' movimentos bancários adicionais'+
+   (state.combination.weakMatches.length?'; '+state.combination.weakMatches.length+' correspondência(s) exigem revisão.':'.'):
+   f.source==='official'?'Caixa homologado.':'Extratos importados, sem movimentos cancelados.'),
+  f.source==='combined'&&state.combination.weakMatches.length>0);
 }
 async function refresh(){
  if(state.loading)return state.loading;
