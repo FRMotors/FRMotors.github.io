@@ -657,6 +657,52 @@
          <small>Histórico preservado dos compromissos</small>
         </div>
        </div>
+       <section class="card audit-card audit-current-bills" id="audit-live-bills" aria-labelledby="audit-current-title">
+        <div class="card-head">
+         <div>
+          <h2 id="audit-current-title">Situação atual dos boletos</h2>
+          <p>Esta é a lista atual de compromissos, separada do histórico de eventos abaixo. Uma linha dizendo “aberto → conciliado” registra o que aconteceu no passado, não que o boleto continua aberto.</p>
+         </div>
+         <button type="button" class="btn" data-view="payables">Conferir / dar baixa</button>
+        </div>
+        <div class="audit-current-counters" aria-label="Resumo atual dos boletos">
+         <div><span>Pagos ou conciliados</span><strong id="audit-current-paid">—</strong></div>
+         <div><span>Em aberto no cadastro</span><strong id="audit-current-open">—</strong></div>
+         <div><span>Exigem revisão</span><strong id="audit-current-review">—</strong></div>
+        </div>
+        <div class="audit-current-toolbar">
+         <label>Pesquisar boleto
+          <input type="search" id="audit-current-search" autocomplete="off" placeholder="Fornecedor, descrição, vencimento ou valor..."></label>
+         <label>Situação atual
+          <select id="audit-current-filter">
+           <option value="todos">Todos os boletos</option>
+           <option value="pago">Somente pagos / conciliados</option>
+           <option value="aberto">Somente em aberto</option>
+           <option value="revisar">Somente exigindo revisão</option>
+          </select>
+         </label>
+         <label>Origem
+          <select id="audit-current-origin">
+           <option value="todos">Todos os compromissos</option>
+           <option value="conta">Compromissos homologados</option>
+           <option value="avulso">Boletos avulsos</option>
+          </select>
+         </label>
+        </div>
+        <p id="audit-current-note" class="audit-current-note" role="status">Consultando situações registradas no banco...</p>
+        <div class="table-wrap audit-current-table">
+         <table class="data-table"><thead><tr>
+          <th>Fornecedor e referência</th><th>Vencimento</th><th class="money">Valor original</th>
+          <th class="money">Pago</th><th>Data da baixa</th><th>Situação atual</th><th>Comprovação no sistema</th>
+         </tr></thead><tbody id="audit-current-rows"><tr><td colspan="7" class="empty">Aguardando consulta...</td></tr></tbody></table>
+        </div>
+        <div class="audit-current-footer">
+         <span id="audit-current-page">Aguardando boletos</span>
+         <div><button type="button" class="btn" id="audit-current-prev" disabled>Anterior</button>
+          <button type="button" class="btn" id="audit-current-next" disabled>Próxima</button></div>
+        </div>
+        <p class="audit-current-caveat">O status apresentado é o que está comprovado nas bases operacionais. Se você realizou uma baixa e o compromisso ainda constar como aberto, confira o vínculo em Contas a pagar. Esta tela nunca presume pagamento apenas por nome, data ou valor semelhante.</p>
+       </section>
        <section class="card audit-card" aria-labelledby="audit-list-title">
         <div class="card-head">
          <div>
@@ -3664,5 +3710,6 @@ init();
 <script src="./financeiro-relatorios-gerenciais.js?v=20261119fix1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
+<script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>
 </body></html>
