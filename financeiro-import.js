@@ -541,7 +541,8 @@ async function saveImport(){
   notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Repetidos ignorados pelo banco: '+data.duplicadas+'.'+repeatMessage+evidenceMessage+boundary);
   window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+(data.duplicadas+blocked)+' repetidos não adicionados.'+boundary);
   await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve(),
-    window.frPixRulesUI?.refresh?.()||Promise.resolve()]);
+    window.frPixRulesUI?.refresh?.()||Promise.resolve(),
+    bankItau?(window.frHistoryUI?.refresh?.()||Promise.resolve()):Promise.resolve()]);
  }catch(e){notice('import-save-status','Importação não concluída: '+e.message,true)}
  finally{working=false;updateCounts()}
 }
