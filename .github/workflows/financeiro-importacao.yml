@@ -1,0 +1,32 @@
+name: Validar classificação individual de extratos
+on:
+  push:
+    paths:
+      - 'financeiro-import.js'
+      - 'financeiro-import.css'
+      - 'financeiro.html'
+      - 'sql/migrations/20261119_classificacao_individual_extratos.sql'
+      - 'tests/financeiro-importacao-classificacao.test.cjs'
+      - '.github/workflows/financeiro-importacao.yml'
+  pull_request:
+    paths:
+      - 'financeiro-import.js'
+      - 'financeiro-import.css'
+      - 'financeiro.html'
+      - 'sql/migrations/20261119_classificacao_individual_extratos.sql'
+      - 'tests/financeiro-importacao-classificacao.test.cjs'
+      - '.github/workflows/financeiro-importacao.yml'
+permissions:
+  contents: read
+jobs:
+  classificacao-importacao:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+      - name: Preparar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar integração de nomes e categorias
+        run: node --test tests/financeiro-importacao-classificacao.test.cjs
