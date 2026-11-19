@@ -429,6 +429,7 @@ async function confirmPay(e){
    window.frOperationalUI?.refresh?.()||Promise.resolve(),
    window.frImportUI?.refresh?.()||Promise.resolve(),
    window.frAuditUI?.refresh?.()||Promise.resolve(),
+   window.frAuditCurrentUI?.refresh?.()||Promise.resolve(),
    window.frDocumentsUI?.refresh?.()||Promise.resolve(),
    window.frManagerReportsUI?.refresh?.()||Promise.resolve()]);
   closeDialog('op-pay-dialog');
