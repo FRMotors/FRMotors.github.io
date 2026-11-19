@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261116sidebar-desktop57">
-<link rel="stylesheet" href="./financeiro-import.css?v=20261119classe1">
+<link rel="stylesheet" href="./financeiro-import.css?v=20261119editold1">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
@@ -2744,6 +2744,52 @@
   </div>
   
   </div>
+</details><details class="fin-collapse" id="imports-editar-categorias">
+ <summary><span>Editar categorias dos extratos importados</span><small>Altere lançamentos já enviados, sem reenviar PDFs nem modificar o caixa</small></summary>
+ <div class="fin-collapse-panel">
+  <section class="card import-oldcat-card" id="import-categories-panel">
+   <div class="card-head">
+    <div>
+     <p class="eyebrow">Classificação manual dos extratos anteriores</p>
+     <h2>Editar categorias de movimentações já importadas</h2>
+     <p>Localize um PIX, pagamento ou recebimento que já esteja salvo e atribua a categoria correta. Cada alteração fica registrada para auditoria.</p>
+    </div>
+    <button type="button" class="btn" id="import-categories-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar lista</button>
+   </div>
+   <p class="info-note import-oldcat-tip">Você pode escolher categorias como <strong>PRÓ-LABORE</strong>, Fornecedores e Tarifas bancárias, ou escrever outra. A descrição original, data, valor, status e identificação bancária não são alterados. Movimentações canceladas são identificadas e permanecem fora do caixa.</p>
+   <div class="import-oldcat-filters">
+    <label for="import-categories-account">Conta bancária
+     <select id="import-categories-account"><option value="">Todas as contas</option></select>
+    </label>
+    <label for="import-categories-search">Pesquisar lançamento
+     <input id="import-categories-search" type="search" placeholder="Descrição, pessoa, categoria, data ou arquivo" autocomplete="off">
+    </label>
+   </div>
+   <p class="import-oldcat-count" id="import-categories-count">Abra esta seção para carregar as movimentações.</p>
+   <div class="status" id="import-categories-status" role="status" aria-live="polite">Abra esta seção para carregar os extratos antigos.</div>
+   <datalist id="import-existing-category-options"></datalist>
+   <div class="table-wrap import-oldcat-table"><table class="data-table">
+    <thead><tr>
+     <th>Data</th><th>Conta e arquivo</th><th>Movimentação</th><th>Editar categoria</th>
+     <th class="money">Valor</th><th>Situação</th><th>Ação</th>
+    </tr></thead>
+    <tbody id="import-categories-rows"><tr><td colspan="7" class="empty">Abra a seção para consultar os lançamentos.</td></tr></tbody>
+   </table></div>
+   <div class="import-oldcat-pager">
+    <button type="button" class="btn" id="import-categories-prev" disabled>Anterior</button>
+    <span id="import-categories-pages">Nenhuma página carregada.</span>
+    <button type="button" class="btn" id="import-categories-next" disabled>Próxima</button>
+   </div>
+   <details class="import-oldcat-audit">
+    <summary>Histórico de alterações de categorias</summary>
+    <p class="info-note">As últimas alterações de classificação são registradas sem modificar o extrato original.</p>
+    <div class="table-wrap">
+     <table class="data-table"><thead><tr><th>Quando</th><th>Conta</th><th>Descrição bancária</th><th>Anterior</th><th>Nova categoria</th></tr></thead>
+     <tbody id="import-categories-audit"><tr><td colspan="5" class="empty">Nenhuma alteração carregada.</td></tr></tbody></table>
+    </div>
+   </details>
+  </section>
+ </div>
 </details><details class="fin-collapse" id="imports-historico">
   <summary><span>Histórico de arquivos enviados</span><small>Extratos, faturas recebidas e registros anteriores</small></summary>
   <div class="fin-collapse-panel">
@@ -3415,6 +3461,7 @@ init();
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import-visibilidade.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-import.js?v=20261119classe1" defer></script>
+<script src="./financeiro-import-categorias.js?v=20261119editold1" defer></script>
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 <script src="./financeiro-faturas.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
