@@ -126,3 +126,34 @@
 .import-preview-table .import-line-number,.import-preview-table .import-category-note{display:block;color:#8ba1aa;font-size:10px;margin-top:4px}
 .import-preview-table .import-edit-value{min-width:105px}
 @media(max-width:700px){.import-preview-table .import-desc-cell{min-width:250px}.import-preview-table .import-category-cell{min-width:160px}}
+
+/* Editor seguro de categorias de extratos bancários já salvos. */
+.import-oldcat-card .card-head{align-items:center}
+.import-oldcat-tip{margin:5px 20px 18px;padding:12px 14px;line-height:1.6}
+.import-oldcat-filters{display:grid;grid-template-columns:minmax(190px,260px) minmax(270px,1fr);gap:14px;padding:0 20px 12px}
+.import-oldcat-filters label{display:flex;flex-direction:column;gap:7px;color:#496272;font-size:12px;font-weight:750}
+.import-oldcat-filters input,.import-oldcat-filters select{min-width:0;width:100%;border:1px solid #cfdfe5;border-radius:8px;padding:10px 12px;background:#fff;color:#344e60;font-size:12px}
+.import-oldcat-count{margin:0;padding:3px 20px 11px;color:#678390;font-size:11px;font-weight:650}
+#import-categories-status{margin:0 20px 14px;min-height:28px}
+.import-oldcat-table{max-height:570px;overflow:auto}
+.import-oldcat-table table{min-width:1130px}
+.import-oldcat-table th{position:sticky;top:0;z-index:1}
+.import-oldcat-table td{padding:11px 13px;vertical-align:top}
+.import-oldcat-table td:nth-child(2){min-width:145px;max-width:205px;overflow-wrap:anywhere}
+.import-oldcat-table td:nth-child(3){min-width:205px;max-width:300px;overflow-wrap:anywhere}
+.import-oldcat-table td:nth-child(4){min-width:195px}
+.import-oldcat-table td strong{font-size:12px}
+.import-oldcat-sub{display:block;color:#8798a6;font-size:10px;margin-top:5px;line-height:1.35;overflow-wrap:anywhere}
+.import-oldcat-label{display:block;font-size:10px;font-weight:800;color:#587783;margin-bottom:6px}
+.import-oldcat-table input[data-old-category-input]{width:100%;min-width:170px;border:1px solid #cadbe1;border-radius:7px;padding:9px;font-size:12px;background:white;color:#284653}
+.import-oldcat-table input[data-old-category-input]:focus{outline:2px solid #60b6b9;outline-offset:1px}
+.import-oldcat-state{display:inline-block;font-size:10px;font-weight:780;border-radius:7px;padding:6px 8px;white-space:normal}
+.import-oldcat-state.confirmed{color:#176d54;background:#e6f6ee}
+.import-oldcat-state.inactive{color:#846333;background:#fbf1e0}
+.import-oldcat-save{font-size:11px;white-space:nowrap}
+.import-oldcat-pager{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:14px 20px;color:#64808c;font-size:11px}
+.import-oldcat-audit{margin:0 20px 20px;border:1px solid #e1eaef;border-radius:10px;padding:12px 14px}
+.import-oldcat-audit summary{cursor:pointer;font-weight:750;font-size:12px;color:#456171}
+.import-oldcat-audit .info-note{margin:10px 0}
+.import-oldcat-audit .data-table{min-width:720px}
+@media(max-width:700px){.import-oldcat-filters{grid-template-columns:1fr;padding:0 14px 12px}.import-oldcat-tip{margin:5px 14px 14px}.import-oldcat-pager{justify-content:center;flex-wrap:wrap}.import-oldcat-audit{margin:0 14px 14px}}
