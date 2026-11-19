@@ -6,6 +6,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const core=require('../financeiro-categorias-core.js');
+const combinedCore=require('../financeiro-categorias-consolidado.js');
 const js=fs.readFileSync(path.join(root,'financeiro-categorias-relatorio.js'),'utf8');
 const html=fs.readFileSync(path.join(root,'financeiro.html'),'utf8');
 function fixture(){
@@ -58,7 +59,7 @@ function harness(tables){
    return q;
   }
  };
- const window={frCategoryCore:core};
+ const window={frCategoryCore:core,frCategoryCombinedCore:combinedCore};
  vm.runInNewContext(js,{window,document,db});
  return {api:window.frCategoryReportUI,get,tables};
 }
@@ -67,7 +68,9 @@ test('relatório e scripts carregam dentro da página gerencial',()=>{
   'rg-cat-inbars','rg-cat-outbars','rg-cat-table','rg-cat-movements','rg-cat-export-summary','rg-cat-export-movements']){
   assert.match(html,new RegExp('id="'+id+'"'));
  }
- assert.ok(html.indexOf('financeiro-categorias-core.js')<html.indexOf('financeiro-categorias-relatorio.js'));
+ assert.ok(html.indexOf('financeiro-categorias-core.js')<html.indexOf('financeiro-categorias-consolidado.js'));
+ assert.ok(html.indexOf('financeiro-categorias-consolidado.js')<html.indexOf('financeiro-categorias-relatorio.js'));
+ assert.ok(html.includes('value="combined">Consolidado: extratos + caixa homologado'));
 });
 test('importações exibem apenas confirmados com categorias manuais',async()=>{
  const h=harness(fixture());await h.api.refresh();
@@ -108,4 +111,34 @@ test('o relatório aceita filtrar mês sem afetar dados de outras fontes',async(
  h.get('rg-month').value='10';h.api.render();
  assert.match(h.get('rg-cat-status').textContent,/0 movimento/);
  assert.match(h.get('rg-cat-movements').innerHTML,/Nenhuma movimentação/);
+});
+
+test('Consolidado junta entradas e saídas homologadas e bancárias sem somar cancelados',async()=>{
+ const h=harness(fixture());await h.api.refresh();
+ h.get('rg-cat-source').value='combined';h.api.render();
+ const k=h.get('rg-cat-metrics').innerHTML;
+ assert.ok(k.includes('1.300,00'));assert.ok(k.includes('950,00'));assert.ok(k.includes('350,00'));
+ assert.ok(h.get('rg-cat-table').innerHTML.includes('PRÓ-LABORE'));
+ assert.ok(h.get('rg-cat-combined-audit').innerHTML.includes('2</strong> homologados'));
+ assert.ok(h.get('rg-cat-combined-audit').innerHTML.includes('2</strong> novos dos extratos'));
+ assert.equal(h.get('rg-cat-account-wrap').hidden,true);
+ assert.ok(h.get('rg-cat-provenance').textContent.includes('O filtro por conta fica indisponível'));
+});
+test('No fechamento não duplica homologados do mesmo valor e deixa rastreabilidade',async()=>{
+ const t=fixture();
+ t.fin_teste_import_linhas.push({
+  id:'copy',importacao_id:'f1',movimento_id:'mc',fingerprint:'fpc',
+  data_lancamento:'2026-11-12',natureza:'saida',valor:700,descricao:'PAGAMENTO',
+  descricao_personalizada:null,categoria_personalizada:null
+ });
+ t.fin_teste_movimentos.push({
+  id:'mc',data_movimento:'2026-11-12',tipo:'saida',valor:700,descricao:'PAGAMENTO',
+  categoria:'EXTRATO BANCÁRIO',estado:'confirmado',referencia_cliente:'extrato:fpc'
+ });
+ const h=harness(t);await h.api.refresh();
+ h.get('rg-cat-source').value='combined';h.api.render();
+ assert.ok(h.get('rg-cat-combined-audit').innerHTML.includes('1</strong> não somados novamente'));
+ assert.ok(h.get('rg-cat-status').textContent.includes('4 movimento'));
+ assert.ok(h.get('rg-cat-provenance').textContent.includes('1 correspondência'));
+ assert.ok(h.get('rg-cat-table').innerHTML.includes('FORNECEDORES'));
 });
