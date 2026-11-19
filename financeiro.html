@@ -2337,7 +2337,7 @@
           <div>
             <p class="eyebrow">Histórico homologado / Itaú</p>
             <h1 class="page-heading">Itaú · Fluxo de Caixa</h1>
-            <p class="page-description">Histórico homologado do Itaú e prévia dos extratos bancários posteriores ao fechamento, com entradas, saídas e saldos separados por origem.</p>
+            <p class="page-description">Histórico homologado do Itaú e prévia dos extratos bancários ainda não contabilizados, inclusive do dia do fechamento, com entradas, saídas e saldos separados por origem.</p>
           </div>
           <div class="header-buttons">
             
@@ -2410,11 +2410,11 @@
           </div>
         </div>
         
-  <p class="hist-homolog-label" id="hist-itau-data-sources">Consultando histórico homologado e extratos posteriores...</p>
+  <p class="hist-homolog-label" id="hist-itau-data-sources">Consultando histórico homologado e extratos ainda não contabilizados...</p>
         <div class="hist-kpis" id="hist-itau-kpis" aria-label="Indicadores do Itaú: histórico e extratos em conferência"></div>
         <div class="hist-two-col">
           <section class="card">
-            <div class="card-head"><div><h2>Entradas e saídas por mês</h2><p>Base homologada mais lançamentos importados posteriores ao fechamento, identificados como prévia</p></div>
+            <div class="card-head"><div><h2>Entradas e saídas por mês</h2><p>Base homologada mais lançamentos importados ainda não contabilizados, identificados como prévia</p></div>
               <div class="chart-legend"><span><i class="legend-key"></i> Entradas</span><span><i class="legend-key out"></i> Saídas</span></div>
             </div>
             <div class="card-body"><div class="hist-chart" id="hist-itau-chart" role="img" aria-label="Gráfico comparativo de entradas e saídas por mês"></div></div>
@@ -2425,7 +2425,7 @@
           </section>
         </div>
         <section class="card hist-table-card">
-          <div class="card-head"><div><h2>Resumo mensal do Itaú</h2><p>Saldo calculado a partir do Excel e dos extratos posteriores, sem alterar o banco oficial</p></div></div>
+          <div class="card-head"><div><h2>Resumo mensal do Itaú</h2><p>Saldo calculado a partir do Excel e dos extratos ainda não contabilizados, sem alterar o banco oficial</p></div></div>
           <div class="table-wrap"><table class="data-table hist-table">
             <thead><tr><th>Mês</th><th class="money">Entradas operacionais</th><th class="money">Saídas</th><th class="money">Resultado</th><th class="money">Saldo calculado</th></tr></thead>
             <tbody id="hist-itau-monthly"></tbody>
@@ -3396,7 +3396,7 @@ init();
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 <script src="./financeiro-faturas.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
-<script src="./financeiro-historico.js?v=20261119itau1" defer></script>
+<script src="./financeiro-historico.js?v=20261119itau2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261118trash1" defer></script>
