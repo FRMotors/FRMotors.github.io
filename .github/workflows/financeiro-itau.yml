@@ -3,20 +3,28 @@ on:
   push:
     paths:
       - 'financeiro-itau-core.js'
+      - 'financeiro-itau-mensal-core.js'
+      - 'financeiro-itau-mensal.js'
+      - 'financeiro-itau-mensal.css'
       - 'financeiro-historico.js'
       - 'financeiro.html'
       - 'financeiro-import.js'
       - 'tests/financeiro-itau-integracao.test.cjs'
       - 'tests/financeiro-itau-core.test.cjs'
+      - 'tests/financeiro-itau-mensal.test.cjs'
       - '.github/workflows/financeiro-itau.yml'
   pull_request:
     paths:
       - 'financeiro-itau-core.js'
+      - 'financeiro-itau-mensal-core.js'
+      - 'financeiro-itau-mensal.js'
+      - 'financeiro-itau-mensal.css'
       - 'financeiro-historico.js'
       - 'financeiro.html'
       - 'financeiro-import.js'
       - 'tests/financeiro-itau-integracao.test.cjs'
       - 'tests/financeiro-itau-core.test.cjs'
+      - 'tests/financeiro-itau-mensal.test.cjs'
       - '.github/workflows/financeiro-itau.yml'
 permissions:
   contents: read
