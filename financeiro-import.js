@@ -328,6 +328,19 @@ function looksLikeSummary(desc,kind){
  if(kind==='cartao' && /(^pagamento\b|(^|\b)(pagto|pgto|pagamento|pag\.)\b.*(fatura|cartao|boleto)|deb(?:ito)?\s+aut.*(cartao|fatura)|creditos? de pagamento|total da fatura|saldo anterior|saldo credor|fatura anterior|liquidacao.*fatura)/.test(s))return true;
  return false;
 }
+// A categoria inicial é preenchida, mas cada linha pode ter sua classificação própria.
+const importDefaultCategory=nature=>({
+ entrada:'RECEBIMENTOS',saida:'EXTRATO BANCÁRIO',
+ compra:'COMPRAS NO CARTÃO',estorno:'ESTORNOS'
+})[nature]||'OUTROS';
+const importPersonalName=row=>String(row.customDesc||'').trim();
+const importCategory=row=>String(row.category||'').trim();
+const importLabelError=row=>{
+ const name=importPersonalName(row),category=importCategory(row);
+ if(name.length>150||(name.length>0&&name.length<2))return 'Informe um nome personalizado de 2 a 150 caracteres.';
+ if(category.length<2||category.length>100)return 'Toda movimentação precisa de uma categoria entre 2 e 100 caracteres.';
+ return '';
+};
 function formatChoice(row){
  const val=id=>{const idx=$(id).value;return idx===''?null:row[Number(idx)]};
  const date=dateISO(val('import-col-date'),$('import-date-format').value,Number($('import-year')?.value)||current.year);
@@ -441,6 +454,7 @@ async function buildPreview(){
    const defaultSelected=current.meta[i]?.defaultInclude??result.defaultInclude;
    preview.push({...result,base,occurrence:n,selected:defaultSelected,defaultSelected,
       originalValue:result.valor,rawAmount:result.valor.toFixed(2).replace('.',','),
+      customDesc:'',category:importDefaultCategory(result.nature),categoryEdited:false,
       index:i+offset,duplicate:false,userToggled:false});
   }
   if(!preview.length)throw Error('Nenhuma transação válida. Revise as colunas e o formato das datas.');
@@ -470,9 +484,16 @@ function drawPreview(){
    [['entrada','Entrada'],['saida','Saída']]:[['compra','Compra'],['estorno','Estorno']];
  body.innerHTML=preview.map((r,i)=>'<tr data-pidx="'+i+'" data-excluded="'+(!r.selected)+'" data-duplicate="'+Boolean(r.duplicate)+'" data-review="'+Boolean(r.reviewSameFile)+'"><td>'+
   '<input type="checkbox" data-import-check="'+i+'" '+(r.selected?'checked':'')+(r.duplicate?' disabled':'')+' aria-label="Incluir linha '+r.index+'"></td>'+
-  '<td>'+esc(r.date.split('-').reverse().join('/'))+'</td><td><span class="row-main">'+esc(r.desc)+'</span><span class="row-sub">Linha '+r.index+'</span></td>'+
+  '<td>'+esc(r.date.split('-').reverse().join('/'))+'</td>'+
+  '<td class="import-desc-cell"><label class="import-mini-label" for="import-custom-name-'+i+'">Nome personalizado (opcional)</label>'+
+  '<input type="text" id="import-custom-name-'+i+'" data-import-label="'+i+'" maxlength="150" value="'+esc(r.customDesc||'')+'" placeholder="Ex.: Pró-labore" aria-label="Novo nome para linha '+r.index+'">'+
+  '<small class="import-bank-original"><strong>Original do banco:</strong> '+esc(r.desc)+'</small>'+
+  '<small class="import-line-number">Linha '+r.index+'</small></td>'+
   '<td><select data-import-nature="'+i+'" aria-label="Natureza linha '+r.index+'">'+opts.map(([value,label])=>
     '<option value="'+value+'"'+(r.nature===value?' selected':'')+'>'+label+'</option>').join('')+'</select></td>'+
+  '<td class="import-category-cell"><label class="import-mini-label" for="import-custom-category-'+i+'">Categoria</label>'+
+  '<input type="text" id="import-custom-category-'+i+'" list="import-category-options" data-import-category="'+i+'" maxlength="100" value="'+esc(r.category)+'" required placeholder="Selecione ou digite" aria-label="Categoria da linha '+r.index+'">'+
+  '<small class="import-category-note">'+(r.categoryEdited?'Definida manualmente':'Padrão editável')+'</small></td>'+
   '<td class="money"><input class="import-edit-value" type="text" inputmode="decimal" data-import-value="'+i+'" aria-label="Valor em reais da linha '+r.index+'" value="'+esc(r.rawAmount)+'" title="Corrija o valor antes de importar" /></td>'+
   '<td>'+(r.duplicate?'<span class="import-duplicate-badge" title="Mesmo dia, tipo, valor e identificação da operação, presente em outro arquivo desta conta ou cartão">Repetição bloqueada</span>':
     !duplicateCheckReady?'<span class="import-checking">Verificando...</span>':
@@ -485,17 +506,19 @@ function updateCounts(){
  const repeats=preview.filter(x=>x.duplicate).length;
  const review=preview.filter(x=>x.reviewSameFile).length;
  const amountInvalid=rows.filter(r=>r.valor===null||!Number.isFinite(r.valor)||r.valor<=0);
+ const labelInvalid=rows.filter(r=>Boolean(importLabelError(r)));
  const net=rows.reduce((v,r)=>v+(['entrada','estorno'].includes(r.nature)?1:-1)*(r.valor||0),0);
  $('import-preview-count').textContent=rows.length+' selecionados'+(repeats?' · '+repeats+' repetidos bloqueados':'')+(review?' · '+review+' para conferir':'');
  $('import-count-all').textContent=String(preview.length);
  $('import-count-selected').textContent=String(rows.length);
  $('import-count-skipped').textContent=String(invalid+preview.length-rows.length);
  $('import-total-selected').textContent=cash(selectedKind()==='banco'?net:-net);
- $('import-confirm').disabled=working||!duplicateCheckReady||rows.length===0||rows.length>1500||amountInvalid.length>0;
+ $('import-confirm').disabled=working||!duplicateCheckReady||rows.length===0||rows.length>1500||amountInvalid.length>0||labelInvalid.length>0;
  $('import-select-all').checked=preview.some(r=>!r.duplicate&&!r.reviewSameFile)&&preview.filter(r=>!r.duplicate&&!r.reviewSameFile).every(r=>r.selected);
  $('import-preview-warning').textContent=!duplicateCheckReady?
   'Verificação de repetições pendente para esta conta ou cartão. Não é possível importar enquanto a conferência não for concluída.':
   amountInvalid.length?amountInvalid.length+' linha(s) com valor inválido. Corrija o valor antes de importar.':
+  labelInvalid.length?labelInvalid.length+' linha(s) com nome ou categoria inválidos. Cada movimentação precisa de categoria.':
   repeats||review?
   repeats+' repetição(ões) entre arquivos bloqueada(s); '+review+' ocorrência(s) igual(is) no mesmo PDF desmarcada(s) para conferência. Se forem operações distintas, marque cada uma manualmente.':
   rows.length?'Sem repetições entre arquivos identificadas nesta conta. Confira cada valor antes de salvar.':
@@ -510,13 +533,19 @@ async function saveImport(){
   const selected=preview.filter(x=>x.selected&&!x.duplicate);
   if(!selected.length)throw Error('Nenhum lançamento novo para importar. Os repetidos foram bloqueados.');
   if(selected.some(r=>r.valor===null||!Number.isFinite(r.valor)||r.valor<=0))throw Error('Corrija os valores inválidos antes de importar.');
+  const invalidLabel=selected.find(row=>importLabelError(row));
+  if(invalidLabel)throw Error('Linha '+invalidLabel.index+': '+importLabelError(invalidLabel));
   working=true;$('import-confirm').disabled=true;
   notice('import-save-status','Calculando identificadores e conferindo duplicidades...');
   const payload=[];
   for(let i=0;i<selected.length;i++){
    const row=selected[i];
    const fingerprint=await hashHex(new TextEncoder().encode(row.base+'|'+row.occurrence));
-   payload.push({fingerprint,data:row.date,descricao:row.desc,valor:row.valor,natureza:row.nature});
+   // Identidade bancária permanece original; rótulo e categoria não afetam deduplicação.
+   payload.push({fingerprint,data:row.date,descricao:row.desc,
+    descricao_personalizada:importPersonalName(row)||null,
+    categoria:importCategory(row),categoria_manual:Boolean(row.categoryEdited),
+    valor:row.valor,natureza:row.nature});
   }
   notice('import-save-status','Gravando '+payload.length+' movimentações verificadas no Supabase...');
   const {data,error}=await db.rpc('fin_teste_importar_extrato',{
@@ -930,11 +959,30 @@ function init(){
  $('import-preview-button').addEventListener('click',buildPreview);
  $('import-confirm').addEventListener('click',saveImport);
  $('sicoob-save-payments').addEventListener('click',saveSicoobPaymentsFromButton);
+ $('import-preview-body').addEventListener('input',event=>{
+  const name=event.target.closest('[data-import-label]');
+  const category=event.target.closest('[data-import-category]');
+  if(name){
+   const row=preview[Number(name.dataset.importLabel)];
+   if(row)row.customDesc=name.value;
+  }
+  if(category){
+   const row=preview[Number(category.dataset.importCategory)];
+   if(row){row.category=category.value;row.categoryEdited=true}
+  }
+  if(name||category)updateCounts();
+ });
  $('import-preview-body').addEventListener('change',event=>{
   const check=event.target.closest('[data-import-check]'),nature=event.target.closest('[data-import-nature]');
   const amount=event.target.closest('[data-import-value]');
   if(check){const i=Number(check.dataset.importCheck);if(preview[i]&&!preview[i].duplicate){preview[i].selected=check.checked;preview[i].userToggled=true}check.closest('tr').dataset.excluded=String(!check.checked)}
-  if(nature){const i=Number(nature.dataset.importNature);if(preview[i])preview[i].nature=nature.value}
+  if(nature){
+   const i=Number(nature.dataset.importNature);
+   if(preview[i]){
+    preview[i].nature=nature.value;
+    if(!preview[i].categoryEdited)preview[i].category=importDefaultCategory(nature.value);
+   }
+  }
   if(amount){
     const i=Number(amount.dataset.importValue);
     const n=numMoney(amount.value);
