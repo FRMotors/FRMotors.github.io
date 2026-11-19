@@ -5,6 +5,7 @@
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261116sidebar-desktop57">
 <link rel="stylesheet" href="./financeiro-import.css?v=20261119editold1">
+<link rel="stylesheet" href="./financeiro-categorias.css?v=20261119cat1">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
@@ -1054,6 +1055,49 @@
          <small><span id="rg-uncat-value">—</span> nas movimentações confirmadas</small>
         </section>
        </div>
+       <section class="card rg-cat-analysis" id="rg-category-analysis" aria-labelledby="rg-category-analysis-title">
+        <div class="card-head">
+         <div><p class="eyebrow">Análise financeira por classificação</p>
+          <h2 id="rg-category-analysis-title">Receitas e despesas por categoria</h2>
+          <p>Veja os valores por categoria, com filtros por fonte, mês, ano e conta bancária. O ano e o mês seguem os filtros gerais acima.</p>
+         </div>
+         <button class="btn" type="button" id="rg-cat-reload">Atualizar categorias</button>
+        </div>
+        <div class="rg-cat-filters">
+         <label>Fonte dos dados
+          <select id="rg-cat-source"><option value="imported">Extratos bancários importados</option><option value="official">Caixa homologado (histórico)</option></select>
+         </label>
+         <label id="rg-cat-account-wrap">Conta bancária
+          <select id="rg-cat-account"><option value="">Todas as contas importadas</option></select>
+         </label>
+         <a class="btn rg-cat-edit-link" href="./financeiro.html?view=imports&amp;section=editar-categorias#imports-editar-categorias">Editar categorias</a>
+        </div>
+        <p id="rg-cat-status" class="rg-cat-status" role="status" aria-live="polite">Aguardando consulta...</p>
+        <p id="rg-cat-provenance" class="rg-cat-note">As fontes permanecem separadas para evitar contagem duplicada.</p>
+        <div id="rg-cat-metrics" class="rg-cat-metrics" aria-label="Indicadores por categoria"></div>
+        <div class="rg-cat-charts">
+         <div class="rg-cat-chart-card"><h3>Despesas por categoria</h3><p>Participação nos pagamentos da fonte selecionada.</p><div id="rg-cat-outbars" class="rg-cat-bars"></div></div>
+         <div class="rg-cat-chart-card"><h3>Receitas por categoria</h3><p>Participação nos recebimentos da fonte selecionada.</p><div id="rg-cat-inbars" class="rg-cat-bars"></div></div>
+        </div>
+        <div class="rg-cat-table-heading"><div><h3>Todas as categorias</h3><p>Selecione uma categoria para consultar as movimentações relacionadas.</p></div>
+         <button class="btn" type="button" id="rg-cat-export-summary">Exportar categorias (CSV)</button></div>
+        <div class="table-wrap rg-cat-table-wrap"><table class="data-table">
+         <thead><tr><th>Categoria</th><th>Tipo</th><th class="money">Movimentações</th><th class="money">Total</th><th class="money">% do tipo</th><th class="money">Valor médio</th></tr></thead>
+         <tbody id="rg-cat-table"><tr><td colspan="6" class="rg-cat-empty">Consultando...</td></tr></tbody></table></div>
+        <div class="rg-cat-details" id="rg-cat-details">
+         <div class="rg-cat-table-heading"><div><h3>Movimentações detalhadas</h3><p>Filtre, pesquise ou exporte o detalhamento da categoria.</p></div>
+          <button class="btn" type="button" id="rg-cat-export-movements">Exportar movimentações (CSV)</button></div>
+         <div class="rg-cat-detail-controls">
+          <label>Categoria<select id="rg-cat-category"><option value="">Todas as categorias</option></select></label>
+          <label>Pesquisar lançamento<input id="rg-cat-search" type="search" placeholder="PIX, fornecedor, pessoa ou descrição" autocomplete="off"></label>
+         </div>
+         <div class="table-wrap rg-cat-detail-table"><table class="data-table">
+          <thead><tr><th>Data</th><th>Movimentação</th><th>Categoria</th><th>Conta / fonte</th><th>Tipo</th><th class="money">Valor</th></tr></thead>
+          <tbody id="rg-cat-movements"><tr><td colspan="6" class="rg-cat-empty">Consultando...</td></tr></tbody></table></div>
+         <div class="rg-cat-pager"><button class="btn" type="button" id="rg-cat-prev" disabled>Anterior</button><span id="rg-cat-page">Aguardando...</span><button class="btn" type="button" id="rg-cat-next" disabled>Próxima</button></div>
+        </div>
+        <p class="rg-cat-bottom-note">Os extratos podem conter lançamentos já presentes no caixa homologado. Alterne a fonte para comparar, não some os totais. Cartões e autopeças documentais não são contabilizados aqui novamente.</p>
+       </section>
        <section class="card rg-annual" aria-labelledby="rg-annual-title">
         <div class="rg-annual-main">
          <h2 id="rg-annual-title">Comparativo anual</h2>
@@ -3481,6 +3525,8 @@ init();
 <script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
+<script src="./financeiro-categorias-core.js?v=20261119cat1" defer></script>
+<script src="./financeiro-categorias-relatorio.js?v=20261119cat1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
