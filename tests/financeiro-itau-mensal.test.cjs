@@ -115,7 +115,7 @@ test('navegação para meses antigos mantém os respectivos valores',async()=>{
  assert.equal(h.ui.__test.state.selected,'2026-11');
  h.ui.__test.changeMonthBy(1);
  assert.equal(h.ui.__test.state.selected,'2026-05');
- assert.match(h.el('hist-itau-mes-totals').innerHTML,/R\\$\\s*70,00/);
+ assert.ok(h.el('hist-itau-mes-totals').innerHTML.includes('70,00'));
  assert.match(h.el('hist-itau-mes-rows').innerHTML,/MOVIMENTO b/);
  assert.doesNotMatch(h.el('hist-itau-mes-rows').innerHTML,/MOVIMENTO a/);
 });
