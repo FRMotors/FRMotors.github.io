@@ -2,6 +2,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const core=window.frItauCore;
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
 const count=n=>new Intl.NumberFormat('pt-BR').format(Number(n)||0);
@@ -9,7 +10,7 @@ const num=n=>Number(n)||0;
 const sum=(rows,k)=>rows.reduce((a,r)=>a+Math.round(num(r[k])*100),0)/100;
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const monthBR=v=>v?new Intl.DateTimeFormat('pt-BR',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(String(v).slice(0,7)+'-01T12:00:00Z')).replace('.',''):'Sem data';
-const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[],importedPending:[],officialCutoff:'',latestImportedDate:''};
+const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[],importedPending:[],officialCutoff:'',latestImportedDate:'',referenceCheck:null,weakMatchCount:0};
 let loading=null,ready=false,activeTab='cards',transactionSerial=0,initialized=false,previousMaxMonth='';
 function status(id,message,error=false){
  const el=$(id);if(!el)return;el.textContent=message;el.className='status'+(error?' bad':' ok');
@@ -73,21 +74,6 @@ function overlappingImports(current,previous){
 /* Conciliação demonstrável: o saldo homologado é a base. Os PDFs são
  * janelas sobrepostas, por isso cada ocorrência física é contada uma vez.
  * A data do último movimento homologado define a janela de atualização. */
-function identityFromDescription(value){
- const desc=String(value||'');
- const doc=desc.match(/[0-9]{2}[.][0-9]{3}[.][0-9]{3}\/[0-9]{4}-[0-9]{2}|[0-9]{3}[.][0-9]{3}[.][0-9]{3}-[0-9]{2}/);
- if(doc)return 'doc:'+doc[0].replace(/[^0-9]/g,'');
- return 'texto:'+desc.toLowerCase().normalize('NFD')
-   .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
-}
-function bankKey(r){
- return [String(r.data_lancamento||'').slice(0,10),String(r.natureza||''),
-   Math.round(num(r.valor)*100),identityFromDescription(r.descricao)].join('|');
-}
-function officialKey(r){
- return [String(r.data_movimento||r.data_lancamento||'').slice(0,10),
-   String(r.tipo||r.natureza||''),Math.round(num(r.valor)*100)].join('|');
-}
 async function fetchPages(makeQuery,max=12000){
  const records=[],limit=400;
  for(let offset=0;offset<max;offset+=limit){
@@ -98,54 +84,6 @@ async function fetchPages(makeQuery,max=12000){
  }
  throw Error('Dados acima do limite de consulta; cálculo bloqueado para evitar saldo parcial.');
 }
-function uniqueBankMovements(files,lines){
- const byFile=new Map();
- files.forEach(f=>byFile.set(f.id,[]));
- lines.forEach(r=>{if(byFile.has(r.importacao_id))byFile.get(r.importacao_id).push(r)});
- const canonical=[],repeated=[],historicalCounts=new Map();
- for(const file of files){
-  const occurrences=new Map();
-  const sorted=(byFile.get(file.id)||[]).slice().sort((a,b)=>
-   String(a.data_lancamento).localeCompare(String(b.data_lancamento))||
-   String(a.descricao).localeCompare(String(b.descricao))||
-   String(a.id).localeCompare(String(b.id)));
-  for(const r of sorted){
-   if(!['entrada','saida'].includes(r.natureza))continue;
-   const key=bankKey(r),number=(occurrences.get(key)||0)+1;
-   occurrences.set(key,number);
-   const row={...r,arquivo_nome:file.arquivo_nome};
-   if(number>(historicalCounts.get(key)||0))canonical.push(row);
-   else repeated.push(row);
-  }
-  for(const [key,n] of occurrences){
-   historicalCounts.set(key,Math.max(n,historicalCounts.get(key)||0));
-  }
- }
- return {canonical,repeated};
-}
-function reconcileBankBalance(base,canonical,official,cutoff){
- const existing=new Map();
- for(const r of official){
-  const key=officialKey(r);
-  existing.set(key,(existing.get(key)||0)+1);
- }
- const pending=[],already=[];
- for(const r of canonical){
-  // Inclusão do dia do corte: confronta cada ocorrência com o fluxo oficial, evitando duplicação.
-  if(r.data_lancamento<cutoff)continue;
-  const key=officialKey(r);
-  if((existing.get(key)||0)>0){
-   existing.set(key,existing.get(key)-1);
-   already.push(r);
-  }else pending.push(r);
- }
- const addedIn=pending.filter(r=>r.natureza==='entrada')
-  .reduce((sum,r)=>sum+Math.round(num(r.valor)*100),0);
- const addedOut=pending.filter(r=>r.natureza==='saida')
-  .reduce((sum,r)=>sum+Math.round(num(r.valor)*100),0);
- return {balanceCents:Math.round(num(base)*100)+addedIn-addedOut,
-  addedIn,addedOut,pending,already};
-}
 async function renderItauReconciliation(){
  const label=$('hist-itau-reconcile-source'),root=$('hist-itau-reconcile-kpis'),
   headline=$('hist-itau-reconcile-headline'),difference=$('hist-itau-reconcile-diff'),
@@ -153,7 +91,7 @@ async function renderItauReconciliation(){
  if(!label||!root||!headline||!difference||!note||!table||!state.monthly.length)return;
  label.textContent='Comparando importações com o último movimento homologado...';
  try{
-  const [imports,latestResponse,refResponse,audits]=await Promise.all([
+  const [imports,latestResponse,refResponse,audits,excelTailResponse]=await Promise.all([
    fetchPages(()=>db.from('fin_teste_importacoes')
     .select('id,arquivo_nome,criado_em,conta_nome')
     .eq('tipo','banco').order('criado_em',{ascending:true}).order('id',{ascending:true})),
@@ -164,15 +102,19 @@ async function renderItauReconciliation(){
     .select('data_referencia,saldo,origem').eq('conta','itau')
     .order('data_referencia',{ascending:false}).limit(1).maybeSingle(),
    db.from('fin_importacao_duplicidades_auditoria')
-    .select('id',{count:'exact',head:true})
+    .select('id',{count:'exact',head:true}),
+   db.from('fin_teste_excel_linhas').select('data_evento')
+    .eq('lote_id',state.lote.id).in('grupo',['entradas_fluxo','saidas_fluxo'])
+    .order('data_evento',{ascending:false}).limit(1).maybeSingle()
   ]);
   if(latestResponse.error)throw latestResponse.error;
   if(refResponse.error)throw refResponse.error;
   if(audits.error)throw audits.error;
+  if(excelTailResponse.error)throw excelTailResponse.error;
   const cutoff=latestResponse.data?.data_movimento;
   if(!cutoff)throw Error('Sem data final do caixa homologado; não é seguro somar lançamentos.');
-  const bankFiles=imports.filter(x=>String(x.conta_nome||'').normalize('NFD')
-   .replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()==='itau');
+  core.ensureSnapshotMatches(excelTailResponse.data?.data_evento,cutoff);
+  const bankFiles=imports.filter(x=>core.accountIsItau(x.conta_nome));
   if(!bankFiles.length)throw Error('Nenhum PDF do Itaú importado.');
   const lines=[];
   for(let i=0;i<bankFiles.length;i+=30){
@@ -183,18 +125,20 @@ async function renderItauReconciliation(){
    lines.push(...part);
   }
   const official=await fetchPages(()=>db.from('fin_movimentos')
-   .select('data_movimento,tipo,valor').eq('origem','fluxo_caixa_homologado')
+   .select('data_movimento,tipo,valor,descricao').eq('origem','fluxo_caixa_homologado')
    .eq('estado','confirmado').gte('data_movimento',cutoff)
    .order('data_movimento',{ascending:true}).order('id',{ascending:true}));
-  const {canonical,repeated}=uniqueBankMovements(bankFiles,lines);
+  const {canonical,repeated}=core.canonicalBank(bankFiles,lines);
   const baseline=state.monthly[state.monthly.length-1];
-  const rec=reconcileBankBalance(baseline.saldo_teorico_acumulado,canonical,official,cutoff);
+  const rec=core.reconcile(baseline.saldo_teorico_acumulado,canonical,official,cutoff);
   const latestDate=canonical.map(r=>r.data_lancamento).sort().pop()||cutoff;
   // Visualização de extratos a partir da data de fechamento, depois de conciliar os já existentes; nenhuma gravação em fin_movimentos.
   state.importedPending=rec.pending.filter(row=>row.data_lancamento>=cutoff);
   state.officialCutoff=cutoff;
   state.latestImportedDate=latestDate>cutoff?latestDate:cutoff;
   const reference=refResponse.data;
+  const validation=core.compareBankReference(rec,reference,cutoff,state.latestImportedDate);
+  state.referenceCheck=validation;state.weakMatchCount=rec.weakMatches.length;
   const projected=rec.balanceCents/100;
   label.textContent='Saldo do Excel homologado até '+dateBR(cutoff)+
    ' + movimentos ainda não contabilizados nos extratos até '+dateBR(latestDate);
@@ -205,8 +149,8 @@ async function renderItauReconciliation(){
     count(rec.pending.filter(r=>r.natureza==='entrada').length)+' lançamento(s)','positive')+
    metric('Saídas adicionais',money(rec.addedOut/100),
     count(rec.pending.filter(r=>r.natureza==='saida').length)+' lançamento(s)')+
-   metric('Saldo final reconciliado',money(projected),
-    'Estimativa após retirar repetições entre PDFs e movimentos já homologados',
+   metric('Saldo estimado até '+dateBR(state.latestImportedDate),money(projected),
+    'Prévia auditável; o caixa oficial não é modificado',
     projected<0?'negative':'positive');
   const canCompare=reference&&reference.data_referencia>=cutoff&&
     reference.data_referencia<=latestDate;
@@ -234,13 +178,13 @@ async function renderItauReconciliation(){
    difference.classList.add('hist-reconcile-mismatch');
   }
   headline.innerHTML=
-   metric('Saldo reconciliado',money(projected),
+   metric('Saldo estimado (a conferir)',money(projected),
     'Calculado até '+dateBR(latestDate),projected<0?'negative':'positive')+
    metric('Diferença do banco',comparisonCents===null?'A conferir':money(comparisonCents/100),
     comparisonCents===null?'Sem referência comparável':'Comparado ao saldo informado em '+dateBR(reference.data_referencia),
     comparisonCents===0?'positive':comparisonCents===null?'':'negative')+
    metric('Lançamentos novos',count(rec.pending.length),
-    count(repeated.length)+' repetição(ões) ignorada(s)');
+    count(repeated.length)+' repetição(ões) ignorada(s); '+count(rec.weakMatches.length)+' vínculo(s) por data e valor');
   note.textContent='Verificação automática, desde '+dateBR(cutoff)+': '+count(lines.length)+' registros originais em '+
    count(bankFiles.length)+' arquivo(s); '+count(repeated.length)+
    ' repetição(ões) entre PDFs não contabilizada(s), '+count(rec.already.length)+
@@ -250,7 +194,8 @@ async function renderItauReconciliation(){
    'Registros anteriores ao fechamento ficam fora; os do próprio dia são adicionados somente se não houver correspondente no caixa homologado. Nenhum pagamento é criado, excluído ou duplicado. Cartões são conferidos separadamente.';
   const pendingRows=rec.pending.map(r=>({...r,decisao:'Acrescentado ao saldo',badge:'new'}));
   const duplicateRows=repeated.map(r=>({...r,decisao:'Repetido · ignorado',badge:'duplicate'}));
-  const entries=[...pendingRows,...duplicateRows]
+  const weakRows=rec.weakMatches.map(r=>({...r.bank,decisao:'Vínculo provável por data/tipo/valor · Excel: '+String(r.official.descricao||'sem descrição'),badge:'review'}));
+  const entries=[...pendingRows,...duplicateRows,...weakRows]
    .sort((a,b)=>String(b.data_lancamento).localeCompare(String(a.data_lancamento))||
     String(a.descricao).localeCompare(String(b.descricao))).slice(0,100);
   table.innerHTML=entries.length?entries.map(r=>
@@ -330,6 +275,7 @@ async function refresh(){
    state.importedPending=[];state.officialCutoff='';state.latestImportedDate='';
    status('hist-itau-status','Consultando o histórico homologado e os extratos posteriores...');
    status('hist-other-status','Consultando as fontes financeiras...');
+   if(!core)throw Error('Motor de conciliação Itaú não carregado. Atualize a página.');
    if(typeof db==='undefined'||!db)throw Error('Conexão financeira indisponível.');
    await refreshImportedItau();
    const {data:lote,error}=await db.from('fin_teste_excel_lotes')
@@ -373,39 +319,7 @@ function open(view){
 /* O relatório mistura, apenas em memória, o lote homologado com PDFs não conciliados desde
    ao fechamento. A fonte original e os pagamentos confirmados não são alterados. */
 function reportMonths(){
- if(!state.importedPending.length)return state.monthly;
- const official=new Map(state.monthly.map(r=>[String(r.mes).slice(0,7),r]));
- const delta=new Map();
- for(const r of state.importedPending){
-  const date=String(r.data_lancamento||'').slice(0,10),key=date.slice(0,7);
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!['entrada','saida'].includes(r.natureza))continue;
-  if(state.officialCutoff&&date<state.officialCutoff)continue;
-  const sum=delta.get(key)||{inc:0,out:0,nIn:0,nOut:0};
-  if(r.natureza==='entrada'){sum.inc+=Math.round(num(r.valor)*100);sum.nIn++}
-  else{sum.out+=Math.round(num(r.valor)*100);sum.nOut++}
-  delta.set(key,sum);
- }
- const months=[...new Set([...official.keys(),...delta.keys()])].sort();
- const finalBalance=state.monthly.length?Math.round(num(state.monthly[state.monthly.length-1].saldo_teorico_acumulado)*100):0;
- let accumulated=0;
- return months.map(key=>{
-  const base=official.get(key);
-  const add=delta.get(key)||{inc:0,out:0,nIn:0,nOut:0};
-  accumulated+=add.inc-add.out;
-  const incoming=Math.round(num(base?.entradas_operacionais)*100)+add.inc;
-  const outgoing=Math.round(num(base?.saidas)*100)+add.out;
-  const bankBalance=base?Math.round(num(base.saldo_teorico_acumulado)*100):finalBalance;
-  return {
-   ...(base||{mes:key+'-01',saldo_abertura:0}),
-   entradas_operacionais:incoming/100,
-   saidas:outgoing/100,
-   entradas_qtd:num(base?.entradas_qtd)+add.nIn,
-   saidas_qtd:num(base?.saidas_qtd)+add.nOut,
-   resultado_operacional:(incoming-outgoing)/100,
-   saldo_teorico_acumulado:(bankBalance+accumulated)/100,
-   extrato_entradas:add.inc/100,extrato_saidas:add.out/100
-  };
- });
+ return core.buildMonthly(state.monthly,state.importedPending,state.officialCutoff);
 }
 function period(){
  const months=reportMonths();
