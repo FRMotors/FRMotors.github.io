@@ -9,6 +9,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Cartão não informado');
+const docCore=window.frDocumentsStatusCore;
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(v)||0)/100);
 const cents=v=>{const n=Number(v);return Number.isFinite(n)?Math.round(n*100):0};
@@ -86,7 +87,7 @@ function renderSummary(){
  const tp=cashTotals(previous),tc=cashTotals(thisYear);
  put('rg-annual-title','Comparativo anual de '+year+' com '+(year-1));
  put('rg-year-cash',brl(tc.outgoing));
- put('rg-year-prior',previous.length?brl(tp.outgoing):'Sem dados');
+ put('rg-year-prior',previous.length?brl(tp.outgoing):'Sem caixa homologado');
  let statement='';
  if(previous.length){
   if(!tp.outgoing){statement='O ano anterior não tem saídas registradas para calcular variação percentual.';}
@@ -95,8 +96,21 @@ function renderSummary(){
    statement=(diff>0?'+':'')+diff.toLocaleString('pt-BR',{maximumFractionDigits:1,minimumFractionDigits:1})+
     '% nas saídas confirmadas, comparando anos completos da base.';
   }
- }else statement='Não há movimentações confirmadas no ano anterior. A ausência de registros não significa gasto zero.';
+ }else statement='O caixa homologado não possui movimentações em '+(year-1)+'. Veja abaixo os documentos de autopeças e faturas desse ano, disponíveis separadamente.';
  put('rg-year-change',statement);
+ const docs=docCore?.annualDocuments(parts,bills,year);
+ if(docs){
+  put('rg-doc-year-current',String(year));put('rg-doc-year-prev',String(year-1));
+  put('rg-auto-current',docs.parts.currentCount?brl(docs.parts.current):'Sem documentos');
+  put('rg-auto-prev',docs.parts.priorCount?brl(docs.parts.prior):'Sem documentos');
+  put('rg-card-current',docs.bills.currentCount?brl(docs.bills.current):'Sem faturas');
+  put('rg-card-prev',docs.bills.priorCount?brl(docs.bills.prior):'Sem faturas');
+  const variation=(current,prior,n)=>!n?'Sem base documental anterior':!prior?'Base anterior com valor zero':
+   ((current-prior)/prior*100).toLocaleString('pt-BR',{maximumFractionDigits:1,minimumFractionDigits:1})+'%';
+  put('rg-auto-annual-diff','Variação: '+variation(docs.parts.current,docs.parts.prior,docs.parts.priorCount));
+  put('rg-card-annual-diff','Variação: '+variation(docs.bills.current,docs.bills.prior,docs.bills.priorCount));
+  put('rg-doc-note','Autopeças: documentos incluídos por data de evento. Cartões: faturas por competência. São fontes documentais distintas, não pagamentos comprovados e não devem ser somadas entre si ou ao caixa.');
+ }
  put('rg-selected-period',month==='todos'?'Ano '+year:months[Number(month)-1]+' de '+year);
 }
 function drawBarRows(id,rows,empty){
@@ -157,7 +171,7 @@ function renderMonthly(){
  const priorYearCash=moves.filter(x=>asYear(x.data_movimento)===year-1).length;
  put('rg-months-note',
   'Movimentações confirmadas: '+currentYearCash+' em '+year+'; '+
-  (priorYearCash?priorYearCash+' em '+(year-1):'sem dados em '+(year-1))+
+  (priorYearCash?priorYearCash+' em '+(year-1):'sem caixa homologado em '+(year-1))+
   '. Valores documentais de cartões e autopeças não entram no caixa realizado.');
 }
 function renderDetail(){
