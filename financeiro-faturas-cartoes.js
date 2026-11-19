@@ -232,6 +232,7 @@ async function openExisting(f,action){
   await window.frDocumentLinksUI.refresh?.(true);
   await window.frDocumentLinksUI.openInvoice(f.id);
  }else{
+  window.frFinanceUI?.selectView?.('expenses');
   if(typeof window.frInvoicesAgendaUI?.refresh!=='function')throw Error('Agenda de vencimentos indisponível.');
   await window.frInvoicesAgendaUI.refresh();
   const type=$('ag-type'),status=$('ag-filter'),input=$('ag-search');
