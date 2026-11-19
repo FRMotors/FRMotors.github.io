@@ -18,7 +18,7 @@ function validDate(v){
 function fold(v){
  return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 }
-function accountIsItau(v){return fold(v)==='itau'}
+function accountIsItau(v){return /(^|[^a-z0-9])itau($|[^a-z0-9])/.test(fold(v))}
 function descriptionIdentity(v){
  const d=String(v??'');
  const doc=d.match(/[0-9]{2}[.][0-9]{3}[.][0-9]{3}\/[0-9]{4}-[0-9]{2}|[0-9]{3}[.][0-9]{3}[.][0-9]{3}-[0-9]{2}/);
