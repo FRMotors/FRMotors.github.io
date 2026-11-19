@@ -565,6 +565,7 @@
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cartoes1">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
 <link rel="stylesheet" href="./financeiro-central-auditoria.css?v=20261118audit1">
+<link rel="stylesheet" href="./financeiro-documentos-atualizado.css?v=20261119fix1">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -1124,6 +1125,13 @@
          <span>Saídas confirmadas · ano atual selecionado <b id="rg-year-cash">—</b></span>
          <span>Saídas confirmadas · ano anterior <b id="rg-year-prior">—</b></span>
         </div>
+       <div class="rg-doc-annual">
+        <div><span>Autopeças · <strong id="rg-doc-year-prev">2025</strong></span><strong id="rg-auto-prev">—</strong></div>
+        <div><span>Autopeças · <strong id="rg-doc-year-current">2026</strong></span><strong id="rg-auto-current">—</strong><small id="rg-auto-annual-diff">—</small></div>
+        <div><span>Faturas · ano anterior</span><strong id="rg-card-prev">—</strong></div>
+        <div><span>Faturas · ano selecionado</span><strong id="rg-card-current">—</strong><small id="rg-card-annual-diff">—</small></div>
+       </div>
+       <p id="rg-doc-note" class="rg-source-note">As carteiras documentais de 2025 e 2026 são mostradas separadamente do caixa homologado.</p>
        </section>
        <section class="card rg-wide" aria-labelledby="rg-month-title">
         <div class="card-head">
@@ -1999,6 +2007,28 @@
    <button type="button" class="btn btn-primary" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
   </div>
  </div>
+ <section class="card fin-doc-supplier-years" id="doc-annual-suppliers">
+  <div class="card-head">
+   <div><h2>Autopeças por fornecedor, mês e ano</h2>
+    <p>Quanto foi registrado em documentos incluídos para cada fornecedor, em cada mês. Não representa pagamentos bancários.</p></div>
+   <button type="button" class="btn" id="doc-by-supplier-export">Exportar resumo (CSV)</button>
+  </div>
+  <div class="fin-doc-supplier-years-toolbar">
+   <label>Selecione o ano <select id="doc-by-supplier-year"><option value="">Carregando...</option></select></label>
+   <label>Buscar fornecedor <input type="search" id="doc-by-supplier-search" autocomplete="off" placeholder="Nome da autopeças"></label>
+  </div>
+  <p id="doc-by-supplier-note" class="info-note">Aguardando consulta dos fornecedores.</p>
+  <div class="table-wrap fin-doc-supplier-years-table">
+   <table class="data-table"><thead><tr>
+    <th>Fornecedor</th><th class="money">Jan</th><th class="money">Fev</th><th class="money">Mar</th>
+    <th class="money">Abr</th><th class="money">Mai</th><th class="money">Jun</th><th class="money">Jul</th>
+    <th class="money">Ago</th><th class="money">Set</th><th class="money">Out</th><th class="money">Nov</th><th class="money">Dez</th>
+    <th class="money">Total no ano</th><th class="money">Registros</th></tr></thead>
+    <tbody id="doc-by-supplier-rows"><tr><td colspan="15" class="empty">Aguardando...</td></tr></tbody>
+    <tfoot id="doc-by-supplier-foot"></tfoot>
+   </table>
+  </div>
+ </section>
  <div class="fin-doc-summary">
   <section class="card fin-doc-summary-card">
    <div class="card-head"><div><h2>Autopeças</h2><p>Valor dos documentos incluídos, não pagamentos novos</p></div></div>
@@ -2388,7 +2418,7 @@
     <div><button type="button" class="btn" id="doc-prev" disabled>Anterior</button>
      <button type="button" class="btn" id="doc-next" disabled>Próxima</button></div>
   </div>
-  <p class="info-note fin-doc-note">“Pago na planilha” é uma informação histórica, não uma baixa confirmada no extrato. “Com desconto informado” registra um valor previsto no documento, sem presumir desconto efetivamente obtido. O histórico contém compras de 2025 e 2026, além de PIX e débito listados originalmente na aba CARTÕES. Nenhum desses valores foi somado novamente ao caixa.</p>
+  <p class="info-note fin-doc-note">A coluna “Situação / inclusão” separa a situação atual do compromisso (quando encontrada por correspondência única e comprovável), a classificação original da planilha e a opção “Incluir no controle”. “Incluir” não significa aberto nem pago. Cartões devem ser conferidos na área de Faturas. “Pago na planilha” é uma informação histórica, não uma baixa confirmada no extrato. “Com desconto informado” registra um valor previsto no documento, sem presumir desconto efetivamente obtido. O histórico contém compras de 2025 e 2026, além de PIX e débito listados originalmente na aba CARTÕES. Nenhum desses valores foi somado novamente ao caixa.</p>
  </section>
 </section>
 
@@ -3590,7 +3620,8 @@ init();
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261118trash1" defer></script>
-<script src="./financeiro-documentos.js?v=20261118prime1" defer></script>
+<script src="./financeiro-documentos-status-core.js?v=20261119fix1" defer></script>
+<script src="./financeiro-documentos.js?v=20261119fix1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261118cartoes1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261118prime1" defer></script>
@@ -3604,8 +3635,8 @@ init();
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>
-<script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
+<script src="./financeiro-relatorios-gerenciais.js?v=20261119fix1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
-<script src="./financeiro-central-auditoria.js?v=20261118audit1" defer></script>
+<script src="./financeiro-central-auditoria.js?v=20261119fix1" defer></script>
 </body></html>
