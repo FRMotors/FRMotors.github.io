@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261116sidebar-desktop57">
-<link rel="stylesheet" href="./financeiro-import.css?v=20261118visibilidade1">
+<link rel="stylesheet" href="./financeiro-import.css?v=20261119classe1">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
@@ -2591,7 +2591,7 @@
   </div>
   <section class="card" style="margin-top:16px" id="import-preview-card" hidden>
     <div class="card-head">
-      <div><h2>3. Revisar e confirmar os lançamentos</h2><p>O sistema identifica movimentos já importados na mesma conta e bloqueia as repetições. Confira as linhas novas, desmarque saldos e totais e corrija valores somente de acordo com o documento original.</p></div>
+      <div><h2>3. Revisar, nomear e categorizar os lançamentos</h2><p>Edite o nome e a categoria de cada movimentação antes de importar. A descrição original do banco fica preservada para auditoria e identificação de repetições, inclusive em extratos sobrepostos.</p></div>
       <div class="import-header-actions"><span id="import-preview-count" class="state">0 selecionados</span><button id="import-toggle-all" type="button" class="btn">Marcar / desmarcar todos</button></div>
     </div>
     <div class="import-summary">
@@ -2600,7 +2600,29 @@
       <div><span>Ignorados / inválidos</span><strong id="import-count-skipped">0</strong></div>
       <div><span>Total líquido selecionado</span><strong id="import-total-selected">R$ 0,00</strong></div>
     </div>
-    <div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição</th><th>Natureza</th><th class="money">Valor (editável)</th><th>Verificação</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
+    <p class="info-note import-classification-note">Edição individual: o nome personalizado é opcional; a categoria já vem preenchida, mas você pode escolher ou digitar outra. Uma edição manual tem prioridade sobre regras automáticas de PIX. Nem a descrição original nem a identidade bancária serão alteradas.</p>
+<datalist id="import-category-options">
+  <option value="PRÓ-LABORE"></option>
+  <option value="SALÁRIOS"></option>
+  <option value="FORNECEDORES"></option>
+  <option value="COMBUSTÍVEL"></option>
+  <option value="TARIFAS BANCÁRIAS"></option>
+  <option value="TRIBUTOS E IMPOSTOS"></option>
+  <option value="ALUGUEL"></option>
+  <option value="SERVIÇOS"></option>
+  <option value="DESPESAS OPERACIONAIS"></option>
+  <option value="PAGAMENTO DE CARTÃO"></option>
+  <option value="TRANSFERÊNCIAS"></option>
+  <option value="RECEBIMENTOS"></option>
+  <option value="VENDAS"></option>
+  <option value="REEMBOLSOS"></option>
+  <option value="EXTRATO BANCÁRIO"></option>
+  <option value="COMPRAS NO CARTÃO"></option>
+  <option value="ESTORNOS"></option>
+  <option value="OUTRAS DESPESAS"></option>
+  <option value="OUTRAS RECEITAS"></option>
+</datalist>
+<div class="table-wrap import-preview-table"><table class="data-table"><thead><tr><th><input id="import-select-all" type="checkbox" aria-label="Selecionar todas as linhas"></th><th>Data</th><th>Descrição original e nome personalizado</th><th>Natureza</th><th>Categoria (editável)</th><th class="money">Valor (editável)</th><th>Verificação</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
     <div class="import-bottom-bar">
       <span id="import-preview-warning" class="info-note">Nenhum registro é salvo até a confirmação. Repetições identificadas em extratos anteriores ficam desmarcadas e bloqueadas; verifique operações distintas de mesmo valor no mesmo dia.</span>
       <button type="button" id="import-confirm" class="btn btn-primary" disabled>Importar lançamentos selecionados</button>
@@ -3392,7 +3414,7 @@ init();
 <script src="./financeiro-recebiveis.js?v=20261117ar1" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import-visibilidade.js?v=20261118visibilidade1" defer></script>
-<script src="./financeiro-import.js?v=20261119audit1" defer></script>
+<script src="./financeiro-import.js?v=20261119classe1" defer></script>
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 <script src="./financeiro-faturas.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
