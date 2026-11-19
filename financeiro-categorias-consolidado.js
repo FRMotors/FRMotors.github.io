@@ -82,16 +82,28 @@ function combineSources(official,imported){
  }
  let matches=0;
  const weakMatches=[],missingOnCutoff=[];
+ // Concilie identificações fortes antes de recorrer a coincidências
+ // de data, tipo e valor, evitando consumir o registro oficial errado.
+ const groups=new Map();
  for(const row of cutoffRows){
   const key=[row.date,row.type,row.value].join('|');
-  const choices=officialDay.get(key)||[];
-  if(!choices.length){missingOnCutoff.push(row);continue}
-  let idx=choices.findIndex(other=>matchOfficial(row,other));
-  const exact=idx>=0;
-  if(!exact)idx=0;
-  const target=choices.splice(idx,1)[0];
-  matches++;
-  if(!exact)weakMatches.push({bank:row,official:target});
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(row);
+ }
+ for(const [key,banks] of groups){
+  const choices=officialDay.get(key)||[],unmatched=[];
+  for(const row of banks){
+   const idx=choices.findIndex(other=>matchOfficial(row,other));
+   if(idx<0){unmatched.push(row);continue}
+   choices.splice(idx,1);
+   matches++;
+  }
+  for(const row of unmatched){
+   if(!choices.length){missingOnCutoff.push(row);continue}
+   const officialRow=choices.shift();
+   weakMatches.push({bank:row,official:officialRow});
+   matches++;
+  }
  }
  const newRows=[...missingOnCutoff,...later].map(row=>({
   ...row,source:'Extrato importado · não homologado'
