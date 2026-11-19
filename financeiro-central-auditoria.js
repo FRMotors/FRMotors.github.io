@@ -38,7 +38,7 @@ const SOURCES=[
 ];
 const TYPES={boletos:'Contas a pagar',receber:'Contas a receber',faturas:'Cartões e faturas',movimentos:'Movimentações',importacoes:'Importações'};
 const VIEWS={boletos:'payables',receber:'receivables',faturas:'cardbills',movimentos:'movements',importacoes:'imports'};
-let all=[],invoiceMap=new Map(),loading=null,ready=false,sourceStatus='',type='todos',query='',start='',end='',page=0;
+let all=[],invoiceMap=new Map(),payableMap=new Map(),loading=null,ready=false,sourceStatus='',type='todos',query='',start='',end='',page=0;
 const PAGE_SIZE=25;
 async function getAll(builder,max=6000){
  const out=[],size=350;
@@ -62,6 +62,7 @@ function payableAction(a,b){
  if(!val(a,'arquivado_em')&&val(b,'arquivado_em'))return 'Boleto arquivado';
  if(val(a,'arquivado_em')&&!val(b,'arquivado_em'))return 'Boleto restaurado';
  if(val(a,'situacao')!==val(b,'situacao')&&val(b,'situacao')==='pago')return 'Boleto quitado';
+ if(val(a,'situacao')!==val(b,'situacao')&&val(b,'situacao')==='conciliado_extrato')return 'Boleto conciliado com extrato';
  if(val(a,'vencimento')!==val(b,'vencimento'))return 'Vencimento alterado';
  return 'Conta a pagar atualizada';
 }
@@ -92,9 +93,11 @@ function fromRow(source,r){
    ['valor_pago','Valor pago'],['descricao','Descrição']])||
    (title==='Boleto arquivado'?'Saiu das contas ativas; registro original preservado':
     title==='Boleto restaurado'?'Retornou às contas ativas':'Alteração registrada no histórico');
-  return makeEvent(id,r.alterado_em,'boletos',title,
+  const e=makeEvent(id,r.alterado_em,'boletos',title,
    val(b,'fornecedor_nome')||val(a,'fornecedor_nome')||val(b,'descricao')||val(a,'descricao'),
    d,val(b,'valor_referencia')??val(a,'valor_referencia'),r.operador,source.key);
+  e.compromissoId=r.compromisso_id;
+  return e;
  }
  case 'manualEdits':{
   const d=diff(a,b,[['vencimento','Vencimento'],['descricao','Descrição'],['valor_referencia','Valor'],
@@ -188,6 +191,14 @@ function render(){
      '<div class="audit-entry-content"><div class="audit-entry-heading"><strong>'+esc(e.title)+'</strong>'+
       '<span class="audit-tag audit-tag-'+esc(e.kind)+'">'+esc(TYPES[e.kind]||'Registro')+'</span></div>'+
       '<p class="audit-subject">'+esc(e.subject)+'</p>'+
+      (e.compromissoId&&payableMap.has(e.compromissoId)?
+       '<p class="audit-current-state"><strong>Situação atual: '+
+       esc((()=>{const v=payableMap.get(e.compromissoId).situacao;
+        return v==='conciliado_extrato'?'Conciliado no extrato':v==='pago'?'Pago':v==='aberto'?'Em aberto':String(v||'Não informado')})())+
+       '</strong>'+(payableMap.get(e.compromissoId).valor_pago!==null?
+        ' · Pago '+money(payableMap.get(e.compromissoId).valor_pago)+' em '+
+         esc(payableMap.get(e.compromissoId).data_pagamento||'data não informada'):'')+
+       ' · Evento histórico preservado</p>':'')+
       '<p class="audit-details">'+esc(e.details)+'</p>'+
       '<p class="audit-meta">'+esc(e.actor)+' · '+esc(e.source)+'</p></div>'+
     '</div>'+
@@ -210,7 +221,9 @@ async function refresh(){
   if(authError||allowed!==true)throw Error('Usuário sem autorização para consultar o financeiro.');
   const outputs=await Promise.all([...SOURCES.map(x=>
     getAll(()=>db.from(x.table).select(x.cols).order(x.date,{ascending:false})).then(list=>({source:x,rows:list}))
-  ),getAll(()=>db.from('fin_faturas_historicas').select('id,cartao_nome,mes_fatura').order('id'))]);
+  ),getAll(()=>db.from('fin_faturas_historicas').select('id,cartao_nome,mes_fatura').order('id')),
+  getAll(()=>db.from('fin_contas_pagar').select('id,situacao,valor_pago,data_pagamento').order('id'))]);
+  const accounts=outputs.pop();payableMap=new Map(accounts.map(x=>[x.id,x]));
   const cards=outputs.pop();
   invoiceMap=new Map(cards.map(x=>[x.id,x]));
   const list=outputs.flatMap(result=>result.rows.map(x=>fromRow(result.source,x)).filter(Boolean));
@@ -221,7 +234,7 @@ async function refresh(){
    new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}).format(new Date())+
    '. '+SOURCES.length+' fontes de registros disponíveis. '+sourceStatus);
  })().catch(err=>{
-  ready=false;all=[];put('audit-status','Não foi possível concluir a consulta: '+(err.message||err));
+  ready=false;all=[];payableMap=new Map();put('audit-status','Não foi possível concluir a consulta: '+(err.message||err));
   if($('audit-activity-list'))$('audit-activity-list').textContent='Histórico indisponível. Use Atualizar para tentar novamente.';
   ['audit-events-total','audit-payment-count','audit-change-count','audit-trash-count','audit-invoice-count'].forEach(id=>put(id,'—'));
  }).finally(()=>{loading=null});
