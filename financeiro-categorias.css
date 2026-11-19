@@ -59,3 +59,27 @@
 .rg-cat-audit .rg-cat-audit-attention{background:#fff5df;border-color:#e8ce94;color:#8c6117}
 .rg-cat-audit .rg-cat-audit-attention strong{color:#8c6117}
 @media(max-width:560px){.rg-cat-audit{margin:0 14px 14px}.rg-cat-audit span{flex:1 1 135px}}
+
+/* Conferência manual de correspondências entre extratos e base homologada. */
+.rg-cat-match-panel{margin:0 22px 18px;border:1px solid #dce8ed;border-radius:12px;background:#fbfdfd;overflow:hidden}
+.rg-cat-match-panel[hidden]{display:none!important}
+.rg-cat-match-panel>summary{cursor:pointer;padding:15px 18px;font-size:13px;font-weight:790;color:#275768}
+.rg-cat-match-panel>summary:hover{background:#f0f8f8}
+.rg-cat-match-panel>summary span{font-weight:650;color:#7a5a2a}
+.rg-cat-match-help,.rg-cat-match-foot{padding:0 18px;font-size:11px;color:#637d89;line-height:1.55}
+.rg-cat-match-help strong{font-weight:800;color:#405b68}
+.rg-cat-match-foot{margin:15px 0;padding-bottom:2px}
+.rg-cat-match-status{background:#edf7f7;border-radius:8px;margin:8px 18px;padding:10px 12px;color:#216857;font-size:11px}
+.rg-cat-match-status.error{color:#a64642;background:#fff0ee}
+.rg-cat-match-table{min-width:930px}
+.rg-cat-match-table td{vertical-align:top;font-size:12px;max-width:320px;overflow-wrap:anywhere}
+.rg-cat-match-table td:nth-child(1){min-width:110px}
+.rg-cat-match-table td:nth-child(2),.rg-cat-match-table td:nth-child(3){min-width:180px}
+.rg-cat-match-table td:nth-child(5){min-width:220px}
+.rg-cat-match-state{border-radius:7px;padding:5px 8px;display:inline-block;font-size:10px;font-weight:790}
+.rg-cat-match-state.approved{background:#e6f7ef;color:#187451}
+.rg-cat-match-state.review{background:#fff3dc;color:#8b622b}
+.rg-cat-match-note-label{display:block;color:#66808b;font-size:10px;font-weight:800;margin-bottom:5px}
+.rg-cat-match-table input[data-match-note]{width:100%;padding:9px 10px;border:1px solid #cbdde3;border-radius:8px;background:white;color:#284a5b;font-size:11px}
+.rg-cat-match-action{width:100%;margin-top:8px;font-size:11px;white-space:normal}
+@media(max-width:600px){.rg-cat-match-panel{margin:0 14px 14px}.rg-cat-match-help,.rg-cat-match-foot{padding:0 12px}.rg-cat-match-status{margin:8px 12px}}
