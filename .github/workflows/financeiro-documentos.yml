@@ -1,0 +1,38 @@
+name: Testar relatório documental e atualização de auditoria
+on:
+  push:
+    paths:
+      - 'financeiro-documentos-status-core.js'
+      - 'financeiro-documentos.js'
+      - 'financeiro-documentos-atualizado.css'
+      - 'financeiro-central-auditoria.js'
+      - 'financeiro-relatorios-gerenciais.js'
+      - 'financeiro-baixas-operacionais.js'
+      - 'financeiro.html'
+      - 'tests/financeiro-documentos-status.test.cjs'
+      - '.github/workflows/financeiro-documentos.yml'
+  pull_request:
+    paths:
+      - 'financeiro-documentos-status-core.js'
+      - 'financeiro-documentos.js'
+      - 'financeiro-documentos-atualizado.css'
+      - 'financeiro-central-auditoria.js'
+      - 'financeiro-relatorios-gerenciais.js'
+      - 'financeiro-baixas-operacionais.js'
+      - 'financeiro.html'
+      - 'tests/financeiro-documentos-status.test.cjs'
+      - '.github/workflows/financeiro-documentos.yml'
+permissions:
+  contents: read
+jobs:
+  test-documental:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter arquivos
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar vinculações, anos e valores documentais
+        run: node --test tests/financeiro-documentos-status.test.cjs
