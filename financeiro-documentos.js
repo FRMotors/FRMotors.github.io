@@ -117,6 +117,66 @@ function drawSummary(){
  if($('doc-month-prev'))$('doc-month-prev').disabled=monthPage===0;
  if($('doc-month-next'))$('doc-month-next').disabled=monthPage>=monthPages-1;
 }
+async function fetchAccounts(){
+ const out=[],size=400;
+ for(let off=0;off<12000;off+=size){
+  const {data,error}=await db.from('fin_contas_pagar')
+   .select('id,fornecedor_nome,vencimento,valor_referencia,situacao,valor_pago,data_pagamento')
+   .is('arquivado_em',null).order('id').range(off,off+size-1);
+  if(error)throw error;
+  out.push(...(data||[]));
+  if((data||[]).length<size)return out;
+ }
+ throw Error('Lista de contas a pagar incompleta. Não é possível validar os estados.');
+}
+function supplierYear(){return $('doc-by-supplier-year')?.value||''}
+function refreshSupplierYears(){
+ const control=$('doc-by-supplier-year');if(!control||!statusCore)return;
+ const before=control.value;
+ const years=[...new Set(documents.filter(r=>r.grupo==='autopecas'&&r.incluir===true)
+  .map(r=>String(r.vencimento||r.data_evento||'').slice(0,4))
+  .filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
+ control.innerHTML=years.map(y=>'<option value="'+escapeHTML(y)+'">'+escapeHTML(y)+'</option>').join('');
+ const current=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric'}).format(new Date());
+ control.value=years.includes(before)?before:years.includes(current)?current:years[0]||'';
+}
+function supplierRows(){
+ const yr=supplierYear();if(!statusCore||!yr)return [];
+ const search=statusCore.fold($('doc-by-supplier-search')?.value||'');
+ return statusCore.monthlySuppliers(documents,yr).filter(r=>!search||statusCore.fold(r.name).includes(search));
+}
+function renderSupplierYears(){
+ const tbody=$('doc-by-supplier-rows'),tfoot=$('doc-by-supplier-foot');
+ if(!tbody||!tfoot)return;
+ const rows=supplierRows(),months=Array(12).fill(0);
+ let grand=0,records=0;
+ for(const row of rows){
+  row.months.forEach((v,i)=>months[i]+=v);
+  grand+=row.total;records+=row.count;
+ }
+ tbody.innerHTML=rows.length?rows.map(r=>
+  '<tr><th scope="row">'+escapeHTML(r.name)+'</th>'+
+  r.months.map(v=>'<td class="money">'+(v?brl(v/100):'—')+'</td>').join('')+
+  '<td class="money"><strong>'+brl(r.total/100)+'</strong></td><td class="money">'+r.count+'</td></tr>'
+ ).join(''):'<tr><td colspan="15" class="empty">Nenhuma compra documental neste ano para o filtro.</td></tr>';
+ tfoot.innerHTML='<tr><th scope="row">Total</th>'+months.map(v=>
+  '<td class="money">'+brl(v/100)+'</td>').join('')+
+  '<td class="money"><strong>'+brl(grand/100)+'</strong></td><td class="money">'+records+'</td></tr>';
+ write('doc-by-supplier-note',rows.length+' fornecedores · '+records+' documentos incluídos · '+brl(grand/100)+
+  ' em '+supplierYear()+'. Referência: vencimento do documento, não data da baixa.');
+}
+function exportSupplierYears(){
+ if(!statusCore||!supplierYear())return;
+ const header=['Fornecedor','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez','Total (R$)','Registros'];
+ const body=supplierRows().map(r=>[r.name,...r.months.map(v=>(v/100).toFixed(2).replace('.',',')),
+  (r.total/100).toFixed(2).replace('.',','),r.count]);
+ const csv='\ufeff'+[header,...body].map(row=>row.map(csvQuoted).join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ const anchor=document.createElement('a');anchor.href=url;
+ anchor.download='FR_Motors_Autopecas_Por_Fornecedor_'+supplierYear()+'.csv';
+ document.body.append(anchor);anchor.click();anchor.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1600);
+}
 function draw(){
  const list=filters(),pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
  page=Math.min(Math.max(page,0),pages-1);
