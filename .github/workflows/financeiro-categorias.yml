@@ -5,24 +5,28 @@ on:
       - 'financeiro-categorias-core.js'
       - 'financeiro-categorias-consolidado.js'
       - 'financeiro-categorias-relatorio.js'
+      - 'sql/migrations/20261119_confirmar_correspondencia_consolidado.sql'
       - 'financeiro-categorias.css'
       - 'financeiro-pro-ui.js'
       - 'financeiro.html'
       - 'tests/financeiro-categorias-core.test.cjs'
       - 'tests/financeiro-categorias-consolidado.test.cjs'
       - 'tests/financeiro-categorias-integracao.test.cjs'
+      - 'tests/financeiro-categorias-confirmacao.test.cjs'
       - '.github/workflows/financeiro-categorias.yml'
   pull_request:
     paths:
       - 'financeiro-categorias-core.js'
       - 'financeiro-categorias-consolidado.js'
       - 'financeiro-categorias-relatorio.js'
+      - 'sql/migrations/20261119_confirmar_correspondencia_consolidado.sql'
       - 'financeiro-categorias.css'
       - 'financeiro-pro-ui.js'
       - 'financeiro.html'
       - 'tests/financeiro-categorias-core.test.cjs'
       - 'tests/financeiro-categorias-consolidado.test.cjs'
       - 'tests/financeiro-categorias-integracao.test.cjs'
+      - 'tests/financeiro-categorias-confirmacao.test.cjs'
       - '.github/workflows/financeiro-categorias.yml'
 permissions:
   contents: read
@@ -37,4 +41,4 @@ jobs:
         with:
           node-version: '22'
       - name: Testar agrupamento e integração da interface
-        run: node --test tests/financeiro-categorias-core.test.cjs tests/financeiro-categorias-consolidado.test.cjs tests/financeiro-categorias-integracao.test.cjs
+        run: node --test tests/financeiro-categorias-core.test.cjs tests/financeiro-categorias-consolidado.test.cjs tests/financeiro-categorias-integracao.test.cjs tests/financeiro-categorias-confirmacao.test.cjs
