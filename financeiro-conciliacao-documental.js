@@ -55,8 +55,10 @@ function renderAuto(){
      (m?'<small>Saída: '+h(date(m.data_movimento))+' · '+brl(m.valor)+
       ' · '+h(m.referencia_origem||'Fluxo')+'</small>':
       '<small>Pagamento indicado na planilha, sem vínculo único no Fluxo</small>')+'</td>'+
-   '<td>'+(r?'<small>Diferença '+r.diferenca_dias+' dia(s)</small>':'—')+'</td></tr>';
- }).join(''):'<tr><td colspan="6" class="empty">Nenhuma compra corresponde ao filtro.</td></tr>';
+   '<td>'+(r?'<small>Diferença '+r.diferenca_dias+' dia(s)</small>':'—')+'</td>'+
+    '<td>'+(r?'<span class="state paid">Conferida</span>':
+    '<button type="button" class="btn" data-dc-review-auto="'+h(d.id)+'">Revisar / localizar pagamento</button>')+'</td></tr>';
+ }).join(''):'<tr><td colspan="7" class="empty">Nenhuma compra corresponde ao filtro.</td></tr>';
  set('dc-auto-paging',rows.length+' compra(s) · página '+(autoPage+1)+' de '+totalPages);
  if($('dc-auto-prev'))$('dc-auto-prev').disabled=autoPage===0;
  if($('dc-auto-next'))$('dc-auto-next').disabled=autoPage>=totalPages-1;
@@ -219,6 +221,25 @@ function initialize(){
  $('dc-fatura-prev')?.addEventListener('click',()=>{faturaPage--;renderFaturas()});
  $('dc-fatura-next')?.addEventListener('click',()=>{faturaPage++;renderFaturas()});
  $('dc-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
+ $('dc-review-pending')?.addEventListener('click',()=>{
+  const filter=$('dc-auto-filter'),search=$('dc-auto-search');
+  if(filter)filter.value='pendentes';
+  if(search)search.value='';
+  autoPage=0;renderAuto();
+  $('dc-auto-rows')?.scrollIntoView?.({behavior:'smooth',block:'center'});
+ });
+ $('dc-auto-rows')?.addEventListener('click',async event=>{
+  const button=event.target.closest?.('[data-dc-review-auto]');
+  if(!button)return;
+  button.disabled=true;
+  try{
+   if(!window.frDocumentLinksUI?.openAuto)throw Error('A conferência de pagamentos não está disponível.');
+   await window.frDocumentLinksUI.refresh(true);
+   await window.frDocumentLinksUI.openAuto(button.dataset.dcReviewAuto);
+  }catch(error){
+   set('dc-status','Não foi possível abrir esta compra: '+String(error.message||error));
+  }finally{button.disabled=false}
+ });
  $('dc-fatura-rows')?.addEventListener('click',e=>{
   const button=e.target.closest('[data-dc-invoice]');
   if(button)showInvoice(button.dataset.dcInvoice).catch(()=>{});
