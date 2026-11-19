@@ -199,7 +199,7 @@ function render(){
         ' · Pago '+money(payableMap.get(e.compromissoId).valor_pago)+' em '+
          esc(payableMap.get(e.compromissoId).data_pagamento||'data não informada'):'')+
        ' · Evento histórico preservado</p>':'')+
-      '<p class="audit-details">'+esc(e.details)+'</p>'+
+      '<p class="audit-details"><strong>Evento histórico:</strong> '+esc(e.details)+'</p>'+
       '<p class="audit-meta">'+esc(e.actor)+' · '+esc(e.source)+'</p></div>'+
     '</div>'+
     '<div class="audit-entry-side">'+(e.amount===null?'':'<strong class="audit-amount">'+money(e.amount)+'</strong>')+
