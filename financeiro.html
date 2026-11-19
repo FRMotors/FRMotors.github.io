@@ -2379,7 +2379,7 @@
  </section>
  <section class="card fin-doc-match-card">
   <div class="card-head"><div><h2>Autopeças e pagamentos existentes</h2>
-    <p>Compras marcadas como pagas no Excel, incluindo aquelas que ainda precisam ser revisadas.</p></div></div>
+    <p>Compras marcadas como pagas no Excel. Use “Revisar pagamento” para abrir o vínculo exato e conferir uma saída existente.</p></div><button type="button" class="btn" id="dc-review-pending">Ver compras pendentes de revisão</button></div>
   <div class="data-toolbar fin-doc-match-filters">
    <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
     <input type="search" id="dc-auto-search" placeholder="Buscar fornecedor ou código..." aria-label="Buscar compras para conciliação"></label>
@@ -2391,8 +2391,8 @@
   </div>
   <div class="table-wrap"><table class="data-table">
    <thead><tr><th>Código</th><th>Fornecedor</th><th>Vencimento</th>
-    <th class="money">Pago na planilha</th><th>Correspondência</th><th>Regra</th></tr></thead>
-   <tbody id="dc-auto-rows"><tr><td colspan="6" class="empty">Aguardando consulta...</td></tr></tbody>
+    <th class="money">Pago na planilha</th><th>Correspondência</th><th>Regra</th><th>Ação</th></tr></thead>
+   <tbody id="dc-auto-rows"><tr><td colspan="7" class="empty">Aguardando consulta...</td></tr></tbody>
   </table></div>
   <div class="table-footer fin-doc-match-paging"><span id="dc-auto-paging">Carregando...</span>
    <div><button type="button" id="dc-auto-prev" class="btn" disabled>Anterior</button>
