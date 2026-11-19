@@ -280,7 +280,7 @@ async function refresh(){
    await renderItauReconciliation();
    renderItau();
    const check=state.referenceCheck;
-   const hasRisk=check?.status==='divergente'||state.weakMatchCount>0;
+   const hasRisk=check?.status!=='conferido'||state.weakMatchCount>0;
    const message=state.importedPending.length?
     'Prévia Itaú até '+dateBR(state.latestImportedDate)+' · '+count(state.importedPending.length)+
     ' movimento(s) não homologado(s), caixa oficial preservado. '+
