@@ -868,7 +868,7 @@
           <p class="page-description">Parcelas de compras no cartão, com cartão, parcela atual/total e mês da fatura. Os pagamentos são controlados pela fatura, sem duplicar saídas do caixa.</p>
         </div>
           <div class="header-buttons pc-header-actions">
-            <button type="button" class="btn" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
+            <button type="button" class="btn" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
             <button type="button" class="btn" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Nova compra no crédito</button>
              <button type="button" class="btn btn-primary" id="pc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar parcelas</button>
           </div>
@@ -923,7 +923,43 @@
         </section>
       </section>
 
-      </section>
+      
+<section class="card cb-payment-portal" id="cb-payments-entry">
+ <div class="card-head"><div><h2>Pagamento de faturas</h2>
+ <p>Use o botão <strong>Pagar fatura / adicionar pagamento</strong> na linha da fatura acima. Pagamentos parciais, externos e bancários serão registrados pelo mesmo formulário, sem criar baixa duplicada.</p></div></div>
+</section>
+<section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>Faturas documentais por cartão e mês</h2>
+    <p>Compras e ajustes negativos agrupados por nome exato do cartão, preservando as identificações da planilha.</p></div></div>
+  <div class="data-toolbar fin-doc-match-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input type="search" id="dc-fatura-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas históricas"></label>
+   <select id="dc-fatura-year" class="filter-select" aria-label="Filtrar faturas por ano"><option value="todos">Todos os anos</option></select>
+   <select id="dc-fatura-card" class="filter-select" aria-label="Filtrar faturas por cartão"><option value="todos">Todos os cartões</option></select>
+  </div>
+  <p id="dc-fatura-period-summary" class="info-note" aria-live="polite">Selecione o ano para conferir o total documental de cada período.</p>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
+   <th class="money">Compras</th><th class="money">Ajustes</th><th class="money">Total documental</th><th>Ação</th>
+  </tr></thead>
+   <tbody id="dc-fatura-rows"><tr><td colspan="7" class="empty">Aguardando consulta...</td></tr></tbody></table>
+  </div>
+  <div class="table-footer fin-doc-match-paging"><span id="dc-fatura-paging">Carregando...</span>
+   <div><button type="button" class="btn" id="dc-fatura-prev" disabled>Anterior</button>
+    <button type="button" class="btn" id="dc-fatura-next" disabled>Próxima</button></div>
+  </div>
+  <div class="fin-doc-fatura-detail" id="dc-fatura-detail" hidden>
+   <div class="card-head"><div><h2 id="dc-detail-title">Lançamentos da fatura</h2>
+     <p id="dc-detail-status" role="status">Aguardando...</p></div>
+    <button type="button" id="dc-detail-close" class="btn">Fechar detalhes</button>
+   </div>
+   <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição / código</th><th class="money">Valor</th></tr></thead>
+    <tbody id="dc-detail-rows"></tbody></table>
+   </div>
+  </div>
+ </section>
+
+</section>
 
       <section class="view cl-view" data-view-panel="classify" hidden aria-label="Central de Classificação de Despesas">
        <div class="section-header cl-intro">
@@ -2045,12 +2081,12 @@
  <div class="fin-expenses-direct-access">
   <div>
    <strong>Faturas e pagamentos parciais</strong>
-   <span>Acompanhe o valor total, as parcelas pagas e o saldo restante.</span>
+   <span>Abra Cartões para conferir ou registrar pagamentos da fatura, inclusive parciais.</span>
   </div>
   <div class="fin-agenda-shortcuts">
    <button type="button" class="btn" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Resumo de faturas</button>
     <button type="button" class="btn" data-jump-section="ag-title"><span class="icon icon-sm" data-icon="calendar"></span> Agenda de vencimentos</button>
-   <button type="button" class="btn btn-primary" data-jump-section="vl-title-section"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
+   <button type="button" class="btn btn-primary" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
   </div>
  </div>
  <section class="card fin-doc-supplier-years" id="doc-annual-suppliers">
@@ -2218,35 +2254,7 @@
   <p class="info-note vl-message" id="vl-load-status" role="status" aria-live="polite">Aguardando consulta dos pagamentos.</p>
   <p class="info-note vl-message"><strong>Histórico até setembro/2026:</strong> faturas quitadas por sua confirmação, sem identificar saídas bancárias. Não foram criados pagamentos ou datas fictícias. As faturas seguintes continuam disponíveis para conciliação com saídas existentes, inclusive por vários pagamentos parciais.</p>
  </section>
- <section class="card vl-card">
-  <div class="card-head"><div><h2>Faturas e pagamentos bancários</h2>
-   <p>Adicione quantos pagamentos comprovados forem necessários, em datas diferentes, até completar o saldo da fatura.</p></div></div>
-  <div class="data-toolbar vl-controls">
-   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-    <input type="search" id="vl-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas para vincular"></label>
-   <select id="vl-filter-status" class="filter-select" aria-label="Filtrar faturas por situação">
-    <option value="todos">Todas as faturas</option>
-    <option value="pendentes">Com saldo restante</option>
-    <option value="parciais">Parcialmente pagas</option>
-    <option value="conferidos">Quitadas</option>
-    <option value="revisao">Em revisão</option>
-   </select>
-  </div>
-  <div class="table-wrap"><table class="data-table"><thead><tr>
-   <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
-   <th class="money">Valor da fatura</th><th class="money">Quitado informado / conciliado</th><th class="money">Saldo restante</th>
-   <th>Situação</th><th>Ação</th>
-  </tr></thead>
-   <tbody id="vl-invoices"><tr><td colspan="8" class="empty">Aguardando conferência...</td></tr></tbody>
-  </table></div>
-  <div class="table-footer vl-invoice-paging">
-   <span id="vl-invoice-count">Aguardando dados.</span>
-   <div>
-    <button type="button" class="btn" id="vl-invoice-prev" disabled>Anterior</button>
-    <button type="button" class="btn" id="vl-invoice-next" disabled>Próxima</button>
-   </div>
-  </div>
- </section>
+ 
  <section class="card vl-card">
   <div class="card-head"><div><h2>Exceções de autopeças pagas após o vencimento</h2>
    <p>Depois da conferência manual, a compra sai desta lista. O histórico permanece disponível.</p></div>
@@ -2260,6 +2268,17 @@
   </tr></thead>
   <tbody id="vl-auto-rows"><tr><td colspan="6" class="empty">Aguardando conferência...</td></tr></tbody></table></div>
  </section>
+<details class="fin-doc-pix-collapse" id="dc-pix-details">
+ <summary><span>PIX / Débito previamente conferidos</span><strong>Mostrar / ocultar registros já conferidos</strong></summary>
+ <section class="card fin-doc-match-card">
+  <div class="card-head"><div><h2>PIX / Débito previamente conferidos</h2>
+   <p>Referências da planilha homologada: quando o vínculo não está no Fluxo, a classificação “Outro banco” permanece.</p></div></div>
+  <div class="table-wrap"><table class="data-table"><thead><tr>
+   <th>Código</th><th>Meio</th><th class="money">Valor</th><th>Situação</th><th>Justificativa</th>
+  </tr></thead><tbody id="dc-pix-rows"><tr><td colspan="5" class="empty">Aguardando consulta...</td></tr></tbody></table></div>
+ </section>
+</details>
+
  <dialog id="vl-dialog" class="fin-dialog vl-dialog" aria-labelledby="vl-title">
   <form id="vl-form">
    <div class="dialog-head">
@@ -2380,43 +2399,8 @@
     <button type="button" id="dc-auto-next" class="btn" disabled>Próxima</button></div>
   </div>
  </section>
- <section class="card fin-doc-match-card">
-  <div class="card-head"><div><h2>Faturas documentais por cartão e mês</h2>
-    <p>Compras e ajustes negativos agrupados por nome exato do cartão, preservando as identificações da planilha.</p></div></div>
-  <div class="data-toolbar fin-doc-match-filters">
-   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-    <input type="search" id="dc-fatura-search" placeholder="Pesquisar cartão, mês ou valor..." aria-label="Buscar faturas históricas"></label>
-   <select id="dc-fatura-year" class="filter-select" aria-label="Filtrar faturas por ano"><option value="todos">Todos os anos</option></select>
-   <select id="dc-fatura-card" class="filter-select" aria-label="Filtrar faturas por cartão"><option value="todos">Todos os cartões</option></select>
-  </div>
-  <p id="dc-fatura-period-summary" class="info-note" aria-live="polite">Selecione o ano para conferir o total documental de cada período.</p>
-  <div class="table-wrap"><table class="data-table"><thead><tr>
-   <th>Cartão</th><th>Mês da fatura</th><th class="money">Lançamentos</th>
-   <th class="money">Compras</th><th class="money">Ajustes</th><th class="money">Total documental</th><th>Ação</th>
-  </tr></thead>
-   <tbody id="dc-fatura-rows"><tr><td colspan="7" class="empty">Aguardando consulta...</td></tr></tbody></table>
-  </div>
-  <div class="table-footer fin-doc-match-paging"><span id="dc-fatura-paging">Carregando...</span>
-   <div><button type="button" class="btn" id="dc-fatura-prev" disabled>Anterior</button>
-    <button type="button" class="btn" id="dc-fatura-next" disabled>Próxima</button></div>
-  </div>
-  <div class="fin-doc-fatura-detail" id="dc-fatura-detail" hidden>
-   <div class="card-head"><div><h2 id="dc-detail-title">Lançamentos da fatura</h2>
-     <p id="dc-detail-status" role="status">Aguardando...</p></div>
-    <button type="button" id="dc-detail-close" class="btn">Fechar detalhes</button>
-   </div>
-   <div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Descrição / código</th><th class="money">Valor</th></tr></thead>
-    <tbody id="dc-detail-rows"></tbody></table>
-   </div>
-  </div>
- </section>
- <section class="card fin-doc-match-card">
-  <div class="card-head"><div><h2>PIX / Débito previamente conferidos</h2>
-   <p>Referências da planilha homologada: quando o vínculo não está no Fluxo, a classificação “Outro banco” permanece.</p></div></div>
-  <div class="table-wrap"><table class="data-table"><thead><tr>
-   <th>Código</th><th>Meio</th><th class="money">Valor</th><th>Situação</th><th>Justificativa</th>
-  </tr></thead><tbody id="dc-pix-rows"><tr><td colspan="5" class="empty">Aguardando consulta...</td></tr></tbody></table></div>
- </section>
+ 
+ 
  <section class="card">
   <div class="card-head">
    <div><h2>Conferência de documentos</h2><p>Os registros marcados como “não incluir” são mantidos apenas para auditoria.</p></div>
@@ -3673,7 +3657,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261118cartoes1"></script>
+<script src="./financeiro-pro-ui.js?v=20261119layout2"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
@@ -3695,8 +3679,8 @@ init();
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-documentos.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261118cartoes1" defer></script>
-<script src="./financeiro-conciliacao-documental.js?v=20261117anofiltro1" defer></script>
-<script src="./financeiro-vinculos-faturas.js?v=20261118prime1" defer></script>
+<script src="./financeiro-conciliacao-documental.js?v=20261119layout2" defer></script>
+<script src="./financeiro-vinculos-faturas.js?v=20261119layout2" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-resumo-operacional.js?v=20261118cartoes1" defer></script>
@@ -3709,7 +3693,7 @@ init();
 <script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261119fix1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
-<script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
+<script src="./financeiro-faturas-cartoes.js?v=20261119layout2" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>
 </body></html>
