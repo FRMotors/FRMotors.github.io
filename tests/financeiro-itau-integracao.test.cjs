@@ -36,4 +36,5 @@ test('Falhas de conciliação não são ocultadas pela mensagem de sucesso',()=>
 });
 test('Nova importação do Itaú solicita atualização do relatório',()=>{
  assert.match(importer,/bankItau\?\(window\.frHistoryUI\?\.refresh\?\.\(\)/);
+ assert.match(importer,/updates\[3\]\?\.status==='rejected'/);
 });
