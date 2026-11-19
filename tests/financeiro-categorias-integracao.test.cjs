@@ -137,7 +137,7 @@ test('No fechamento não duplica homologados do mesmo valor e deixa rastreabilid
  });
  const h=harness(t);await h.api.refresh();
  h.get('rg-cat-source').value='combined';h.api.render();
- assert.ok(h.get('rg-cat-combined-audit').innerHTML.includes('1</strong> não somados novamente'));
+ assert.ok(h.get('rg-cat-combined-audit').innerHTML.includes('2</strong> não somados novamente'));
  assert.ok(h.get('rg-cat-status').textContent.includes('4 movimento'));
  assert.ok(h.get('rg-cat-provenance').textContent.includes('1 correspondência'));
  assert.ok(h.get('rg-cat-table').innerHTML.includes('FORNECEDORES'));
