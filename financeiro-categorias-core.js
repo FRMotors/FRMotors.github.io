@@ -52,7 +52,8 @@ function sourceRowsImported(files,lines,movements){
    category:categoryName(m.categoria||line.categoria_personalizada),
    description:line.descricao_personalizada||m.descricao||line.descricao,
    bankDescription:line.descricao,account:file.conta_nome||'Conta não informada',
-   file:file.arquivo_nome,source:'Extrato importado'});
+   file:file.arquivo_nome,importId:line.importacao_id,fileCreated:file.criado_em||'',
+   manual:Boolean(line.categoria_personalizada),source:'Extrato importado'});
  }
  return rows;
 }
