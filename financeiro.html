@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
-<link rel="stylesheet" href="./financeiro-historico.css?v=20261117clean1">
+<link rel="stylesheet" href="./financeiro-historico.css?v=20261119review2">
 <link rel="stylesheet" href="./financeiro-itau-mensal.css?v=20261119month1">
 <style>
 .fin-homolog-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 20px 18px}
@@ -581,7 +581,6 @@
     <button type="button" data-view="reports"><span class="icon" data-icon="chart"></span> Relatórios gerenciais</button>
     <button type="button" data-view="audit"><span class="icon" data-icon="shield"></span> Central de auditoria</button>
     <button type="button" data-view="classify"><span class="icon" data-icon="receipt"></span> Classificar despesas</button>
-    <button type="button" data-view="movements"><span class="icon" data-icon="wallet"></span> Movimentações oficiais</button>
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
     <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Cartões</button>
@@ -2556,13 +2555,7 @@
             <tbody id="hist-itau-monthly"></tbody>
           </table></div>
         </section>
-        <section class="card hist-table-card">
-          <div class="card-head"><div><h2>Prévia das movimentações recentes</h2><p>Esta tabela resumida mostra até 40 lançamentos. Para consultar todos, use a seção “Movimentações do Itaú mês a mês” acima.</p></div></div>
-          <div class="table-wrap"><table class="data-table hist-table">
-            <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria / Meio</th><th class="money">Valor</th></tr></thead>
-            <tbody id="hist-itau-transactions"></tbody>
-          </table></div>
-        </section>
+
       
 
   </div>
@@ -3593,7 +3586,7 @@ init();
 <script src="./financeiro-itau-core.js?v=20261119audit1" defer></script>
 <script src="./financeiro-itau-mensal-core.js?v=20261119month1" defer></script>
 <script src="./financeiro-itau-mensal.js?v=20261119month1" defer></script>
-<script src="./financeiro-historico.js?v=20261119month1" defer></script>
+<script src="./financeiro-historico.js?v=20261119review2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261118trash1" defer></script>
