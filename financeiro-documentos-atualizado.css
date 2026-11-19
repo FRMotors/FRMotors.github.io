@@ -1,0 +1,27 @@
+/* FR Motors | Comparativo documental e situações efetivamente conciliadas. */
+.rg-doc-annual{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:13px 20px 8px}
+.rg-doc-annual>div{border:1px solid #e0eaed;border-radius:10px;padding:12px 13px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.rg-doc-annual>div>span{color:#5d7682;font-size:11px}
+.rg-doc-annual>div>strong{color:#2c5365;font-size:20px;font-weight:820;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rg-doc-annual>div>small{color:#6b8a92;font-size:11px;line-height:1.5}
+#rg-doc-note{margin:2px 20px 16px}
+.fin-doc-supplier-years{margin:17px 0;overflow:hidden}
+.fin-doc-supplier-years .card-head{gap:14px}
+.fin-doc-supplier-years .card-head p{font-size:12px;color:#6a8390;line-height:1.5}
+.fin-doc-supplier-years-toolbar{display:flex;gap:12px;flex-wrap:wrap;padding:0 18px 14px}
+.fin-doc-supplier-years-toolbar label{font-size:11px;color:#536e7d;font-weight:780;display:flex;flex-direction:column;gap:7px;min-width:180px;flex:1}
+.fin-doc-supplier-years-toolbar select,.fin-doc-supplier-years-toolbar input{width:100%;min-height:39px;border-radius:9px;border:1px solid #d5e2e7;padding:8px;color:#264b60}
+.fin-doc-supplier-years .info-note{margin:0 18px 13px;font-size:11px}
+.fin-doc-supplier-years-table{max-height:560px;overflow:auto}
+.fin-doc-supplier-years-table .data-table{min-width:1540px;font-variant-numeric:tabular-nums}
+.fin-doc-supplier-years-table th,.fin-doc-supplier-years-table td{white-space:nowrap;padding:10px;font-size:11px}
+.fin-doc-supplier-years-table tbody th:first-child,.fin-doc-supplier-years-table thead th:first-child{position:sticky;left:0;z-index:1;background:var(--surface,#fff);min-width:150px}
+.fin-doc-supplier-years-table thead th{position:sticky;top:0;z-index:2;background:#f0f6f9}
+.fin-doc-supplier-years-table thead th:first-child{z-index:3}
+.fin-doc-supplier-years-table tfoot{background:#e8f3f4;font-weight:800}
+.fin-doc-original{color:#7e99a3;font-size:10px;margin-top:4px;display:block}
+.audit-current-state{font-size:11px;line-height:1.5;color:#246950;padding:7px 9px;border-radius:7px;background:#e9f7f0;margin-top:5px}
+.audit-current-state strong{font-weight:810}
+@media(max-width:1020px){.rg-doc-annual{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.rg-doc-annual{padding:10px 12px;gap:8px}.rg-doc-annual>div{padding:10px}.rg-doc-annual>div>strong{font-size:17px}#rg-doc-note{margin:2px 12px 14px}.fin-doc-supplier-years-toolbar{padding:0 12px 12px}}
+@media print{.fin-doc-supplier-years-toolbar,.fin-doc-supplier-years .card-head button{display:none!important}}
