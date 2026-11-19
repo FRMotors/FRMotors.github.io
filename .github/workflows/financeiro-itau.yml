@@ -1,0 +1,28 @@
+name: Validar conciliação Itaú
+on:
+  push:
+    paths:
+      - 'financeiro-itau-core.js'
+      - 'financeiro-historico.js'
+      - 'tests/financeiro-itau-core.test.cjs'
+      - '.github/workflows/financeiro-itau.yml'
+  pull_request:
+    paths:
+      - 'financeiro-itau-core.js'
+      - 'financeiro-historico.js'
+      - 'tests/financeiro-itau-core.test.cjs'
+      - '.github/workflows/financeiro-itau.yml'
+permissions:
+  contents: read
+jobs:
+  regressao-itau:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter repositório
+        uses: actions/checkout@v4
+      - name: Preparar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Executar testes do motor financeiro
+        run: node --test tests/financeiro-itau-core.test.cjs
