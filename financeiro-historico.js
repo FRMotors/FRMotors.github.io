@@ -131,7 +131,8 @@ function reconcileBankBalance(base,canonical,official,cutoff){
  }
  const pending=[],already=[];
  for(const r of canonical){
-  if(r.data_lancamento<=cutoff)continue;
+  // Inclusão do dia do corte: confronta cada ocorrência com o fluxo oficial, evitando duplicação.
+  if(r.data_lancamento<cutoff)continue;
   const key=officialKey(r);
   if((existing.get(key)||0)>0){
    existing.set(key,existing.get(key)-1);
@@ -189,8 +190,8 @@ async function renderItauReconciliation(){
   const baseline=state.monthly[state.monthly.length-1];
   const rec=reconcileBankBalance(baseline.saldo_teorico_acumulado,canonical,official,cutoff);
   const latestDate=canonical.map(r=>r.data_lancamento).sort().pop()||cutoff;
-  // Visualização de extratos pós-fechamento; nenhuma inserção em fin_movimentos.
-  state.importedPending=rec.pending.filter(row=>row.data_lancamento>cutoff);
+  // Visualização de extratos a partir da data de fechamento, depois de conciliar os já existentes; nenhuma gravação em fin_movimentos.
+  state.importedPending=rec.pending.filter(row=>row.data_lancamento>=cutoff);
   state.officialCutoff=cutoff;
   state.latestImportedDate=latestDate>cutoff?latestDate:cutoff;
   const reference=refResponse.data;
@@ -240,13 +241,13 @@ async function renderItauReconciliation(){
     comparisonCents===0?'positive':comparisonCents===null?'':'negative')+
    metric('Lançamentos novos',count(rec.pending.length),
     count(repeated.length)+' repetição(ões) ignorada(s)');
-  note.textContent='Verificação automática, após '+dateBR(cutoff)+': '+count(lines.length)+' registros originais em '+
+  note.textContent='Verificação automática, desde '+dateBR(cutoff)+': '+count(lines.length)+' registros originais em '+
    count(bankFiles.length)+' arquivo(s); '+count(repeated.length)+
    ' repetição(ões) entre PDFs não contabilizada(s), '+count(rec.already.length)+
    ' movimento(s) já presente(s) no fluxo homologado a partir de '+dateBR(cutoff)+
    ', '+count(rec.pending.length)+' lançamento(s) adicional(is). '+
    count(audits.count||0)+' registro(s) antigo(s) marcado(s) como cancelado(s) com auditoria. '+
-   'Movimentos na data de fechamento ou anteriores não são somados automaticamente. Não há criação nem exclusão de pagamentos. Cartões são conferidos separadamente.';
+   'Registros anteriores ao fechamento ficam fora; os do próprio dia são adicionados somente se não houver correspondente no caixa homologado. Nenhum pagamento é criado, excluído ou duplicado. Cartões são conferidos separadamente.';
   const pendingRows=rec.pending.map(r=>({...r,decisao:'Acrescentado ao saldo',badge:'new'}));
   const duplicateRows=repeated.map(r=>({...r,decisao:'Repetido · ignorado',badge:'duplicate'}));
   const entries=[...pendingRows,...duplicateRows]
@@ -369,7 +370,7 @@ function open(view){
  if(view==='itau'||!ready){refresh().catch(()=>{});return}
  renderOther();
 }
-/* O relatório mistura, apenas em memória, o lote homologado com PDFs posteriores
+/* O relatório mistura, apenas em memória, o lote homologado com PDFs não conciliados desde
    ao fechamento. A fonte original e os pagamentos confirmados não são alterados. */
 function reportMonths(){
  if(!state.importedPending.length)return state.monthly;
@@ -378,7 +379,7 @@ function reportMonths(){
  for(const r of state.importedPending){
   const date=String(r.data_lancamento||'').slice(0,10),key=date.slice(0,7);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!['entrada','saida'].includes(r.natureza))continue;
-  if(state.officialCutoff&&date<=state.officialCutoff)continue;
+  if(state.officialCutoff&&date<state.officialCutoff)continue;
   const sum=delta.get(key)||{inc:0,out:0,nIn:0,nOut:0};
   if(r.natureza==='entrada'){sum.inc+=Math.round(num(r.valor)*100);sum.nIn++}
   else{sum.out+=Math.round(num(r.valor)*100);sum.nOut++}
@@ -436,10 +437,10 @@ function renderItau(){
   'Histórico homologado até '+dateBR(state.officialCutoff)+' + '+count(state.importedPending.length)+' movimento(s) importado(s) até '+dateBR(state.latestImportedDate)+'. Prévia somente para consulta.':
   'Histórico homologado do Excel, sem novos extratos incorporados.';
  $('hist-itau-kpis').innerHTML=
- metric('Entradas operacionais',money(income),count(selected.reduce((s,r)=>s+num(r.entradas_qtd),0))+' lançamentos · sem saldo inicial','positive')+
- metric('Saídas efetivas',money(expenses),count(selected.reduce((s,r)=>s+num(r.saidas_qtd),0))+' pagamentos registrados no Itaú')+
+ metric('Entradas (histórico + prévia)',money(income),count(selected.reduce((s,r)=>s+num(r.entradas_qtd),0))+' lançamentos · sem saldo inicial','positive')+
+ metric('Saídas (histórico + prévia)',money(expenses),count(selected.reduce((s,r)=>s+num(r.saidas_qtd),0))+' pagamentos registrados no Itaú')+
  metric('Resultado operacional',money(result),'Entradas operacionais menos saídas; não é lucro contábil',result<0?'negative':'positive')+
- metric('Saldo acumulado calculado',money(last),'Saldo histórico estimado até '+(selected.length?monthBR(selected[selected.length-1].mes):'o período')+(opening?' · saldo inicial no recorte: '+money(opening):''),last<0?'negative':'positive');
+ metric('Saldo estimado (a conferir)',money(last),'Histórico mais extratos não homologados até '+(selected.length?monthBR(selected[selected.length-1].mes):'o período')+(opening?' · saldo inicial no recorte: '+money(opening):''),last<0?'negative':'positive');
  drawChart(selected);
  const categories=state.categories.filter(r=>r.grupo==='saidas_fluxo');
  const max=Math.max(1,...categories.map(r=>num(r.total)));
