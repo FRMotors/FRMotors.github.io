@@ -427,7 +427,10 @@ async function confirmPay(e){
     (warning?' Atualize a carteira.':''));
   await Promise.allSettled([window.frOperationalPayablesUI?.refresh?.()||Promise.resolve(),
    window.frOperationalUI?.refresh?.()||Promise.resolve(),
-   window.frImportUI?.refresh?.()||Promise.resolve()]);
+   window.frImportUI?.refresh?.()||Promise.resolve(),
+   window.frAuditUI?.refresh?.()||Promise.resolve(),
+   window.frDocumentsUI?.refresh?.()||Promise.resolve(),
+   window.frManagerReportsUI?.refresh?.()||Promise.resolve()]);
   closeDialog('op-pay-dialog');
   if(warning)window.frFinanceUI?.showToast(warning,true);
  }catch(error){
