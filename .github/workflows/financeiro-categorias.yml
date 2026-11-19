@@ -1,0 +1,36 @@
+name: Validar relatórios financeiros por categoria
+on:
+  push:
+    paths:
+      - 'financeiro-categorias-core.js'
+      - 'financeiro-categorias-relatorio.js'
+      - 'financeiro-categorias.css'
+      - 'financeiro-pro-ui.js'
+      - 'financeiro.html'
+      - 'tests/financeiro-categorias-core.test.cjs'
+      - 'tests/financeiro-categorias-integracao.test.cjs'
+      - '.github/workflows/financeiro-categorias.yml'
+  pull_request:
+    paths:
+      - 'financeiro-categorias-core.js'
+      - 'financeiro-categorias-relatorio.js'
+      - 'financeiro-categorias.css'
+      - 'financeiro-pro-ui.js'
+      - 'financeiro.html'
+      - 'tests/financeiro-categorias-core.test.cjs'
+      - 'tests/financeiro-categorias-integracao.test.cjs'
+      - '.github/workflows/financeiro-categorias.yml'
+permissions:
+  contents: read
+jobs:
+  categorias-financeiras:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do projeto
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Testar agrupamento e integração da interface
+        run: node --test tests/financeiro-categorias-core.test.cjs tests/financeiro-categorias-integracao.test.cjs
