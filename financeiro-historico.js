@@ -226,13 +226,16 @@ async function refreshImportedItau(){
   if(!previous){
    compare.textContent='Este é o primeiro extrato Itaú importado. O saldo do histórico homologado permanece independente.';
   }else{
-   const overlap=overlappingImports(valid,prior);
-   const novel=importTotals(overlap.unmatched);
+   const comp=core.canonicalBank([previous,latest],
+    [...prior.filter(r=>r.natureza==='entrada'||r.natureza==='saida'),...valid]);
+   const newRows=comp.canonical.filter(r=>r.importacao_id===latest.id);
+   const duplicateRows=comp.repeated.filter(r=>r.importacao_id===latest.id);
+   const novel=importTotals(newRows);
    compare.textContent='Comparação com o extrato anterior ('+previous.arquivo_nome+'): '+
-    count(overlap.matches)+' possível(is) coincidência(s) por data, tipo e valor; '+
-    count(overlap.unmatched.length)+' registro(s) sem coincidência. '+
-    'Valores sem coincidência: entradas '+money(novel.entries)+' e saídas '+money(novel.exits)+
-    '. Confira antes de incorporar ao caixa homologado.';
+    count(duplicateRows.length)+' repetição(ões) entre PDFs usando identificação e ocorrências; '+
+    count(newRows.length)+' movimento(s) sem correspondência neste par de arquivos. '+
+    'Valores sem correspondência: entradas '+money(novel.entries)+' e saídas '+money(novel.exits)+
+    '. A conciliação total confere todos os arquivos com o fechamento oficial.';
   }
   if(current.length!==valid.length)compare.textContent+=' Há '+(current.length-valid.length)+' linha(s) com natureza não reconhecida.';
  }catch(e){
