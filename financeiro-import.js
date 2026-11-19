@@ -612,7 +612,7 @@ async function refreshHistory(){
 }
 async function refreshCards(){
  const all=await fetchAll(()=>db.from('fin_teste_cartao_lancamentos')
- .select('id,importacao_id,cartao_nome,data_lancamento,descricao,natureza,valor')
+ .select('id,importacao_id,cartao_nome,data_lancamento,descricao,categoria,natureza,valor')
  .order('data_lancamento',{ascending:false}).order('id',{ascending:false}));
  cardRows=all;
  const visible=all.filter(r=>window.frImportVisibility?.isVisible?.(r.cartao_nome)!==false);
@@ -629,10 +629,11 @@ async function refreshCards(){
    ((byFile.get(r.importacao_id+'|'+duplicateKey(r))||0)>1?
     '<span class="import-review-badge" title="Compras idênticas no mesmo extrato; confirme no PDF antes de corrigir.">Conferir repetição</span>':'')+
    '</td><td>'+esc(r.cartao_nome)+'</td>'+
+  '<td>'+esc(r.categoria||'(sem categoria no histórico)')+'</td>'+
   '<td><span class="state '+(r.nature==='estorno'?'in':'out')+'">'+(r.nature==='estorno'?'Estorno':'Compra')+'</span></td>'+
   '<td class="money">'+(r.nature==='estorno'?'− ':'')+cash(r.valor)+'</td>'+
   '<td class="edit-cell"><button type="button" class="row-edit-button" data-card-edit="'+esc(r.id)+'">Editar</button></td></tr>').join(''):
-  '<tr><td colspan="6" class="empty">'+(hidden?
+  '<tr><td colspan="7" class="empty">'+(hidden?
    'Lançamentos de outros cartões ocultos. Ative “Mostrar outros bancos e cartões” para consultá-los.':
    'Nenhuma compra de cartão importada nesta seleção.')+'</td></tr>';
  const purchases=visible.filter(r=>r.nature==='compra').reduce((s,r)=>s+Number(r.valor),0);
