@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#101820"><title>FR Motors · Financeiro</title>
 <link rel="stylesheet" href="./financeiro-pro.css?v=20261116sidebar-desktop57">
 <link rel="stylesheet" href="./financeiro-import.css?v=20261119editold1">
-<link rel="stylesheet" href="./financeiro-categorias.css?v=20261119cat2">
+<link rel="stylesheet" href="./financeiro-categorias.css?v=20261119match1">
 <link rel="stylesheet" href="./financeiro-faturas.css?v=20261113paid3">
 <link rel="stylesheet" href="./fr-header-unificado.css?v=20261113a">
 <link rel="stylesheet" href="./financeiro-unificado.css?v=20261113conciliado2">
@@ -1079,6 +1079,18 @@
         <p id="rg-cat-status" class="rg-cat-status" role="status" aria-live="polite">Aguardando consulta...</p>
         <p id="rg-cat-provenance" class="rg-cat-note">Selecione as fontes separadas ou consolidadas; lançamentos coincidentes serão descontados automaticamente.</p>
         <div id="rg-cat-combined-audit" class="rg-cat-audit" hidden aria-label="Memória da consolidação"></div>
+        <details id="rg-cat-match-panel" class="rg-cat-match-panel" hidden>
+         <summary>Ver correspondências e confirmar (<span id="rg-cat-match-count">0 pendentes</span>)</summary>
+         <p class="rg-cat-match-help">Confira os dois registros lado a lado antes de confirmar. O OK registra uma correspondência entre o extrato e o caixa homologado. <strong>Não cria pagamento, não altera valores, não homologa extrato e não modifica o saldo.</strong></p>
+         <p id="rg-cat-match-status" role="status" aria-live="polite" class="rg-cat-match-status">Nenhuma confirmação realizada nesta sessão.</p>
+         <div class="table-wrap">
+          <table class="data-table rg-cat-match-table">
+           <thead><tr><th>Data / valor</th><th>Registro do extrato</th><th>Registro homologado</th><th>Conferência</th><th>Ação</th></tr></thead>
+           <tbody id="rg-cat-match-rows"><tr><td colspan="5" class="rg-cat-empty">Aguardando correspondências.</td></tr></tbody>
+          </table>
+         </div>
+         <p class="rg-cat-match-foot">Para reabrir uma conferência já aprovada, use o botão “Reabrir”. A aprovação, a reabertura e o usuário responsável ficam registrados na auditoria do sistema.</p>
+        </details>
         <div id="rg-cat-metrics" class="rg-cat-metrics" aria-label="Indicadores por categoria"></div>
         <div class="rg-cat-charts">
          <div class="rg-cat-chart-card"><h3>Despesas por categoria</h3><p>Participação nos pagamentos da fonte selecionada.</p><div id="rg-cat-outbars" class="rg-cat-bars"></div></div>
@@ -3532,7 +3544,7 @@ init();
 <script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
-<script src="./financeiro-categorias-relatorio.js?v=20261119cat2" defer></script>
+<script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261118prime1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
