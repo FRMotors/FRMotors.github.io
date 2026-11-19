@@ -125,9 +125,11 @@ function selectView(next,options={}){
    if(next==='cardbills'){
   window.frCardBillsUI?.refresh?.();
   window.frCardInstallmentsUI?.refresh?.();
+  window.frDocsReconcileUI?.refresh?.();
+  window.frDocumentLinksUI?.refresh?.();
  }
  if(next==='imports'&&byId('imports-base-migrada')?.open)window.frOperationalUI?.open?.();
-    if(next==='audit')window.frAuditUI?.refresh?.();
+    if(next==='audit'){window.frAuditUI?.refresh?.();window.frAuditCurrentUI?.refresh?.();}
   if(next==='payables')window.frBoletoUI?.refresh?.().catch?.(()=>{});
  if(!options.preserveScroll)window.scrollTo({top:0,behavior:'auto'});
 }
