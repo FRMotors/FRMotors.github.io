@@ -152,28 +152,23 @@ async function renderItauReconciliation(){
    metric('Saldo estimado até '+dateBR(state.latestImportedDate),money(projected),
     'Prévia auditável; o caixa oficial não é modificado',
     projected<0?'negative':'positive');
-  const canCompare=reference&&reference.data_referencia>=cutoff&&
-    reference.data_referencia<=latestDate;
-  let comparisonCents=null;
-  if(canCompare){
-   const projectionAtReference=rec.balanceCents-
-    rec.pending.filter(r=>r.data_lancamento>reference.data_referencia).reduce(
-     (sum,r)=>sum+(r.natureza==='entrada'?1:-1)*Math.round(num(r.valor)*100),0);
-   const delta=projectionAtReference-Math.round(num(reference.saldo)*100);
-   comparisonCents=delta;
-   difference.textContent=(delta===0?'Conciliação conferida · diferença R$ 0,00. ':
-    'Diferença de conciliação: '+money(delta/100)+'. Revisar antes de considerar fechado. ')+
-    'Referência informada em '+dateBR(reference.data_referencia)+': '+money(reference.saldo)+
-    '. '+count(rec.pending.length)+' movimento(s) acrescentado(s), '+
-    count(repeated.length)+' repetição(ões) descartada(s) do cálculo.';
-   difference.classList.toggle('hist-reconcile-mismatch',delta!==0);
-   difference.classList.toggle('hist-reconcile-ok',delta===0);
+  const comparisonCents=validation.differenceCents;
+  if(validation.status==='conferido'||validation.status==='divergente'){
+   const delta=comparisonCents;
+   const weak=rec.weakMatches.length;
+   const message=delta===0?'Conciliação aritmética confere com a referência bancária.':
+    'Diferença de conciliação: '+money(delta/100)+'. Revise antes de considerar o saldo conferido.';
+   difference.textContent=message+' Referência em '+dateBR(validation.referenceDate)+
+    ': '+money(validation.bankCents/100)+'. '+count(rec.pending.length)+' novo(s), '+
+    count(repeated.length)+' repetido(s) descartado(s). '+
+    (weak?count(weak)+' vínculo(s) somente por data, tipo e valor, com descrição diferente; exige revisão.':'');
+   difference.classList.toggle('hist-reconcile-mismatch',delta!==0||weak>0);
+   difference.classList.toggle('hist-reconcile-ok',delta===0&&weak===0);
   }else{
-   difference.textContent='Saldo calculado até '+dateBR(latestDate)+'. '+
-    (reference?'Última referência bancária em '+dateBR(reference.data_referencia)+
-    ' ('+money(reference.saldo)+') fora da janela comparável.':
-    'Nenhum saldo bancário independente registrado para comparar.')+
-    ' Não é possível garantir diferença zero sem referência contemporânea.';
+   difference.textContent='Saldo estimado até '+dateBR(state.latestImportedDate)+
+    '. '+(reference?'A referência de '+dateBR(reference.data_referencia)+' ('+money(reference.saldo)+
+    ') está fora da janela comparável.':'Sem referência bancária independente.')+
+    ' Não é possível confirmar o saldo sem referência contemporânea.';
    difference.classList.remove('hist-reconcile-ok');
    difference.classList.add('hist-reconcile-mismatch');
   }
@@ -206,12 +201,15 @@ async function renderItauReconciliation(){
    '<td><span class="hist-reconcile-flag '+r.badge+'">'+safe(r.decisao)+'</span></td></tr>'
   ).join(''):'<tr><td colspan="5" class="hist-empty">Nenhum ajuste necessário neste período.</td></tr>';
  }catch(e){
-  label.textContent='Não foi possível concluir a conciliação automática.';
+  state.importedPending=[];state.officialCutoff='';state.latestImportedDate='';
+  state.referenceCheck=null;state.weakMatchCount=0;
+  label.textContent='Falha de conciliação. Saldo não calculado.';
   root.innerHTML='';headline.innerHTML='';
   difference.textContent='Conciliação indisponível: '+String(e.message||e);
   difference.classList.add('hist-reconcile-mismatch');
-  note.textContent='O saldo não foi alterado. Atualize a página ou verifique o acesso à base financeira.';
+  note.textContent='Cálculo bloqueado para não mostrar números parciais ou possivelmente duplicados.';
   table.innerHTML='<tr><td colspan="5" class="hist-empty">Dados de conciliação indisponíveis.</td></tr>';
+  throw e;
  }
 }
 
@@ -302,11 +300,23 @@ async function refresh(){
    renderOther();
    await renderItauReconciliation();
    renderItau();
-   status('hist-itau-status',state.importedPending.length?
-    'Prévia até '+dateBR(state.latestImportedDate)+': '+count(state.importedPending.length)+' movimento(s) posteriores ao fechamento em '+dateBR(state.officialCutoff)+'. Caixa homologado não alterado.':
-    'Histórico Itaú consultado. Fonte homologada: '+lote.arquivo_nome+'.');
+   const check=state.referenceCheck;
+   const hasRisk=check?.status==='divergente'||state.weakMatchCount>0;
+   const message=state.importedPending.length?
+    'Prévia Itaú até '+dateBR(state.latestImportedDate)+' · '+count(state.importedPending.length)+
+    ' movimento(s) não homologado(s), caixa oficial preservado. '+
+    (check?.status==='conferido'?'Saldo comparado com referência bancária.':'Saldo sem confirmação bancária.'):
+    'Histórico Itaú carregado, sem extratos adicionais. Fonte: '+lote.arquivo_nome+'.';
+   status('hist-itau-status',message+(state.weakMatchCount?' Revise '+count(state.weakMatchCount)+' vínculo(s) por valor/data.':''),hasRisk);
    status('hist-other-status','Fontes homologadas atualizadas. Nenhum lançamento operacional foi modificado.');
-  }catch(e){ready=false;renderError('Não foi possível carregar a visualização: '+e.message);throw e}
+  }catch(e){
+   ready=false;
+   renderError('Não foi possível atualizar o Itaú: '+e.message);
+   for(const id of ['hist-itau-kpis','hist-itau-monthly','hist-itau-transactions','hist-itau-chart']){
+    const element=$(id);if(element)element.innerHTML='';
+   }
+   throw e;
+  }
   finally{loading=null}
  })();
  return loading;
