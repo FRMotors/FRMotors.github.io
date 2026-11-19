@@ -3,18 +3,24 @@ on:
   push:
     paths:
       - 'financeiro-import.js'
+      - 'financeiro-import-categorias.js'
       - 'financeiro-import.css'
       - 'financeiro.html'
       - 'sql/migrations/20261119_classificacao_individual_extratos.sql'
+      - 'sql/migrations/20261119_edicao_categorias_extratos_existentes.sql'
       - 'tests/financeiro-importacao-classificacao.test.cjs'
+      - 'tests/financeiro-import-categorias-existentes.test.cjs'
       - '.github/workflows/financeiro-importacao.yml'
   pull_request:
     paths:
       - 'financeiro-import.js'
+      - 'financeiro-import-categorias.js'
       - 'financeiro-import.css'
       - 'financeiro.html'
       - 'sql/migrations/20261119_classificacao_individual_extratos.sql'
+      - 'sql/migrations/20261119_edicao_categorias_extratos_existentes.sql'
       - 'tests/financeiro-importacao-classificacao.test.cjs'
+      - 'tests/financeiro-import-categorias-existentes.test.cjs'
       - '.github/workflows/financeiro-importacao.yml'
 permissions:
   contents: read
@@ -29,4 +35,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar integração de nomes e categorias
-        run: node --test tests/financeiro-importacao-classificacao.test.cjs
+        run: node --test tests/financeiro-importacao-classificacao.test.cjs tests/financeiro-import-categorias-existentes.test.cjs
