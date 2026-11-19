@@ -3,6 +3,12 @@ on:
   push:
     paths:
       - 'financeiro-documentos-status-core.js'
+      - 'financeiro-auditoria-estado-core.js'
+      - 'financeiro-auditoria-estado-ui.js'
+      - 'financeiro-faturas-cartoes.js'
+      - 'financeiro-vinculos-faturas.js'
+      - 'financeiro-conciliacao-documental.js'
+      - 'financeiro-pro-ui.js'
       - 'financeiro-documentos.js'
       - 'financeiro-documentos-atualizado.css'
       - 'financeiro-central-auditoria.js'
@@ -10,10 +16,17 @@ on:
       - 'financeiro-baixas-operacionais.js'
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
+      - 'tests/financeiro-auditoria-fornecedores-layout.test.cjs'
       - '.github/workflows/financeiro-documentos.yml'
   pull_request:
     paths:
       - 'financeiro-documentos-status-core.js'
+      - 'financeiro-auditoria-estado-core.js'
+      - 'financeiro-auditoria-estado-ui.js'
+      - 'financeiro-faturas-cartoes.js'
+      - 'financeiro-vinculos-faturas.js'
+      - 'financeiro-conciliacao-documental.js'
+      - 'financeiro-pro-ui.js'
       - 'financeiro-documentos.js'
       - 'financeiro-documentos-atualizado.css'
       - 'financeiro-central-auditoria.js'
@@ -21,6 +34,7 @@ on:
       - 'financeiro-baixas-operacionais.js'
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
+      - 'tests/financeiro-auditoria-fornecedores-layout.test.cjs'
       - '.github/workflows/financeiro-documentos.yml'
 permissions:
   contents: read
@@ -35,4 +49,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar vinculações, anos e valores documentais
-        run: node --test tests/financeiro-documentos-status.test.cjs
+        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs
