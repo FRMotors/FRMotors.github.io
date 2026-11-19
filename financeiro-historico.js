@@ -121,14 +121,9 @@ async function renderItauReconciliation(){
   const validation=core.compareBankReference(rec,reference,cutoff,state.latestImportedDate);
   // O OK manual do consolidado vale também na conciliação do Itaú.
   // Só suprime alertas quando as DUAS IDs do par aprovado coincidem.
-  const confirmedByLine=new Map(confirmations.map(c=>[c.linha_id,c]));
-  const isApproved=match=>{
-   const record=confirmedByLine.get(match.bank.id);
-   return record?.situacao==='conferido'&&
-    record.movimento_homologado_id===match.official.id;
-  };
-  const waiting=rec.weakMatches.filter(match=>!isApproved(match));
-  const approved=rec.weakMatches.filter(isApproved);
+  const {waiting,approved}=core.reviewWeakMatches(rec.weakMatches,confirmations);
+  const approvedSet=new Set(approved.map(match=>match.bank.id));
+  const isApproved=match=>approvedSet.has(match.bank.id);
   state.referenceCheck=validation;
   state.weakMatchCount=waiting.length;
   state.approvedMatchCount=approved.length;
