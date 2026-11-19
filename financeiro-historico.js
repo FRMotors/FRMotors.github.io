@@ -9,8 +9,8 @@ const num=n=>Number(n)||0;
 const sum=(rows,k)=>rows.reduce((a,r)=>a+Math.round(num(r[k])*100),0)/100;
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const monthBR=v=>v?new Intl.DateTimeFormat('pt-BR',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(String(v).slice(0,7)+'-01T12:00:00Z')).replace('.',''):'Sem data';
-const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[]};
-let loading=null,ready=false,activeTab='cards',transactionSerial=0,initialized=false;
+const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[],importedPending:[],officialCutoff:'',latestImportedDate:''};
+let loading=null,ready=false,activeTab='cards',transactionSerial=0,initialized=false,previousMaxMonth='';
 function status(id,message,error=false){
  const el=$(id);if(!el)return;el.textContent=message;el.className='status'+(error?' bad':' ok');
 }
@@ -131,7 +131,7 @@ function reconcileBankBalance(base,canonical,official,cutoff){
  }
  const pending=[],already=[];
  for(const r of canonical){
-  if(r.data_lancamento<cutoff)continue;
+  if(r.data_lancamento<=cutoff)continue;
   const key=officialKey(r);
   if((existing.get(key)||0)>0){
    existing.set(key,existing.get(key)-1);
@@ -189,6 +189,10 @@ async function renderItauReconciliation(){
   const baseline=state.monthly[state.monthly.length-1];
   const rec=reconcileBankBalance(baseline.saldo_teorico_acumulado,canonical,official,cutoff);
   const latestDate=canonical.map(r=>r.data_lancamento).sort().pop()||cutoff;
+  // Visualização de extratos pós-fechamento; nenhuma inserção em fin_movimentos.
+  state.importedPending=rec.pending.filter(row=>row.data_lancamento>cutoff);
+  state.officialCutoff=cutoff;
+  state.latestImportedDate=latestDate>cutoff?latestDate:cutoff;
   const reference=refResponse.data;
   const projected=rec.balanceCents/100;
   label.textContent='Saldo do Excel homologado até '+dateBR(cutoff)+
@@ -236,13 +240,13 @@ async function renderItauReconciliation(){
     comparisonCents===0?'positive':comparisonCents===null?'':'negative')+
    metric('Lançamentos novos',count(rec.pending.length),
     count(repeated.length)+' repetição(ões) ignorada(s)');
-  note.textContent='Verificação automática: '+count(lines.length)+' registros originais em '+
+  note.textContent='Verificação automática, após '+dateBR(cutoff)+': '+count(lines.length)+' registros originais em '+
    count(bankFiles.length)+' arquivo(s); '+count(repeated.length)+
    ' repetição(ões) entre PDFs não contabilizada(s), '+count(rec.already.length)+
    ' movimento(s) já presente(s) no fluxo homologado a partir de '+dateBR(cutoff)+
    ', '+count(rec.pending.length)+' lançamento(s) adicional(is). '+
    count(audits.count||0)+' registro(s) antigo(s) marcado(s) como cancelado(s) com auditoria. '+
-   'Não há criação nem exclusão de pagamentos. Cartões são conferidos separadamente.';
+   'Movimentos na data de fechamento ou anteriores não são somados automaticamente. Não há criação nem exclusão de pagamentos. Cartões são conferidos separadamente.';
   const pendingRows=rec.pending.map(r=>({...r,decisao:'Acrescentado ao saldo',badge:'new'}));
   const duplicateRows=repeated.map(r=>({...r,decisao:'Repetido · ignorado',badge:'duplicate'}));
   const entries=[...pendingRows,...duplicateRows]
@@ -322,7 +326,8 @@ async function refresh(){
  if(loading)return loading;
  loading=(async()=>{
   try{
-   status('hist-itau-status','Consultando o histórico homologado...');
+   state.importedPending=[];state.officialCutoff='';state.latestImportedDate='';
+   status('hist-itau-status','Consultando o histórico homologado e os extratos posteriores...');
    status('hist-other-status','Consultando as fontes financeiras...');
    if(typeof db==='undefined'||!db)throw Error('Conexão financeira indisponível.');
    await refreshImportedItau();
@@ -347,9 +352,12 @@ async function refresh(){
     categories:categories.sort((a,b)=>num(b.total)-num(a.total)),
     banks});
    ready=true;
-   renderItau();renderOther();
+   renderOther();
    await renderItauReconciliation();
-   status('hist-itau-status','Histórico do Itaú atualizado. Fonte: '+lote.arquivo_nome+'.');
+   renderItau();
+   status('hist-itau-status',state.importedPending.length?
+    'Prévia até '+dateBR(state.latestImportedDate)+': '+count(state.importedPending.length)+' movimento(s) posteriores ao fechamento em '+dateBR(state.officialCutoff)+'. Caixa homologado não alterado.':
+    'Histórico Itaú consultado. Fonte homologada: '+lote.arquivo_nome+'.');
    status('hist-other-status','Fontes homologadas atualizadas. Nenhum lançamento operacional foi modificado.');
   }catch(e){ready=false;renderError('Não foi possível carregar a visualização: '+e.message);throw e}
   finally{loading=null}
@@ -357,21 +365,55 @@ async function refresh(){
  return loading;
 }
 function open(view){
- if(!ready){refresh().catch(()=>{});return}
- if(view==='itau'){
-  renderItau();
-  // A última importação pode ter acontecido nesta mesma sessão.
-  refreshImportedItau().catch(()=>{});
-  renderItauReconciliation().catch(()=>{});
- }else renderOther();
+ // Recarregar tudo ao entrar no Itaú, inclusive PDFs importados após a última consulta.
+ if(view==='itau'||!ready){refresh().catch(()=>{});return}
+ renderOther();
+}
+/* O relatório mistura, apenas em memória, o lote homologado com PDFs posteriores
+   ao fechamento. A fonte original e os pagamentos confirmados não são alterados. */
+function reportMonths(){
+ if(!state.importedPending.length)return state.monthly;
+ const official=new Map(state.monthly.map(r=>[String(r.mes).slice(0,7),r]));
+ const delta=new Map();
+ for(const r of state.importedPending){
+  const date=String(r.data_lancamento||'').slice(0,10),key=date.slice(0,7);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!['entrada','saida'].includes(r.natureza))continue;
+  if(state.officialCutoff&&date<=state.officialCutoff)continue;
+  const sum=delta.get(key)||{inc:0,out:0,nIn:0,nOut:0};
+  if(r.natureza==='entrada'){sum.inc+=Math.round(num(r.valor)*100);sum.nIn++}
+  else{sum.out+=Math.round(num(r.valor)*100);sum.nOut++}
+  delta.set(key,sum);
+ }
+ const months=[...new Set([...official.keys(),...delta.keys()])].sort();
+ const finalBalance=state.monthly.length?Math.round(num(state.monthly[state.monthly.length-1].saldo_teorico_acumulado)*100):0;
+ let accumulated=0;
+ return months.map(key=>{
+  const base=official.get(key);
+  const add=delta.get(key)||{inc:0,out:0,nIn:0,nOut:0};
+  accumulated+=add.inc-add.out;
+  const incoming=Math.round(num(base?.entradas_operacionais)*100)+add.inc;
+  const outgoing=Math.round(num(base?.saidas)*100)+add.out;
+  const bankBalance=base?Math.round(num(base.saldo_teorico_acumulado)*100):finalBalance;
+  return {
+   ...(base||{mes:key+'-01',saldo_abertura:0}),
+   entradas_operacionais:incoming/100,
+   saidas:outgoing/100,
+   entradas_qtd:num(base?.entradas_qtd)+add.nIn,
+   saidas_qtd:num(base?.saidas_qtd)+add.nOut,
+   resultado_operacional:(incoming-outgoing)/100,
+   saldo_teorico_acumulado:(bankBalance+accumulated)/100,
+   extrato_entradas:add.inc/100,extrato_saidas:add.out/100
+  };
+ });
 }
 function period(){
- const months=state.monthly;
+ const months=reportMonths();
  const a=$('hist-itau-from'),b=$('hist-itau-to');
  if(!months.length)return [];
  const min=months[0].mes.slice(0,7),max=months[months.length-1].mes.slice(0,7);
  if(!a.value)a.value=min;
- if(!b.value)b.value=max;
+ if(!b.value||b.value===previousMaxMonth)b.value=max;
+ previousMaxMonth=max;
  a.min=b.min=min;a.max=b.max=max;
  if(a.value>b.value){status('hist-itau-status','O mês inicial deve ser anterior ou igual ao mês final.',true);return null}
  return months.filter(r=>r.mes.slice(0,7)>=a.value&&r.mes.slice(0,7)<=b.value);
@@ -387,8 +429,12 @@ function renderItau(){
  const result=income-expenses;
  const last=selected.length?num(selected[selected.length-1].saldo_teorico_acumulado):0;
  $('hist-itau-period-note').textContent=selected.length?
-  selected.length+' mês(es) · saldo acumulado até o fim do período (não confirmado pelo banco)':
+  selected.length+' mês(es) · '+(state.importedPending.length?'prévia de extratos até '+dateBR(state.latestImportedDate)+'; sem baixa no caixa oficial':'saldo histórico, não confirmado pelo banco'):
   'Nenhum movimento registrado nesse intervalo.';
+ const sourceLabel=$('hist-itau-data-sources');
+ if(sourceLabel)sourceLabel.textContent=state.importedPending.length?
+  'Histórico homologado até '+dateBR(state.officialCutoff)+' + '+count(state.importedPending.length)+' movimento(s) importado(s) até '+dateBR(state.latestImportedDate)+'. Prévia somente para consulta.':
+  'Histórico homologado do Excel, sem novos extratos incorporados.';
  $('hist-itau-kpis').innerHTML=
  metric('Entradas operacionais',money(income),count(selected.reduce((s,r)=>s+num(r.entradas_qtd),0))+' lançamentos · sem saldo inicial','positive')+
  metric('Saídas efetivas',money(expenses),count(selected.reduce((s,r)=>s+num(r.saidas_qtd),0))+' pagamentos registrados no Itaú')+
@@ -461,13 +507,17 @@ async function fetchTransactions(from,to){
   fetch('entradas_fluxo'),fetch('saidas_fluxo'),fetchExtra()
  ]);
  if(request!==transactionSerial)return;
- const records=[...received,...paid,...supplement]
+ const imported=state.importedPending.filter(r=>String(r.data_lancamento).slice(0,7)>=from&&String(r.data_lancamento).slice(0,7)<=to)
+  .map(r=>({grupo:r.natureza==='entrada'?'entradas_fluxo':'saidas_fluxo',
+   data_evento:r.data_lancamento,descricao:r.descricao,valor:r.valor,
+   fonte:'PDF Itaú (prévia)',dados:{categoria:'Extrato importado',meio:'Em conferência',saldo_inicial:false}}));
+ const records=[...received,...paid,...supplement,...imported]
   .sort((a,b)=>b.data_evento.localeCompare(a.data_evento)).slice(0,40);
  tbody.innerHTML=records.length?records.map(r=>{
   const isIn=r.grupo==='entradas_fluxo',isOpening=Boolean(r.dados?.saldo_inicial);
   const origin=r.fonte==='Contas a Receber'
    ?'<small class="hist-subline">Contas a Receber · linha '+safe(r.linha_origem)+
-    ' · '+safe(r.cliente||'')+'</small>':'';
+    ' · '+safe(r.cliente||'')+'</small>':r.fonte==='PDF Itaú (prévia)'?'<small class="hist-subline">Extrato importado · não homologado</small>':'';
   return '<tr><td>'+dateBR(r.data_evento)+'</td>'+
    '<td><strong>'+safe(r.descricao)+'</strong>'+origin+'</td>'+
    '<td><span class="hist-kind '+(isIn?'in':'out')+'">'+
@@ -592,9 +642,9 @@ function selectTab(next){
 function exportCsv(){
  if(!ready)return;
  const rows=period();if(!rows?.length)return;
- const fields=['Mes','Entradas operacionais','Saidas','Resultado operacional','Saldo de abertura','Saldo teorico acumulado'];
+ const fields=['Mes','Entradas operacionais','Saidas','Resultado operacional','Saldo de abertura','Saldo teorico acumulado','Entradas importadas em conferencia','Saidas importadas em conferencia'];
  const lines=rows.map(r=>[r.mes.slice(0,7),num(r.entradas_operacionais),num(r.saidas),
-   num(r.resultado_operacional),num(r.saldo_abertura),num(r.saldo_teorico_acumulado)]);
+   num(r.resultado_operacional),num(r.saldo_abertura),num(r.saldo_teorico_acumulado),num(r.extrato_entradas),num(r.extrato_saidas)]);
  const csv='\uFEFF'+[fields,...lines].map(row=>row.map(cell=>'"'+String(cell).replace(/"/g,'""')+'"').join(';')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
  const a=document.createElement('a');a.href=url;a.download='FR_Motors_Itau_Historico_'+new Date().toISOString().slice(0,10)+'.csv';
