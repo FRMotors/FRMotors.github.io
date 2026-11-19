@@ -35,8 +35,8 @@ async function fetchImportLines(importId){
  const result=[],chunk=400,max=4000;
  for(let off=0;off<max;off+=chunk){
   const {data,error}=await db.from('fin_teste_import_linhas')
-   .select('data_lancamento,natureza,valor')
-   .eq('importacao_id',importId).order('data_lancamento',{ascending:false})
+   .select('id,importacao_id,data_lancamento,descricao,natureza,valor')
+   .eq('importacao_id',importId).order('data_lancamento',{ascending:false}).order('id',{ascending:true})
    .range(off,off+chunk-1);
   if(error)throw error;
   result.push(...(data||[]));
@@ -44,32 +44,10 @@ async function fetchImportLines(importId){
  }
  throw Error('O arquivo excedeu 4.000 lançamentos; não é possível mostrar um resumo parcial.');
 }
-const importSignature=r=>[
- String(r.data_lancamento||'').slice(0,10),
- String(r.natureza||'').toLowerCase(),
- Math.round(num(r.valor)*100)
-].join('|');
 function importTotals(rows){
  const entries=rows.filter(r=>r.natureza==='entrada');
  const exits=rows.filter(r=>r.natureza==='saida');
  return {count:rows.length,entries:sum(entries,'valor'),exits:sum(exits,'valor')};
-}
-function overlappingImports(current,previous){
- // As comparações são sugestões, não baixas nem deduplicação da base.
- // A contagem por ocorrência evita esconder duas operações iguais no mesmo dia.
- const keys=new Map();
- previous.forEach(r=>{
-  const key=importSignature(r);
-  keys.set(key,(keys.get(key)||0)+1);
- });
- const unmatched=[];
- let matches=0;
- current.forEach(r=>{
-  const key=importSignature(r);
-  if(keys.get(key)>0){matches++;keys.set(key,keys.get(key)-1)}
-  else unmatched.push(r);
- });
- return {matches,unmatched};
 }
 /* Conciliação demonstrável: o saldo homologado é a base. Os PDFs são
  * janelas sobrepostas, por isso cada ocorrência física é contada uma vez.
@@ -218,12 +196,10 @@ async function refreshImportedItau(){
  if(!source||!kpis||!compare)return;
  source.textContent='Consultando a última importação do banco...';
  try{
-  const {data,error}=await db.from('fin_teste_importacoes')
-   .select('id,arquivo_nome,criado_em,linhas_selecionadas')
-   .eq('tipo','banco').ilike('conta_nome','itau')
-   .order('criado_em',{ascending:false}).limit(2);
-  if(error)throw error;
-  const latest=data?.[0],previous=data?.[1];
+  const imports=await fetchPages(()=>db.from('fin_teste_importacoes')
+   .select('id,arquivo_nome,criado_em,conta_nome,linhas_selecionadas')
+   .eq('tipo','banco').order('criado_em',{ascending:false}).order('id',{ascending:false}));
+  const [latest,previous]=imports.filter(row=>core.accountIsItau(row.conta_nome)).slice(0,2);
   if(!latest){
    source.textContent='Nenhum extrato bancário do Itaú importado.';
    kpis.innerHTML='';compare.textContent='Faça a importação pela página Importações.';
