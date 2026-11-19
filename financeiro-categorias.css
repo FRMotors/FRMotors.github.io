@@ -1,0 +1,52 @@
+/* FR Motors · Relatório por categoria, exclusivo da seleção de origem.
+ * Gráficos HTML responsivos sem dependência de bibliotecas externas. */
+.rg-cat-analysis{margin:20px 0 26px;overflow:hidden}
+.rg-cat-analysis .card-head{align-items:center}
+.rg-cat-analysis h3{font-size:15px;line-height:1.4;color:#244455;margin:0}
+.rg-cat-analysis .card-head p,.rg-cat-chart-card>p,.rg-cat-table-heading p{font-size:12px;color:#728894;line-height:1.5;margin:5px 0 0}
+.rg-cat-filters{padding:4px 22px 16px;display:flex;align-items:flex-end;gap:15px;flex-wrap:wrap}
+.rg-cat-filters label,.rg-cat-detail-controls label{display:flex;flex:1 1 210px;min-width:0;flex-direction:column;gap:8px;color:#496474;font-size:11px;font-weight:760}
+.rg-cat-filters select,.rg-cat-detail-controls select,.rg-cat-detail-controls input{height:41px;min-width:0;width:100%;border:1px solid #d3e1e6;border-radius:9px;background:white;color:#2c4a5a;padding:8px 11px;font-size:12px}
+.rg-cat-edit-link{white-space:normal;text-align:center;min-height:41px;display:inline-flex;align-items:center;justify-content:center}
+.rg-cat-status{font-size:12px;font-weight:650;color:#235a63;margin:0 22px 6px;background:#edf7f7;padding:10px 12px;border-radius:9px}
+.rg-cat-status.rg-cat-error{color:#9d4449;background:#fff0ef}
+.rg-cat-note{font-size:11px;line-height:1.55;color:#697e8b;margin:0 22px 15px}
+.rg-cat-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:0 22px 22px}
+.rg-cat-metric{border:1px solid #deebef;background:#fff;border-radius:13px;padding:15px;min-width:0}
+.rg-cat-metric span{display:block;color:#637e8c;font-size:11px;font-weight:760;margin-bottom:9px}
+.rg-cat-metric strong{display:block;font-weight:850;color:#284958;font-variant-numeric:tabular-nums;font-size:clamp(16px,1.8vw,24px);line-height:1.2;overflow-wrap:anywhere}
+.rg-cat-metric small{display:block;font-size:10px;line-height:1.45;color:#8498a3;margin-top:8px}
+.rg-cat-metric.income strong,.rg-cat-metric.positive strong{color:#18745a}
+.rg-cat-metric.expense strong,.rg-cat-metric.negative strong{color:#b55259}
+.rg-cat-metric.review strong{color:#a07327}
+.rg-cat-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 22px 20px}
+.rg-cat-chart-card{background:#fbfdfd;border:1px solid #e4ecef;border-radius:13px;padding:16px;min-width:0}
+.rg-cat-bars{margin-top:19px;max-height:470px;overflow:auto}
+.rg-cat-bar-item{margin:0 0 17px}
+.rg-cat-bar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
+.rg-cat-bar-head span{font-size:11px;line-height:1.35;color:#365466;font-weight:730;overflow-wrap:anywhere}
+.rg-cat-bar-head strong{font-size:11px;color:#2e5362;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rg-cat-bar-track{height:10px;background:#e7eef2;border-radius:7px;overflow:hidden}
+.rg-cat-bar-track span{display:block;height:100%;border-radius:7px;background:#e28b75;min-width:0}
+.rg-cat-chart-card:nth-child(2) .rg-cat-bar-track span{background:#58aea3}
+.rg-cat-bar-item small{color:#869da9;font-size:10px;display:block;margin-top:6px}
+.rg-cat-table-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 22px;flex-wrap:wrap}
+.rg-cat-table-wrap table{min-width:740px}
+.rg-cat-table-wrap td,.rg-cat-detail-table td{vertical-align:top}
+.rg-cat-catbutton{border:0;background:none;font-size:12px;font-weight:800;padding:4px 0;color:#246b77;cursor:pointer;text-align:left}
+.rg-cat-catbutton:hover{text-decoration:underline}
+.rg-cat-selected{background:#effbfa}
+.rg-cat-kind{display:inline-block;font-size:10px;font-weight:750;border-radius:6px;padding:5px 7px}
+.rg-cat-kind.income{background:#e4f4ef;color:#176e5c}
+.rg-cat-kind.expense{background:#fcefeb;color:#9d5850}
+.rg-cat-details{margin-top:15px;border-top:1px solid #e5eef2}
+.rg-cat-detail-controls{display:flex;flex-wrap:wrap;gap:14px;padding:0 22px 15px}
+.rg-cat-detail-table table{min-width:840px}
+.rg-cat-detail-table td:nth-child(2){min-width:240px;max-width:400px;overflow-wrap:anywhere}
+.rg-cat-sub{display:block;font-size:10px;color:#8399a5;line-height:1.4;margin-top:5px}
+.rg-cat-pager{padding:14px 22px;display:flex;align-items:center;justify-content:flex-end;gap:15px;font-size:11px;color:#69838e}
+.rg-cat-bottom-note{font-size:11px;line-height:1.55;color:#698392;margin:0;padding:13px 22px 18px;border-top:1px solid #ecf1f4}
+.rg-cat-empty{font-size:12px;color:#8296a0;padding:16px 8px}
+@media(max-width:1080px){.rg-cat-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.rg-cat-charts{grid-template-columns:1fr}}
+@media(max-width:560px){.rg-cat-filters,.rg-cat-charts,.rg-cat-metrics{padding-left:14px;padding-right:14px}.rg-cat-status,.rg-cat-note{margin-left:14px;margin-right:14px}.rg-cat-table-heading{padding-left:14px;padding-right:14px}.rg-cat-detail-controls{padding:0 14px 14px}.rg-cat-bottom-note{padding:12px 14px}.rg-cat-pager{flex-wrap:wrap;justify-content:center}.rg-cat-chart-card{padding:12px}.rg-cat-metric{padding:12px}}
+@media print{.rg-cat-filters .btn,.rg-cat-table-heading .btn,.rg-cat-pager{display:none!important}}
