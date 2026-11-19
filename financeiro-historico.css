@@ -181,3 +181,6 @@
  .fin-workflow-intro{margin-bottom:13px}
 }
 @media(prefers-reduced-motion:reduce){.fin-collapse>summary::after{transition:none}}
+
+/* Correspondência confirmada manualmente no consolidado: alerta resolvido. */
+.hist-reconcile-flag.confirmed{color:#196e51;background:#e4f5eb;border:1px solid #b7dfcb}
