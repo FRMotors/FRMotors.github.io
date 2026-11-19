@@ -226,6 +226,9 @@ function init(){
   if(button)saveCategory(button.dataset.oldCategorySave);
  });
  $('import-reload')?.addEventListener('click',()=>{if(details.open)refresh()});
+ const requestedSection=new URLSearchParams(window.location.search).get('section');
+ if(window.location.hash==='#imports-editar-categorias'||requestedSection==='editar-categorias')
+  details.open=true;
  if(details.open)refresh();
 }
 window.frImportCategoriasUI={refresh};
