@@ -540,9 +540,14 @@ async function saveImport(){
   const boundary=bankItau?' Extrato salvo na base de importações; o caixa homologado não é alterado automaticamente. Consulte o resumo no painel Itaú.':'';
   notice('import-save-status','Importação concluída. Novos: '+data.importadas+' · Repetidos ignorados pelo banco: '+data.duplicadas+'.'+repeatMessage+evidenceMessage+boundary);
   window.frFinanceUI?.showToast(data.importadas+' lançamento(s) importado(s). '+(data.duplicadas+blocked)+' repetidos não adicionados.'+boundary);
-  await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve(),
+  const updates=await Promise.allSettled([refresh(),typeof render==='function'?render():Promise.resolve(),
     window.frPixRulesUI?.refresh?.()||Promise.resolve(),
     bankItau?(window.frHistoryUI?.refresh?.()||Promise.resolve()):Promise.resolve()]);
+  if(bankItau&&updates[3]?.status==='rejected'){
+   const reason=String(updates[3].reason?.message||updates[3].reason||'erro desconhecido');
+   notice('import-save-status','Extrato importado com sucesso, mas a atualização do Itaú não passou na conferência: '+reason+'. Nenhum dado homologado foi alterado.',true);
+   window.frFinanceUI?.showToast('Atenção: extrato salvo, porém saldo Itaú ainda não validado.',true);
+  }
  }catch(e){notice('import-save-status','Importação não concluída: '+e.message,true)}
  finally{working=false;updateCounts()}
 }
