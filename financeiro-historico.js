@@ -10,8 +10,8 @@ const num=n=>Number(n)||0;
 const sum=(rows,k)=>rows.reduce((a,r)=>a+Math.round(num(r[k])*100),0)/100;
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const monthBR=v=>v?new Intl.DateTimeFormat('pt-BR',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(String(v).slice(0,7)+'-01T12:00:00Z')).replace('.',''):'Sem data';
-const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[],importedPending:[],officialCutoff:'',latestImportedDate:'',referenceCheck:null,weakMatchCount:0};
-let loading=null,ready=false,activeTab='cards',transactionSerial=0,initialized=false,previousMaxMonth='';
+const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[],importedPending:[],officialCutoff:'',latestImportedDate:'',referenceCheck:null,weakMatchCount:0,approvedMatchCount:0};
+let loading=null,ready=false,activeTab='cards',initialized=false,previousMaxMonth='';
 function status(id,message,error=false){
  const el=$(id);if(!el)return;el.textContent=message;el.className='status'+(error?' bad':' ok');
 }
@@ -69,7 +69,7 @@ async function renderItauReconciliation(){
  if(!label||!root||!headline||!difference||!note||!table||!state.monthly.length)return;
  label.textContent='Comparando importações com o último movimento homologado...';
  try{
-  const [imports,latestResponse,refResponse,audits,excelTailResponse]=await Promise.all([
+  const [imports,latestResponse,refResponse,audits,excelTailResponse,confirmations]=await Promise.all([
    fetchPages(()=>db.from('fin_teste_importacoes')
     .select('id,arquivo_nome,criado_em,conta_nome')
     .eq('tipo','banco').order('criado_em',{ascending:true}).order('id',{ascending:true})),
@@ -83,7 +83,10 @@ async function renderItauReconciliation(){
     .select('id',{count:'exact',head:true}),
    db.from('fin_teste_excel_linhas').select('data_evento')
     .eq('lote_id',state.lote.id).in('grupo',['entradas_fluxo','saidas_fluxo'])
-    .order('data_evento',{ascending:false}).limit(1).maybeSingle()
+    .order('data_evento',{ascending:false}).limit(1).maybeSingle(),
+   fetchPages(()=>db.from('fin_conciliacao_confirmacoes')
+    .select('linha_id,movimento_homologado_id,situacao,confirmado_em')
+    .eq('situacao','conferido').order('linha_id',{ascending:true}))
   ]);
   if(latestResponse.error)throw latestResponse.error;
   if(refResponse.error)throw refResponse.error;
@@ -103,7 +106,7 @@ async function renderItauReconciliation(){
    lines.push(...part);
   }
   const official=await fetchPages(()=>db.from('fin_movimentos')
-   .select('data_movimento,tipo,valor,descricao').eq('origem','fluxo_caixa_homologado')
+   .select('id,data_movimento,tipo,valor,descricao').eq('origem','fluxo_caixa_homologado')
    .eq('estado','confirmado').gte('data_movimento',cutoff)
    .order('data_movimento',{ascending:true}).order('id',{ascending:true}));
   const {canonical,repeated}=core.canonicalBank(bankFiles,lines);
@@ -116,7 +119,19 @@ async function renderItauReconciliation(){
   state.latestImportedDate=latestDate>cutoff?latestDate:cutoff;
   const reference=refResponse.data;
   const validation=core.compareBankReference(rec,reference,cutoff,state.latestImportedDate);
-  state.referenceCheck=validation;state.weakMatchCount=rec.weakMatches.length;
+  // O OK manual do consolidado vale também na conciliação do Itaú.
+  // Só suprime alertas quando as DUAS IDs do par aprovado coincidem.
+  const confirmedByLine=new Map(confirmations.map(c=>[c.linha_id,c]));
+  const isApproved=match=>{
+   const record=confirmedByLine.get(match.bank.id);
+   return record?.situacao==='conferido'&&
+    record.movimento_homologado_id===match.official.id;
+  };
+  const waiting=rec.weakMatches.filter(match=>!isApproved(match));
+  const approved=rec.weakMatches.filter(isApproved);
+  state.referenceCheck=validation;
+  state.weakMatchCount=waiting.length;
+  state.approvedMatchCount=approved.length;
   const projected=rec.balanceCents/100;
   label.textContent='Saldo do Excel homologado até '+dateBR(cutoff)+
    ' + movimentos ainda não contabilizados nos extratos até '+dateBR(latestDate);
@@ -133,13 +148,14 @@ async function renderItauReconciliation(){
   const comparisonCents=validation.differenceCents;
   if(validation.status==='conferido'||validation.status==='divergente'){
    const delta=comparisonCents;
-   const weak=rec.weakMatches.length;
+   const weak=waiting.length;
    const message=delta===0?'Conciliação aritmética confere com a referência bancária.':
     'Diferença de conciliação: '+money(delta/100)+'. Revise antes de considerar o saldo conferido.';
    difference.textContent=message+' Referência em '+dateBR(validation.referenceDate)+
     ': '+money(validation.bankCents/100)+'. '+count(rec.pending.length)+' novo(s), '+
     count(repeated.length)+' repetido(s) descartado(s). '+
-    (weak?count(weak)+' vínculo(s) somente por data, tipo e valor, com descrição diferente; exige revisão.':'');
+    (weak?count(weak)+' vínculo(s) somente por data, tipo e valor, com descrição diferente; exige revisão.':'')+
+    (approved.length?' '+count(approved.length)+' correspondência(s) conferida(s) manualmente.':'');
    difference.classList.toggle('hist-reconcile-mismatch',delta!==0||weak>0);
    difference.classList.toggle('hist-reconcile-ok',delta===0&&weak===0);
   }else{
@@ -157,7 +173,7 @@ async function renderItauReconciliation(){
     comparisonCents===null?'Sem referência comparável':'Comparado ao saldo informado em '+dateBR(reference.data_referencia),
     comparisonCents===0?'positive':comparisonCents===null?'':'negative')+
    metric('Lançamentos novos',count(rec.pending.length),
-    count(repeated.length)+' repetição(ões) ignorada(s); '+count(rec.weakMatches.length)+' vínculo(s) por data e valor');
+    count(repeated.length)+' repetição(ões) ignorada(s); '+count(waiting.length)+' vínculo(s) pendente(s), '+count(approved.length)+' conferido(s)');
   note.textContent='Verificação automática, desde '+dateBR(cutoff)+': '+count(lines.length)+' registros originais em '+
    count(bankFiles.length)+' arquivo(s); '+count(repeated.length)+
    ' repetição(ões) entre PDFs não contabilizada(s), '+count(rec.already.length)+
@@ -167,7 +183,13 @@ async function renderItauReconciliation(){
    'Registros anteriores ao fechamento ficam fora; os do próprio dia são adicionados somente se não houver correspondente no caixa homologado. Nenhum pagamento é criado, excluído ou duplicado. Cartões são conferidos separadamente.';
   const pendingRows=rec.pending.map(r=>({...r,decisao:'Acrescentado ao saldo',badge:'new'}));
   const duplicateRows=repeated.map(r=>({...r,decisao:'Repetido · ignorado',badge:'duplicate'}));
-  const weakRows=rec.weakMatches.map(r=>({...r.bank,decisao:'Vínculo provável por data/tipo/valor · Excel: '+String(r.official.descricao||'sem descrição'),badge:'review'}));
+  const weakRows=rec.weakMatches.map(r=>({
+   ...r.bank,
+   decisao:isApproved(r)?
+    'Correspondência conferida manualmente · Excel: '+String(r.official.descricao||'sem descrição'):
+    'Correspondência pendente por data/tipo/valor · Excel: '+String(r.official.descricao||'sem descrição'),
+   badge:isApproved(r)?'confirmed':'review'
+  }));
   const entries=[...pendingRows,...duplicateRows,...weakRows]
    .sort((a,b)=>String(b.data_lancamento).localeCompare(String(a.data_lancamento))||
     String(a.descricao).localeCompare(String(b.descricao))).slice(0,100);
@@ -180,7 +202,7 @@ async function renderItauReconciliation(){
   ).join(''):'<tr><td colspan="5" class="hist-empty">Nenhum ajuste necessário neste período.</td></tr>';
  }catch(e){
   state.importedPending=[];state.officialCutoff='';state.latestImportedDate='';
-  state.referenceCheck=null;state.weakMatchCount=0;
+  state.referenceCheck=null;state.weakMatchCount=0;state.approvedMatchCount=0;
   label.textContent='Falha de conciliação. Saldo não calculado.';
   root.innerHTML='';headline.innerHTML='';
   difference.textContent='Conciliação indisponível: '+String(e.message||e);
@@ -297,7 +319,7 @@ async function refresh(){
   }catch(e){
    ready=false;
    renderError('Não foi possível atualizar o Itaú: '+e.message);
-   for(const id of ['hist-itau-kpis','hist-itau-monthly','hist-itau-transactions','hist-itau-chart']){
+   for(const id of ['hist-itau-kpis','hist-itau-monthly','hist-itau-chart']){
     const element=$(id);if(element)element.innerHTML='';
    }
    throw e;
@@ -366,7 +388,7 @@ function renderItau(){
    '<td class="money">'+money(r.saidas)+'</td><td class="money '+(result<0?'hist-money-negative':'hist-money-positive')+'">'+
    money(result)+'</td><td class="money '+(saldo<0?'hist-money-negative':'hist-money-positive')+'">'+money(saldo)+'</td></tr>';
  }).join(''):'<tr><td colspan="5" class="hist-empty">Nenhum mês no intervalo selecionado.</td></tr>';
- fetchTransactions(start,end).catch(e=>status('hist-itau-status','O resumo está disponível, mas os lançamentos não puderam ser carregados: '+e.message,true));
+ // A nova tabela mensal paginada substitui a lista limitada de 40.
 }
 function drawChart(rows){
  const root=$('hist-itau-chart');if(!root)return;
@@ -380,63 +402,6 @@ function drawChart(rows){
    '<div class="hist-bar out" style="height:'+b+'%" title="'+safe(label+' · Saídas '+money(r.saidas))+'"></div>'+
    '</div><div class="hist-chart-label">'+safe(label.split(' ')[0])+'</div></div>';
  }).join('')+'</div>';
-}
-function lastDay(ym){
- const [y,m]=ym.split('-').map(Number);
- return new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
-}
-async function fetchTransactions(from,to){
- const tbody=$('hist-itau-transactions');
- if(!tbody||!state.lote||!from||!to)return;
- const request=++transactionSerial;
- tbody.innerHTML='<tr><td colspan="5" class="hist-empty">Carregando lançamentos...</td></tr>';
- const fetch=async grupo=>{
-  const {data,error}=await db.from('fin_teste_excel_linhas')
-   .select('grupo,data_evento,descricao,valor,dados')
-   .eq('lote_id',state.lote.id).eq('grupo',grupo)
-   .gte('data_evento',from+'-01').lte('data_evento',lastDay(to))
-   .order('data_evento',{ascending:false}).limit(40);
-  if(error)throw error;return data||[];
- };
- const fetchExtra=async()=>{
-  const {data,error}=await db.from('fin_teste_excel_recebimentos_complementares')
-   .select('data_recebimento,descricao,cliente,categoria,conta,valor,linha_origem,aba_origem')
-   .eq('lote_id',state.lote.id)
-   .gte('data_recebimento',from+'-01').lte('data_recebimento',lastDay(to))
-   .order('data_recebimento',{ascending:false}).limit(40);
-  if(error)throw error;
-  return (data||[]).map(item=>({
-   grupo:'entradas_fluxo',data_evento:item.data_recebimento,
-   descricao:item.descricao,valor:item.valor,
-   fonte:'Contas a Receber',linha_origem:item.linha_origem,
-   dados:{categoria:item.categoria||'VENDAS',meio:'Boleto recebido · Itaú',saldo_inicial:false},
-   cliente:item.cliente
-  }));
- };
- const [received,paid,supplement]=await Promise.all([
-  fetch('entradas_fluxo'),fetch('saidas_fluxo'),fetchExtra()
- ]);
- if(request!==transactionSerial)return;
- const imported=state.importedPending.filter(r=>String(r.data_lancamento).slice(0,7)>=from&&String(r.data_lancamento).slice(0,7)<=to)
-  .map(r=>({grupo:r.natureza==='entrada'?'entradas_fluxo':'saidas_fluxo',
-   data_evento:r.data_lancamento,descricao:r.descricao,valor:r.valor,
-   fonte:'PDF Itaú (prévia)',dados:{categoria:'Extrato importado',meio:'Em conferência',saldo_inicial:false}}));
- const records=[...received,...paid,...supplement,...imported]
-  .sort((a,b)=>b.data_evento.localeCompare(a.data_evento)).slice(0,40);
- tbody.innerHTML=records.length?records.map(r=>{
-  const isIn=r.grupo==='entradas_fluxo',isOpening=Boolean(r.dados?.saldo_inicial);
-  const origin=r.fonte==='Contas a Receber'
-   ?'<small class="hist-subline">Contas a Receber · linha '+safe(r.linha_origem)+
-    ' · '+safe(r.cliente||'')+'</small>':r.fonte==='PDF Itaú (prévia)'?'<small class="hist-subline">Extrato importado · não homologado</small>':'';
-  return '<tr><td>'+dateBR(r.data_evento)+'</td>'+
-   '<td><strong>'+safe(r.descricao)+'</strong>'+origin+'</td>'+
-   '<td><span class="hist-kind '+(isIn?'in':'out')+'">'+
-    (isOpening?'Saldo de abertura':isIn?'Entrada':'Saída')+'</span></td>'+
-   '<td>'+safe(r.dados?.categoria||'Sem categoria')+
-   '<small class="hist-subline">'+safe(r.dados?.meio||'Meio não indicado')+'</small></td>'+
-   '<td class="money '+(isIn?'hist-money-positive':'hist-money-negative')+'">'+
-   (isIn?'+ ':'− ')+money(r.valor)+'</td></tr>';
- }).join(''):'<tr><td colspan="5" class="hist-empty">Nenhuma movimentação neste período.</td></tr>';
 }
 function renderOther(){
  if(!ready)return;
