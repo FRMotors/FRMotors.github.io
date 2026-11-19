@@ -565,7 +565,7 @@
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cartoes1">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
 <link rel="stylesheet" href="./financeiro-central-auditoria.css?v=20261118audit1">
-<link rel="stylesheet" href="./financeiro-documentos-atualizado.css?v=20261119fix1">
+<link rel="stylesheet" href="./financeiro-documentos-atualizado.css?v=20261119supplier2">
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -2010,21 +2010,47 @@
  <section class="card fin-doc-supplier-years" id="doc-annual-suppliers">
   <div class="card-head">
    <div><h2>Autopeças por fornecedor, mês e ano</h2>
-    <p>Quanto foi registrado em documentos incluídos para cada fornecedor, em cada mês. Não representa pagamentos bancários.</p></div>
+    <p>Veja o total mensal e anual dos fornecedores que você selecionar, incluindo retíficas e compras identificadas como Mercado Livre. Origens Autopeças e Cartões permanecem identificadas separadamente.</p></div>
    <button type="button" class="btn" id="doc-by-supplier-export">Exportar resumo (CSV)</button>
   </div>
   <div class="fin-doc-supplier-years-toolbar">
    <label>Selecione o ano <select id="doc-by-supplier-year"><option value="">Carregando...</option></select></label>
    <label>Buscar fornecedor <input type="search" id="doc-by-supplier-search" autocomplete="off" placeholder="Nome da autopeças"></label>
   </div>
+  <details id="doc-supplier-chooser" class="fin-doc-supplier-chooser" open>
+   <summary>Conferir fornecedores incluídos no resumo <strong id="doc-supplier-selected-count">Aguardando fornecedores...</strong></summary>
+   <p>O catálogo reúne nomes encontrados em <strong>Autopeças</strong>, em <strong>Cartões</strong> e no cadastro de fornecedores. Você escolhe o que entra na análise mensal. Compras de Cartões não são, por si só, pagamentos comprovados nem compras de autopeças confirmadas.</p>
+   <div class="fin-doc-supplier-chooser-tools">
+    <label>Pesquisar na lista completa
+     <input type="search" id="doc-supplier-choice-search" autocomplete="off" placeholder="Ex.: retífica, Mercado Livre, oficina..."></label>
+    <label>Exibir
+     <select id="doc-supplier-choice-filter">
+      <option value="todos">Todos os encontrados</option>
+      <option value="fora">Não selecionados</option>
+      <option value="selecionados">Selecionados</option>
+      <option value="autopecas">Origem Autopeças</option>
+      <option value="cartoes">Origem Cartões</option>
+      <option value="cadastro">Somente no cadastro</option>
+     </select></label>
+   </div>
+   <div class="fin-doc-supplier-chooser-actions">
+    <button type="button" class="btn" id="doc-supplier-pick-default">Autopeças + retíficas + Mercado Livre</button>
+    <button type="button" class="btn" id="doc-supplier-pick-auto">Somente origem Autopeças</button>
+    <button type="button" class="btn" id="doc-supplier-pick-all">Selecionar todos</button>
+    <button type="button" class="btn" id="doc-supplier-pick-none">Desmarcar todos</button>
+   </div>
+   <p id="doc-supplier-choice-count" class="fin-doc-supplier-choice-note" role="status">Carregando a lista completa...</p>
+   <div class="fin-doc-supplier-choice-list" id="doc-supplier-choice-list" role="group" aria-label="Selecionar fornecedores que entrarão na análise"></div>
+   <p id="doc-supplier-choice-storage" class="fin-doc-supplier-choice-note">A escolha é uma preferência de visualização. Nenhuma compra, classificação ou baixa é modificada.</p>
+  </details>
   <p id="doc-by-supplier-note" class="info-note">Aguardando consulta dos fornecedores.</p>
   <div class="table-wrap fin-doc-supplier-years-table">
    <table class="data-table"><thead><tr>
-    <th>Fornecedor</th><th class="money">Jan</th><th class="money">Fev</th><th class="money">Mar</th>
+    <th>Fornecedor</th><th>Origem</th><th class="money">Jan</th><th class="money">Fev</th><th class="money">Mar</th>
     <th class="money">Abr</th><th class="money">Mai</th><th class="money">Jun</th><th class="money">Jul</th>
     <th class="money">Ago</th><th class="money">Set</th><th class="money">Out</th><th class="money">Nov</th><th class="money">Dez</th>
     <th class="money">Total no ano</th><th class="money">Registros</th></tr></thead>
-    <tbody id="doc-by-supplier-rows"><tr><td colspan="15" class="empty">Aguardando...</td></tr></tbody>
+    <tbody id="doc-by-supplier-rows"><tr><td colspan="16" class="empty">Aguardando...</td></tr></tbody>
     <tfoot id="doc-by-supplier-foot"></tfoot>
    </table>
   </div>
@@ -3620,8 +3646,8 @@ init();
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261119fix1" defer></script>
-<script src="./financeiro-documentos-status-core.js?v=20261119fix1" defer></script>
-<script src="./financeiro-documentos.js?v=20261119fix1" defer></script>
+<script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
+<script src="./financeiro-documentos.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261118cartoes1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261117anofiltro1" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261118prime1" defer></script>
@@ -3638,5 +3664,5 @@ init();
 <script src="./financeiro-relatorios-gerenciais.js?v=20261119fix1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261118classify1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261118cartoes1" defer></script>
-<script src="./financeiro-central-auditoria.js?v=20261119fix1" defer></script>
+<script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>
 </body></html>
