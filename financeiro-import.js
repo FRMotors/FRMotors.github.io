@@ -341,6 +341,14 @@ const importLabelError=row=>{
  if(category.length<2||category.length>100)return 'Toda movimentação precisa de uma categoria entre 2 e 100 caracteres.';
  return '';
 };
+const importPayloadRow=(row,fingerprint)=>({
+ fingerprint,data:row.date,
+ // A descrição do banco é a chave original e nunca pode receber o apelido.
+ descricao:row.desc,
+ descricao_personalizada:importPersonalName(row)||null,
+ categoria:importCategory(row),categoria_manual:Boolean(row.categoryEdited),
+ valor:row.valor,natureza:row.nature
+});
 function formatChoice(row){
  const val=id=>{const idx=$(id).value;return idx===''?null:row[Number(idx)]};
  const date=dateISO(val('import-col-date'),$('import-date-format').value,Number($('import-year')?.value)||current.year);
@@ -541,11 +549,7 @@ async function saveImport(){
   for(let i=0;i<selected.length;i++){
    const row=selected[i];
    const fingerprint=await hashHex(new TextEncoder().encode(row.base+'|'+row.occurrence));
-   // Identidade bancária permanece original; rótulo e categoria não afetam deduplicação.
-   payload.push({fingerprint,data:row.date,descricao:row.desc,
-    descricao_personalizada:importPersonalName(row)||null,
-    categoria:importCategory(row),categoria_manual:Boolean(row.categoryEdited),
-    valor:row.valor,natureza:row.nature});
+   payload.push(importPayloadRow(row,fingerprint));
   }
   notice('import-save-status','Gravando '+payload.length+' movimentações verificadas no Supabase...');
   const {data,error}=await db.rpc('fin_teste_importar_extrato',{
