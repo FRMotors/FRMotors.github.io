@@ -4,12 +4,18 @@ on:
     paths:
       - 'financeiro-itau-core.js'
       - 'financeiro-historico.js'
+      - 'financeiro.html'
+      - 'financeiro-import.js'
+      - 'tests/financeiro-itau-integracao.test.cjs'
       - 'tests/financeiro-itau-core.test.cjs'
       - '.github/workflows/financeiro-itau.yml'
   pull_request:
     paths:
       - 'financeiro-itau-core.js'
       - 'financeiro-historico.js'
+      - 'financeiro.html'
+      - 'financeiro-import.js'
+      - 'tests/financeiro-itau-integracao.test.cjs'
       - 'tests/financeiro-itau-core.test.cjs'
       - '.github/workflows/financeiro-itau.yml'
 permissions:
@@ -25,4 +31,4 @@ jobs:
         with:
           node-version: '22'
       - name: Executar testes do motor financeiro
-        run: node --test tests/financeiro-itau-core.test.cjs
+        run: node --test tests/financeiro-itau-*.test.cjs
