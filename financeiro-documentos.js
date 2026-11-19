@@ -4,6 +4,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const statusCore=window.frDocumentsStatusCore;
 const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Não informado');
 const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
@@ -13,7 +14,7 @@ const write=(id,text)=>{const node=$(id);if(node)node.textContent=text};
 const groupName=g=>g==='autopecas'?'Autopeças':'Cartões / outros meios';
 const monthOf=r=>(r.grupo==='cartoes'?r.mes_fatura:r.vencimento)?.slice(0,7)||'sem-mes';
 const inYear=r=>{const y=$('doc-year')?.value||'todos';return y==='todos'||monthOf(r).slice(0,4)===y;};
-let documents=[],page=0,monthPage=0,loading=null;
+let documents=[],liveMatches=new Map(),page=0,monthPage=0,loading=null;
 const PAGE_SIZE=35;
 const MONTH_PAGE_SIZE=12;
 const fields='id,grupo,codigo_origem,linha_excel,data_evento,vencimento,data_compra,mes_fatura,descricao,fornecedor_nome,cartao_nome,parcela,meio,valor_registrado,valor_cheio_documento,valor_com_desconto_informado,valor_pago_informado,data_pagamento_informada,situacao_origem,incluir,revisao_origem';
@@ -125,10 +126,16 @@ function draw(){
   const card=r.grupo==='cartoes';
   const mainDate=card?r.data_evento:r.vencimento;
   const referenceDate=card?r.mes_fatura:r.vencimento;
-  const payment=r.situacao_origem==='Pago'?
-   '<span class="state paid">Pago na planilha</span>':
-   '<span class="state open">'+escapeHTML(r.situacao_origem||'A confirmar')+'</span>';
-  const inclusion=r.incluir?'<span class="state open">Incluir</span>':'<span class="state">Não incluir</span>';
+  const match=liveMatches.get(r.id);
+  const payment=match?.status==='pago'?
+   '<span class="state paid">Pago · conciliado no financeiro</span>'+
+   '<small>'+escapeHTML(dateBR(match.paidDate))+
+   (match.valuePaid!==null?' · '+brl(match.valuePaid/100):'')+'</small>':
+   match?.status==='aberto'?'<span class="state open">Em aberto no financeiro</span>':
+   card?'<span class="state">Situação da fatura: consultar Cartões</span>':
+   r.situacao_origem==='Pago'?'<span class="state paid">Pago informado na planilha</span>':
+    '<span class="state open">Sem baixa comprovada nesta carteira</span>';
+  const inclusion=r.incluir?'<span class="state">Incluído no controle</span>':'<span class="state">Excluído do controle</span>';
   const more=r.parcela?' <small>Parcela '+escapeHTML(r.parcela)+'</small>':'';
   return '<tr>'+
    '<td><strong>'+escapeHTML(r.codigo_origem)+'</strong> <small>linha '+escapeHTML(r.linha_excel)+'</small></td>'+
@@ -142,7 +149,7 @@ function draw(){
    '<td class="money">'+(r.valor_com_desconto_informado===null?'—':brl(r.valor_com_desconto_informado))+'</td>'+
    '<td class="money">'+(r.valor_pago_informado===null?'—':brl(r.valor_pago_informado)+
      '<small>'+escapeHTML(dateBR(r.data_pagamento_informada))+'</small>')+'</td>'+
-   '<td>'+payment+'<small>'+inclusion+'</small></td></tr>';
+   '<td>'+payment+'<small>'+inclusion+'</small><small class="fin-doc-original">Original da planilha: '+escapeHTML(r.situacao_origem||'A confirmar')+'</small></td></tr>';
  }).join(''):'<tr><td colspan="10" class="empty">Nenhum documento corresponde aos filtros.</td></tr>';
  const sum=list.reduce((v,r)=>v+cents(r.valor_registrado),0);
  write('doc-found',list.length+' de '+documents.length+' documentos · página '+(page+1)+' de '+pages);
@@ -203,7 +210,9 @@ async function refresh(){
    if(typeof db==='undefined'||!db)throw Error('Conexão indisponível.');
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-   const rows=await fetchAll();
+   if(!statusCore)throw Error('Módulo de conciliação documental indisponível. Recarregue.');
+   const [rows,accounts]=await Promise.all([fetchAll(),fetchAccounts()]);
+   liveMatches=statusCore.matchLiveDocs(rows,accounts);
    documents=rows.sort((a,b)=>{
     const m1=monthOf(a)==='sem-mes'?'0000-00':monthOf(a);
     const m2=monthOf(b)==='sem-mes'?'0000-00':monthOf(b);
@@ -211,13 +220,15 @@ async function refresh(){
       String(b.data_evento||b.vencimento||'').localeCompare(String(a.data_evento||a.vencimento||''))||
       b.linha_excel-a.linha_excel;
    });
-   updateYears();updateMonths();draw();
+   updateYears();updateMonths();refreshSupplierYears();draw();renderSupplierYears();
    const included=documents.filter(r=>r.incluir).length,ignored=documents.length-included;
    write('doc-status','Histórico conferido: '+documents.length+' documentos, '+included+
-    ' incluídos e '+ignored+' excluídos. Todos preservados sem criar movimentos no caixa.');
+    ' incluídos e '+ignored+' excluídos. '+liveMatches.size+' documento(s) associados ao operacional, sem alterar os lançamentos financeiros.');
   }catch(e){
    write('doc-status','Falha ao carregar documentos históricos: '+(e.message||e));
    if($('doc-rows'))$('doc-rows').innerHTML='<tr><td colspan="10" class="empty">Não foi possível consultar os documentos.</td></tr>';
+   liveMatches=new Map();
+   if($('doc-by-supplier-rows'))$('doc-by-supplier-rows').textContent='Dados indisponíveis';
   }
  })();
  try{await loading}finally{loading=null;}
@@ -233,6 +244,9 @@ function setup(){
  $('doc-month-prev')?.addEventListener('click',()=>{monthPage--;drawSummary()});
  $('doc-month-next')?.addEventListener('click',()=>{monthPage++;drawSummary()});
  $('doc-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
+ $('doc-by-supplier-year')?.addEventListener('change',renderSupplierYears);
+ $('doc-by-supplier-search')?.addEventListener('input',renderSupplierYears);
+ $('doc-by-supplier-export')?.addEventListener('click',exportSupplierYears);
  $('doc-export')?.addEventListener('click',exportCsv);
 }
 window.frDocumentsUI={refresh};
