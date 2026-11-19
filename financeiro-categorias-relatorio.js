@@ -1,0 +1,260 @@
+/* FR Motors | Análise financeira por categoria e conta bancária.
+ * Fonte selecionável: extratos confirmados OU caixa homologado, nunca a soma de ambos.
+ * Somente leitura. Mudanças de classificação são lidas do Supabase a cada atualização. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const core=window.frCategoryCore;
+const safe=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
+const count=n=>new Intl.NumberFormat('pt-BR').format(n);
+const percent=(n,total)=>total?new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:1}).format(n/total):'0%';
+const dateBR=value=>String(value||'').slice(0,10).split('-').reverse().join('/');
+const state={official:[],imported:[],files:[],loaded:false,loading:null,detailPage:0,detailLimit:20,categoryKey:'',detailSearch:'',generation:0};
+const elements={
+ source:'rg-cat-source',account:'rg-cat-account',status:'rg-cat-status',note:'rg-cat-provenance',
+ kpis:'rg-cat-metrics',inBars:'rg-cat-inbars',outBars:'rg-cat-outbars',
+ table:'rg-cat-table',categoryFilter:'rg-cat-category',search:'rg-cat-search',
+ details:'rg-cat-movements',pagination:'rg-cat-page',prev:'rg-cat-prev',next:'rg-cat-next'
+};
+const el=name=>$(elements[name]);
+function setStatus(message,bad=false){
+ const node=el('status');if(!node)return;
+ node.textContent=message;node.className='rg-cat-status'+(bad?' rg-cat-error':'');
+}
+async function all(makeQuery,max=20000){
+ const result=[],step=400;
+ for(let i=0;i<max;i+=step){
+  const {data,error}=await makeQuery().range(i,i+step-1);
+  if(error)throw error;
+  result.push(...(data||[]));
+  if((data||[]).length<step)return result;
+ }
+ throw Error('O relatório excedeu o limite seguro de '+max+' lançamentos; não serão exibidos totais parciais.');
+}
+function filters(){
+ const source=el('source')?.value||'imported';
+ const year=Number($('rg-year')?.value||new Date().getFullYear());
+ const month=$('rg-month')?.value||'todos';
+ const account=source==='imported'?(el('account')?.value||''):'';
+ return {source,year,month,account};
+}
+function sourceRows(){
+ return filters().source==='official'?state.official:state.imported;
+}
+function grouped(){
+ const f=filters();
+ return core.summarize(f.source==='official'?state.official:state.imported,f);
+}
+function accountOptions(){
+ const control=el('account');if(!control)return;
+ const old=control.value;
+ const byName=new Map();
+ state.files.forEach(f=>{
+  const name=String(f.conta_nome||'').trim();
+  const key=core.fold(name);
+  if(key&&!byName.has(key))byName.set(key,name);
+ });
+ const options=[...byName].sort((a,b)=>a[1].localeCompare(b[1],'pt-BR'));
+ control.innerHTML='<option value="">Todas as contas importadas</option>'+
+  options.map(([key,label])=>'<option value="'+safe(key)+'">'+safe(label)+'</option>').join('');
+ if(options.some(([key])=>key===old))control.value=old;
+}
+function metric(label,value,note,kind=''){
+ return '<article class="rg-cat-metric '+kind+'"><span>'+safe(label)+'</span>'+
+  '<strong>'+safe(value)+'</strong><small>'+safe(note)+'</small></article>';
+}
+function bars(node,groups,total,empty){
+ if(!node)return;
+ if(!groups.length){node.innerHTML='<p class="rg-cat-empty">'+safe(empty)+'</p>';return}
+ const max=Math.max(...groups.map(g=>g.value),1);
+ node.innerHTML=groups.slice(0,12).map(group=>{
+  const width=Math.max(0,Math.round(group.value/max*100));
+  return '<div class="rg-cat-bar-item">'+
+   '<div class="rg-cat-bar-head"><span title="'+safe(group.label)+'">'+safe(group.label)+'</span>'+
+    '<strong>'+money(group.value)+'</strong></div>'+
+   '<div class="rg-cat-bar-track"><span style="width:'+width+'%"></span></div>'+
+   '<small>'+count(group.count)+' movimentação(ões) · '+percent(group.value,total)+' do '+(group.type==='entrada'?'recebido':'pago')+'</small>'+
+   '</div>';
+ }).join('');
+}
+function categoryOptions(summary){
+ const input=el('categoryFilter');
+ if(!input)return;
+ const current=state.categoryKey;
+ const choices=summary.allGroups.map(g=>'<option value="'+safe(g.key)+'">'+
+  safe((g.type==='entrada'?'Entrada: ':'Saída: ')+g.label)+'</option>');
+ input.innerHTML='<option value="">Todas as categorias</option>'+choices.join('');
+ if(summary.allGroups.some(g=>g.key===current))input.value=current;
+ else{state.categoryKey='';input.value=''}
+}
+function resultRows(summary){
+ const root=el('table');
+ if(!root)return;
+ const groups=summary.allGroups;
+ root.innerHTML=groups.length?groups.map(group=>{
+  const base=group.type==='entrada'?summary.incoming:summary.outgoing;
+  const selected=group.key===state.categoryKey?' rg-cat-selected':'';
+  return '<tr class="rg-cat-category-row'+selected+'">'+
+   '<td><button type="button" class="rg-cat-catbutton" data-rg-cat-key="'+safe(group.key)+'">'+safe(group.label)+'</button></td>'+
+   '<td><span class="rg-cat-kind '+(group.type==='entrada'?'income':'expense')+'">'+
+    (group.type==='entrada'?'Receita':'Despesa')+'</span></td>'+
+   '<td class="money">'+count(group.count)+'</td>'+
+   '<td class="money">'+money(group.value)+'</td>'+
+   '<td class="money">'+percent(group.value,base)+'</td>'+
+   '<td class="money">'+money(Math.round(group.value/group.count))+'</td></tr>';
+ }).join(''):'<tr><td colspan="6" class="rg-cat-empty">Sem movimentações nesta fonte e período.</td></tr>';
+}
+function filteredDetails(summary){
+ const term=core.fold(state.detailSearch);
+ return summary.rows.filter(row=>
+  (!state.categoryKey||row.type+'|'+core.categoryKey(row.category)===state.categoryKey)&&
+  (!term||core.fold([row.date,dateBR(row.date),row.description,row.bankDescription,
+   row.category,row.account,row.file].join(' ')).includes(term))
+ ).sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));
+}
+function detailRows(summary){
+ const root=el('details');if(!root)return;
+ const rows=filteredDetails(summary);
+ const totalPages=Math.max(1,Math.ceil(rows.length/state.detailLimit));
+ state.detailPage=Math.max(0,Math.min(state.detailPage,totalPages-1));
+ const page=rows.slice(state.detailPage*state.detailLimit,(state.detailPage+1)*state.detailLimit);
+ root.innerHTML=page.length?page.map(r=>
+  '<tr><td>'+safe(dateBR(r.date))+'</td>'+
+   '<td><strong>'+safe(r.description)+'</strong>'+
+    (r.bankDescription&&r.bankDescription!==r.description?'<small class="rg-cat-sub">No extrato: '+safe(r.bankDescription)+'</small>':'')+
+    '</td><td>'+safe(r.category)+'</td>'+
+   '<td>'+safe(r.account||'Caixa homologado')+'</td>'+
+   '<td><span class="rg-cat-kind '+(r.type==='entrada'?'income':'expense')+'">'+
+    (r.type==='entrada'?'Entrada':'Saída')+'</span></td>'+
+   '<td class="money">'+(r.type==='saida'?'− ':'+ ')+money(r.value)+'</td></tr>'
+ ).join(''):'<tr><td colspan="6" class="rg-cat-empty">Nenhuma movimentação corresponde à busca.</td></tr>';
+ const pageInfo=el('pagination');
+ if(pageInfo)pageInfo.textContent=count(rows.length)+' registro(s) · página '+(state.detailPage+1)+' de '+totalPages;
+ if(el('prev'))el('prev').disabled=state.detailPage===0;
+ if(el('next'))el('next').disabled=state.detailPage>=totalPages-1;
+}
+function render(){
+ if(!state.loaded||!core)return;
+ const f=filters(),summary=grouped();
+ const sourceSelect=el('account');
+ if(sourceSelect)sourceSelect.disabled=f.source==='official';
+ const accountWrap=$('rg-cat-account-wrap');
+ if(accountWrap)accountWrap.hidden=f.source==='official';
+ const labelledPeriod=f.month==='todos'?String(f.year):f.month+'/'+f.year;
+ const note=f.source==='official'?
+  'CAIXA HOMOLOGADO: movimentações confirmadas da origem oficial, sem vínculo individual de conta bancária nesta base. '+
+  'Os extratos importados não estão somados aqui.':
+  'EXTRATOS IMPORTADOS: somente movimentações confirmadas provenientes dos arquivos bancários, sem cancelamentos. '+
+  'Pode haver operações que também constam do histórico homologado. As fontes nunca são somadas entre si.';
+ if(el('note'))el('note').textContent=note;
+ if(el('kpis'))el('kpis').innerHTML=
+  metric('Receitas',money(summary.incoming),count(summary.entries)+' entradas','income')+
+  metric('Despesas',money(summary.outgoing),count(summary.exits)+' saídas','expense')+
+  metric('Resultado do período',money(summary.net),'Receitas menos despesas',summary.net<0?'negative':'positive')+
+  metric('A classificar',money(summary.pendingClassAmount),count(summary.pendingClass)+' linha(s) genérica(s) ou sem categoria','review');
+ bars(el('inBars'),summary.inGroups,summary.incoming,'Nenhuma entrada nesta seleção.');
+ bars(el('outBars'),summary.outGroups,summary.outgoing,'Nenhuma saída nesta seleção.');
+ categoryOptions(summary);resultRows(summary);detailRows(summary);
+ setStatus('Análise de '+labelledPeriod+' · '+count(summary.rows.length)+' movimento(s) · '+summary.allGroups.length+
+  ' categoria(s) agrupada(s). '+(f.source==='official'?'Caixa homologado.':'Extratos importados, sem movimentos cancelados.'));
+}
+async function refresh(){
+ if(state.loading)return state.loading;
+ state.loading=(async()=>{
+  setStatus('Consultando categorias e movimentações no Supabase...');
+  if(!core)throw Error('Motor de categorias indisponível. Recarregue a página.');
+  if(typeof db==='undefined'||!db)throw Error('Sem conexão com o banco financeiro.');
+  const access=await db.rpc('fluxo_caixa_autorizado');
+  if(access.error||access.data!==true)throw Error('Acesso financeiro não autorizado.');
+  const [official,files]=await Promise.all([
+   all(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,categoria,valor,estado,origem')
+    .eq('estado','confirmado').eq('origem','fluxo_caixa_homologado').order('id')),
+   all(()=>db.from('fin_teste_importacoes').select('id,tipo,conta_nome,arquivo_nome,criado_em')
+    .eq('tipo','banco').order('id'))
+  ]);
+  const lines=[];
+  for(let i=0;i<files.length;i+=30){
+   const ids=files.slice(i,i+30).map(x=>x.id);
+   if(!ids.length)break;
+   const part=await all(()=>db.from('fin_teste_import_linhas').select(
+    'id,importacao_id,movimento_id,fingerprint,data_lancamento,descricao,descricao_personalizada,categoria_personalizada,natureza,valor')
+    .in('importacao_id',ids).order('id'));
+   lines.push(...part);
+  }
+  const movements=[],movementIds=[...new Set(lines.map(x=>x.movimento_id).filter(Boolean))];
+  for(let i=0;i<movementIds.length;i+=30){
+   const ids=movementIds.slice(i,i+30);
+   const part=await all(()=>db.from('fin_teste_movimentos')
+    .select('id,data_movimento,tipo,descricao,categoria,valor,estado,referencia_cliente')
+    .in('id',ids).order('id'));
+   movements.push(...part);
+  }
+  // Somente após validar todas as fontes substituímos os dados exibidos.
+  const a=core.sourceRowsOfficial(official),b=core.sourceRowsImported(files,lines,movements);
+  state.official=a;state.imported=b;state.files=files;state.loaded=true;
+  accountOptions();render();
+ })().catch(err=>{
+  state.loaded=false;state.official=[];state.imported=[];state.files=[];
+  for(const name of ['kpis','inBars','outBars','table','details']){
+   const node=el(name);if(node)node.innerHTML='';
+  }
+  setStatus('Não foi possível validar as categorias: '+String(err.message||err),true);
+ }).finally(()=>{state.loading=null});
+ return state.loading;
+}
+function csvSafe(value){
+ const str=String(value??'');
+ return '"'+(/^\s*[=+\-@]/.test(str)?"'"+str:str).replace(/"/g,'""')+'"';
+}
+function exportCSV(kind){
+ if(!state.loaded)return;
+ const summary=grouped(),f=filters();
+ const data=kind==='movements'?
+  [['Data','Origem','Conta bancária','Tipo','Descrição','Descrição do banco','Categoria','Valor (R$)'],
+   ...filteredDetails(summary).map(r=>[dateBR(r.date),r.source,r.account,r.type,r.description,
+    r.bankDescription||r.description,r.category,(r.value/100).toFixed(2).replace('.',',')])]:
+  [['Tipo','Categoria','Quantidade','Total (R$)','Participação','Média (R$)'],
+   ...summary.allGroups.map(g=>[g.type,g.label,g.count,(g.value/100).toFixed(2).replace('.',','),
+    percent(g.value,g.type==='entrada'?summary.incoming:summary.outgoing),
+    (g.value/g.count/100).toFixed(2).replace('.',',')])];
+ const content='\ufeff'+data.map(r=>r.map(csvSafe).join(';')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8;'}));
+ const anchor=document.createElement('a');
+ anchor.href=url;anchor.download='FR_Motors_categorias_'+(kind==='movements'?'movimentos_':'resumo_')+
+  f.source+'_'+f.year+(f.month==='todos'?'':'_'+f.month)+'.csv';
+ document.body.appendChild(anchor);anchor.click();anchor.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function init(){
+ if(!el('source'))return;
+ el('source').addEventListener('change',()=>{state.detailPage=0;state.categoryKey='';render()});
+ el('account')?.addEventListener('change',()=>{state.detailPage=0;state.categoryKey='';render()});
+ for(const id of ['rg-year','rg-month'])$(id)?.addEventListener('change',()=>{
+  state.detailPage=0;state.categoryKey='';render()
+ });
+ el('categoryFilter')?.addEventListener('change',e=>{
+  state.categoryKey=e.target.value;state.detailPage=0;render()
+ });
+ el('search')?.addEventListener('input',e=>{
+  state.detailSearch=e.target.value;state.detailPage=0;detailRows(grouped())
+ });
+ el('table')?.addEventListener('click',e=>{
+  const button=e.target.closest('[data-rg-cat-key]');if(!button)return;
+  state.categoryKey=button.dataset.rgCatKey;state.detailPage=0;render();
+  $('rg-cat-details')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+ });
+ el('prev')?.addEventListener('click',()=>{state.detailPage--;detailRows(grouped())});
+ el('next')?.addEventListener('click',()=>{state.detailPage++;detailRows(grouped())});
+ $('rg-cat-reload')?.addEventListener('click',refresh);
+ $('rg-refresh')?.addEventListener('click',refresh);
+ $('rg-cat-export-summary')?.addEventListener('click',()=>exportCSV('summary'));
+ $('rg-cat-export-movements')?.addEventListener('click',()=>exportCSV('movements'));
+ document.addEventListener('click',e=>{
+  if(e.target.closest('[data-view="reports"]'))refresh();
+ });
+ if(!document.querySelector('[data-view-panel="reports"]')?.hidden)refresh();
+}
+window.frCategoryReportUI={refresh,render};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
