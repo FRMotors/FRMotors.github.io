@@ -25,3 +25,62 @@
 @media(max-width:1020px){.rg-doc-annual{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.rg-doc-annual{padding:10px 12px;gap:8px}.rg-doc-annual>div{padding:10px}.rg-doc-annual>div>strong{font-size:17px}#rg-doc-note{margin:2px 12px 14px}.fin-doc-supplier-years-toolbar{padding:0 12px 12px}}
 @media print{.fin-doc-supplier-years-toolbar,.fin-doc-supplier-years .card-head button{display:none!important}}
+
+/* Catálogo completo e configurável de fornecedores. */
+.fin-doc-supplier-chooser{margin:0 18px 16px;border:1px solid #dce7ec;border-radius:12px;overflow:hidden;background:#fcfefe}
+.fin-doc-supplier-chooser>summary{cursor:pointer;padding:14px 16px;font-weight:800;font-size:13px;color:#2d5265}
+.fin-doc-supplier-chooser>summary strong{font-size:11px;font-weight:690;color:#66818b;margin-left:10px}
+.fin-doc-supplier-chooser>p{padding:0 16px;font-size:11px;color:#6c8491;line-height:1.55}
+.fin-doc-supplier-chooser-tools{display:flex;flex-wrap:wrap;gap:12px;padding:7px 16px}
+.fin-doc-supplier-chooser-tools label{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;font-size:11px;font-weight:800;color:#557583}
+.fin-doc-supplier-chooser-tools input,.fin-doc-supplier-chooser-tools select{width:100%;padding:9px 12px;min-height:40px;border-radius:8px;border:1px solid #ccdfe7;background:#fff}
+.fin-doc-supplier-chooser-actions{padding:6px 16px;display:flex;gap:8px;flex-wrap:wrap}
+.fin-doc-supplier-chooser-actions button{font-size:11px;white-space:normal}
+.fin-doc-supplier-choice-note{margin:6px 0;padding:6px 16px;font-size:11px;color:#537686}
+.fin-doc-supplier-choice-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:7px;padding:6px 16px 15px;max-height:360px;overflow:auto;overscroll-behavior:contain}
+.fin-doc-supplier-choice{display:flex;gap:10px;align-items:flex-start;border:1px solid #e1eaf0;border-radius:9px;background:white;padding:11px;cursor:pointer}
+.fin-doc-supplier-choice:hover{background:#eff8fa}
+.fin-doc-supplier-choice input{margin:2px 0;flex-shrink:0;width:17px;height:17px;accent-color:#2c6c81}
+.fin-doc-supplier-choice span{min-width:0;overflow-wrap:anywhere}
+.fin-doc-supplier-choice strong{font-size:12px;display:block;color:#315869}
+.fin-doc-supplier-choice small{font-size:10px;color:#839ba5;margin-top:3px;line-height:1.4;display:block}
+.fin-doc-supplier-years-table td:nth-child(2){min-width:130px;color:#5f7b89}
+.fin-doc-pix-collapse{margin:16px 0;border:1px solid #d9e5ea;border-radius:12px;overflow:hidden}
+.fin-doc-pix-collapse>summary{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;cursor:pointer;padding:15px;background:#f6fafd;color:#34566b;font-weight:800;font-size:13px}
+.fin-doc-pix-collapse>summary strong{font-size:11px;font-weight:690;color:#607e8d}
+.fin-doc-pix-collapse>section{margin:0;border-radius:0;border:0;box-shadow:none}
+.fin-doc-pix-collapse[open]>summary{border-bottom:1px solid #d9e5ea}
+/* Posição atual dos boletos: distinta da linha do tempo de auditoria. */
+.audit-current-bills{margin:16px 0 20px}
+.audit-current-bills .card-head p{color:#5e7b8b;font-size:12px;line-height:1.5}
+.audit-current-counters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 18px 15px}
+.audit-current-counters>div{border-radius:10px;border:1px solid #dce6eb;background:#f9fcfd;padding:12px 15px;display:flex;flex-direction:column;gap:6px}
+.audit-current-counters span{font-size:11px;color:#698391}
+.audit-current-counters strong{font-size:22px;color:#2f5769;font-variant-numeric:tabular-nums}
+.audit-current-toolbar{display:flex;flex-wrap:wrap;gap:11px;padding:0 18px 14px}
+.audit-current-toolbar label{display:flex;flex-direction:column;gap:6px;flex:1 1 175px;color:#5f7f8d;font-size:11px;font-weight:750}
+.audit-current-toolbar input,.audit-current-toolbar select{min-height:41px;border:1px solid #d1e0e6;border-radius:9px;background:#fff;padding:9px 11px;width:100%}
+.audit-current-note{font-size:11px;line-height:1.5;color:#3e6f84;margin:0 18px 13px;padding:11px;background:#edf7fa;border-radius:9px}
+.audit-current-note.error{color:#9f4040;background:#fff1f1}
+.audit-current-table{overflow:auto;max-height:640px}
+.audit-current-table table{min-width:990px}
+.audit-current-table th{position:sticky;top:0;background:#f5f9fb;z-index:2}
+.audit-current-table td{font-size:11px;vertical-align:top;padding:10px}
+.audit-current-table td:first-child{min-width:220px}
+.audit-current-table td small{display:block;margin-top:5px;font-size:10px;color:#829ba6}
+.audit-current-badge{display:inline-block;font-size:11px;font-weight:800;padding:6px 9px;border-radius:8px;white-space:nowrap}
+.audit-current-badge.audit-current-pago{color:#207351;background:#e9f7ee}
+.audit-current-badge.audit-current-aberto{color:#925b29;background:#fff2dd}
+.audit-current-badge.audit-current-revisar{color:#9e4444;background:#fff0f0}
+.audit-current-footer{padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:11px;flex-wrap:wrap;font-size:11px;color:#638390}
+.audit-current-footer>div{display:flex;flex-wrap:wrap;gap:8px}
+.audit-current-caveat{font-size:11px;line-height:1.55;color:#668391;margin:0;padding:12px 18px 16px;border-top:1px solid #ecf1f4}
+@media(max-width:670px){
+ .fin-doc-supplier-chooser{margin:0 12px 14px}
+ .fin-doc-supplier-choice-list{grid-template-columns:1fr;max-height:310px}
+ .audit-current-toolbar{padding:0 12px 12px}
+ .audit-current-counters{grid-template-columns:1fr;gap:7px;padding:0 12px 12px}
+ .audit-current-counters>div{flex-direction:row;align-items:center;justify-content:space-between}
+ .audit-current-note{margin:0 12px 12px}
+ .audit-current-footer{padding:12px}
+}
