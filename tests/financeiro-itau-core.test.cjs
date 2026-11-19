@@ -136,3 +136,28 @@ test('Reconhece conta Itaú com apelidos, sem confundir cartão Itaucard',()=>{
  assert.equal(core.accountIsItau('Itaucard'),false);
  assert.equal(core.accountIsItau('Bradesco Prime'),false);
 });
+
+test('Correspondência aprovada no consolidado não gera alerta de revisão no Itaú',()=>{
+ const match={bank:{id:'linha-banco',data_lancamento:'2026-11-12'},
+  official:{id:'movimento-oficial',descricao:'PÃO'}};
+ const ok=[{linha_id:'linha-banco',movimento_homologado_id:'movimento-oficial',situacao:'conferido'}];
+ const result=core.reviewWeakMatches([match],ok);
+ assert.equal(result.waiting.length,0);
+ assert.equal(result.approved.length,1);
+});
+test('Reabrir a aprovação restaura o alerta de revisão sem mudar movimentações',()=>{
+ const match={bank:{id:'linha-banco'},official:{id:'movimento-oficial'}};
+ const approved=core.reviewWeakMatches([match],[{
+  linha_id:'linha-banco',movimento_homologado_id:'movimento-oficial',situacao:'reaberto'
+ }]);
+ assert.equal(approved.waiting.length,1);
+ assert.equal(approved.approved.length,0);
+});
+test('Aprovação de outro par não esconde correspondência pendente',()=>{
+ const match={bank:{id:'linha-banco'},official:{id:'movimento-oficial'}};
+ const mismatched=core.reviewWeakMatches([match],[{
+  linha_id:'linha-banco',movimento_homologado_id:'outro-movimento',situacao:'conferido'
+ }]);
+ assert.equal(mismatched.waiting.length,1);
+ assert.throws(()=>core.reviewWeakMatches([{bank:{},official:{id:'a'}}],[]),/IDs/);
+});
