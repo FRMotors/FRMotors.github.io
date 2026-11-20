@@ -1,4 +1,4 @@
-/* FR Motors | Agenda unificada de boletos e faturas com saldo pendente.
+/* FR Motors | Agenda unificada de boletos, faturas e contas a receber.
  * Vencimentos da carteira operacional e dos boletos manuais são reais.
  * Faturas usam somente as datas da agenda informadas pelo usuário.
  * Nenhum compromisso gera saída bancária por aparecer neste calendário.
@@ -17,7 +17,7 @@ const localDay=()=>{const d=new Date();return [
 const cmpMonth=x=>x?date(x).slice(3):'Mês desconhecido';
 const out=(id,t)=>{if($(id))$(id).textContent=t};
 let invoices=[],declarations=[],payments=[],fullPayments=[],deadlines=[];
-let bills=[],manualBills=[],billLinks=[],manualBankLinks=[];
+let bills=[],manualBills=[],billLinks=[],manualBankLinks=[],receivables=[];
 let working=null,loading=null,filter='todos',typeFilter='todos',selectedDay=null,month=new Date(),busy=false,page=0;
 const PAGE_SIZE=10;
 month=new Date(month.getFullYear(),month.getMonth(),1);
@@ -31,25 +31,19 @@ async function queryAll(builder,max=3000){
  }
  throw Error('Consulta maior que o limite seguro; confira a base.');
 }
-const declaredIds=()=>new Set(declarations.map(x=>x.fatura_id));
-const agendaById=()=>new Map(deadlines.map(x=>[x.fatura_id,x]));
-const partialById=()=>{
- const map=new Map();
- payments.forEach(x=>map.set(x.fatura_id,(map.get(x.fatura_id)||0)+cents(x.valor_pago)));
- return map;
-};
-const fullById=()=>new Map(fullPayments.filter(x=>x.fatura_id).map(x=>[x.fatura_id,x]));
 function allActive(){
- const declared=declaredIds(),partials=partialById(),integral=fullById(),agenda=agendaById();
- return invoices.filter(x=>!declared.has(x.id)).map(f=>{
-  const total=cents(f.valor_documental),
-   paid=integral.has(f.id)?cents(integral.get(f.id).valor_conferido):(partials.get(f.id)||0),
-   rest=Math.max(0,total-paid);
-  return {...f,total,paid,rest,vencimento:agenda.get(f.id)?.vencimento||null,
-   observacoes:agenda.get(f.id)?.observacoes||''};
- }).filter(x=>x.rest>0).sort((a,b)=>
-  String(a.vencimento||'9999-99-99').localeCompare(String(b.vencimento||'9999-99-99'))||
-  a.mes_fatura.localeCompare(b.mes_fatura)||cardName(a.cartao_nome).localeCompare(cardName(b.cartao_nome),'pt-BR'));
+ const engine=window.frInvoiceStateCore;
+ if(!engine)throw Error('Motor de situação das faturas indisponível.');
+ return engine.buildInvoiceStates(invoices,declarations,payments,fullPayments,deadlines,cardName)
+  .filter(f=>f.remaining>0)
+  .map(f=>({
+   id:f.id,cartao_nome:f.originalCard,mes_fatura:f.period,
+   quantidade_lancamentos:f.transactions,valor_documental:f.total/100,
+   total:f.total,paid:f.paid,rest:f.remaining,vencimento:f.due,observacoes:f.notes
+  }))
+  .sort((a,b)=>String(a.vencimento||'9999-99-99').localeCompare(String(b.vencimento||'9999-99-99'))||
+   String(a.mes_fatura).localeCompare(String(b.mes_fatura))||
+   cardName(a.cartao_nome).localeCompare(cardName(b.cartao_nome),'pt-BR'));
 }
 /* A carteira de boletos é documental. Se já há baixa vinculada, não aparece
  * novamente como vencimento pendente e nunca é somada como saída do caixa. */
@@ -76,7 +70,15 @@ function allAgendaItems(){
    title:x.fornecedor_nome,details:x.descricao,source:'Cadastrado no aplicativo',
    total:amount,paid:0,rest:amount};
  });
- return [...cards,...openAccounts,...openManual]
+ const receivableItems=receivables.filter(x=>['aberto','parcial'].includes(String(x.situacao||'').toLowerCase()))
+ .map(x=>{
+  const total=cents(x.valor),paid=Math.max(0,cents(x.valor_recebido));
+  return {...x,kind:'receber',agendaId:'receber:'+x.id,origin:'cliente',
+   title:x.fin_receber_clientes?.nome||'Cliente não informado',
+   details:[x.numero_documento,x.descricao].filter(Boolean).join(' · '),source:'Contas a receber',
+   total,paid,rest:Math.max(0,total-paid),vencimento:x.vencimento||null};
+ });
+ return [...cards,...openAccounts,...openManual,...receivableItems]
   .filter(x=>Number.isSafeInteger(x.rest)&&x.rest>0)
   .sort((a,b)=>String(a.vencimento||'9999-99-99').localeCompare(String(b.vencimento||'9999-99-99'))||
    String(a.title).localeCompare(String(b.title),'pt-BR')||
@@ -104,10 +106,12 @@ function render(){
  const soon=pending.filter(f=>condition(f,day)==='proximos-7');
  const partial=pending.filter(f=>f.kind==='cartao'&&f.paid>0);
  const cardCount=pending.filter(f=>f.kind==='cartao').length;
- const billCount=pending.length-cardCount;
+ const billCount=pending.filter(f=>f.kind==='boleto').length;
+ const receiveCount=pending.filter(f=>f.kind==='receber').length;
  out('ag-count',String(pending.length));
- out('ag-count-detail',billCount+' boleto(s) + '+cardCount+' fatura(s)');
- out('ag-total',brl(pending.reduce((s,f)=>s+f.rest,0)/100));
+ out('ag-count-detail',billCount+' boleto(s), '+cardCount+' fatura(s) e '+receiveCount+' a receber');
+ out('ag-total',brl(pending.filter(f=>f.kind!=='receber').reduce((s,f)=>s+f.rest,0)/100));
+ out('ag-receive-total',brl(pending.filter(f=>f.kind==='receber').reduce((s,f)=>s+f.rest,0)/100));
  out('ag-no-date',String(noDate.length));
  out('ag-overdue',String(overdue.length));
  out('ag-soon',String(soon.length));
@@ -125,10 +129,12 @@ function render(){
  page=Math.max(0,Math.min(page,pages-1));
  const visible=rows.slice(page*PAGE_SIZE,(page+1)*PAGE_SIZE);
  if($('ag-rows'))$('ag-rows').innerHTML=visible.length?visible.map(f=>{
-  const status=condition(f,day),card=f.kind==='cartao';
-  const badge='<span class="ag-kind '+(card?'ag-kind-card':'ag-kind-bill')+'">'+(card?'Cartão':'Boleto')+'</span>';
+  const status=condition(f,day),card=f.kind==='cartao',receiving=f.kind==='receber';
+  const badge='<span class="ag-kind '+(card?'ag-kind-card':receiving?'ag-kind-receive':'ag-kind-bill')+
+   '">'+(card?'Cartão':receiving?'A receber':'Boleto')+'</span>';
   const details=card?(f.quantidade_lancamentos+' lançamentos'):f.details;
-  const buttons=card?
+  const buttons=receiving?
+   '<button type="button" class="btn btn-teal" data-ag-receive="'+esc(f.id)+'">Ver recebimento</button>':card?
    '<button type="button" class="btn" data-ag-edit="'+esc(f.id)+'">'+
     (f.vencimento?'Editar vencimento':'Informar vencimento')+'</button>'+
    '<button type="button" class="btn btn-teal" data-ag-pay="'+esc(f.id)+'">Adicionar pagamento</button>':
@@ -140,7 +146,7 @@ function render(){
     (details&&details!==f.title?'<small>'+esc(details)+'</small>':'')+'</td>'+
    '<td>'+esc(card?cmpMonth(f.mes_fatura):f.source)+'</td>'+
    '<td class="money">'+brl(f.total/100)+'</td>'+
-   '<td class="money">'+(card?brl(f.paid/100):'—')+'</td>'+
+   '<td class="money">'+(card||receiving?brl(f.paid/100):'—')+'</td>'+
    '<td class="money"><strong>'+brl(f.rest/100)+'</strong></td>'+
    '<td><strong>'+esc(f.vencimento?date(f.vencimento):'Sem data')+'</strong>'+
     (f.observacoes?'<small>'+esc(f.observacoes.slice(0,100))+'</small>':'')+'</td>'+
@@ -172,22 +178,25 @@ function renderCalendar(pending){
  for(let d=1;d<=days;d++){
   const id=year+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
   const list=due.get(id)||[],today=id===localDay(),past=id<localDay();
-  const bills=list.filter(x=>x.kind==='boleto').length,cards=list.length-bills;
+  const bills=list.filter(x=>x.kind==='boleto').length,
+   cards=list.filter(x=>x.kind==='cartao').length,
+   receiving=list.filter(x=>x.kind==='receber').length;
   const cl='ag-day'+(list.length?' with-invoices':'')+(bills?' has-boletos':'')+
     (today?' is-today':'')+(past?' is-past':'')+(id===selectedDay?' is-selected':'');
   const breakdown=(bills?'<span class="ag-calendar-bill">'+bills+' bol.</span>':'')+
-    (cards?'<span class="ag-calendar-card">'+cards+' cart.</span>':'');
+    (cards?'<span class="ag-calendar-card">'+cards+' cart.</span>':'')+
+    (receiving?'<span class="ag-calendar-receive">'+receiving+' rec.</span>':'');
   const content='<span class="ag-day-number">'+d+'</span>'+
    (list.length?'<small class="ag-day-breakdown">'+breakdown+'</small>':'');
   cells+=list.length?'<button type="button" class="'+cl+'" data-ag-day="'+id+
-   '" aria-pressed="'+(id===selectedDay)+'" aria-label="'+bills+' boletos e '+cards+
-   ' faturas com vencimento em '+date(id)+'">'+content+'</button>':
+   '" aria-pressed="'+(id===selectedDay)+'" aria-label="'+bills+' boletos, '+cards+
+   ' faturas e '+receiving+' recebíveis com vencimento em '+date(id)+'">'+content+'</button>':
    '<div class="'+cl+'">'+content+'</div>';
  }
  if($('ag-calendar'))$('ag-calendar').innerHTML=headers+cells;
  out('ag-calendar-note',due.size?
-  'Datas de boletos e faturas ainda pendentes. Toque em um dia para ver todos os vencimentos.':
-  'Nenhum boleto ou fatura com vencimento pendente neste mês.');
+  'Boletos, faturas e contas a receber ainda pendentes. Toque em um dia para consultar.':
+  'Nenhum compromisso pendente com vencimento neste mês.');
 }
 function edit(id){
  const f=allActive().find(x=>x.id===id);
@@ -233,7 +242,7 @@ async function refresh(){
    out('ag-status','Carregando boletos, faturas, saldos e vencimentos...');
    const {data:authorized,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||authorized!==true)throw Error('Acesso ao financeiro não autorizado.');
-   const [inv,dec,par,full,ag,cp,av,linked,linkedBank]=await Promise.all([
+   const [inv,dec,par,full,ag,cp,av,linked,linkedBank,rec]=await Promise.all([
     queryAll(()=>db.from('fin_faturas_historicas')
      .select('id,cartao_nome,mes_fatura,valor_documental,quantidade_lancamentos')
      .order('mes_fatura',{ascending:true})),
@@ -255,16 +264,20 @@ async function refresh(){
     queryAll(()=>db.from('fin_baixas_operacionais')
      .select('conta_pagar_id,boleto_avulso_id').order('criado_em',{ascending:false})),
     queryAll(()=>db.from('fin_baixas_extrato_avulsos')
-     .select('boleto_avulso_id').order('criado_em',{ascending:false}))
+     .select('boleto_avulso_id').order('criado_em',{ascending:false})),
+    queryAll(()=>db.from('fin_contas_receber')
+     .select('id,numero_documento,descricao,valor,valor_recebido,vencimento,situacao,fin_receber_clientes(nome)')
+     .order('vencimento',{ascending:true,nullsFirst:false}))
    ]);
    invoices=inv;declarations=dec;payments=par;fullPayments=full;deadlines=ag;
-   bills=cp;manualBills=av;billLinks=linked;manualBankLinks=linkedBank;
+   bills=cp;manualBills=av;billLinks=linked;manualBankLinks=linkedBank;receivables=rec;
    render();
    const active=allAgendaItems();
    const billCount=active.filter(x=>x.kind==='boleto').length;
-   const cardCount=active.length-billCount;
-   out('ag-status',billCount+' boleto(s) e '+cardCount+
-    ' fatura(s) pendentes no calendário. '+declarations.length+
+   const cardCount=active.filter(x=>x.kind==='cartao').length;
+   const receiveCount=active.filter(x=>x.kind==='receber').length;
+   out('ag-status',billCount+' boleto(s), '+cardCount+' fatura(s) e '+receiveCount+
+    ' conta(s) a receber pendentes no calendário. '+declarations.length+
     ' faturas quitadas por confirmação histórica. Sem novas saídas financeiras.');
   }catch(e){
    out('ag-status','Erro ao consultar agenda: '+(e.message||e));
@@ -309,7 +322,16 @@ function init(){
   const pay=e.target.closest('[data-ag-pay]');
   const billPay=e.target.closest('[data-ag-bill-pay]');
   const billEdit=e.target.closest('[data-ag-bill-edit]');
-  if(billEdit){
+  const receive=e.target.closest('[data-ag-receive]');
+  if(receive){
+   const item=receivables.find(x=>String(x.id)===receive.dataset.agReceive);
+   window.frFinanceUI?.selectView?.('receivables');
+   const search=$('ar-search');
+   if(search){
+    search.value=item?.numero_documento||item?.fin_receber_clientes?.nome||item?.descricao||'';
+    search.dispatchEvent(new Event('input',{bubbles:true}));
+   }
+  }else if(billEdit){
    if(typeof window.frBoletoUI?.openEdit==='function')window.frBoletoUI.openEdit(billEdit.dataset.agBillEdit);
    else out('ag-status','Não foi possível abrir a edição do boleto. Atualize a página.');
   }else if(billPay){
@@ -335,7 +357,7 @@ function init(){
  $('ag-cancel')?.addEventListener('click',()=>{if(!busy&&$('ag-dialog')?.open)$('ag-dialog').close()});
  $('ag-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
  $('ag-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
- if(!document.querySelector('[data-view-panel="expenses"]')?.hidden)refresh().catch(()=>{});
+ if(!document.querySelector('[data-view-panel="agenda"]')?.hidden)refresh().catch(()=>{});
 }
 window.frInvoicesAgendaUI={refresh};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
