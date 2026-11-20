@@ -86,7 +86,7 @@ test('Fatura é paga na aba Cartões e não exige abrir Autopeças',()=>{
 test('Faturas documentais ficam em Cartões com recarregamento ao abrir',()=>{
  const cards=html.indexOf('data-view-panel="cardbills"');
  const docs=html.indexOf('<h2>Faturas documentais por cartão e mês</h2>');
- const nextView=html.indexOf('<section class="view cl-view"',cards);
+ const nextView=html.indexOf('<section class="view rg-view" data-view-panel="reports"',cards);
  assert.ok(cards>=0&&docs>cards&&docs<nextView);
  assert.match(nav,/frDocsReconcileUI\?\.refresh/);
 });
