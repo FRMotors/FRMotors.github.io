@@ -1,6 +1,6 @@
 /* FR Motors · Conciliação documental em modo de consulta.
-   97 referências verificadas, 5 pendências, 48 faturas documentais e
-   6 validações PIX/Débito do lote homologado atual. Nunca lança caixa. */
+   Reconhece correspondências automáticas e confirmações manuais com vínculo ao caixa.
+   Totais e situações são calculados da base atual, sem lançar novos pagamentos. */
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -10,7 +10,7 @@ const date=x=>x?String(x).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const set=(id,value)=>{if($(id))$(id).textContent=value;};
 const autoPageSize=18;
 const invoicePageSize=10;
-let documents=[],autoRefs=[],pixRefs=[],faturas=[],declaredFaturas=new Set(),movements=new Map();
+let documents=[],autoRefs=[],manualRefs=[],pixRefs=[],faturas=[],declaredFaturas=new Set(),partialFaturas=new Map(),movements=new Map();
 let autoPage=0,faturaPage=0,loading=null,selectedInvoice=null,detailVersion=0;
 async function fetchAll(builder,max=6000){
  const result=[],size=450;
@@ -23,9 +23,15 @@ async function fetchAll(builder,max=6000){
  throw Error('Limite de consulta atingido; totais não foram apresentados para evitar dados incompletos.');
 }
 const paidAuto=()=>documents.filter(x=>x.grupo==='autopecas'&&x.incluir&&x.situacao_origem==='Pago');
-const referenceByDoc=()=>new Map(autoRefs.map(x=>[x.documento_id,x]));
-function statusBadge(ok){return ok?
- '<span class="state paid">Localizado no Fluxo</span>':
+const referenceByDoc=()=>new Map([
+ ...autoRefs.map(x=>[x.documento_id,{...x,manual:false}]),
+ ...manualRefs.map(x=>[x.documento_id,{
+  documento_id:x.documento_id,movimento_id:x.movimento_fluxo_id,
+  valor_conferido:x.valor_conferido,manual:true
+ }])
+]);
+function statusBadge(ref,movement){return ref&&movement?
+ '<span class="state paid">'+(ref.manual?'Conferida manualmente':'Localizada no Fluxo')+'</span>':
  '<span class="state open">Revisar correspondência</span>';}
 function autoFiltered(){
  const q=($('dc-auto-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
@@ -51,12 +57,12 @@ function renderAuto(){
      (d.descricao&&d.descricao!==d.fornecedor_nome?'<small>'+h(d.descricao)+'</small>':'')+'</td>'+
    '<td>'+h(date(d.vencimento))+'</td>'+
    '<td class="money">'+brl(d.valor_pago_informado)+'</td>'+
-   '<td>'+statusBadge(Boolean(r&&m))+
+   '<td>'+statusBadge(r,m)+
      (m?'<small>Saída: '+h(date(m.data_movimento))+' · '+brl(m.valor)+
       ' · '+h(m.referencia_origem||'Fluxo')+'</small>':
       '<small>Pagamento indicado na planilha, sem vínculo único no Fluxo</small>')+'</td>'+
-   '<td>'+(r?'<small>Diferença '+r.diferenca_dias+' dia(s)</small>':'—')+'</td>'+
-    '<td>'+(r?'<span class="state paid">Conferida</span>':
+   '<td>'+(r?.manual?'<small>Comprovação manual vinculada ao Fluxo</small>':r?'<small>Diferença '+r.diferenca_dias+' dia(s)</small>':'—')+'</td>'+
+    '<td>'+(r&&m?'<span class="state paid">Conferida</span>':
     '<button type="button" class="btn" data-dc-review-auto="'+h(d.id)+'">Revisar / localizar pagamento</button>')+'</td></tr>';
  }).join(''):'<tr><td colspan="7" class="empty">Nenhuma compra corresponde ao filtro.</td></tr>';
  set('dc-auto-paging',rows.length+' compra(s) · página '+(autoPage+1)+' de '+totalPages);
@@ -94,7 +100,9 @@ function renderFaturas(){
    '<td class="money">'+brl(f.valor_ajustes)+
     (f.ajustes_negativos?'<small>'+f.ajustes_negativos+' ajustes negativos</small>':'')+'</td>'+
    '<td class="money"><strong>'+brl(f.valor_documental)+'</strong>'+
-   (declaredFaturas.has(f.id)?'<small>Quitada por confirmação, sem conciliação</small>':'<small>Pagamento não confirmado nesta base</small>')+'</td>'+
+   (declaredFaturas.has(f.id)?'<small>Quitada por confirmação histórica</small>':
+    partialFaturas.has(f.id)?'<small>Pagamento parcial informado · '+brl(partialFaturas.get(f.id))+'</small>':
+    '<small>Pagamento não confirmado nesta base</small>')+'</td>'+
    '<td><button type="button" class="btn" data-dc-invoice="'+h(f.id)+'">Ver lançamentos</button></td></tr>'
  ).join(''):'<tr><td colspan="7" class="empty">Nenhuma fatura documental corresponde à pesquisa.</td></tr>';
  set('dc-fatura-paging',list.length+' fatura(s) · 10 por página · página '+(faturaPage+1)+' de '+pages);
@@ -155,7 +163,7 @@ async function refresh(){
    set('dc-status','Conferindo referências de autopeças, PIX/Débito e faturas documentais...');
    const {data:allowed,error:authorizationError}=await db.rpc('fluxo_caixa_autorizado');
    if(authorizationError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-   const [auto,pix,invoices,autoDocs,declarations]=await Promise.all([
+   const [auto,pix,invoices,autoDocs,declarations,manual,partials]=await Promise.all([
     fetchAll(()=>db.from('fin_conciliacoes_documentais')
      .select('id,documento_id,movimento_id,valor_conferido,diferenca_dias,criterio').order('identificado_em',{ascending:false})),
     fetchAll(()=>db.from('fin_pix_debito_referencias')
@@ -167,7 +175,12 @@ async function refresh(){
      .select('id,grupo,incluir,codigo_origem,linha_excel,descricao,fornecedor_nome,cartao_nome,meio,vencimento,valor_registrado,valor_pago_informado,situacao_origem')
      .eq('grupo','autopecas').eq('incluir',true).eq('situacao_origem','Pago').order('linha_excel',{ascending:true})),
     fetchAll(()=>db.from('fin_faturas_quitacoes_declaradas')
-     .select('fatura_id').order('registrado_em',{ascending:false}))
+     .select('fatura_id').order('registrado_em',{ascending:false})),
+    fetchAll(()=>db.from('fin_comprovacoes_documentais')
+     .select('documento_id,movimento_fluxo_id,valor_conferido,tipo')
+     .eq('tipo','autopecas_excecao').not('documento_id','is',null).order('conferido_em',{ascending:false})),
+    fetchAll(()=>db.from('fin_faturas_pagamentos_parciais')
+     .select('fatura_id,valor_pago').order('confirmado_em',{ascending:false}))
    ]);
    const pixIds=pix.map(x=>x.documento_id);
    let pixDocs=[];
@@ -177,7 +190,10 @@ async function refresh(){
     if(error)throw error;
     pixDocs=data||[];
    }
-   const movementIds=[...new Set([...auto,...pix].map(x=>x.movimento_id).filter(Boolean))];
+   const movementIds=[...new Set([
+    ...auto.map(x=>x.movimento_id),...pix.map(x=>x.movimento_id),
+    ...manual.map(x=>x.movimento_fluxo_id)
+   ].filter(Boolean))];
    let found=[];
    if(movementIds.length){
     const {data,error}=await db.from('fin_movimentos')
@@ -186,21 +202,29 @@ async function refresh(){
     found=data||[];
    }
    documents=[...autoDocs,...pixDocs];
-   autoRefs=auto;pixRefs=pix;faturas=invoices;
+   autoRefs=auto;manualRefs=manual;pixRefs=pix;faturas=invoices;
    declaredFaturas=new Set(declarations.map(x=>x.fatura_id));
+   partialFaturas=new Map();
+   partials.forEach(x=>partialFaturas.set(x.fatura_id,(partialFaturas.get(x.fatura_id)||0)+Number(x.valor_pago||0)));
    movements=new Map(found.map(x=>[x.id,x]));
-   if(auto.some(x=>!movements.has(x.movimento_id)))throw Error('Há referências sem saída no Fluxo. Confira a base.');
-   const remaining=paidAuto().filter(x=>!new Set(auto.map(a=>a.documento_id)).has(x.id));
-   set('dc-matched-count',String(auto.length));
-   set('dc-matched-total',brl(auto.reduce((s,x)=>s+Math.round(Number(x.valor_conferido)*100),0)/100));
+   if(auto.some(x=>!movements.has(x.movimento_id))||
+      manual.some(x=>!x.movimento_fluxo_id||!movements.has(x.movimento_fluxo_id)))
+    throw Error('Há referências sem saída comprovada no Fluxo. Confira a base.');
+   const linked=referenceByDoc();
+   const remaining=paidAuto().filter(x=>!linked.has(x.id));
+   const matched=paidAuto().filter(x=>linked.has(x.id));
+   set('dc-matched-count',String(matched.length));
+   set('dc-matched-total',brl(matched.reduce((total,x)=>
+    total+Math.round(Number(linked.get(x.id)?.valor_conferido||0)*100),0)/100));
    set('dc-review-count',String(remaining.length));
    set('dc-invoice-count',String(invoices.length));
    set('dc-invoice-total',brl(invoices.reduce((s,x)=>s+Math.round(Number(x.valor_documental)*100),0)/100));
    set('dc-pix-count',String(pix.length));
    rebuildInvoiceFilters();renderAuto();renderFaturas();renderPix();
-   set('dc-status',auto.length+' referências únicas às saídas existentes · '+remaining.length+
-    ' compras pagas sem correspondência única · '+invoices.length+
-    ' faturas documentais ('+declaredFaturas.size+' quitadas por confirmação, sem conciliação) · '+
+   set('dc-status',auto.length+' correspondências automáticas · '+manual.length+
+    ' conferências manuais vinculadas ao Fluxo · '+remaining.length+
+    ' compras pagas ainda sem vínculo · '+invoices.length+' faturas documentais ('+
+    declaredFaturas.size+' quitadas por declaração; '+partialFaturas.size+' com pagamento parcial) · '+
     pix.length+' validações PIX/Débito. Nenhum novo pagamento lançado.');
    if(selectedInvoice)await showInvoice(selectedInvoice);
   }catch(e){
