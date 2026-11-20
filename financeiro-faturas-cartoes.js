@@ -50,30 +50,9 @@ async function fetchAll(builder,max=5000){
  throw Error('A consulta ultrapassou o limite seguro, sem exibir totais incompletos.');
 }
 function buildInvoiceStates(invoices,declarations,partials,fullPayments,agendas){
- const declared=new Set(declarations.map(x=>x.fatura_id));
- const partial=new Map(),external=new Map(),integral=new Map(),due=new Map();
- partials.forEach(x=>{
-  partial.set(x.fatura_id,(partial.get(x.fatura_id)||0)+cents(x.valor_pago));
-  if(x.origem==='externo')external.set(x.fatura_id,(external.get(x.fatura_id)||0)+cents(x.valor_pago));
- });
- fullPayments.forEach(x=>integral.set(x.fatura_id,cents(x.valor_conferido)));
- agendas.forEach(x=>due.set(x.fatura_id,{vencimento:x.vencimento||null,observacoes:x.observacoes||''}));
- return invoices.map(x=>{
-  const total=cents(x.valor_documental),isDeclared=declared.has(x.id);
-  const paid=integral.has(x.id)?integral.get(x.id):partial.get(x.id)||0;
-  const externalPaid=external.get(x.id)||0;
-  const bankPaid=Math.max(0,paid-externalPaid);
-  const remaining=isDeclared?0:Math.max(0,total-paid);
-  const status=isDeclared?'declarada':
-   remaining===0&&externalPaid>0&&bankPaid===0?'externa':
-   remaining===0&&externalPaid>0?'mista':
-   remaining===0?'conciliada':paid>0?'parcial':'aberta';
-  return {
-   id:x.id,card:cardName(x.cartao_nome),originalCard:x.cartao_nome||'',period:x.mes_fatura,
-   transactions:x.quantidade_lancamentos||0,total,paid,bankPaid,externalPaid,remaining,status,
-   due:due.get(x.id)?.vencimento||null,notes:due.get(x.id)?.observacoes||''
-  };
- });
+ const engine=window.frInvoiceStateCore;
+ if(!engine)throw Error('Motor de situação das faturas não carregado.');
+ return engine.buildInvoiceStates(invoices,declarations,partials,fullPayments,agendas,cardName);
 }
 const sum=(rows,field)=>rows.reduce((total,x)=>total+x[field],0);
 function compare(a,b){
@@ -232,7 +211,7 @@ async function openExisting(f,action){
   await window.frDocumentLinksUI.refresh?.(true);
   await window.frDocumentLinksUI.openInvoice(f.id);
  }else{
-  window.frFinanceUI?.selectView?.('expenses');
+  window.frFinanceUI?.selectView?.('agenda');
   if(typeof window.frInvoicesAgendaUI?.refresh!=='function')throw Error('Agenda de vencimentos indisponível.');
   await window.frInvoicesAgendaUI.refresh();
   const type=$('ag-type'),status=$('ag-filter'),input=$('ag-search');
