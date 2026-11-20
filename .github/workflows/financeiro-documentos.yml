@@ -20,6 +20,8 @@ on:
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
       - 'tests/financeiro-consolidacao.test.cjs'
+      - 'tests/financeiro-estabilizacao.test.cjs'
+      - 'sql/migrations/20261120_estabilizar_financeiro_legado_indices.sql'
       - 'tests/financeiro-auditoria-fornecedores-layout.test.cjs'
       - '.github/workflows/financeiro-documentos.yml'
   pull_request:
@@ -42,6 +44,8 @@ on:
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
       - 'tests/financeiro-consolidacao.test.cjs'
+      - 'tests/financeiro-estabilizacao.test.cjs'
+      - 'sql/migrations/20261120_estabilizar_financeiro_legado_indices.sql'
       - 'tests/financeiro-auditoria-fornecedores-layout.test.cjs'
       - '.github/workflows/financeiro-documentos.yml'
 permissions:
@@ -57,4 +61,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar vinculações, anos e valores documentais
-        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs
+        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs
