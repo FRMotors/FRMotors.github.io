@@ -76,7 +76,7 @@ function renderOverview(now){
  put('cv-home-overdue',String(overdue.length));
  put('cv-home-receive',String(urgent.filter(x=>x.kind==='receber').length));
  put('cv-home-status',dueToday.length||overdue.length?
-  'Existem compromissos que precisam de atenção. Confira os detalhes em Contas a pagar.':
+  'Existem compromissos que precisam de atenção. Confira os detalhes na Agenda Financeira.':
   'Nenhuma conta vencida ou com vencimento hoje entre os registros pendentes.');
  const strip=$('cv-home-banner');if(strip)strip.classList.toggle('cv-home-clear',!urgent.length);
 }
@@ -198,7 +198,7 @@ function openSection(button){
  if(destination==='payables')$('fin-cp-operacional')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function init(){
- if(!$('cv-calendar'))return;
+ if(!$('cv-home-banner'))return; // só o alerta da Visão Geral permanece; o calendário fica na Agenda Financeira
  $('cv-refresh')?.addEventListener('click',()=>refresh());
  $('cv-prev')?.addEventListener('click',()=>{visibleMonth--;if(visibleMonth<0){visibleMonth=11;visibleYear--}selectedDate=null;render()});
  $('cv-next')?.addEventListener('click',()=>{visibleMonth++;if(visibleMonth>11){visibleMonth=0;visibleYear++}selectedDate=null;render()});
