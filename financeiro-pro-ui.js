@@ -35,7 +35,7 @@ function svg(name){return '<svg aria-hidden="true" viewBox="0 0 24 24">'+(iconPa
 function applyIcons(root=document){root.querySelectorAll('[data-icon]').forEach(n=>{const name=n.getAttribute('data-icon');if(name in iconPaths)n.innerHTML=svg(name)})}
 const state={moves:[],dues:[],purchases:[],suppliers:[]};
 let view='overview';
-const NAV_VIEWS=['overview','movements','receivables','payables','imports','itau','history','expenses','forecast','reports','classify','cardbills','audit'];
+const NAV_VIEWS=['overview','movements','receivables','payables','agenda','imports','itau','history','expenses','forecast','reports','classify','cardbills','audit'];
 const SECTION_SLUGS={'vl-title-section':'payments','ag-title':'agenda'};
 const VIEWPORT_KEY='fr-financeiro-viewport-atual';
 const SIDEBAR_KEY='fr-financeiro-sidebar-desktop-recolhida';
@@ -43,7 +43,7 @@ function syncNavigationUrl(next,section){
  try{
   const url=new URL(window.location.href);
   url.searchParams.set('view',next);
-  if(next==='expenses'&&section)url.searchParams.set('section',section);
+  if((next==='expenses'||next==='agenda')&&section)url.searchParams.set('section',section);
   else url.searchParams.delete('section');
   window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash);
  }catch(_){
@@ -84,7 +84,7 @@ function selectView(next,options={}){
  // Páginas legadas de demonstração não devem aparecer como financeiras operacionais.
  // Movimentações do site possuem uma visualização oficial própria.
  if(next==='settings')next='overview';
- if(next==='deadlines')next='payables'; // link legado, página unificada
+ if(next==='deadlines')next='agenda'; // link legado para Agenda Financeira
  if(next==='purchases')next='cardbills'; // link antigo de compras parceladas
  if(next==='operational'){
   next='imports'; // Base migrada agora está em Importações
@@ -99,7 +99,7 @@ function selectView(next,options={}){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Cartões',audit:'Central de auditoria'};
+ const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',agenda:'Agenda Financeira',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Cartões',audit:'Central de auditoria'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
@@ -114,7 +114,7 @@ function selectView(next,options={}){
   if(next==='expenses')window.frDocumentsUI?.refresh?.();
   if(next==='expenses')window.frDocsReconcileUI?.refresh?.();
   if(next==='expenses')window.frDocumentLinksUI?.refresh?.();
-  if(next==='expenses')window.frInvoicesAgendaUI?.refresh?.();
+  if(next==='agenda')window.frInvoicesAgendaUI?.refresh?.();
   if(next==='receivables')window.frReceberUI?.refresh?.();
    if(next==='payables')window.frOperationalPayablesUI?.refresh?.();
    if(next==='payables')window.frBoletoTrashUI?.refresh?.();
@@ -362,12 +362,12 @@ function setup(){
   if(e.target.open)window.frOperationalUI?.open?.();
  });
  document.querySelectorAll('[data-jump-section]').forEach(btn=>btn.addEventListener('click',()=>{
-  selectView('expenses');
-  const id=btn.dataset.jumpSection;
-  syncNavigationUrl('expenses',SECTION_SLUGS[id]);
-  scrollToExpensesSection(id);
- }));
- document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>{
+   const id=btn.dataset.jumpSection,destination=id==='ag-title'?'agenda':'expenses';
+   selectView(destination);
+   syncNavigationUrl(destination,SECTION_SLUGS[id]);
+   scrollToExpensesSection(id);
+  }));
+  document.querySelectorAll('[data-open]').forEach(btn=>btn.addEventListener('click',()=>{
   const target=btn.dataset.open;
   if(btn.dataset.dismissDialog){
     const previous=byId(btn.dataset.dismissDialog);
@@ -419,7 +419,7 @@ function setup(){
  const requestedView=params.get('view');
  const initialView=
   requestedView==='settings'?'overview':
-  requestedView==='deadlines'?'payables':
+  requestedView==='deadlines'?'agenda':
   requestedView==='purchases'?'cardbills':
   requestedView==='operational'?'imports':
   NAV_VIEWS.includes(requestedView)?requestedView:'overview';
@@ -430,7 +430,7 @@ function setup(){
  selectView(initialView,{syncUrl:false,preserveScroll:true});
  if(requestedView!==initialView)syncNavigationUrl(initialView);
  const restored=restoreViewportOnReload();
- if(!restored&&initialView==='expenses'&&['payments','agenda'].includes(params.get('section'))){
+ if(!restored&&['expenses','agenda'].includes(initialView)&&['payments','agenda'].includes(params.get('section'))){
   const target=params.get('section')==='agenda'?'ag-title':'vl-title-section';
   requestAnimationFrame(()=>scrollToExpensesSection(target));
  }
