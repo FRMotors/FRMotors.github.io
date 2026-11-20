@@ -566,7 +566,14 @@
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
 <link rel="stylesheet" href="./financeiro-central-auditoria.css?v=20261118audit1">
 <link rel="stylesheet" href="./financeiro-documentos-atualizado.css?v=20261119supplier2">
-</head>
+<style>
+.fin-agenda-central-shortcut{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin:0 0 18px;padding:16px;border:1px solid var(--stroke);border-radius:12px;background:var(--card,#fff)}
+.fin-agenda-central-shortcut strong{font-size:15px}.fin-agenda-central-shortcut p{font-size:12px;color:var(--muted);margin:5px 0 0}
+.fin-agenda-central-page .fin-agenda-card{margin-top:16px}
+.fin-overview-analysis,.fin-extra-conciliation{margin-top:16px}.fin-overview-analysis>summary{font-weight:750}
+.ag-kind-receive{background:#e7f4ed!important;color:#24664d!important}.ag-calendar-receive{color:#247650}
+@media(max-width:620px){.fin-agenda-central-shortcut .btn{width:100%}}
+</style></head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
@@ -584,6 +591,7 @@
     <button type="button" data-view="classify"><span class="icon" data-icon="receipt"></span> Classificar despesas</button>
     <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
     <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
+<button type="button" data-view="agenda"><span class="icon" data-icon="calendar"></span> Agenda Financeira</button>
     <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Cartões</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
     <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
@@ -1532,6 +1540,7 @@
           </div>
         </section>
 
+<details class="fin-collapse fin-overview-analysis"><summary>Explorar categorias e lançamentos do caixa</summary>
 <section class="card cashx-card" id="cashx-panel" aria-labelledby="cashx-title">
  <div class="card-head">
   <div><p class="eyebrow">Fluxo de Caixa homologado</p>
@@ -1585,6 +1594,7 @@
   </section>
  </div>
 </section>
+</details>
         <div class="legacy-demo-block" hidden aria-hidden="true">
         <div class="callout" role="note"><span class="icon" data-icon="shield"></span>
           <div><strong>Abaixo começa o ambiente de demonstração.</strong>
@@ -1682,97 +1692,8 @@
           <div><p class="eyebrow">Compromissos da empresa</p><h1 class="page-heading">Contas a pagar</h1><p class="page-description">Gerencie os compromissos migrados, suas datas, descontos e conciliações, mantendo a planilha original protegida.</p></div>
           <span class="env-chip">OPERAÇÃO · 2026</span>
         </div>
-              <section class="cv-deadlines cv-embedded" id="cv-payables-deadlines" aria-label="Agenda de vencimentos de contas a pagar e receber">
-        <div class="cv-embedded-head">
-         <div><p class="eyebrow">Agenda integrada · Contas a pagar</p><h2>Vencimentos e calendário</h2>
-          <p>Contas a pagar e a receber que precisam de atenção. Alertas apenas para hoje e vencidos.</p></div>
-         <div class="header-buttons">
-          <button class="btn" type="button" data-cv-anchor="fin-cp-operacional">Ir à carteira</button>
-          <button class="btn" type="button" data-view="receivables">Contas a receber</button>
-          <button class="btn btn-primary" type="button" id="cv-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar vencimentos</button>
-         </div>
-        </div>
-        <p id="cv-status" class="info-note" role="status" aria-live="polite">Carregando boletos e recebíveis oficiais...</p>
-        <p class="cv-date-note">Data de referência: <strong id="cv-today-date">—</strong>. Alertas somente para hoje e compromissos vencidos.</p>
-        <div class="cv-calendar-workspace" id="cv-calendar-workspace" aria-label="Calendário e lista de vencimentos">
-         <section class="card cv-calendar-section" aria-labelledby="cv-calendar-heading">
-         <div class="card-head cv-calendar-heading">
-          <div><h2 id="cv-calendar-heading">Calendário de boletos</h2>
-           <p>Consulte todas as datas de contas a pagar e a receber, inclusive as futuras.</p></div>
-          <div class="cv-calendar-controls">
-           <button type="button" class="btn" id="cv-prev" aria-label="Mês anterior">Anterior</button>
-           <h3 id="cv-month-title">Mês</h3>
-           <button type="button" class="btn" id="cv-next" aria-label="Mês seguinte">Próximo</button>
-           <button type="button" class="btn btn-teal" id="cv-current">Hoje</button>
-          </div>
-         </div>
-         <div class="cv-calendar-body">
-           <div id="cv-calendar" class="cv-calendar-grid" aria-label="Calendário de vencimentos de contas a pagar e receber"></div>
-           <div class="cv-calendar-legend"><span><i class="cv-legend-dot cv-legend-pay"></i> A pagar</span>
-            <span><i class="cv-legend-dot cv-legend-receive"></i> A receber</span></div>
-           <p id="cv-calendar-note" class="cv-calendar-note"></p>
-         </div>
-        </section>
-        <section class="card cv-month-list" aria-labelledby="cv-list-title">
-         <div class="card-head">
-           <div><h2 id="cv-list-title">Boletos do mês</h2><p>Selecione um compromisso para ir à página de gerenciamento correspondente.</p></div>
-           <div class="cv-list-controls">
-            <select id="cv-kind" class="filter-select" aria-label="Filtrar compromissos do calendário">
-             <option value="todos">A pagar e receber</option><option value="pagar">Somente a pagar</option>
-             <option value="receber">Somente a receber</option>
-            </select>
-            <button type="button" class="btn" id="cv-clear-day" hidden>Limpar dia</button>
-           </div>
-         </div>
-         <div id="cv-month-records" class="cv-month-entries"><p>Consultando...</p></div>
-         <div class="cv-list-foot" id="cv-list-count">Aguardando dados.</div>
-        </section>
-        </div>
-        <div id="cv-metrics" class="cv-metrics" aria-label="Indicadores de vencimento">
-         <button type="button" class="cv-metric cv-metric-today" data-cv-alert-kind="pay-today">
-          <span class="cv-metric-heading">A pagar hoje</span><strong id="cv-pay-today-count">—</strong>
-          <em id="cv-pay-today-value">—</em><small>Boletos que vencem nesta data</small>
-         </button>
-         <button type="button" class="cv-metric cv-metric-overdue" data-cv-alert-kind="pay-overdue">
-          <span class="cv-metric-heading">A pagar vencidos</span><strong id="cv-pay-overdue-count">—</strong>
-          <em id="cv-pay-overdue-value">—</em><small>Boletos sem baixa confirmada</small>
-         </button>
-         <button type="button" class="cv-metric cv-metric-today cv-metric-receive" data-cv-alert-kind="receive-today">
-          <span class="cv-metric-heading">A receber hoje</span><strong id="cv-receive-today-count">—</strong>
-          <em id="cv-receive-today-value">—</em><small>Saldo ainda não recebido</small>
-         </button>
-         <button type="button" class="cv-metric cv-metric-overdue cv-metric-receive" data-cv-alert-kind="receive-overdue">
-          <span class="cv-metric-heading">A receber vencidos</span><strong id="cv-receive-overdue-count">—</strong>
-          <em id="cv-receive-overdue-value">—</em><small>Saldo restante de clientes</small>
-         </button>
-        </div>
-        <div class="cv-totalbar" aria-label="Visão de todos os compromissos">
-         <div class="cv-totalbar-item">A pagar em aberto: <strong id="cv-pay-total">—</strong><small>(<span id="cv-pay-total-count">—</span> boletos)</small></div>
-         <div class="cv-totalbar-item">A receber em aberto: <strong id="cv-receive-total">—</strong><small>(<span id="cv-receive-total-count">—</span> boletos)</small></div>
-         <div class="cv-totalbar-item">Sem vencimento: <strong id="cv-undated-count">—</strong></div>
-         <span class="cv-totalbar-note">Valores nominais de documentos. Não representam entradas ou saídas confirmadas no caixa.</span>
-        </div>
-        <div class="cv-urgent-layout">
-         <section class="card cv-urgent-column" aria-labelledby="cv-pay-heading">
-          <div class="card-head"><div><h2 id="cv-pay-heading">Boletos a pagar em atenção</h2>
-           <p>Somente vencidos e com vencimento hoje.</p></div>
-           <button type="button" class="card-link" data-view="payables">Abrir carteira</button>
-          </div>
-          <div id="cv-pay-alerts" class="cv-urgent-stack"><p>Consultando...</p></div>
-         </section>
-         <section class="card cv-urgent-column" aria-labelledby="cv-receive-heading">
-          <div class="card-head"><div><h2 id="cv-receive-heading">Contas a receber em atenção</h2>
-           <p>Boletos dos clientes ainda não recebidos.</p></div>
-           <button type="button" class="card-link" data-view="receivables">Abrir recebíveis</button>
-          </div>
-          <div id="cv-receive-alerts" class="cv-urgent-stack"><p>Consultando...</p></div>
-         </section>
-        </div>
-
-        <p class="cv-note">As faturas de cartão permanecem separadas em <button type="button" class="card-link" data-view="cardbills">Faturas dos cartões</button>. Os vencimentos da agenda não são somados ao caixa realizado.</p>
-      </section>
- 
-        <section class="card" id="fin-cp-operacional" aria-labelledby="fin-cp-title">
+              <div class="fin-agenda-central-shortcut"><div><strong>Agenda Financeira unificada</strong><p>Boletos, cartões e contas a receber são acompanhados no mesmo calendário.</p></div><button type="button" class="btn btn-teal" data-view="agenda">Abrir Agenda Financeira</button></div>
+<section class="card" id="fin-cp-operacional" aria-labelledby="fin-cp-title">
           <div class="card-head">
             <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
               <p>Compromissos da planilha e boletos cadastrados no aplicativo, com rastreabilidade e conciliações preservadas.</p></div>
@@ -2066,6 +1987,101 @@
 
 
 
+<section class="view fin-agenda-central-page" data-view-panel="agenda" hidden aria-label="Agenda Financeira unificada">
+<div class="section-header"><div><p class="eyebrow">Agenda financeira · compromissos reais</p><h1 class="page-heading">Agenda Financeira</h1>
+<p class="page-description">Vencimentos de boletos, cartões e contas a receber. Entradas e saídas permanecem separadas, sem contabilizar compromissos como caixa realizado.</p></div>
+<div class="header-buttons"><button type="button" class="btn" data-view="payables">Contas a pagar</button><button type="button" class="btn" data-view="cardbills">Cartões</button><button type="button" class="btn" data-view="receivables">Contas a receber</button></div></div>
+<section class="card fin-agenda-card" aria-labelledby="ag-title">
+  <div class="card-head">
+   <div><h2 id="ag-title">Agenda de vencimentos · boletos, cartões e recebíveis</h2>
+    <p>Boletos, faturas e contas a receber ainda pendentes reunidos por vencimento real.</p></div>
+   <button type="button" class="btn" id="ag-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar agenda</button>
+  </div>
+  <div class="fin-agenda-stats">
+   <article class="insight-card"><span>Compromissos a acompanhar</span><strong id="ag-count">—</strong><small id="ag-count-detail">Boletos e faturas pendentes</small></article>
+   <article class="insight-card"><span>Saldo nominal a pagar</span><strong id="ag-total">—</strong><small>Referências documentais, não saída bancária</small></article>
+   <article class="insight-card"><span>Sem vencimento informado</span><strong id="ag-no-date">—</strong><small>Não são marcadas como atrasadas</small></article>
+   <article class="insight-card"><span>Prazo informado já passado</span><strong id="ag-overdue">—</strong><small>Quitação não confirmada</small></article>
+   <article class="insight-card"><span>Vencem em até 7 dias</span><strong id="ag-soon">—</strong><small>Conforme datas informadas</small></article>
+   <article class="insight-card"><span>Saldo a receber</span><strong id="ag-receive-total">—</strong><small>Separado dos compromissos a pagar</small></article>
+<article class="insight-card"><span>Faturas parcialmente pagas</span><strong id="ag-partial">—</strong><small>Saldo ainda pendente</small></article>
+  </div>
+  <p class="info-note fin-agenda-status" id="ag-status" role="status" aria-live="polite">Aguardando consulta dos boletos e das faturas.</p>
+  <div class="fin-agenda-layout">
+   <div class="fin-agenda-calendar-panel">
+    <div class="fin-agenda-calendar-header">
+     <h3 id="ag-month-label">Mês de referência</h3>
+     <div><button type="button" class="btn" id="ag-prev" aria-label="Mês anterior">Anterior</button>
+      <button type="button" class="btn" id="ag-today">Este mês</button>
+      <button type="button" class="btn" id="ag-next" aria-label="Próximo mês">Próximo</button></div>
+    </div>
+    <div id="ag-calendar" class="fin-agenda-calendar" aria-label="Calendário de vencimentos"></div>
+    <div class="fin-agenda-legend" aria-label="Legenda do calendário">
+      <span><i class="ag-legend-dot ag-legend-bill"></i> Boletos</span>
+      <span><i class="ag-legend-dot ag-legend-card"></i> Cartões</span>
+    </div>
+    <p id="ag-calendar-note" class="fin-agenda-calendar-note">Informe os vencimentos reais para preencher o calendário.</p>
+   </div>
+   <div class="fin-agenda-guidance">
+    <h3>Como usar</h3>
+    <p>O calendário reúne boletos, faturas de cartões e contas a receber. O pagamento efetivo continua no Fluxo de Caixa.</p>
+    <p>As datas dos boletos vêm da carteira financeira. Para cartões, informe o <strong>vencimento real</strong> quando ainda não estiver cadastrado.</p>
+    <p>Clique em um dia para ver seus compromissos. <strong>Dar baixa</strong> abre a conciliação com um pagamento existente; o calendário não gera saídas bancárias nem mostra boletos já conciliados como pendentes.</p>
+   </div>
+  </div>
+  <div class="data-toolbar fin-agenda-filters">
+   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
+    <input id="ag-search" type="search" placeholder="Buscar boleto, fornecedor, cartão ou valor..." aria-label="Pesquisar boletos e faturas em acompanhamento"></label>
+   <select id="ag-type" class="filter-select" aria-label="Filtrar tipo de compromisso">
+    <option value="todos">Boletos e cartões</option>
+    <option value="boleto">Somente boletos</option>
+    <option value="cartao">Somente cartões</option><option value="receber">Somente a receber</option>
+   </select>
+   <select id="ag-filter" class="filter-select" aria-label="Filtrar situação">
+    <option value="todos">Todos os pendentes</option>
+    <option value="sem-data">Sem data informada</option>
+    <option value="prazo-passado">Prazo passado</option>
+    <option value="proximos-7">Vencem em 7 dias</option>
+    <option value="programada">Programadas</option>
+    <option value="parcial">Pagamento parcial</option>
+   </select>
+   <button type="button" id="ag-clear-day" class="btn" hidden>Limpar filtro de dia</button>
+  </div>
+  <div class="table-wrap"><table class="data-table fin-agenda-table">
+   <thead><tr><th>Compromisso</th><th>Referência / origem</th><th class="money">Valor nominal</th>
+    <th class="money">Pago vinculado</th><th class="money">Em aberto</th>
+    <th>Vencimento</th><th>Situação</th><th>Ações</th></tr></thead>
+   <tbody id="ag-rows"><tr><td colspan="8" class="empty">Aguardando boletos e faturas...</td></tr></tbody>
+  </table></div>
+  <div class="table-footer fin-agenda-pagination">
+   <span id="ag-listed">Aguardando dados.</span>
+   <div><button type="button" class="btn" id="ag-page-prev" disabled>Anterior</button>
+    <button type="button" class="btn" id="ag-page-next" disabled>Próxima</button></div>
+  </div>
+ </section>
+ <dialog id="ag-dialog" class="fin-dialog fin-agenda-dialog" aria-labelledby="ag-edit-title">
+  <form id="ag-form">
+   <div class="dialog-head">
+    <div><h2 id="ag-edit-title">Vencimento da fatura</h2><p>Informe a data que consta na fatura.</p></div>
+    <button type="button" class="dialog-close" id="ag-close" aria-label="Fechar">&times;</button>
+   </div>
+   <div class="dialog-body">
+    <p id="ag-edit-summary" class="fin-agenda-edit-summary"></p>
+    <div class="fields fin-agenda-form-fields">
+     <label>Data real do vencimento <input type="date" id="ag-date"></label>
+     <label>Observações (opcional) <textarea id="ag-notes" rows="3" maxlength="1000" placeholder="Ex.: data conferida no aplicativo do cartão."></textarea></label>
+    </div>
+    <p id="ag-edit-error" class="info-note" role="status">A data pode ficar vazia até ser confirmada.</p>
+    <div class="form-actions">
+     <button type="button" class="btn" id="ag-cancel">Cancelar</button>
+     <button type="submit" class="btn btn-primary" id="ag-save">Salvar vencimento</button>
+    </div>
+    <p class="info-note">Salvar o vencimento não cria ou modifica saídas bancárias. As alterações ficam registradas para auditoria.</p>
+   </div>
+  </form>
+ </dialog>
+ 
+</section>
 <section class="view" data-view-panel="expenses" hidden aria-label="Carteiras históricas de autopeças e cartões">
  <div class="section-header">
   <div><p class="eyebrow">Documentos homologados · sem duplicar o caixa</p>
@@ -2078,18 +2094,10 @@
   <label>Ano dos gastos <select id="doc-year" class="filter-select" aria-label="Ano dos gastos em autopeças e cartões"><option value="todos">Todos os anos</option></select></label>
   <p class="info-note">Os resumos de autopeças e cartões, o comparativo mensal e os registros respeitam o ano escolhido. A tabela de faturas tem seu próprio filtro anual.</p>
  </div>
- <div class="fin-expenses-direct-access">
-  <div>
-   <strong>Faturas e pagamentos parciais</strong>
-   <span>Abra Cartões para conferir ou registrar pagamentos da fatura, inclusive parciais.</span>
-  </div>
-  <div class="fin-agenda-shortcuts">
-   <button type="button" class="btn" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Resumo de faturas</button>
-    <button type="button" class="btn" data-jump-section="ag-title"><span class="icon icon-sm" data-icon="calendar"></span> Agenda de vencimentos</button>
-   <button type="button" class="btn btn-primary" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
-  </div>
- </div>
- <section class="card fin-doc-supplier-years" id="doc-annual-suppliers">
+ <div class="fin-expenses-direct-access"><div><strong>Consultas relacionadas</strong><span>Faturas e pagamentos ficam em Cartões; vencimentos na Agenda Financeira.</span></div>
+<div class="fin-agenda-shortcuts"><button type="button" class="btn" data-view="agenda"><span class="icon icon-sm" data-icon="calendar"></span> Agenda Financeira</button>
+<button type="button" class="btn btn-primary" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Cartões e pagamentos</button></div></div>
+<section class="card fin-doc-supplier-years" id="doc-annual-suppliers">
   <div class="card-head">
    <div><h2>Autopeças por fornecedor, mês e ano</h2>
     <p>Veja o total mensal e anual dos fornecedores que você selecionar, incluindo retíficas e compras identificadas como Mercado Livre. Origens Autopeças e Cartões permanecem identificadas separadamente.</p></div>
@@ -2149,95 +2157,8 @@
    <p><strong id="doc-card-count">—</strong> lançamentos incluídos</p>
   </section>
  </div>
- <section class="card fin-agenda-card" aria-labelledby="ag-title">
-  <div class="card-head">
-   <div><h2 id="ag-title">Agenda de vencimentos · boletos e cartões</h2>
-    <p>Boletos de fornecedores e faturas de cartões ainda pendentes, reunidos pelas datas reais de vencimento.</p></div>
-   <button type="button" class="btn" id="ag-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar agenda</button>
-  </div>
-  <div class="fin-agenda-stats">
-   <article class="insight-card"><span>Compromissos a acompanhar</span><strong id="ag-count">—</strong><small id="ag-count-detail">Boletos e faturas pendentes</small></article>
-   <article class="insight-card"><span>Valor nominal pendente</span><strong id="ag-total">—</strong><small>Referências documentais, não saída bancária</small></article>
-   <article class="insight-card"><span>Sem vencimento informado</span><strong id="ag-no-date">—</strong><small>Não são marcadas como atrasadas</small></article>
-   <article class="insight-card"><span>Prazo informado já passado</span><strong id="ag-overdue">—</strong><small>Quitação não confirmada</small></article>
-   <article class="insight-card"><span>Vencem em até 7 dias</span><strong id="ag-soon">—</strong><small>Conforme datas informadas</small></article>
-   <article class="insight-card"><span>Faturas parcialmente pagas</span><strong id="ag-partial">—</strong><small>Saldo ainda pendente</small></article>
-  </div>
-  <p class="info-note fin-agenda-status" id="ag-status" role="status" aria-live="polite">Aguardando consulta dos boletos e das faturas.</p>
-  <div class="fin-agenda-layout">
-   <div class="fin-agenda-calendar-panel">
-    <div class="fin-agenda-calendar-header">
-     <h3 id="ag-month-label">Mês de referência</h3>
-     <div><button type="button" class="btn" id="ag-prev" aria-label="Mês anterior">Anterior</button>
-      <button type="button" class="btn" id="ag-today">Este mês</button>
-      <button type="button" class="btn" id="ag-next" aria-label="Próximo mês">Próximo</button></div>
-    </div>
-    <div id="ag-calendar" class="fin-agenda-calendar" aria-label="Calendário de vencimentos"></div>
-    <div class="fin-agenda-legend" aria-label="Legenda do calendário">
-      <span><i class="ag-legend-dot ag-legend-bill"></i> Boletos</span>
-      <span><i class="ag-legend-dot ag-legend-card"></i> Cartões</span>
-    </div>
-    <p id="ag-calendar-note" class="fin-agenda-calendar-note">Informe os vencimentos reais para preencher o calendário.</p>
-   </div>
-   <div class="fin-agenda-guidance">
-    <h3>Como usar</h3>
-    <p>O calendário reúne os boletos de <strong>Contas a pagar</strong>, inclusive os cadastrados no aplicativo, com as faturas de cartões ainda em aberto.</p>
-    <p>As datas dos boletos vêm da carteira financeira. Para cartões, informe o <strong>vencimento real</strong> quando ainda não estiver cadastrado.</p>
-    <p>Clique em um dia para ver seus compromissos. <strong>Dar baixa</strong> abre a conciliação com um pagamento existente; o calendário não gera saídas bancárias nem mostra boletos já conciliados como pendentes.</p>
-   </div>
-  </div>
-  <div class="data-toolbar fin-agenda-filters">
-   <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-    <input id="ag-search" type="search" placeholder="Buscar boleto, fornecedor, cartão ou valor..." aria-label="Pesquisar boletos e faturas em acompanhamento"></label>
-   <select id="ag-type" class="filter-select" aria-label="Filtrar tipo de compromisso">
-    <option value="todos">Boletos e cartões</option>
-    <option value="boleto">Somente boletos</option>
-    <option value="cartao">Somente cartões</option>
-   </select>
-   <select id="ag-filter" class="filter-select" aria-label="Filtrar situação">
-    <option value="todos">Todos os pendentes</option>
-    <option value="sem-data">Sem data informada</option>
-    <option value="prazo-passado">Prazo passado</option>
-    <option value="proximos-7">Vencem em 7 dias</option>
-    <option value="programada">Programadas</option>
-    <option value="parcial">Pagamento parcial</option>
-   </select>
-   <button type="button" id="ag-clear-day" class="btn" hidden>Limpar filtro de dia</button>
-  </div>
-  <div class="table-wrap"><table class="data-table fin-agenda-table">
-   <thead><tr><th>Compromisso</th><th>Referência / origem</th><th class="money">Valor nominal</th>
-    <th class="money">Pago vinculado</th><th class="money">Em aberto</th>
-    <th>Vencimento</th><th>Situação</th><th>Ações</th></tr></thead>
-   <tbody id="ag-rows"><tr><td colspan="8" class="empty">Aguardando boletos e faturas...</td></tr></tbody>
-  </table></div>
-  <div class="table-footer fin-agenda-pagination">
-   <span id="ag-listed">Aguardando dados.</span>
-   <div><button type="button" class="btn" id="ag-page-prev" disabled>Anterior</button>
-    <button type="button" class="btn" id="ag-page-next" disabled>Próxima</button></div>
-  </div>
- </section>
- <dialog id="ag-dialog" class="fin-dialog fin-agenda-dialog" aria-labelledby="ag-edit-title">
-  <form id="ag-form">
-   <div class="dialog-head">
-    <div><h2 id="ag-edit-title">Vencimento da fatura</h2><p>Informe a data que consta na fatura.</p></div>
-    <button type="button" class="dialog-close" id="ag-close" aria-label="Fechar">&times;</button>
-   </div>
-   <div class="dialog-body">
-    <p id="ag-edit-summary" class="fin-agenda-edit-summary"></p>
-    <div class="fields fin-agenda-form-fields">
-     <label>Data real do vencimento <input type="date" id="ag-date"></label>
-     <label>Observações (opcional) <textarea id="ag-notes" rows="3" maxlength="1000" placeholder="Ex.: data conferida no aplicativo do cartão."></textarea></label>
-    </div>
-    <p id="ag-edit-error" class="info-note" role="status">A data pode ficar vazia até ser confirmada.</p>
-    <div class="form-actions">
-     <button type="button" class="btn" id="ag-cancel">Cancelar</button>
-     <button type="submit" class="btn btn-primary" id="ag-save">Salvar vencimento</button>
-    </div>
-    <p class="info-note">Salvar o vencimento não cria ou modifica saídas bancárias. As alterações ficam registradas para auditoria.</p>
-   </div>
-  </form>
- </dialog>
- <section class="card vl-card" aria-labelledby="vl-title-section">
+ <details class="fin-collapse fin-extra-conciliation"><summary>Indicadores detalhados de conciliação (opcional)</summary>
+<section class="card vl-card" aria-labelledby="vl-title-section">
   <div class="card-head"><div><h2 id="vl-title-section">Vincular faturas e revisar exceções</h2>
    <p>Confirmação manual de pagamentos existentes. Sem criar saídas financeiras ou alterar o Fluxo de Caixa.</p></div>
    <button type="button" class="btn" id="vl-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar vínculos</button>
@@ -2255,7 +2176,8 @@
   <p class="info-note vl-message"><strong>Histórico até setembro/2026:</strong> faturas quitadas por sua confirmação, sem identificar saídas bancárias. Não foram criados pagamentos ou datas fictícias. As faturas seguintes continuam disponíveis para conciliação com saídas existentes, inclusive por vários pagamentos parciais.</p>
  </section>
  
- <section class="card vl-card">
+ </details>
+<section class="card vl-card">
   <div class="card-head"><div><h2>Exceções de autopeças pagas após o vencimento</h2>
    <p>Depois da conferência manual, a compra sai desta lista. O histórico permanece disponível.</p></div>
    <label class="vl-show-confirmed-control"><input type="checkbox" id="vl-show-confirmed"> Mostrar conferidas</label>
@@ -2359,15 +2281,15 @@
  </dialog>
  <section class="card fin-doc-match-card" aria-labelledby="dc-title">
   <div class="card-head"><div>
-    <h2 id="dc-title">Conciliação documental</h2>
-    <p>Relações auditáveis entre autopeças, saídas já confirmadas e agrupamentos de cartões. Nenhuma nova baixa no caixa.</p>
+    <h2 id="dc-title">Conciliação documental de autopeças</h2>
+    <p>Relações auditáveis entre autopeças e saídas confirmadas. Faturas detalhadas ficam em Cartões.</p>
    </div>
    <button type="button" id="dc-refresh" class="btn"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar conferência</button>
   </div>
   <div class="fin-doc-match-stats">
    <article class="insight-card"><span>Autopeças localizadas no Fluxo</span><strong id="dc-matched-count">—</strong>
     <small id="dc-matched-total">—</small></article>
-   <article class="insight-card"><span>Compras pagas para revisar</span><strong id="dc-review-count">—</strong>
+   <article class="insight-card"><span>Compras pagas sem comprovação</span><strong id="dc-review-count">—</strong>
     <small>Sem correspondência individual segura</small></article>
    <article class="insight-card"><span>Faturas documentais</span><strong id="dc-invoice-count">—</strong>
     <small id="dc-invoice-total">—</small></article>
@@ -2840,12 +2762,12 @@
   </div>
   <div class="fin-accordion-stack">
 <details class="fin-collapse" id="imports-faturas">
-  <summary><span>Faturas e pagamentos</span><small>Valores das faturas, pagamentos vinculados e conciliação</small></summary>
+  <summary><span>Conferência técnica de faturas importadas</span><small>Pagamentos e saldos ficam em Cartões; aqui permanecem os dados importados para conferência.</small></summary>
   <div class="fin-collapse-panel">
 <section class="card" id="invoice-settlement-panel" style="margin-top:17px" aria-labelledby="invoice-settlement-title">
     <div class="card-head">
       <div>
-        <h2 id="invoice-settlement-title">Faturas de cartão e pagamentos</h2>
+        <h2 id="invoice-settlement-title">Faturas importadas: conferência técnica</h2>
         <p>Controle o valor total da fatura e vincule uma saída bancária à quitação, sem criar um estorno ou uma despesa adicional.</p>
       </div>
       <span class="state">Conciliação</span>
