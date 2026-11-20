@@ -405,7 +405,7 @@ function setup(){
   if(view==='cardbills'){
     window.frCardBillsUI?.refresh?.();
     window.frCardInstallmentsUI?.refresh?.();
-  }else if(view==='classify'){
+  }else if(view==='imports'&&byId('imports-classificacao')?.open){
     window.frClassificationUI?.refresh?.();
   }else if(view==='reports'){
     window.frManagerReportsUI?.refresh?.();
