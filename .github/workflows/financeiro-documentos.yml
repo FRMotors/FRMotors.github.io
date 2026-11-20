@@ -21,6 +21,8 @@ on:
       - 'tests/financeiro-documentos-status.test.cjs'
       - 'tests/financeiro-consolidacao.test.cjs'
       - 'tests/financeiro-estabilizacao.test.cjs'
+      - 'tests/financeiro-preferencias-fornecedores.test.cjs'
+      - 'sql/migrations/20261120_preferencias_fornecedores_por_conta.sql'
       - 'sql/migrations/20261120_estabilizar_financeiro_legado_indices.sql'
       - 'tests/financeiro-auditoria-fornecedores-layout.test.cjs'
       - '.github/workflows/financeiro-documentos.yml'
@@ -45,6 +47,8 @@ on:
       - 'tests/financeiro-documentos-status.test.cjs'
       - 'tests/financeiro-consolidacao.test.cjs'
       - 'tests/financeiro-estabilizacao.test.cjs'
+      - 'tests/financeiro-preferencias-fornecedores.test.cjs'
+      - 'sql/migrations/20261120_preferencias_fornecedores_por_conta.sql'
       - 'sql/migrations/20261120_estabilizar_financeiro_legado_indices.sql'
       - 'tests/financeiro-auditoria-fornecedores-layout.test.cjs'
       - '.github/workflows/financeiro-documentos.yml'
@@ -61,4 +65,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar vinculações, anos e valores documentais
-        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs
+        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs tests/financeiro-preferencias-fornecedores.test.cjs

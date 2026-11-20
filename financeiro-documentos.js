@@ -14,7 +14,7 @@ const write=(id,text)=>{const node=$(id);if(node)node.textContent=text};
 const groupName=g=>g==='autopecas'?'Autopeças':'Cartões / outros meios';
 const monthOf=r=>(r.grupo==='cartoes'?r.mes_fatura:r.vencimento)?.slice(0,7)||'sem-mes';
 const inYear=r=>{const y=$('doc-year')?.value||'todos';return y==='todos'||monthOf(r).slice(0,4)===y;};
-let documents=[],liveMatches=new Map(),supplierCatalogue=[],selectedSuppliers=new Set(),selectionKey=null,selectionLoaded=false,page=0,monthPage=0,loading=null;
+let documents=[],liveMatches=new Map(),supplierCatalogue=[],selectedSuppliers=new Set(),selectionKey=null,selectionLoaded=false,selectionUserId=null,selectionSavedSnapshot=null,selectionSaving=false,page=0,monthPage=0,loading=null;
 const PAGE_SIZE=35;
 const MONTH_PAGE_SIZE=12;
 const fields='id,grupo,codigo_origem,linha_excel,data_evento,vencimento,data_compra,mes_fatura,descricao,fornecedor_nome,cartao_nome,parcela,meio,valor_registrado,valor_cheio_documento,valor_com_desconto_informado,valor_pago_informado,data_pagamento_informada,situacao_origem,incluir,revisao_origem';
@@ -139,33 +139,80 @@ function choiceStorage(){
  if(!selectionKey||typeof window==='undefined')return null;
  try{return window.localStorage||null}catch{return null}
 }
-function restoreSupplierSelection(userId){
+// Preferências de análise: rascunho local e salvamento confirmado por conta no Supabase.
+const selectionSnapshot=values=>JSON.stringify([...values].sort());
+const selectionValid=values=>Array.isArray(values)&&values.every(v=>typeof v==='string');
+function selectionStatus(message){
+ const button=$('doc-supplier-save');
+ const dirty=selectionSavedSnapshot===null||selectionSnapshot(selectedSuppliers)!==selectionSavedSnapshot;
+ if(button){button.disabled=selectionSaving||!selectionUserId||!dirty;button.textContent=selectionSaving?'Salvando...':'Salvar seleção';}
+ write('doc-supplier-choice-storage',message||(!selectionUserId?'Faça login para salvar as opções.':
+  dirty?'Seleção modificada. Clique em "Salvar seleção" para manter as escolhas na sua conta.':
+  'Seleção salva na sua conta. Ela voltará automaticamente ao entrar novamente.'));
+}
+async function restoreSupplierSelection(userId){
  const nextKey=userId?'fr-motors:fornecedores-analisados:v2:'+String(userId):null;
  if(selectionLoaded&&selectionKey===nextKey)return;
- selectionLoaded=true;selectionKey=nextKey;
+ selectionLoaded=true;selectionKey=nextKey;selectionUserId=userId;selectionSavedSnapshot=null;
  selectedSuppliers=statusCore.defaultSupplierKeys(supplierCatalogue);
- const storage=choiceStorage();
+ const validKeys=new Set(supplierCatalogue.map(x=>x.key));
+ let localFound=false;
  try{
-  const stored=storage?.getItem(selectionKey);
-  if(stored!==null&&stored!==undefined){
-   const parsed=JSON.parse(stored);
-   if(Array.isArray(parsed)&&parsed.every(v=>typeof v==='string'))
-    selectedSuppliers=new Set(parsed);
+  const raw=choiceStorage()?.getItem(selectionKey);
+  if(raw!==null&&raw!==undefined){
+   const saved=JSON.parse(raw);
+   if(selectionValid(saved)){selectedSuppliers=new Set(saved.filter(x=>validKeys.has(x)));localFound=true;}
   }
- }catch{
-  write('doc-supplier-choice-storage','Preferências carregadas apenas nesta sessão: armazenamento do navegador indisponível.');
+ }catch{}
+ if(!userId){selectionStatus('Conta não identificada. As escolhas ficam apenas nesta sessão.');return;}
+ try{
+  const {data,error}=await db.from('fin_preferencias_fornecedores')
+   .select('selecionados').eq('usuario_id',userId).maybeSingle();
+  if(error)throw error;
+  if(data){
+   if(!selectionValid(data.selecionados))throw Error('Formato salvo inválido.');
+   selectedSuppliers=new Set(data.selecionados.filter(x=>validKeys.has(x)));
+   selectionSavedSnapshot=selectionSnapshot(selectedSuppliers);
+   selectionStatus('Preferências recuperadas da sua conta. Os fornecedores marcados estão salvos.');
+  }else selectionStatus(localFound?
+   'Seleção anterior deste navegador recuperada. Clique em "Salvar seleção" para gravá-la na conta.':
+   'Seleção padrão carregada. Clique em "Salvar seleção" para gravá-la na conta.');
+ }catch(e){
+  selectionStatus('Não foi possível consultar as preferências no servidor. '+
+   (localFound?'Seu rascunho local foi recuperado. ':'')+
+   'Salve novamente para sincronizar. '+(e.message||''));
  }
 }
 function saveSupplierSelection(){
- const storage=choiceStorage();
- if(storage)try{
-  storage.setItem(selectionKey,JSON.stringify([...selectedSuppliers]));
-  write('doc-supplier-choice-storage','Seleção salva neste navegador, para a conta conectada. Não altera compras nem dá baixa em boletos.');
- }catch{
-  write('doc-supplier-choice-storage','Seleção aplicada nesta sessão; o navegador não permitiu salvar preferências.');
- }
- else write('doc-supplier-choice-storage','Seleção aplicada nesta sessão. Não altera lançamentos financeiros.');
+ try{choiceStorage()?.setItem(selectionKey,JSON.stringify([...selectedSuppliers]));}catch{}
+ selectionStatus('Alterações aplicadas ao resumo. Clique em "Salvar seleção" para protegê-las na sua conta.');
  renderChoice();renderSupplierYears();
+}
+async function persistSupplierSelection(){
+ if(selectionSaving)return;
+ if(!selectionUserId||typeof db==='undefined'||!db){
+  selectionStatus('Entre com uma conta autorizada antes de salvar.');return;
+ }
+ const userId=selectionUserId,keys=[...selectedSuppliers].sort(),snapshot=selectionSnapshot(keys);
+ selectionSaving=true;selectionStatus('Salvando seleção...');
+ let message='';
+ try{
+  const {data,error}=await db.from('fin_preferencias_fornecedores')
+   .upsert({usuario_id:userId,selecionados:keys,atualizado_em:new Date().toISOString()},
+    {onConflict:'usuario_id'}).select('selecionados').single();
+  if(error)throw error;
+  if(!selectionValid(data?.selecionados)||selectionSnapshot(data.selecionados)!==snapshot)
+   throw Error('O servidor não confirmou as opções salvas.');
+  if(userId!==selectionUserId)throw Error('A conta conectada mudou.');
+  selectionSavedSnapshot=snapshot;
+  message='Seleção salva na sua conta. Os fornecedores serão restaurados ao entrar novamente.';
+  window.frFinanceUI?.showToast?.('Seleção de fornecedores salva.');
+ }catch(e){message='Erro ao salvar na conta: '+(e.message||e)+'. O rascunho local foi preservado.';}
+ finally{
+  selectionSaving=false;
+  selectionStatus(selectionSavedSnapshot!==null&&selectionSnapshot(selectedSuppliers)!==selectionSavedSnapshot?
+   'Novas alterações ainda não foram salvas. Clique em "Salvar seleção" novamente.':message);
+ }
 }
 function refreshSupplierYears(){
  const control=$('doc-by-supplier-year');if(!control||!statusCore)return;
@@ -358,7 +405,7 @@ async function refresh(){
    const [rows,accounts,registered]=await Promise.all([fetchAll(),fetchAccounts(),fetchSupplierRegistry()]);
    supplierCatalogue=statusCore.supplierCatalogue(rows,registered);
    const user=await db.auth?.getUser?.();
-   restoreSupplierSelection(user?.data?.user?.id||null);
+   await restoreSupplierSelection(user?.data?.user?.id||null);
    liveMatches=statusCore.matchLiveDocs(rows,accounts);
    documents=rows.sort((a,b)=>{
     const m1=monthOf(a)==='sem-mes'?'0000-00':monthOf(a);
@@ -407,6 +454,7 @@ function setup(){
  $('doc-supplier-pick-auto')?.addEventListener('click',()=>applySupplierMode('auto'));
  $('doc-supplier-pick-all')?.addEventListener('click',()=>applySupplierMode('all'));
  $('doc-supplier-pick-none')?.addEventListener('click',()=>applySupplierMode('none'));
+  $('doc-supplier-save')?.addEventListener('click',()=>persistSupplierSelection());
 
  $('doc-export')?.addEventListener('click',exportCsv);
 }

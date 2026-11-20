@@ -594,7 +594,7 @@
 <button type="button" data-view="agenda"><span class="icon" data-icon="calendar"></span> Agenda Financeira</button>
     <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Cartões</button>
     <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e cartões</button>
-    <button type="button" data-view="imports"><span class="icon" data-icon="download"></span> Importações</button>
+    <button type="button" data-view="imports"><span class="icon" data-icon="settings"></span> Administração</button>
 
   </nav>
   <div class="sidebar-divider"></div>
@@ -1455,10 +1455,10 @@
             <p class="page-description">Acompanhe os lançamentos homologados e os compromissos reais, sem duplicação de valores.</p>
           </div>
           <div class="header-buttons">
-            <button type="button" class="btn btn-teal" data-view="imports"><span class="icon icon-sm" data-icon="download"></span> Importar arquivo</button>
+            
             <button type="button" class="btn" data-ops-pay><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button>
             <button type="button" class="btn" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
-             <button type="button" class="btn btn-teal" data-view="forecast"><span class="icon icon-sm" data-icon="chart"></span> Projeção de caixa</button>
+             
               <button type="button" class="btn" data-view="reports"><span class="icon icon-sm" data-icon="chart"></span> Relatórios</button>
               <button type="button" class="btn" data-view="audit"><span class="icon icon-sm" data-icon="shield"></span> Auditoria</button>
           </div>
@@ -2128,10 +2128,11 @@
     <button type="button" class="btn" id="doc-supplier-pick-auto">Somente origem Autopeças</button>
     <button type="button" class="btn" id="doc-supplier-pick-all">Selecionar todos</button>
     <button type="button" class="btn" id="doc-supplier-pick-none">Desmarcar todos</button>
+     <button type="button" class="btn btn-primary" id="doc-supplier-save" disabled>Salvar seleção</button>
    </div>
    <p id="doc-supplier-choice-count" class="fin-doc-supplier-choice-note" role="status">Carregando a lista completa...</p>
    <div class="fin-doc-supplier-choice-list" id="doc-supplier-choice-list" role="group" aria-label="Selecionar fornecedores que entrarão na análise"></div>
-   <p id="doc-supplier-choice-storage" class="fin-doc-supplier-choice-note">A escolha é uma preferência de visualização. Nenhuma compra, classificação ou baixa é modificada.</p>
+   <p id="doc-supplier-choice-storage" class="fin-doc-supplier-choice-note" role="status" aria-live="polite">A escolha é uma preferência de visualização. Nenhuma compra, classificação ou baixa é modificada.</p>
   </details>
   <p id="doc-by-supplier-note" class="info-note">Aguardando consulta dos fornecedores.</p>
   <div class="table-wrap fin-doc-supplier-years-table">
@@ -2517,7 +2518,7 @@
               <h2 id="hist-itau-import-title">Último extrato Itaú recebido</h2>
               <p id="hist-itau-import-source">Consultando a última importação...</p>
             </div>
-            <button class="btn" type="button" data-view="imports">Ver importações</button>
+            <button class="btn" type="button" data-view="imports">Abrir Administração</button>
           </div>
           <div id="hist-itau-import-kpis" class="hist-kpis hist-import-kpis" aria-label="Totais do extrato bancário mais recente"></div>
           <p id="hist-itau-import-compare" class="hist-import-compare" role="status" aria-live="polite"></p>
@@ -2636,12 +2637,12 @@
         </div>
       </section>
 
-      <section class="view" data-view-panel="imports" hidden aria-label="Importar extratos e faturas">
+      <section class="view" data-view-panel="imports" hidden aria-label="Administração financeira e importações">
   <div class="section-header">
     <div>
       <p class="eyebrow">Automação financeira</p>
-      <h1 class="page-heading">Importações</h1>
-      <p class="page-description">Envie arquivos de extrato bancário e faturas de cartões, confira os lançamentos e importe todos de uma só vez.</p>
+      <h1 class="page-heading">Administração</h1>
+      <p class="page-description">Administre arquivos, extratos, faturas e ferramentas técnicas de conferência financeira.</p>
     </div>
     <div class="header-buttons">
       <button type="button" class="btn" id="import-reload"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar listas</button>
@@ -3518,7 +3519,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261119layout3"></script>
+<script src="./financeiro-pro-ui.js?v=20261120admin1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
@@ -3538,7 +3539,7 @@ init();
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261119fix1" defer></script>
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
-<script src="./financeiro-documentos.js?v=20261119supplier2" defer></script>
+<script src="./financeiro-documentos.js?v=20261120suppliercloud1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261118cartoes1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261119layout2" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261119layout2" defer></script>

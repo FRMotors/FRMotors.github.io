@@ -87,7 +87,7 @@ function selectView(next,options={}){
  if(next==='deadlines')next='agenda'; // link legado para Agenda Financeira
  if(next==='purchases')next='cardbills'; // link antigo de compras parceladas
  if(next==='operational'){
-  next='imports'; // Base migrada agora está em Importações
+  next='imports'; // Base migrada acessível em Administração
   const accordion=byId('imports-base-migrada');if(accordion)accordion.open=true;
  }
  if(!NAV_VIEWS.includes(next))next='overview';
@@ -99,7 +99,7 @@ function selectView(next,options={}){
   n.classList.toggle('active',active);
   if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
  });
- const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',agenda:'Agenda Financeira',purchases:'Compras parceladas',imports:'Importações',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Cartões',audit:'Central de auditoria'};
+ const names={overview:'Visão geral',movements:'Movimentações',receivables:'Contas a receber',payables:'Contas a pagar',agenda:'Agenda Financeira',purchases:'Compras parceladas',imports:'Administração',settings:'Configurações',itau:'Itaú · Histórico',history:'Outras fontes',operational:'Base migrada',expenses:'Autopeças e cartões',forecast:'Projeção de caixa',reports:'Relatórios gerenciais',classify:'Classificar despesas',cardbills:'Cartões',audit:'Central de auditoria'};
  if(byId('crumb-page'))byId('crumb-page').textContent=names[next];
  document.title=names[next]+' | Financeiro FR Motors';
  closeSidebar();
