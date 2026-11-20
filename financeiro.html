@@ -2762,84 +2762,23 @@
   </div>
   <div class="fin-accordion-stack">
 <details class="fin-collapse" id="imports-faturas">
-  <summary><span>Conferência técnica de faturas importadas</span><small>Pagamentos e saldos ficam em Cartões; aqui permanecem os dados importados para conferência.</small></summary>
-  <div class="fin-collapse-panel">
-<section class="card" id="invoice-settlement-panel" style="margin-top:17px" aria-labelledby="invoice-settlement-title">
-    <div class="card-head">
-      <div>
-        <h2 id="invoice-settlement-title">Faturas importadas: conferência técnica</h2>
-        <p>Controle o valor total da fatura e vincule uma saída bancária à quitação, sem criar um estorno ou uma despesa adicional.</p>
-      </div>
-      <span class="state">Conciliação</span>
+ <summary><span>Arquivos de faturas importadas</span><small>Consulta documental e histórico, sem registrar pagamentos nesta tela</small></summary>
+ <div class="fin-collapse-panel">
+  <section class="card" id="invoice-settlement-panel" aria-labelledby="invoice-settlement-title">
+   <div class="card-head">
+    <div><h2 id="invoice-settlement-title">Conferência dos arquivos de cartão</h2>
+     <p>As importações mantêm os lançamentos originais para auditoria. O controle de faturas, vencimentos, quitações, pagamentos parciais e vínculos bancários ocorre exclusivamente em Cartões.</p>
+    </div><span class="state">Somente consulta</span>
+   </div>
+   <div class="card-body">
+    <p class="info-note">A antiga rotina de registro de pagamentos no caixa de testes foi desativada para evitar um segundo caminho de quitação. Nenhum lançamento histórico foi excluído. As compras e estornos importados permanecem em “Movimentações e conciliação de boletos” e no histórico de arquivos.</p>
+    <div class="header-buttons">
+     <button type="button" class="btn btn-primary" data-view="cardbills">Abrir Cartões e pagamentos</button>
+     <button type="button" class="btn" data-view="agenda">Consultar Agenda Financeira</button>
     </div>
-    <div class="card-body">
-      <div class="invoice-grid">
-        <div>
-          <h3 class="invoice-subheading">Faturas importadas</h3>
-          <div class="invoice-list" id="invoice-list"><p class="info-note">Abra Importações para consultar as faturas.</p></div>
-          <p class="info-note">O valor das compras importadas pode ser diferente do total da fatura por causa de juros, saldos anteriores e créditos. Confirme o total no documento.</p>
-        </div>
-        <div class="invoice-editor">
-          <h3 class="invoice-subheading">Conciliação da fatura selecionada</h3>
-          <div id="invoice-empty" class="info-note">Selecione uma fatura à esquerda para configurar o total e vincular pagamentos.</div>
-          <div id="invoice-detail" class="hidden">
-            <strong id="invoice-name" class="row-main">Fatura selecionada</strong>
-            <div id="invoice-value-status" class="invoice-value-status"></div>
-            <div class="fields">
-              <label>Valor total da fatura (R$)
-                <input id="invoice-total" type="number" min="0.01" step="0.01" placeholder="Confirme no PDF" required>
-              </label>
-              <label>Data de vencimento
-                <input id="invoice-due-date" type="date">
-              </label>
-            </div>
-            <button type="button" id="invoice-save-total" class="btn btn-teal" style="margin-top:12px">Confirmar total da fatura</button>
-            <div class="invoice-divider"></div>
-            <div class="invoice-document-evidence">
-              <label class="invoice-field-label" for="invoice-document-payment">Pagamento identificado na fatura do cartão</label>
-              <select id="invoice-document-payment"><option value="">Selecione um pagamento identificado no PDF</option></select>
-              <p id="invoice-document-hint" class="info-note">Esses pagamentos geralmente se referem à fatura anterior, não à fatura onde aparecem. Ao selecionar, preencheremos os dados para conferência, sem criar uma nova saída automaticamente.</p>
-              <button type="button" id="invoice-use-document" class="btn" disabled>Usar como referência de pagamento</button>
-            </div>
-            <div class="invoice-divider"></div>
-            <label class="invoice-field-label" for="invoice-bank-move">Selecionar uma saída do extrato bancário</label>
-            <select id="invoice-bank-move"><option value="">Selecione um pagamento</option></select>
-            <p id="invoice-bank-empty" class="info-note invoice-bank-empty" role="status" hidden>Nenhuma saída bancária importada está disponível. Importe o extrato ou registre um pagamento já realizado abaixo.</p>
-            <button type="button" id="invoice-go-import" class="btn invoice-import-button">Importar extrato bancário</button>
-            <button type="button" id="invoice-apply-bank" class="btn btn-primary" style="margin-top:12px" disabled>Vincular pagamento da fatura</button>
-            <div class="invoice-payments" id="invoice-payments"></div>
-            <p class="info-note">A conciliação não cria um segundo pagamento. Compras do cartão não entram novamente como saídas bancárias.</p>
-            <div class="invoice-divider"></div>
-            <h4 class="invoice-subheading">Pagamento já realizado, mas sem extrato?</h4>
-            <p class="info-note">Registre aqui somente pagamentos realmente efetuados. O sistema cria uma saída bancária de teste e vincula à fatura em uma única operação.</p>
-            <div class="fields invoice-manual-fields">
-              <label>Data do pagamento
-                <input id="invoice-manual-date" type="date" required>
-              </label>
-              <label>Valor pago (R$)
-                <input id="invoice-manual-amount" type="number" min="0.01" step="0.01" placeholder="0,00" required>
-              </label>
-              <label>Forma de pagamento
-                <select id="invoice-manual-method">
-                  <option value="boleto">Boleto</option>
-                  <option value="pix">Pix</option>
-                  <option value="transferencia">Transferência</option>
-                  <option value="debito">Débito</option>
-                  <option value="dinheiro">Dinheiro</option>
-                  <option value="outro">Outro</option>
-                </select>
-              </label>
-            </div>
-            <button type="button" id="invoice-register-manual" class="btn btn-teal" disabled>Registrar pagamento e vincular</button>
-            <p class="info-note invoice-duplicate-note">Atenção: ao importar o extrato bancário posteriormente, não selecione novamente o pagamento já lançado manualmente. Isso duplicaria a saída.</p>
-            <div class="status" id="invoice-message" role="status"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+   </div>
   </section>
-  
-  </div>
+ </div>
 </details><details class="fin-collapse" id="imports-conciliacao">
   <summary><span>Movimentações e conciliação de boletos</span><small>Despesas de cartão importadas e vínculo com saídas do banco</small></summary>
   <div class="fin-collapse-panel">
@@ -3589,7 +3528,7 @@ init();
 <script src="./financeiro-import.js?v=20261119classe1" defer></script>
 <script src="./financeiro-import-categorias.js?v=20261119editold1" defer></script>
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
-<script src="./financeiro-faturas.js?v=20261118visibilidade1" defer></script>
+
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-itau-core.js?v=20261119review2" defer></script>
 <script src="./financeiro-itau-mensal-core.js?v=20261119month1" defer></script>
