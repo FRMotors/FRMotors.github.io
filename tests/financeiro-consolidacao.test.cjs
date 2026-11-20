@@ -53,7 +53,8 @@ test('Fluxo de faturas e navegação usam uma única regra de status e agenda',(
  const agAt=html.indexOf('financeiro-agenda-faturas.js');
  const cbAt=html.indexOf('financeiro-faturas-cartoes.js');
  assert.ok(coreAt>=0&&coreAt<agAt&&agAt<cbAt);
- assert.match(cards,/frInvoiceStateCore\.buildInvoiceStates/);
+ assert.match(cards,/const engine=window\.frInvoiceStateCore/);
+ assert.match(cards,/engine\.buildInvoiceStates/);
  assert.match(agenda,/engine\.buildInvoiceStates/);
  assert.match(cards,/selectView\?\.\('agenda'\)/);
  assert.match(nav,/if\(next==='agenda'\)window\.frInvoicesAgendaUI/);
