@@ -235,7 +235,8 @@ function init(){
  $('cl-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault();else active=null});
  $('cl-dialog')?.addEventListener('close',()=>{if(!busy)active=null});
  $('modal-supplier')?.addEventListener('close',()=>refreshSuppliers());
- if(!document.querySelector('[data-view-panel="classify"]')?.hidden)refresh();
+ if(!document.querySelector('[data-view-panel="imports"]')?.hidden&&
+   document.getElementById('imports-classificacao')?.open)refresh();
 }
 window.frClassificationUI={refresh,__test:{assigned,label,atBR}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
