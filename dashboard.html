@@ -62,6 +62,13 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 8px 22px rgba(23,33,38,.05)}
 .card span{display:block;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase}
 .card strong{display:block;margin-top:8px;font-size:24px}
+.dashboard-os-profit{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;border-left:4px solid var(--teal)}
+.dashboard-os-profit>div{flex:1 1 320px;min-width:0}
+.dashboard-os-profit h2{margin:5px 0 5px;font-size:17px}
+.dashboard-os-profit p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+.dashboard-os-profit>strong{font-size:30px;font-weight:850;color:var(--ink);font-variant-numeric:tabular-nums}
+.dashboard-os-profit>strong.negative{color:#aa4639}
+@media(max-width:540px){.dashboard-os-profit{align-items:flex-start}.dashboard-os-profit>strong{font-size:27px}}
 .empty{margin-top:16px;padding:26px;text-align:center;color:var(--muted);background:#fff;border:1px dashed #cbd5d9;border-radius:16px}
 .dashboard-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
 .dashboard-controls label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase}
@@ -238,6 +245,14 @@ body{margin:0;padding-top:78px;background:#f4f7f8;color:var(--ink);font-family:s
     <div class="card"><span>Dentro da média</span><strong id="kpiOk">0</strong></div>
     <div class="card"><span>Abaixo da média</span><strong id="kpiAbaixo">0</strong></div>
   </section>
+  <section class="card dashboard-os-profit" aria-labelledby="dashboard-os-profit-title">
+    <div>
+      <span class="import-note">Base de ordens de serviço · ano e empresa selecionados</span>
+      <h2 id="dashboard-os-profit-title">Margem das O.S.</h2>
+      <p id="dashboard-os-profit-note">Líquido ÷ bruto × 100. Considera gastos e descontos da planilha. Não representa o lucro líquido contábil da oficina.</p>
+    </div>
+    <strong id="kpiMargem">—</strong>
+  </section>
 
   <div class="table-wrap">
     <table class="summary-table">
@@ -341,7 +356,8 @@ document.getElementById('financialCheckToggle')?.addEventListener('click',()=>{
   document.getElementById('financialCheckToggle')?.setAttribute('aria-expanded',collapsed?'false':'true');
 });
 </script>
-<script src="./dashboard-data-v4481.js?build=20261016b"></script>
+<script src="./financeiro-margem-os-core.js?v=20261121os1"></script>
+<script src="./dashboard-data-v4481.js?build=20261121os1"></script>
 
 
 <!-- V4.4.67 · Símbolo FR padronizado com Ficha/O.S. -->
