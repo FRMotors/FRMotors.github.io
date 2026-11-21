@@ -113,6 +113,7 @@ function selectView(next,options={}){
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
   
   if(next==='overview')window.frRealDashboard?.refresh?.();
+   if(next==='overview')window.frOrdersProfitUI?.refresh?.();
    if(next==='overview')window.frDeadlinesUI?.refresh?.();
   if(next==='overview')window.frCashDetailUI?.refresh?.();
   
@@ -125,7 +126,7 @@ function selectView(next,options={}){
    if(next==='payables')window.frBoletoTrashUI?.refresh?.();
    if(next==='payables')window.frDeadlinesUI?.refresh?.();
    if(next==='forecast')window.frForecastUI?.refresh?.();
-   if(next==='reports'){window.frManagerReportsUI?.refresh?.();window.frCategoryReportUI?.refresh?.();}
+   if(next==='reports'){window.frManagerReportsUI?.refresh?.();window.frCategoryReportUI?.refresh?.();window.frOrdersProfitUI?.refresh?.();}
    if(next==='imports'&&byId('imports-classificacao')?.open)window.frClassificationUI?.refresh?.();
    if(next==='cardbills'){
   window.frCardBillsUI?.refresh?.();
