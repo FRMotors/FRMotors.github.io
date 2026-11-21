@@ -120,3 +120,18 @@
  .rg-view .rg-monthly-table th,.rg-view .rg-monthly-table td{font-size:8px;padding:5px}
  .rg-view .card,.rg-view .rg-metric{break-inside:avoid}
 }
+/* Margem das O.S.: fonte do Dashboard, não somar ao fluxo bancário. */
+.rg-view .rg-os-profit{margin:0 0 18px;padding:17px}
+.rg-view .rg-os-profit>.card-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:0}
+.rg-view .rg-os-profit .card-head h2{font-size:17px;margin:3px 0 5px}
+.rg-view .rg-os-profit .card-head p{font-size:11px;line-height:1.5;max-width:650px;margin:0}
+.rg-view .rg-os-company-label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;color:#617986}
+.rg-view .rg-os-company-label select{max-width:240px;min-width:175px}
+.rg-view .rg-os-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rg-view .rg-os-metrics>div{display:flex;flex-direction:column;gap:6px;min-width:0;padding:13px;border:1px solid #e2e9ed;border-radius:11px}
+.rg-view .rg-os-metrics span{font-size:11px;color:#607887}
+.rg-view .rg-os-metrics strong{font-size:21px;line-height:1.2;color:#244a59;overflow-wrap:anywhere}
+.rg-view .rg-os-metrics strong.negative{color:#aa4639}
+.rg-view .rg-os-profit>.info-note{font-size:11px;line-height:1.5;margin:10px 0 0}
+@media(max-width:1000px){.rg-view .rg-os-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.rg-view .rg-os-profit{padding:12px}.rg-view .rg-os-metrics{grid-template-columns:1fr}.rg-view .rg-os-company-label,.rg-view .rg-os-company-label select{width:100%;max-width:none}}
