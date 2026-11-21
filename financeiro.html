@@ -286,6 +286,11 @@
 .real-dashboard-metrics>div>strong{font-size:22px;line-height:1.25;overflow-wrap:anywhere;color:var(--ink)}
 .real-dashboard-metrics strong.negative{color:var(--bad)}
 .real-dashboard-metrics small{font-size:10px;color:var(--muted);line-height:1.45}
+.real-os-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.real-os-filters label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted)}
+.real-os-filters select{max-width:190px;min-width:125px;min-height:36px;font-size:12px}
+.real-os-panel{background:var(--surface,#fff)}
+@media(max-width:700px){.real-os-filters{width:100%}.real-os-filters label{flex:1 1 120px}.real-os-filters select{width:100%;max-width:none;min-width:0}}
 .real-margin-explainer{margin:-2px 0 0;border-top:1px solid var(--stroke);padding-top:10px}
 .real-margin-explainer summary{cursor:pointer;font-size:11px;font-weight:750;color:var(--ink)}
 .real-margin-explainer p{font-size:11px;color:var(--muted);line-height:1.5;margin:8px 0 0}
@@ -1021,7 +1026,7 @@
          <span class="rg-source">Caixa confirmado</span>
          <h3>Resultado realizado</h3><strong id="rg-net">—</strong>
          <small>Entradas confirmadas menos saídas confirmadas</small>
-         <small class="rg-margin-readout">Margem de lucro estimada*: <b id="rg-margin">—</b></small>
+         <small class="rg-margin-readout">Margem estimada do caixa*: <b id="rg-margin">—</b></small>
          <small id="rg-margin-info">* Indicador de caixa (resultado ÷ entradas), não lucro contábil.</small>
         </section>
         <section class="rg-metric rg-doc" aria-label="Compras documentais de autopeças">
@@ -1040,7 +1045,24 @@
          <small><span id="rg-uncat-value">—</span> nas movimentações confirmadas</small>
         </section>
        </div>
-       <section class="card rg-cat-analysis" id="rg-category-analysis" aria-labelledby="rg-category-analysis-title">
+       <section class="card rg-os-profit" id="rg-os-profit" aria-labelledby="rg-os-title">
+          <div class="card-head"><div>
+            <p class="eyebrow">Base de vendas · Dashboard da oficina</p>
+            <h2 id="rg-os-title">Margem das ordens de serviço</h2>
+            <p>Os filtros de ano e mês dos relatórios são respeitados. Valores da planilha de cada carro, independentes do caixa.</p>
+          </div><label class="rg-os-company-label">Empresa
+             <select id="rg-os-company" class="filter-select" aria-label="Empresa na margem das ordens de serviço"><option value="TODAS">Todas as empresas</option></select>
+          </label></div>
+          <div class="rg-os-metrics">
+            <div><span>Bruto das O.S.</span><strong id="rg-os-gross">—</strong></div>
+            <div><span>Gastos das O.S.</span><strong id="rg-os-costs">—</strong></div>
+            <div><span>Líquido das O.S.</span><strong id="rg-os-net">—</strong></div>
+            <div><span>Margem sobre bruto</span><strong id="rg-os-margin">—</strong></div>
+          </div>
+          <p id="rg-os-note" class="info-note" role="status" aria-live="polite">Aguardando base de ordens de serviço...</p>
+          <p class="info-note">Margem = líquido ÷ bruto × 100. Despesas e descontos da O.S. já estão refletidos no líquido. Não é lucro líquido contábil, nem deve ser somada às movimentações bancárias.</p>
+        </section>
+        <section class="card rg-cat-analysis" id="rg-category-analysis" aria-labelledby="rg-category-analysis-title">
         <div class="card-head">
          <div><p class="eyebrow">Análise financeira por classificação</p>
           <h2 id="rg-category-analysis-title">Receitas e despesas por categoria</h2>
@@ -1389,7 +1411,7 @@
                 <div><span>Entradas confirmadas</span><strong id="real-cash-in">—</strong></div>
                 <div><span>Saídas confirmadas</span><strong id="real-cash-out">—</strong></div>
                 <div><span>Resultado do período</span><strong id="real-cash-net">—</strong></div>
-                <div><span>Margem de lucro estimada*</span><strong id="real-cash-margin">—</strong>
+                <div><span>Margem estimada do caixa*</span><strong id="real-cash-margin">—</strong>
                   <small id="real-cash-margin-status">Aguardando cálculo do caixa.</small></div>
               </div>
               <p class="real-dashboard-fine"><span id="real-cash-count">Aguardando...</span> O resultado representa entradas menos saídas, não o saldo bancário.</p>
@@ -1409,6 +1431,30 @@
                 <th class="money">Saídas</th><th class="money">Resultado</th></tr></thead>
                 <tbody id="real-month-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
               </details>
+            </section>
+            <section class="real-dashboard-panel real-dashboard-cash real-os-panel" id="real-os-profit" aria-labelledby="real-os-profit-title">
+              <div class="real-dashboard-panel-head">
+                <div>
+                  <h3 id="real-os-profit-title">Margem das ordens de serviço</h3>
+                  <p>Dados da BASE do Dashboard: receita bruta, gastos e líquido de cada carro. Independente das entradas e saídas bancárias.</p>
+                </div>
+                <div class="real-os-filters">
+                  <label>Ano<select id="real-os-year" class="filter-select" aria-label="Ano das ordens de serviço"><option value="">Carregando...</option></select></label>
+                  <label>Mês<select id="real-os-month" class="filter-select" aria-label="Mês das ordens de serviço"><option value="todos">Todos os meses</option></select></label>
+                  <label>Empresa<select id="real-os-company" class="filter-select" aria-label="Empresa das ordens de serviço"><option value="TODAS">Todas as empresas</option></select></label>
+                </div>
+              </div>
+              <div class="real-dashboard-metrics">
+                <div><span>Bruto das O.S.</span><strong id="real-os-gross">—</strong></div>
+                <div><span>Gastos registrados</span><strong id="real-os-costs">—</strong></div>
+                <div><span>Líquido das O.S.</span><strong id="real-os-net">—</strong></div>
+                <div><span>Margem sobre bruto</span><strong id="real-os-margin">—</strong><small>Líquido ÷ bruto × 100</small></div>
+              </div>
+              <p class="real-dashboard-fine" id="real-os-count" role="status" aria-live="polite">Aguardando ordens de serviço do Dashboard...</p>
+              <details class="real-margin-explainer"><summary>Entenda a diferença entre margem das O.S. e lucro contábil</summary>
+                <p>O líquido já reflete os gastos e descontos informados em cada O.S. Não subtraímos essas despesas de novo. Esta é uma margem da operação por ordem de serviço, não lucro líquido contábil: salários, impostos, despesas gerais e outros custos podem não estar integralmente incluídos. Os totais da planilha não são somados ao Fluxo de Caixa.</p>
+              </details>
+              <p class="real-dashboard-fine"><a href="./dashboard.html">Consultar o Dashboard de vendas e O.S.</a></p>
             </section>
             <section class="real-dashboard-panel">
               <div class="real-dashboard-panel-head"><div><h3>Contas a pagar</h3><p>Compromissos sem baixa. Valores de referência dos boletos.</p></div>
@@ -3563,8 +3609,10 @@ init();
 <script src="./financeiro-faturas-estado-core.js?v=20261120unificado1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
+<script src="./financeiro-margem-os-core.js?v=20261121orders1" defer></script>
 <script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
 <script src="./financeiro-resumo-operacional.js?v=20261121profit1" defer></script>
+<script src="./financeiro-margem-os.js?v=20261121orders1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
 <script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
