@@ -10,6 +10,7 @@
 const $=id=>document.getElementById(id);
 const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Cartão não informado');
 const docCore=window.frDocumentsStatusCore;
+const marginCore=window.frProfitMarginCore;
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[ch]));
 const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(v)||0)/100);
 const cents=v=>{const n=Number(v);return Number.isFinite(n)?Math.round(n*100):0};
@@ -73,6 +74,12 @@ function renderSummary(){
  const t=cashTotals(cash);
  put('rg-income',brl(t.incoming));put('rg-expense',brl(t.outgoing));
  put('rg-net',brl(t.net));
+ const margin=marginCore?.calculate(t.incoming,t.outgoing);
+ put('rg-margin',margin?.available?marginCore.format(margin.percent):'—');
+ put('rg-margin-info',margin?.available?
+  '* Estimativa pelo caixa confirmado (resultado ÷ entradas). Não é lucro contábil.':
+  '* Sem entradas confirmadas neste período. Margem indisponível.');
+ $('rg-margin')?.classList.toggle('rg-negative',Boolean(margin?.available&&margin.percent<0));
  put('rg-auto',brl(total(pur,'valor_registrado')));
  put('rg-invoices',brl(total(inv,'valor_documental')));
  const nocat=cash.filter(r=>r.tipo==='saida'&&!String(r.categoria||'').trim());
@@ -230,7 +237,7 @@ async function refresh(){
  })().catch(e=>{
    loaded=false;
    const root=$('rg-months');if(root)root.innerHTML='<tr><td colspan="8" class="rg-empty">Não foi possível consultar a base.</td></tr>';
-   ['rg-income','rg-expense','rg-net','rg-auto','rg-invoices','rg-uncat','rg-year-cash','rg-year-prior'].forEach(id=>put(id,'—'));
+   ['rg-income','rg-expense','rg-net','rg-margin','rg-auto','rg-invoices','rg-uncat','rg-year-cash','rg-year-prior'].forEach(id=>put(id,'—'));
    ['rg-categories','rg-suppliers','rg-paid-suppliers','rg-cards'].forEach(id=>{if($(id))$(id).textContent='Dados indisponíveis';});
    if($('rg-cash-rows'))$('rg-cash-rows').textContent='Dados indisponíveis';
    put('rg-status','Falha ao carregar relatórios: '+(e.message||e));
