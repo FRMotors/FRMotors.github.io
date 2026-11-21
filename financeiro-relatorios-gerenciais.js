@@ -202,6 +202,7 @@ function renderDetail(){
 function render(){
  if(!loaded)return;
  renderSummary();renderRankings();renderMonthly();renderDetail();
+  window.frOrdersProfitUI?.renderReports?.();
  const time=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}).format(new Date());
  put('rg-status','Atualizado às '+time+'. Relatórios somente leitura; fontes documentais não somadas ao caixa.');
 }
