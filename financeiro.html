@@ -280,11 +280,16 @@
 .real-dashboard-panel-head>.btn{padding:8px 10px}
 .real-dashboard-period{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted)}
 .real-dashboard-period select{font-size:12px;max-width:100%;min-width:195px}
-.real-dashboard-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.real-dashboard-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .real-dashboard-metrics>div{display:flex;flex-direction:column;gap:5px;min-width:0;border:1px solid var(--stroke);border-radius:10px;padding:13px}
 .real-dashboard-metrics>div>span{font-size:11px;color:var(--muted)}
 .real-dashboard-metrics>div>strong{font-size:22px;line-height:1.25;overflow-wrap:anywhere;color:var(--ink)}
 .real-dashboard-metrics strong.negative{color:var(--bad)}
+.real-dashboard-metrics small{font-size:10px;color:var(--muted);line-height:1.45}
+.real-margin-explainer{margin:-2px 0 0;border-top:1px solid var(--stroke);padding-top:10px}
+.real-margin-explainer summary{cursor:pointer;font-size:11px;font-weight:750;color:var(--ink)}
+.real-margin-explainer p{font-size:11px;color:var(--muted);line-height:1.5;margin:8px 0 0}
+@media(max-width:1030px){.real-dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .real-dashboard-fine{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
 .real-dashboard-lead{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
 .real-dashboard-lead strong{font-size:24px;font-weight:800;line-height:1.15;overflow-wrap:anywhere}
@@ -560,7 +565,7 @@
 <link rel="stylesheet" href="./financeiro-painel-mensal.css?v=20261118calendar1">
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
-<link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261118reports1">
+<link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261121profit1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cartoes1">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
@@ -1016,6 +1021,8 @@
          <span class="rg-source">Caixa confirmado</span>
          <h3>Resultado realizado</h3><strong id="rg-net">—</strong>
          <small>Entradas confirmadas menos saídas confirmadas</small>
+         <small class="rg-margin-readout">Margem de lucro estimada*: <b id="rg-margin">—</b></small>
+         <small id="rg-margin-info">* Indicador de caixa (resultado ÷ entradas), não lucro contábil.</small>
         </section>
         <section class="rg-metric rg-doc" aria-label="Compras documentais de autopeças">
          <span class="rg-source">Documento · não somar ao caixa</span>
@@ -1382,8 +1389,13 @@
                 <div><span>Entradas confirmadas</span><strong id="real-cash-in">—</strong></div>
                 <div><span>Saídas confirmadas</span><strong id="real-cash-out">—</strong></div>
                 <div><span>Resultado do período</span><strong id="real-cash-net">—</strong></div>
+                <div><span>Margem de lucro estimada*</span><strong id="real-cash-margin">—</strong>
+                  <small id="real-cash-margin-status">Aguardando cálculo do caixa.</small></div>
               </div>
               <p class="real-dashboard-fine"><span id="real-cash-count">Aguardando...</span> O resultado representa entradas menos saídas, não o saldo bancário.</p>
+              <details class="real-margin-explainer"><summary>* Entenda a margem estimada</summary>
+                <p>Margem = (entradas confirmadas − saídas confirmadas) ÷ entradas confirmadas × 100, no período selecionado. É uma aproximação pelo movimento de caixa, <strong>não o lucro contábil</strong>. Transferências, empréstimos, investimentos, impostos ou gastos sem baixa podem distorcer o indicador. Faturas e compras documentais não são somadas novamente.</p>
+              </details>
               <div class="real-trend" aria-label="Evolução mensal do caixa homologado">
                <div class="real-trend-heading">
                 <h4>Evolução dos últimos seis meses</h4>
@@ -3551,7 +3563,8 @@ init();
 <script src="./financeiro-faturas-estado-core.js?v=20261120unificado1" defer></script>
 <script src="./financeiro-agenda-faturas.js?v=20261118prime1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
-<script src="./financeiro-resumo-operacional.js?v=20261118cartoes1" defer></script>
+<script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261121profit1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
 <script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
@@ -3559,7 +3572,7 @@ init();
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>
-<script src="./financeiro-relatorios-gerenciais.js?v=20261119fix1" defer></script>
+<script src="./financeiro-relatorios-gerenciais.js?v=20261121profit1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261120classifyadmin1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261119layout2" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>

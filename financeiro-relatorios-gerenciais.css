@@ -20,6 +20,11 @@
 .rg-view .rg-metric.rg-income{border-left:3px solid #28a390}
 .rg-view .rg-metric.rg-expense{border-left:3px solid #d19470}
 .rg-view .rg-metric.rg-result{border-left:3px solid #7b9dab}
+.rg-view .rg-metric .rg-margin-readout{border-top:1px solid #e2e9ed;margin-top:6px;padding-top:9px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;color:#496370}
+.rg-view .rg-metric .rg-margin-readout b{font-size:17px;white-space:nowrap;color:#244a59}
+.rg-view .rg-metric .rg-margin-readout b.rg-negative{color:#ae4634}
+.rg-view .rg-metric #rg-margin-info{line-height:1.5}
+
 .rg-view .rg-metric.rg-doc{background:#fafcfc}
 .rg-view .rg-metric.rg-doc strong{font-size:22px}
 .rg-view .rg-metric.rg-uncat strong{font-size:22px}

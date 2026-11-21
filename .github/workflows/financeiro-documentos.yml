@@ -16,6 +16,10 @@ on:
       - 'financeiro-documentos-atualizado.css'
       - 'financeiro-central-auditoria.js'
       - 'financeiro-relatorios-gerenciais.js'
+      - 'financeiro-margem-core.js'
+      - 'financeiro-resumo-operacional.js'
+      - 'financeiro-relatorios-gerenciais.css'
+      - 'tests/financeiro-margem-lucro.test.cjs'
       - 'financeiro-baixas-operacionais.js'
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
@@ -44,6 +48,10 @@ on:
       - 'financeiro-documentos-atualizado.css'
       - 'financeiro-central-auditoria.js'
       - 'financeiro-relatorios-gerenciais.js'
+      - 'financeiro-margem-core.js'
+      - 'financeiro-resumo-operacional.js'
+      - 'financeiro-relatorios-gerenciais.css'
+      - 'tests/financeiro-margem-lucro.test.cjs'
       - 'financeiro-baixas-operacionais.js'
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
@@ -69,4 +77,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar vinculações, anos e valores documentais
-        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs tests/financeiro-preferencias-fornecedores.test.cjs tests/financeiro-classificacao-administracao.test.cjs
+        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs tests/financeiro-preferencias-fornecedores.test.cjs tests/financeiro-classificacao-administracao.test.cjs tests/financeiro-margem-lucro.test.cjs
