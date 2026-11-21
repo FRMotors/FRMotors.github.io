@@ -1239,6 +1239,18 @@ function dRender(){
 
   document.getElementById('kpiBruto').textContent=dashMoney.format(sum('bruto'));
   document.getElementById('kpiLiquido').textContent=dashMoney.format(sum('liquido'));
+  const orderProfit=window.frOrdersProfitCore?.summarize(rows);
+  const marginKpi=document.getElementById('kpiMargem');
+  if(marginKpi){
+    marginKpi.textContent=orderProfit?.available?
+      window.frOrdersProfitCore.formatPercent(orderProfit.margin):'—';
+    marginKpi.classList.toggle('negative',Boolean(orderProfit?.available&&orderProfit.margin<0));
+  }
+  const marginNote=document.getElementById('dashboard-os-profit-note');
+  if(marginNote)marginNote.textContent=orderProfit?.available?
+    orderProfit.count+' O.S. no filtro · Líquido ÷ bruto × 100. Gastos e descontos já refletidos no líquido. Não é lucro contábil.':
+    'Não há receita bruta de O.S. suficiente nesse filtro para calcular uma margem.';
+
   document.getElementById('kpiGasto').textContent=dashMoney.format(sum('gasto'));
   document.getElementById('kpiOs').textContent=String(rows.length);
   document.getElementById('kpiOk').textContent=String(rows.filter(r=>dNorm(r.status)==='OK').length);
