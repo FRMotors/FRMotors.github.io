@@ -7,6 +7,7 @@
 const $=id=>document.getElementById(id);
 const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cents=n=>Math.round(Number(n||0)*100);
+const marginCore=window.frProfitMarginCore;
 const brl=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
 const ymd=()=>{
  const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
@@ -170,6 +171,12 @@ function drawCash(){
  put('real-cash-in',brl(ins/100));
  put('real-cash-out',brl(outs/100));
  put('real-cash-net',brl((ins-outs)/100));
+ const margin=marginCore?.calculate(ins,outs);
+ put('real-cash-margin',margin?.available?marginCore.format(margin.percent):'—');
+ put('real-cash-margin-status',margin?.available?
+  'Resultado ÷ entradas do caixa. Não é lucro contábil.':
+  'Sem entradas confirmadas; percentual indisponível.');
+ $('real-cash-margin')?.classList.toggle('negative',Boolean(margin?.available&&margin.percent<0));
  put('real-cash-count',filtered.length+' movimentação(ões) confirmada(s) no período selecionado.');
  if($('real-cash-net'))$('real-cash-net').classList.toggle('negative',ins<outs);
  const monthly=cashByMonth().slice(0,12);
@@ -264,7 +271,8 @@ async function refresh(){
    hasData=false;
    put('real-status','Não foi possível consultar a base homologada: '+(e.message||e)+'. Nenhum total parcial foi exibido.');
    for(const id of ['real-cash-in','real-cash-out','real-cash-net','real-compare-in','real-compare-out',
-    'real-compare-net','real-bill-value','real-card-value'])put(id,'—');
+    'real-compare-net','real-bill-value','real-card-value','real-cash-margin'])put(id,'—');
+   put('real-cash-margin-status','Não foi possível calcular a margem de caixa.');
    if($('real-trend-list'))$('real-trend-list').innerHTML=
     '<p class="real-trend-empty">Evolução temporariamente indisponível. Tente atualizar.</p>';
    if($('real-month-rows'))$('real-month-rows').innerHTML=
