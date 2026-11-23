@@ -30,7 +30,8 @@ function drawList(){
   '<td><label class="itau-approve-pick"><input type="checkbox" data-itau-approve-id="'+safe(x.id)+'"'+
    (selected.has(x.id)?' checked':'')+'> <span>Incluir</span></label></td>'+
   '<td>'+safe(dateBR(x.data_lancamento))+'</td>'+
-  '<td>'+safe(x.descricao)+'</td>'+
+  '<td>'+safe(x.descricao)+
+  '<small class="hist-subline">'+safe(x.arquivo_nome||'PDF Itaú')+'</small></td>'+
   '<td>'+safe(x.natureza==='entrada'?'Entrada':'Saída')+'</td>'+
   '<td class="money">'+money(x.valor)+'</td></tr>').join(''):
   '<tr><td colspan="5">Nenhum lançamento novo aguardando homologação.</td></tr>';
