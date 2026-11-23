@@ -516,7 +516,10 @@ function init(){
  document.querySelectorAll('[data-ops-pay]').forEach(button=>
   button.addEventListener('click',()=>openPay().catch(e=>write('op-pay-error',String(e)))));
  document.querySelectorAll('[data-ops-new]').forEach(button=>button.addEventListener('click',openAdd));
- $('op-pay-select')?.addEventListener('change',()=>{ $('op-pay-ack').checked=false;updateBank() });
+ $('op-pay-select')?.addEventListener('change',()=>{
+  $('op-pay-ack').checked=false;$('op-pay-search').value='';updateBank()
+ });
+ $('op-pay-search')?.addEventListener('input',()=>updateBank({preserve:true}));
  $('op-pay-delete')?.addEventListener('click',()=>{
   const doc=chosen();
   if(doc?.tipo==='avulso')requestDelete(doc.id);
@@ -529,15 +532,28 @@ function init(){
  $('op-delete-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
  $('op-delete-dialog')?.addEventListener('close',()=>{deleteTarget=null;});
  $('op-pay-movement')?.addEventListener('change',()=>{$('op-pay-ack').checked=false;movementChanged()});
- ['op-pay-discount','op-pay-fees'].forEach(id=>$(id)?.addEventListener('input',recalc));
+ ['op-pay-discount','op-pay-fees','op-pay-adjust','op-pay-reason']
+  .forEach(id=>$(id)?.addEventListener('input',recalc));
  $('op-pay-ack')?.addEventListener('change',recalc);
  $('op-pay-use-difference')?.addEventListener('click',()=>{
   const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
   if(!doc||!bank)return;
   const fees=validAmount($('op-pay-fees').value);
   if(fees===null)return;
-  const diff=cents(doc.valor)+fees-cents(bank.valor);
+  const adjustment=signedAmount($('op-pay-adjust').value);
+  if(adjustment===null)return;
+  const diff=cents(doc.valor)+fees+adjustment-cents(bank.valor);
   if(diff>0&&diff<=cents(doc.valor)){$('op-pay-discount').value=(diff/100).toFixed(2);recalc()}
+ });
+ $('op-pay-use-adjust')?.addEventListener('click',()=>{
+  const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
+  const discount=validAmount($('op-pay-discount').value);
+  const fees=validAmount($('op-pay-fees').value);
+  if(doc?.tipo!=='homologado'||!bank||discount===null||fees===null)return;
+  const adjustment=cents(bank.valor)-(cents(doc.valor)-discount+fees);
+  $('op-pay-adjust').value=(adjustment/100).toFixed(2);
+  $('op-pay-reason').focus();
+  recalc();
  });
  $('op-pay-form')?.addEventListener('submit',confirmPay);
  $('op-new-form')?.addEventListener('submit',createManual);
