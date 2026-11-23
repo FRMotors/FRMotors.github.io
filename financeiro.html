@@ -1813,25 +1813,39 @@
                 <label style="grid-column:1/-1">Saída já confirmada no Fluxo de Caixa ou extrato importado
                   <select id="op-pay-movement" required><option value="">Selecione um boleto primeiro</option></select>
                 </label>
+                <label style="grid-column:1/-1">Buscar pagamento por valor, descrição ou data
+                  <input id="op-pay-search" type="search" autocomplete="off" placeholder="Ex.: 430,00 ou fornecedor ou 2026-11">
+                </label>
+                <p id="op-pay-movement-count" class="info-note" role="status" style="grid-column:1/-1">Selecione um boleto para consultar os pagamentos.</p>
                 <div style="grid-column:1/-1" class="fin-op-base">
                   <span id="op-pay-source">Selecione um compromisso.</span>
-                  <strong>Valor de referência: <span id="op-pay-base">—</span></strong>
+                  <strong>Valor original da planilha: <span id="op-pay-base">—</span></strong>
+                  <strong>Pagamento bancário selecionado: <span id="op-pay-real">—</span></strong>
                 </div>
                 <label>Desconto efetivo (R$)
                   <input id="op-pay-discount" type="number" min="0" step="0.01" value="0.00" required>
                 </label>
-                <label>Juros e multa (R$)
+                <label>Juros e multa comprovados (R$)
                   <input id="op-pay-fees" type="number" min="0" step="0.01" value="0.00" required>
                 </label>
+                <label id="op-pay-adjust-wrap" style="grid-column:1/-1" hidden>Ajuste do valor original da planilha (R$, positivo ou negativo)
+                  <input id="op-pay-adjust" type="number" step="0.01" value="0.00">
+                </label>
+                <label id="op-pay-reason-wrap" style="grid-column:1/-1" hidden>Justificativa do ajuste ou da data de pagamento (mínimo de 12 caracteres)
+                  <textarea id="op-pay-reason" rows="3" maxlength="500" placeholder="Ex.: Valor corrigido pelo fornecedor, comprovante conferido."></textarea>
+                </label>
               </div>
-              <button type="button" id="op-pay-use-difference" class="btn" hidden>Usar diferença como desconto</button>
-              <p id="op-pay-info" class="info-note" role="status">Os valores precisam coincidir com a saída bancária selecionada.</p>
+              <div class="fin-op-adjust-actions">
+                <button type="button" id="op-pay-use-difference" class="btn" hidden>Aplicar diferença como desconto comprovado</button>
+                <button type="button" id="op-pay-use-adjust" class="btn" hidden>Usar diferença como ajuste da planilha</button>
+              </div>
+              <p id="op-pay-info" class="info-note" role="status">O valor da planilha pode diferir do pagamento real. Registre o ajuste e a justificativa, sem criar outra saída.</p>
               <label class="fin-op-ack"><input type="checkbox" id="op-pay-ack" required>
                 Confirmei que esta saída corresponde ao boleto selecionado e não deve ser registrada outra vez.</label>
               <p id="op-pay-error" class="status" role="alert"></p>
               <div class="form-actions"><button type="button" class="btn" data-op-close="op-pay-dialog">Cancelar</button>
                <button type="submit" id="op-pay-confirm" class="btn btn-primary" disabled>Confirmar baixa sem duplicação</button></div>
-              <p class="info-note">A lista utiliza saídas confirmadas do Fluxo de Caixa e de extratos já importados, com a regra de até três dias entre vencimento e pagamento. Se a saída não aparecer, confirme a importação antes da baixa. A conciliação nunca inventa pagamentos.</p>
+              <p class="info-note">Em boletos importados, pagamentos com valor diferente ou fora dos três dias do vencimento podem ser vinculados com justificativa. Desconto e juros devem refletir fatos comprovados; uma correção do valor original deve usar “Ajuste da planilha”. Se o pagamento não constar na lista, importe o extrato primeiro. A baixa nunca inventa pagamentos.</p>
             </div>
           </form>
         </dialog>
@@ -3600,7 +3614,7 @@ init();
 <script src="./financeiro-historico.js?v=20261119review2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261118trash1" defer></script>
-<script src="./financeiro-baixas-operacionais.js?v=20261119fix1" defer></script>
+<script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-documentos.js?v=20261120suppliercloud1" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261118cartoes1" defer></script>
