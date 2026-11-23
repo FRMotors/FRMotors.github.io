@@ -5,6 +5,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const statusCore=window.frDocumentsStatusCore;
+const purposeCore=window.frDocumentPurposeCore;
 const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Não informado');
 const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0);
@@ -14,7 +15,7 @@ const write=(id,text)=>{const node=$(id);if(node)node.textContent=text};
 const groupName=g=>g==='autopecas'?'Autopeças':'Cartões / outros meios';
 const monthOf=r=>(r.grupo==='cartoes'?r.mes_fatura:r.vencimento)?.slice(0,7)||'sem-mes';
 const inYear=r=>{const y=$('doc-year')?.value||'todos';return y==='todos'||monthOf(r).slice(0,4)===y;};
-let documents=[],liveMatches=new Map(),supplierCatalogue=[],selectedSuppliers=new Set(),selectionKey=null,selectionLoaded=false,selectionUserId=null,selectionSavedSnapshot=null,selectionSaving=false,page=0,monthPage=0,loading=null;
+let documents=[],cardPurposes=new Map(),liveMatches=new Map(),supplierCatalogue=[],selectedSuppliers=new Set(),selectionKey=null,selectionLoaded=false,selectionUserId=null,selectionSavedSnapshot=null,selectionSaving=false,page=0,monthPage=0,loading=null;
 const PAGE_SIZE=35;
 const MONTH_PAGE_SIZE=12;
 const fields='id,grupo,codigo_origem,linha_excel,data_evento,vencimento,data_compra,mes_fatura,descricao,fornecedor_nome,cartao_nome,parcela,meio,valor_registrado,valor_cheio_documento,valor_com_desconto_informado,valor_pago_informado,data_pagamento_informada,situacao_origem,incluir,revisao_origem';
@@ -78,14 +79,6 @@ function drawSummary(){
  write('doc-ignored-count',String(ignored.length));
  write('doc-paid-origin',String(auto.filter(r=>r.situacao_origem==='Pago').length));
  write('doc-credits-count',String(cards.filter(r=>r.valor_registrado<0).length));
- const suppliers=summaryRows(auto,r=>r.fornecedor_nome||r.descricao);
- const supplierBody=$('doc-supplier-rows');
- if(supplierBody)supplierBody.innerHTML=suppliers.length?suppliers.map(r=>
-  '<tr><td>'+escapeHTML(r.name)+'</td><td class="money">'+r.count+'</td>'+
-  '<td class="money">'+brl(r.full/100)+'</td>'+
-  '<td class="money">'+(r.discountCount?brl(r.discountQuote/100)+' <small>'+r.discountCount+' informados</small>':'—')+'</td>'+
-  '<td class="money">'+(r.paidCount?brl(r.paid/100)+' <small>'+r.paidCount+' informados</small>':'—')+'</td></tr>'
- ).join(''):'<tr><td colspan="5" class="empty">Sem fornecedores na carteira incluída.</td></tr>';
  const summaries=summaryRows(cards,r=>cardName(r.cartao_nome));
  const cardBody=$('doc-card-rows');
  if(cardBody)cardBody.innerHTML=summaries.length?summaries.map(r=>
@@ -93,14 +86,20 @@ function drawSummary(){
   '<td class="money">'+brl(r.total/100)+'</td>'+
   '<td class="money">'+r.credits+'</td></tr>'
  ).join(''):'<tr><td colspan="4" class="empty">Sem lançamentos de cartões incluídos.</td></tr>';
- const byMonth=new Map();
- included.forEach(r=>{
-  const key=monthOf(r);
-  let value=byMonth.get(key);
-  if(!value){value={auto:0,autoCount:0,card:0,cardCount:0};byMonth.set(key,value)}
-  if(r.grupo==='autopecas'){value.auto+=cents(r.valor_registrado);value.autoCount++}
-  else{value.card+=cents(r.valor_registrado);value.cardCount++}
- });
+ // Uma compra só integra a coluna Oficina quando marcada manualmente com esta finalidade.
+ // Categorias (combustível, Mercado Livre etc.) não determinam por si mesmas o uso.
+ const byMonth=purposeCore.summarizeMonths(included,cardPurposes);
+ const classified=[...byMonth.values()].reduce((a,v)=>{
+  a.oficina+=v.oficinaCount;a.outras+=v.outrasCount;
+  a.pendentes+=v.pendentesCount;a.meios+=v.meiosCount;
+  a.pendentesCentavos+=v.pendentes;return a;
+ },{oficina:0,outras:0,pendentes:0,meios:0,pendentesCentavos:0});
+ write('doc-month-classification-note',
+  classified.oficina+' compra(s) de cartão confirmadas para a oficina; '+
+  classified.outras+' de outras finalidades; '+
+  classified.pendentes+' sem finalidade definida ('+brl(classified.pendentesCentavos/100)+
+  ' líquidos). Outros meios (PIX/débito): '+classified.meios+
+  '. Compras não identificadas não entram na coluna Oficina. Use Cartões para classificar.');
  const currentMonth=$('doc-month')?.value||'todos';
  const months=[...byMonth].filter(([key])=>currentMonth==='todos'||currentMonth===key)
   .sort(([a],[b])=>(b==='sem-mes'?'0000-00':b).localeCompare(a==='sem-mes'?'0000-00':a));
@@ -111,11 +110,27 @@ function drawSummary(){
  if(monthly)monthly.innerHTML=visibleMonths.length?visibleMonths.map(([m,v])=>
   '<tr><td>'+escapeHTML(m==='sem-mes'?'Sem mês':m.slice(5,7)+'/'+m.slice(0,4))+'</td>'+
   '<td class="money">'+brl(v.auto/100)+' <small>'+v.autoCount+' registros</small></td>'+
+  '<td class="money">'+brl(v.oficina/100)+' <small>'+v.oficinaCount+' compras</small></td>'+
+  '<td class="money">'+brl(v.outras/100)+' <small>'+v.outrasCount+' compras</small></td>'+
+  '<td class="money">'+brl(v.pendentes/100)+' <small>'+v.pendentesCount+' compras</small></td>'+
+  '<td class="money">'+brl(v.meios/100)+' <small>'+v.meiosCount+' lançamentos</small></td>'+
   '<td class="money">'+brl(v.card/100)+' <small>'+v.cardCount+' registros</small></td></tr>'
- ).join(''):'<tr><td colspan="3" class="empty">Nenhum mês corresponde ao filtro.</td></tr>';
+ ).join(''):'<tr><td colspan="7" class="empty">Nenhum mês corresponde ao filtro.</td></tr>';
  write('doc-month-paging',months.length+' mês(es) · página '+(monthPage+1)+' de '+monthPages);
  if($('doc-month-prev'))$('doc-month-prev').disabled=monthPage===0;
  if($('doc-month-next'))$('doc-month-next').disabled=monthPage>=monthPages-1;
+}
+async function fetchCardPurposes(){
+ const rows=[],size=450;
+ for(let off=0;off<10000;off+=size){
+  const {data,error}=await db.from('fin_cartoes_finalidades')
+   .select('lancamento_id,finalidade').eq('origem','planilha')
+   .order('lancamento_id').range(off,off+size-1);
+  if(error)throw error;
+  rows.push(...(data||[]));
+  if((data||[]).length<size)return new Map(rows.map(r=>[r.lancamento_id,r.finalidade]));
+ }
+ throw Error('Quantidade de classificações ultrapassou o limite de segurança.');
 }
 async function fetchAccounts(){
  const out=[],size=400;
@@ -401,8 +416,9 @@ async function refresh(){
    if(typeof db==='undefined'||!db)throw Error('Conexão indisponível.');
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-   if(!statusCore)throw Error('Módulo de conciliação documental indisponível. Recarregue.');
-   const [rows,accounts,registered]=await Promise.all([fetchAll(),fetchAccounts(),fetchSupplierRegistry()]);
+   if(!statusCore||!purposeCore)throw Error('Módulo de conciliação ou finalidades indisponível. Recarregue.');
+   const [rows,accounts,registered,purposes]=await Promise.all([fetchAll(),fetchAccounts(),fetchSupplierRegistry(),fetchCardPurposes()]);
+   cardPurposes=purposes;
    supplierCatalogue=statusCore.supplierCatalogue(rows,registered);
    const user=await db.auth?.getUser?.();
    await restoreSupplierSelection(user?.data?.user?.id||null);
