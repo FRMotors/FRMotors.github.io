@@ -1,0 +1,37 @@
+/* FR Motors | Auditoria e homologação manual do Itaú */
+.itau-balance-panel{margin:12px 0 17px;overflow:hidden}
+.itau-balance-panel>.card-head{padding-bottom:8px}
+.itau-balance-panel .card-head p{font-size:12px;line-height:1.5;margin:5px 0 0}
+.itau-balance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:5px 17px 12px}
+.itau-balance-grid article{display:flex;flex-direction:column;gap:7px;padding:14px;min-width:0;border-radius:11px;border:1px solid var(--stroke,#dae3e7)}
+.itau-balance-grid span{font-size:12px;color:var(--muted,#607582)}
+.itau-balance-grid strong{font-size:22px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.itau-balance-grid small{font-size:11px;color:var(--muted,#647882);line-height:1.45}
+.itau-balance-grid .itau-balance-negative{color:var(--bad,#af4437)}
+.itau-balance-info{font-size:12px;padding:0 17px 16px;line-height:1.5;color:var(--muted,#627582)}
+.itau-approve-panel{margin:14px 0 20px}
+.itau-approve-panel>.card-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.itau-approve-panel .card-head p{font-size:12px;line-height:1.5;margin:5px 0 0;max-width:710px}
+.itau-approve-summary{display:flex;gap:12px;flex-wrap:wrap;padding:0 18px 10px;font-size:12px}
+.itau-approve-summary strong{font-variant-numeric:tabular-nums}
+.itau-approve-panel .info-note{padding:0 18px 14px}
+.itau-approve-panel .is-error{color:var(--bad,#b34e3c)}
+.itau-approve-dialog{width:min(960px,calc(100vw - 20px));max-width:960px;max-height:90vh;padding:0;border:1px solid var(--stroke,#dde5e9);border-radius:13px;color:var(--ink,#2d4756)}
+.itau-approve-dialog::backdrop{background:#10202ab3}
+.itau-approve-dialog .dialog-body{padding:18px;max-height:80vh;overflow:auto}
+.itau-approve-dialog h2{margin:0 0 8px;font-size:20px}
+.itau-approve-dialog p{font-size:12px;line-height:1.5}
+.itau-approve-actions{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0}
+.itau-approve-actions>div{display:flex;flex-wrap:wrap;gap:8px}
+.itau-approve-table{width:100%;min-width:700px}
+.itau-approve-table th,.itau-approve-table td{font-size:12px;vertical-align:middle}
+.itau-approve-table td:nth-child(3){max-width:420px;overflow-wrap:anywhere}
+.itau-approve-pick{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px}
+.itau-approve-pick input{width:16px;height:16px}
+.itau-approve-dialog label[for="hist-itau-approve-reason"]{display:block;font-size:12px;font-weight:700;margin:10px 0 5px}
+.itau-approve-dialog textarea{display:block;width:100%;max-width:100%;resize:vertical}
+.itau-approve-checkbox{display:flex;align-items:flex-start;gap:9px;margin:13px 0;font-size:12px;line-height:1.5}
+.itau-approve-checkbox input{margin-top:4px}
+.itau-approve-footer{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;padding:12px 0}
+.itau-approve-status{font-size:12px;line-height:1.5}
+@media(max-width:850px){.itau-balance-grid{grid-template-columns:1fr}.itau-balance-grid strong{font-size:19px}}
