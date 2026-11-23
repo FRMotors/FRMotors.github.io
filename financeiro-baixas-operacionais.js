@@ -324,6 +324,10 @@ async function createManual(e){
   closeDialog('op-new-dialog');await load();
   window.frFinanceUI?.showToast('Boleto registrado em aberto. Nenhum pagamento foi criado.');
   await window.frOperationalPayablesUI?.refresh?.();
+  await Promise.allSettled([
+   window.frInvoicesAgendaUI?.refresh?.()||Promise.resolve(),
+   window.frDeadlinesUI?.refresh?.()||Promise.resolve()
+  ]);
   await openPay('avulso:'+data.id);
  }catch(e){write('op-new-status','Não foi possível salvar boleto: '+(e.message||e))}
  finally{busy=false;$('op-new-submit').disabled=false}
@@ -379,7 +383,9 @@ async function saveManualEdit(e){
    load(),
    window.frOperationalPayablesUI?.refresh?.()||Promise.resolve(),
    window.frOperationalUI?.refresh?.()||Promise.resolve(),
-   window.frRealDashboard?.refresh?.()||Promise.resolve()
+   window.frRealDashboard?.refresh?.()||Promise.resolve(),
+   window.frInvoicesAgendaUI?.refresh?.()||Promise.resolve(),
+   window.frDeadlinesUI?.refresh?.()||Promise.resolve()
   ]);
   const failed=results.some(x=>x.status==='rejected');
   window.frFinanceUI?.showToast(data.resultado==='sem_alteracoes'?
