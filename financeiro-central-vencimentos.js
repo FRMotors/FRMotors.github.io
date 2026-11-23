@@ -5,6 +5,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const boletoCore=window.frAgendaBoletosCore;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format((Number(v)||0)/100);
 const toCents=v=>{const n=Number(v);return Number.isFinite(n)?Math.round(n*100):0;};
@@ -31,7 +32,7 @@ async function fetchAll(builder,max=10000){
 const dueStatus=(r,now)=>!r.due?'sem-data':r.due<now?'vencido':r.due===now?'hoje':'programado';
 const sum=rows=>rows.reduce((v,r)=>v+r.amount,0);
 const typeText=r=>r.kind==='pagar'?'A pagar':'A receber';
-function createRecords(cp,manual,links,bankLinks,receivables){
+function createRecords(cp,manual,links,bankLinks,receivables,parts,supplierMap){
  const linkedAccounts=new Set(links.map(x=>x.conta_pagar_id).filter(Boolean));
  const linkedManual=new Set([...links.map(x=>x.boleto_avulso_id),...bankLinks.map(x=>x.boleto_avulso_id)].filter(Boolean));
  const output=[];
@@ -46,6 +47,12 @@ function createRecords(cp,manual,links,bankLinks,receivables){
   if(value>0)output.push({id:x.id,kind:'pagar',source:'avulso',due:x.vencimento||null,
    name:x.fornecedor_nome||'Fornecedor não informado',info:x.descricao||'Boleto cadastrado no aplicativo',
    amount:value,lookup:x.fornecedor_nome||x.descricao||''});
+ });
+ if(!boletoCore)throw Error('Módulo de parcelas de boleto indisponível.');
+ boletoCore.openInstallments(parts,supplierMap).forEach(x=>{
+  output.push({id:x.id,kind:'pagar',source:'parcela',due:x.vencimento,
+   name:x.fornecedor,info:(x.numero?'Parcela '+x.numero+' · ':'')+x.descricao,
+   amount:x.valorCentavos,lookup:x.fornecedor+' '+x.descricao});
  });
  receivables.filter(x=>['aberto','parcial'].includes(x.situacao)).forEach(x=>{
   const value=Math.max(0,toCents(x.valor)-toCents(x.valor_recebido));
@@ -156,14 +163,20 @@ async function refresh(){
   put('cv-status','Consultando os vencimentos registrados...');
   const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
   if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-  const [cp,manual,links,bank,rec]=await Promise.all([
+  const [cp,manual,links,bank,rec,parts,suppliers]=await Promise.all([
    fetchAll(()=>db.from('fin_contas_pagar').select('id,codigo_origem,fornecedor_nome,descricao,valor_referencia,vencimento,situacao').is('arquivado_em',null).order('id')),
    fetchAll(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,valor_referencia,vencimento,excluido_em').order('id')),
    fetchAll(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id').order('id')),
    fetchAll(()=>db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id').order('id')),
-   fetchAll(()=>db.from('fin_contas_receber').select('id,numero_documento,descricao,valor,valor_recebido,vencimento,situacao,fin_receber_clientes(nome)').order('id'))
+   fetchAll(()=>db.from('fin_contas_receber').select('id,numero_documento,descricao,valor,valor_recebido,vencimento,situacao,fin_receber_clientes(nome)').order('id')),
+   fetchAll(()=>db.from('fin_parcelas')
+    .select('id,compra_id,numero,vencimento,valor_cheio,status,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento)')
+    .eq('status','aberto').eq('fin_compras.forma_pagamento','boleto')
+    .order('vencimento',{ascending:true,nullsFirst:false}).order('id')),
+   fetchAll(()=>db.from('fin_fornecedores').select('id,nome').order('nome'))
   ]);
-  records=createRecords(cp,manual,links,bank,rec);ready=true;render();
+  records=createRecords(cp,manual,links,bank,rec,parts,new Map(suppliers.map(s=>[s.id,s.nome])));
+  ready=true;render();
  })().catch(e=>{
    ready=false;
    put('cv-status','Não foi possível carregar a central: '+(e.message||e));
