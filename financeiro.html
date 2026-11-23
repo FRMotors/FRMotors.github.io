@@ -574,6 +574,7 @@
 <link rel="stylesheet" href="./financeiro-itau-homologacao.css?v=20261123manual1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cartoes1">
+<link rel="stylesheet" href="./financeiro-cartoes-categorias.css?v=20261123cards1">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
 <link rel="stylesheet" href="./financeiro-central-auditoria.css?v=20261118audit1">
 <link rel="stylesheet" href="./financeiro-documentos-atualizado.css?v=20261119supplier2">
@@ -774,6 +775,7 @@
         </div>
         <div class="header-buttons">
          <button type="button" class="btn" data-view="expenses">Autopeças e compras</button>
+          <button type="button" class="btn btn-primary" id="cbcat-jump">Classificar compras</button>
          <button type="button" class="btn btn-primary" id="cb-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
         </div>
        </div>
@@ -879,7 +881,77 @@
         </div>
         <p class="cb-list-note">Use “Conferir pagamento” para acessar os vínculos bancários sem criar pagamentos duplicados. Use “Vencimento” para consultar ou informar a data real na agenda financeira.</p>
        </section>
-      <section class="fin-cards-installments" id="card-installments" aria-labelledby="pc-section-title">
+      
+<section class="card cbcat-panel" id="cbcat-panel" aria-labelledby="cbcat-title">
+ <div class="card-head">
+  <div>
+   <p class="eyebrow">Gestão documental · classificação de despesas</p>
+   <h2 id="cbcat-title">Classificar compras do cartão de crédito</h2>
+   <p>Organize despesas como autopeças, combustível, ferramentas e serviços. Escolha o cartão, ano e mês para visualizar as compras; clique em <strong>Categorizar</strong> para classificar uma compra individual, sem alterar valores ou gerar outro pagamento.</p>
+  </div>
+  <button type="button" class="btn" id="cbcat-refresh">Atualizar compras</button>
+ </div>
+ <div class="cbcat-filters">
+  <label>Origem das compras
+   <select id="cbcat-source"><option value="planilha">Histórico da planilha</option><option value="importado">Faturas importadas (PDF)</option></select>
+  </label>
+  <label>Ano<select id="cbcat-year"><option value="todos">Todos os anos</option></select></label>
+  <label>Mês da fatura / lançamento<select id="cbcat-month"><option value="todos">Todos os meses</option></select></label>
+  <label>Cartão<select id="cbcat-card"><option value="todos">Todos os cartões</option></select></label>
+  <label>Categoria<select id="cbcat-category"><option value="todos">Todas as categorias</option></select></label>
+  <label>Situação da classificação
+   <select id="cbcat-status-filter"><option value="todos">Todas as compras</option><option value="sem">Somente a classificar</option><option value="definida">Somente categorizadas</option></select>
+  </label>
+  <label class="cbcat-search">Buscar compra<input id="cbcat-search" type="search" placeholder="Descrição, estabelecimento ou valor" autocomplete="off"></label>
+  <button type="button" id="cbcat-clear" class="btn">Limpar filtros</button>
+ </div>
+ <div class="cbcat-kpis">
+  <article><span>Compras na seleção</span><strong id="cbcat-count">—</strong><small>Quantidade de lançamentos documentais</small></article>
+  <article><span>Valor documental selecionado</span><strong id="cbcat-total">—</strong><small>Não equivale a saída de caixa no Itaú</small></article>
+  <article><span>Sem categoria específica</span><strong id="cbcat-unclassified">—</strong><small id="cbcat-unclassified-total">—</small></article>
+ </div>
+ <p class="cbcat-status" id="cbcat-status" role="status" aria-live="polite">Abra esta área para carregar as categorias.</p>
+ <p class="cbcat-source-note" id="cbcat-source-note">Os dados históricos e as faturas PDF são fontes separadas; evite somá-los sem conferência.</p>
+ <div class="table-wrap cbcat-table"><table class="data-table">
+  <thead><tr><th>Compra / origem</th><th>Cartão</th><th>Mês</th><th>Data</th><th>Categoria</th><th class="money">Valor</th><th>Ação</th></tr></thead>
+  <tbody id="cbcat-rows"><tr><td colspan="7">Aguardando consulta...</td></tr></tbody>
+ </table></div>
+ <div class="cbcat-footer">
+  <span id="cbcat-pages">0 lançamentos</span>
+  <div><button class="btn" id="cbcat-prev" type="button" disabled>Anterior</button>
+  <button class="btn" id="cbcat-next" type="button" disabled>Próxima</button></div>
+ </div>
+ <details class="cbcat-summary">
+  <summary>Resumo das compras por categoria no período selecionado</summary>
+  <div class="cbcat-breakdown" id="cbcat-breakdown">Aguardando consulta...</div>
+ </details>
+ <p class="cbcat-source-note">O mês do histórico refere-se à competência da fatura; nas importações PDF, à data do lançamento. As categorias não comprovam quitação e não alteram o Fluxo de Caixa.</p>
+</section>
+<dialog class="fin-dialog cbcat-dialog" id="cbcat-dialog" aria-labelledby="cbcat-dialog-title">
+ <div class="dialog-head"><div>
+  <h2 id="cbcat-dialog-title">Categorizar compra do cartão</h2>
+  <p>Edite somente a classificação desta compra.</p>
+ </div><button type="button" class="dialog-close" id="cbcat-close" aria-label="Fechar">×</button></div>
+ <div class="dialog-body">
+  <p id="cbcat-edit-summary">Compra selecionada</p>
+  <p id="cbcat-edit-current" class="info-note"></p>
+  <form id="cbcat-form">
+   <label for="cbcat-edit-value">Categoria
+    <input id="cbcat-edit-value" type="text" list="cbcat-category-options"
+     minlength="2" maxlength="100" required placeholder="Selecione ou digite uma categoria" autocomplete="off">
+   </label>
+   <datalist id="cbcat-category-options"></datalist>
+   <p id="cbcat-edit-error" class="info-note" role="status" aria-live="polite"></p>
+   <div class="cbcat-dialog-actions">
+    <button type="button" class="btn" id="cbcat-cancel">Cancelar</button>
+    <button type="submit" class="btn btn-primary" id="cbcat-edit-save">Salvar categoria</button>
+   </div>
+  </form>
+  <p class="info-note">Classificar uma compra não gera pagamento nem altera o extrato, o saldo da fatura ou o histórico original. A alteração fica auditada.</p>
+ </div>
+</dialog>
+
+<section class="fin-cards-installments" id="card-installments" aria-labelledby="pc-section-title">
         <div class="section-header"><div>
           <p class="eyebrow">Histórico de cartões · planilha homologada</p>
           <h2 class="fin-cards-heading" id="pc-section-title">Compras parceladas</h2>
@@ -3700,6 +3772,7 @@ init();
 <script src="./financeiro-relatorios-gerenciais.js?v=20261123manual1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261120classifyadmin1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261119layout2" defer></script>
+<script src="./financeiro-cartoes-categorias.js?v=20261123cards1" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-auditoria-estado-ui.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>
