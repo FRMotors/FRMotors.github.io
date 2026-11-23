@@ -70,28 +70,36 @@ function supplierDiscount(doc,bank){
  const diff=Math.round(value*pct/100);
  return value-diff===cents(bank.valor)?{pct,amount:diff}:null;
 }
+function dayGap(doc,bank){
+ if(!doc?.vencimento||!bank?.data_movimento)return 0;
+ const a=Date.parse(String(doc.vencimento).slice(0,10)+'T12:00:00Z');
+ const b=Date.parse(String(bank.data_movimento).slice(0,10)+'T12:00:00Z');
+ return Number.isFinite(a)&&Number.isFinite(b)?Math.abs(Math.round((b-a)/86400000)):0;
+}
 function availableBank(doc){
- if(!doc)return[];
+ if(!doc)return [];
  const paid=paidLinks().movement;
+ const search=String($('op-pay-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  return movements.filter(x=>{
   if((x.source==='fluxo'&&otherUsed.has(x.ref))||
     (x.source==='extrato'&&testUsed.has(x.ref))||paid.has(x.id))return false;
-  if(doc.vencimento){
-   const delta=Math.round((Date.parse(x.data_movimento+'T12:00:00Z')-
-      Date.parse(doc.vencimento+'T12:00:00Z'))/86400000);
-   if(!Number.isFinite(delta)||Math.abs(delta)>3)return false;
-  }
-  return true;
+  if(doc.tipo!=='homologado'&&dayGap(doc,x)>3)return false;
+  if(!search)return true;
+  const corpus=[x.descricao,x.data_movimento,brl(x.valor),String(x.valor),
+    Number(x.valor).toFixed(2).replace('.',','),x.source==='fluxo'?'fluxo':'extrato']
+    .join(' ').toLocaleLowerCase('pt-BR');
+  return corpus.includes(search);
  }).sort((a,b)=>{
   const score=x=>{
    const exact=cents(x.valor)===cents(doc.valor);
    const hint=supplierDiscount(doc,x);
-   const byValue=exact||Boolean(hint);
-   const supplierName=String(doc.fornecedor||'').trim().toLocaleUpperCase('pt-BR');
-   const sameName=String(x.descricao||'').trim().toLocaleUpperCase('pt-BR')===supplierName;
-   return Number(byValue)*100+Number(sameName)*30;
+   const name=String(doc.fornecedor||'').trim().toLocaleUpperCase('pt-BR');
+   const same=String(x.descricao||'').trim().toLocaleUpperCase('pt-BR')===name;
+   return Number(exact)*1000+Number(Boolean(hint))*800+Number(same)*100+
+    Math.max(0,30-dayGap(doc,x));
   };
-  return score(b)-score(a)||b.data_movimento.localeCompare(a.data_movimento)||a.descricao.localeCompare(b.descricao);
+  return score(b)-score(a)||b.data_movimento.localeCompare(a.data_movimento)||
+   a.descricao.localeCompare(b.descricao);
  });
 }
 function updateDeleteButton(){
