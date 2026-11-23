@@ -289,14 +289,15 @@ async function refresh(){
   if(typeof db==='undefined'||!db)throw Error('Sem conexão com o banco financeiro.');
   const access=await db.rpc('fluxo_caixa_autorizado');
   if(access.error||access.data!==true)throw Error('Acesso financeiro não autorizado.');
-  const [official,files,confirmedMatches]=await Promise.all([
+  const [official,files,confirmedMatches,homologacoes]=await Promise.all([
    all(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,categoria,valor,estado,origem')
-    .eq('estado','confirmado').eq('origem','fluxo_caixa_homologado').order('id')),
+    .eq('estado','confirmado').in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).order('id')),
    all(()=>db.from('fin_teste_importacoes').select('id,tipo,conta_nome,arquivo_nome,criado_em')
     .eq('tipo','banco').order('id')),
    all(()=>db.from('fin_conciliacao_confirmacoes')
     .select('linha_id,movimento_homologado_id,situacao,confirmado_em,confirmado_por,observacao')
-    .order('linha_id'))
+    .order('linha_id')),
+   all(()=>db.from('fin_itau_homologacoes').select('linha_id').order('linha_id'))
   ]);
   const lines=[];
   for(let i=0;i<files.length;i+=30){
@@ -317,7 +318,13 @@ async function refresh(){
   }
   // Somente após validar todas as fontes substituímos os dados exibidos.
   const a=core.sourceRowsOfficial(official),b=core.sourceRowsImported(files,lines,movements);
-  const combination=consolidatedCore.combineSources(a,b);
+  const approvedIds=new Set(homologacoes.map(x=>x.linha_id));
+  const historicalDates=official.filter(x=>x.origem==='fluxo_caixa_homologado')
+   .map(x=>x.data_movimento).sort();
+  const cutoff=historicalDates.at(-1)||null;
+  // Preserve imported-only reporting, without readding already approved PDFs.
+  const combination=consolidatedCore.combineSources(a,
+   b.filter(x=>!approvedIds.has(x.id)),{cutoff});
   combination.cancelledIgnored=lines.length-b.length;
   state.official=a;state.imported=b;state.combined=combination.rows;state.combination=combination;
   state.confirmations=new Map(confirmedMatches.map(row=>[row.linha_id,row]));

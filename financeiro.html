@@ -571,6 +571,7 @@
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
 <link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261123collapse1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261121orders1">
+<link rel="stylesheet" href="./financeiro-itau-homologacao.css?v=20261123manual1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cartoes1">
 <link rel="stylesheet" href="./financeiro-pagamento-externo.css?v=20261118external1">
@@ -1011,7 +1012,20 @@
        <p id="rg-status" class="rg-status" role="status" aria-live="polite">Aguardando consulta dos registros oficiais...</p>
        <p class="rg-note"><strong>Fontes separadas para não duplicar gastos.</strong> Caixa realizado: somente movimentações confirmadas no Supabase. Autopeças: compras da carteira documental incluídas no relatório. Cartões: totais históricos das faturas por competência, independentemente da quitação. Não some as três fontes como se fossem pagamentos distintos.</p>
 
-       <div class="rg-metrics">
+       
+<section class="card itau-balance-panel" id="itau-balance-reports" aria-label="Resultado operacional comparado ao saldo Itaú">
+ <div class="card-head"><div>
+  <h2>Resultado do período × saldo do Itaú</h2>
+  <p>O resultado das movimentações não é o saldo bancário. Veja a abertura do histórico e os extratos posteriores ao fechamento.</p>
+ </div><button type="button" class="btn" data-view="itau">Conferir Itaú</button></div>
+ <div class="itau-balance-grid">
+  <article><span>Resultado do caixa homologado</span><strong id="itau-balance-reports-result">—</strong><small id="itau-balance-reports-result-date">Aguardando datas da base</small></article>
+  <article><span>Saldo de abertura</span><strong id="itau-balance-reports-opening">—</strong><small id="itau-balance-reports-opening-date">Aguardando referência inicial</small></article>
+  <article><span>Saldo estimado do Itaú</span><strong id="itau-balance-reports-balance">—</strong><small id="itau-balance-reports-balance-date">Aguardando extratos</small></article>
+ </div>
+ <p class="itau-balance-info" id="itau-balance-reports-info" role="status">Consultando a reconciliação. A estimativa não substitui o saldo bancário.</p>
+</section>
+<div class="rg-metrics">
         <section class="rg-metric rg-income" aria-label="Entradas realizadas">
          <span class="rg-source">Caixa confirmado</span>
          <h3>Entradas realizadas</h3><strong id="rg-income">—</strong>
@@ -1392,7 +1406,20 @@
     <button type="button" class="btn btn-teal" data-view="agenda">Abrir Agenda Financeira</button>
   </div>
  </section>
-        <section class="card real-dashboard" id="real-dashboard" aria-labelledby="real-dashboard-title">
+        
+<section class="card itau-balance-panel" id="itau-balance-overview" aria-label="Resultado operacional comparado ao saldo Itaú">
+ <div class="card-head"><div>
+  <h2>Resultado do período × saldo do Itaú</h2>
+  <p>O resultado das movimentações não é o saldo bancário. Veja a abertura do histórico e os extratos posteriores ao fechamento.</p>
+ </div><button type="button" class="btn" data-view="itau">Conferir Itaú</button></div>
+ <div class="itau-balance-grid">
+  <article><span>Resultado do caixa homologado</span><strong id="itau-balance-overview-result">—</strong><small id="itau-balance-overview-result-date">Aguardando datas da base</small></article>
+  <article><span>Saldo de abertura</span><strong id="itau-balance-overview-opening">—</strong><small id="itau-balance-overview-opening-date">Aguardando referência inicial</small></article>
+  <article><span>Saldo estimado do Itaú</span><strong id="itau-balance-overview-balance">—</strong><small id="itau-balance-overview-balance-date">Aguardando extratos</small></article>
+ </div>
+ <p class="itau-balance-info" id="itau-balance-overview-info" role="status">Consultando a reconciliação. A estimativa não substitui o saldo bancário.</p>
+</section>
+<section class="card real-dashboard" id="real-dashboard" aria-labelledby="real-dashboard-title">
           <div class="card-head">
             <div><p class="eyebrow">Dados homologados · somente consulta</p>
               <h2 id="real-dashboard-title">Painel financeiro operacional</h2>
@@ -2401,7 +2428,46 @@
             </div>
           </details>
         </section>
-        <section class="card hist-itau-mes-card" id="hist-itau-mensal" aria-labelledby="hist-itau-mes-title">
+        
+<section class="card itau-approve-panel" id="hist-itau-approve-panel" aria-labelledby="hist-itau-approve-title">
+ <div class="card-head"><div><p class="eyebrow">Autorização manual e auditada</p>
+  <h2 id="hist-itau-approve-title">Homologar novas movimentações do Itaú</h2>
+  <p>Um PDF importado permanece em conferência até você revisar e autorizar as linhas novas. Lançamentos já presentes no Excel não são importados novamente.</p></div>
+  <button type="button" class="btn btn-primary" id="hist-itau-approve-open" disabled>Revisar e homologar extrato</button>
+ </div>
+ <div class="itau-approve-summary"><span><strong id="hist-itau-approve-count">Aguardando...</strong></span>
+  <span><strong id="hist-itau-approved-count">Aguardando...</strong></span></div>
+ <p class="info-note" id="hist-itau-approve-warning">Correspondências existentes não serão duplicadas.</p>
+ <p class="info-note itau-approve-status" id="hist-itau-approve-status" role="status" aria-live="polite">Consultando extratos...</p>
+</section>
+<dialog id="hist-itau-approve-dialog" class="fin-dialog itau-approve-dialog" aria-labelledby="hist-itau-approve-dialog-title">
+ <div class="dialog-body">
+  <h2 id="hist-itau-approve-dialog-title">Revise o extrato antes de homologar</h2>
+  <p>Confira cada linha com o PDF. <strong>Nenhum lançamento vem selecionado.</strong> Somente os selecionados entrarão no caixa homologado, com a origem e o responsável registrados.</p>
+  <div class="itau-approve-actions"><div>
+   <button type="button" class="btn" id="hist-itau-approve-all">Selecionar todos os novos</button>
+   <button type="button" class="btn" id="hist-itau-approve-none">Limpar seleção</button></div>
+   <strong id="hist-itau-approve-selected">0 selecionados</strong>
+  </div>
+  <form id="hist-itau-approve-form">
+   <div class="table-wrap"><table class="data-table itau-approve-table">
+    <thead><tr><th>Conferido?</th><th>Data</th><th>Descrição original do PDF</th><th>Tipo</th><th class="money">Valor</th></tr></thead>
+    <tbody id="hist-itau-approve-rows"><tr><td colspan="5">Aguardando...</td></tr></tbody>
+   </table></div>
+   <label for="hist-itau-approve-reason">Justificativa da conferência (12 a 500 caracteres)</label>
+   <textarea id="hist-itau-approve-reason" minlength="12" maxlength="500" rows="3" required
+    placeholder="Ex.: Conferi as linhas selecionadas contra o PDF do Itaú e o fechamento anterior."></textarea>
+   <label class="itau-approve-checkbox"><input id="hist-itau-approve-ack" type="checkbox" required>
+    <span>Confirmo que conferi os lançamentos selecionados e autorizo a inclusão no caixa homologado. A operação será auditada e não cria outro pagamento bancário.</span></label>
+   <div class="itau-approve-footer">
+    <button type="button" class="btn" id="hist-itau-approve-cancel">Cancelar</button>
+    <button type="submit" class="btn btn-primary" id="hist-itau-approve-confirm" disabled>Homologar selecionados</button>
+   </div>
+  </form>
+ </div>
+ <button type="button" class="dialog-close" id="hist-itau-approve-close" aria-label="Fechar">×</button>
+</dialog>
+<section class="card hist-itau-mes-card" id="hist-itau-mensal" aria-labelledby="hist-itau-mes-title">
           <div class="card-head">
             <div>
               <p class="eyebrow">Movimentações por competência · todos os meses disponíveis</p>
@@ -3605,9 +3671,10 @@ init();
 
 <script src="./financeiro-unificado.js?v=20261116abertos1" defer></script>
 <script src="./financeiro-itau-core.js?v=20261119review2" defer></script>
-<script src="./financeiro-itau-mensal-core.js?v=20261119month1" defer></script>
-<script src="./financeiro-itau-mensal.js?v=20261119month1" defer></script>
-<script src="./financeiro-historico.js?v=20261119review2" defer></script>
+<script src="./financeiro-itau-mensal-core.js?v=20261123manual1" defer></script>
+<script src="./financeiro-itau-mensal.js?v=20261123manual1" defer></script>
+<script src="./financeiro-historico.js?v=20261123manual1" defer></script>
+<script src="./financeiro-itau-homologacao.js?v=20261123manual1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261123unificado1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
@@ -3621,16 +3688,16 @@ init();
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-margem-os-core.js?v=20261121orders1" defer></script>
 <script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
-<script src="./financeiro-resumo-operacional.js?v=20261121profit1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261123manual1" defer></script>
 <script src="./financeiro-margem-os.js?v=20261121orders1" defer></script>
-<script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
+<script src="./financeiro-detalhamento-caixa.js?v=20261123manual1" defer></script>
 <script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261123collapse1" defer></script>
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>
-<script src="./financeiro-relatorios-gerenciais.js?v=20261121orders1" defer></script>
+<script src="./financeiro-relatorios-gerenciais.js?v=20261123manual1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261120classifyadmin1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261119layout2" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>

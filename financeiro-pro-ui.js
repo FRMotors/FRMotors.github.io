@@ -111,6 +111,7 @@ function selectView(next,options={}){
  if(next==='imports')window.frImportUI?.refresh?.();
  if(next==='imports')window.frPixRulesUI?.refresh?.();
  if(next==='itau'||next==='history')window.frHistoryUI?.open?.(next);
+ if(next==='overview'||next==='reports')window.frHistoryUI?.refresh?.().catch?.(()=>{});
   
   if(next==='overview')window.frRealDashboard?.refresh?.();
    if(next==='overview')window.frOrdersProfitUI?.refresh?.();
