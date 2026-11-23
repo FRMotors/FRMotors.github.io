@@ -157,21 +157,45 @@ function signedAmount(x){
 function recalc(){
  const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
  const disc=validAmount($('op-pay-discount').value),fees=validAmount($('op-pay-fees').value);
+ const signed=signedAmount($('op-pay-adjust').value);
+ const adjust=doc?.tipo==='homologado'?signed:0;
  const full=doc?cents(doc.valor):null,paid=bank?cents(bank.valor):null;
- const calc=full===null||disc===null||fees===null?null:full-disc+fees;
- const correct=Boolean(doc&&bank&&disc!==null&&fees!==null&&disc<=full&&calc===paid);
- const diff=(full!==null&&paid!==null&&fees!==null)?full+fees-paid:null;
+ const gap=dayGap(doc,bank);
+ const outside=doc?.tipo==='homologado'&&bank?.source==='fluxo'&&gap>3;
+ const needsReason=Boolean(doc?.tipo==='homologado'&&(adjust!==0||outside));
+ const reason=String($('op-pay-reason')?.value||'').trim();
+ const reasonValid=reason.length>=12&&reason.length<=500;
+ const calc=full===null||disc===null||fees===null||adjust===null?
+  null:full-disc+fees+adjust;
+ const correct=Boolean(doc&&bank&&disc!==null&&fees!==null&&adjust!==null&&
+  disc<=full&&calc===paid&&(!needsReason||reasonValid));
+ const diff=full!==null&&paid!==null&&fees!==null&&adjust!==null?
+  full+fees+adjust-paid:null;
+ const neededAdjustment=full!==null&&disc!==null&&fees!==null&&paid!==null?
+  paid-(full-disc+fees):null;
  $('op-pay-use-difference').hidden=!(doc&&bank&&diff>0&&diff<=full&&disc!==diff);
+ $('op-pay-use-adjust').hidden=!(doc?.tipo==='homologado'&&bank&&
+  neededAdjustment!==null&&neededAdjustment!==0&&adjust!==neededAdjustment);
  $('op-pay-confirm').disabled=busy||!correct||!$('op-pay-ack').checked;
+ write('op-pay-real',bank?brl(bank.valor):'—');
  const rule=supplierDiscount(doc,bank);
+ const gapNote=doc&&bank&&gap>3?
+  ' Atenção: pagamento e vencimento têm '+gap+' dias de diferença.'+
+  (outside?' Informe o motivo dessa diferença.':' Confira a data antes de confirmar.'):'';
+ const valueNote=calc!==null&&paid!==null&&calc!==paid?
+  ' Os valores divergem: registre o desconto ou juros efetivos, ou use "Ajuste da planilha" quando o valor original tiver sido corrigido.':'';
+ const reasonNote=needsReason&&!reasonValid?
+  ' Justificativa obrigatória: mínimo de 12 caracteres.':'';
  const desc=doc&&bank?
-   'Valor do compromisso '+brl(doc.valor)+' − desconto '+brl((disc||0)/100)+
-   ' + juros '+brl((fees||0)/100)+' = '+(calc===null?'—':brl(calc/100))+
-   '. Saída já registrada ('+(bank.source==='extrato'?'extrato importado':'Fluxo de Caixa')+'): '+brl(bank.valor)+'. '+
-   (correct?'Valores conferem. Confirme o vínculo sem criar pagamento.':
-   'Os valores não conferem. Use desconto/juros somente com base no comprovante.')+
-   (rule?' Regra '+rule.pct+'% do fornecedor aplicável até o vencimento.':''):
-   'Escolha uma conta e uma saída já registrada no Fluxo de Caixa.';
+  'Valor da planilha '+brl(doc.valor)+' − desconto '+brl((disc||0)/100)+
+  ' + juros '+brl((fees||0)/100)+' + ajuste '+(adjust===null?'—':brl(adjust/100))+
+  ' = '+(calc===null?'—':brl(calc/100))+
+  '. Pagamento real ('+(bank.source==='extrato'?'extrato importado':'Fluxo de Caixa')+'): '+brl(bank.valor)+'. '+
+  (correct?'Valores conferem. O vínculo não cria nova saída.':
+    'A confirmação fica bloqueada até conferir valor e justificativa.')+
+  valueNote+reasonNote+gapNote+
+  (rule?' Regra de desconto do fornecedor: '+rule.pct+'% até o vencimento.':''):
+  'Escolha uma conta e uma saída já confirmada no banco.';
  write('op-pay-info',desc);
  return correct;
 }
