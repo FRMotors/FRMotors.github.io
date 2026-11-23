@@ -20,11 +20,11 @@ const categoryKey=s=>fold(categoryName(s));
 const isUnclassified=s=>['sem categoria','extrato bancario','a classificar','nao classificado'].includes(categoryKey(s));
 function sourceRowsOfficial(records){
  if(!Array.isArray(records))throw Error('A base homologada não foi carregada.');
- return records.filter(r=>r.estado==='confirmado'&&r.origem==='fluxo_caixa_homologado')
+ return records.filter(r=>r.estado==='confirmado'&&['fluxo_caixa_homologado','extrato_itau_homologado'].includes(r.origem))
  .map(r=>{
   if(!validDate(r.data_movimento)||!['entrada','saida'].includes(r.tipo))throw Error('Movimento oficial com data ou tipo inválido.');
   return {id:r.id,date:r.data_movimento,type:r.tipo,value:moneyCents(r.valor),category:categoryName(r.categoria),
-   description:r.descricao||'Sem descrição',account:'',source:'Caixa homologado'};
+   description:r.descricao||'Sem descrição',account:'',source:r.origem==='extrato_itau_homologado'?'PDF Itaú homologado':'Caixa homologado'};
  });
 }
 function sourceRowsImported(files,lines,movements){
