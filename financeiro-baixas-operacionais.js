@@ -446,24 +446,40 @@ async function confirmPay(e){
  if(busy||!recalc()||!$('op-pay-ack').checked)return;
  const doc=chosen(),payment=movements.find(x=>x.id===$('op-pay-movement').value);
  const discount=validAmount($('op-pay-discount').value),fees=validAmount($('op-pay-fees').value);
- if(!doc||!payment||discount===null||fees===null)return;
+ const adjust=signedAmount($('op-pay-adjust').value);
+ const reason=String($('op-pay-reason').value||'').trim();
+ if(!doc||!payment||discount===null||fees===null||adjust===null)return;
+ const adjusted=doc.tipo==='homologado'&&(adjust!==0||
+  (payment.source==='fluxo'&&dayGap(doc,payment)>3));
  busy=true;$('op-pay-confirm').disabled=true;
  try{
   let response;
   if(payment.source==='fluxo'){
-   response=await db.rpc('fin_baixa_operacional_vincular',{
-    p_tipo:doc.tipo,p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
-   });
+   response=adjusted?
+    await db.rpc('fin_baixa_operacional_ajustada',{
+     p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100,
+     p_ajuste:adjust/100,p_justificativa:reason
+    }):
+    await db.rpc('fin_baixa_operacional_vincular',{
+     p_tipo:doc.tipo,p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
+    });
   }else if(doc.tipo==='homologado'){
-   response=await db.rpc('fin_teste_conciliar_aberto_excel',{
-    p_aberto:doc.linha_origem_id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
-   });
+   response=adjusted?
+    await db.rpc('fin_teste_conciliar_aberto_excel_ajustado',{
+     p_aberto:doc.linha_origem_id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100,
+     p_ajuste:adjust/100,p_justificativa:reason
+    }):
+    await db.rpc('fin_teste_conciliar_aberto_excel',{
+     p_aberto:doc.linha_origem_id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
+    });
   }else{
    response=await db.rpc('fin_boleto_avulso_conciliar_extrato',{
     p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
    });
   }
   if(response.error)throw response.error;
+  if(!response.data||!response.data.vinculo_id)
+   throw Error('O servidor não confirmou o vínculo com o pagamento real.');
   let warning='';
   if(payment.source==='extrato'&&doc.tipo==='homologado'){
    const sync=await db.rpc('fin_cp_sincronizar_conciliacoes');
