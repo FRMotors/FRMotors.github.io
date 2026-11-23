@@ -149,7 +149,7 @@ async function refresh(){
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
    const data=await getAll(()=>db.from('fin_movimentos')
     .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,estado,origem')
-    .eq('origem','fluxo_caixa_homologado').eq('estado','confirmado')
+    .in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).eq('estado','confirmado')
     .order('data_movimento',{ascending:false}).order('id',{ascending:false}));
    if(data.some(x=>!['entrada','saida'].includes(x.tipo)))throw Error('Tipo inesperado no Fluxo de Caixa; confira a base antes de calcular.');
    rows=data;
