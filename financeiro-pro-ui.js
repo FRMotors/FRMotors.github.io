@@ -130,6 +130,7 @@ function selectView(next,options={}){
    if(next==='reports'){window.frManagerReportsUI?.refresh?.();window.frCategoryReportUI?.refresh?.();window.frOrdersProfitUI?.refresh?.();}
    if(next==='imports'&&byId('imports-classificacao')?.open)window.frClassificationUI?.refresh?.();
    if(next==='cardbills'){
+  window.frCardCategoriesUI?.refresh?.();
   window.frCardBillsUI?.refresh?.();
   window.frCardInstallmentsUI?.refresh?.();
   window.frDocsReconcileUI?.refresh?.();
