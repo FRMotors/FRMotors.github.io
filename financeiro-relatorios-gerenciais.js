@@ -226,7 +226,7 @@ async function refresh(){
   if(accessError||access!==true)throw Error('Acesso financeiro não autorizado.');
   const [bank,auto,invoices,providers]=await Promise.all([
    loadAll(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,descricao,categoria,fornecedor_id,valor,estado,origem')
-    .eq('estado','confirmado').eq('origem','fluxo_caixa_homologado').order('id')),
+    .eq('estado','confirmado').in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).order('id')),
    loadAll(()=>db.from('fin_documentos_despesas')
     .select('id,grupo,incluir,data_evento,fornecedor_nome,descricao,valor_registrado')
     .eq('grupo','autopecas').eq('incluir',true).order('id')),
