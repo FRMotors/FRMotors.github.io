@@ -7,6 +7,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'');
+const boletoCore=window.frAgendaBoletosCore;
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brl=x=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(x)||0);
 const cents=x=>Math.round(Number(x)*100);
@@ -17,7 +18,7 @@ const localDay=()=>{const d=new Date();return [
 const cmpMonth=x=>x?date(x).slice(3):'Mês desconhecido';
 const out=(id,t)=>{if($(id))$(id).textContent=t};
 let invoices=[],declarations=[],payments=[],fullPayments=[],deadlines=[];
-let bills=[],manualBills=[],billLinks=[],manualBankLinks=[],receivables=[];
+let bills=[],manualBills=[],installmentBills=[],supplierNames=new Map(),billLinks=[],manualBankLinks=[],receivables=[];
 let working=null,loading=null,filter='todos',typeFilter='todos',selectedDay=null,month=new Date(),busy=false,page=0;
 const PAGE_SIZE=10;
 month=new Date(month.getFullYear(),month.getMonth(),1);
@@ -70,6 +71,16 @@ function allAgendaItems(){
    title:x.fornecedor_nome,details:x.descricao,source:'Cadastrado no aplicativo',
    total:amount,paid:0,rest:amount};
  });
+ // Inclui tanto compras em boleto com 1 parcela (boleto único) quanto
+ // compras parceladas, exclusivamente enquanto a parcela estiver aberta.
+ if(!boletoCore)throw Error('Módulo de parcelas dos boletos não carregado.');
+ const openInstallments=boletoCore.openInstallments(installmentBills,supplierNames).map(x=>({
+  id:x.id,compra_id:x.compraId,numero:x.numero,kind:'boleto',origin:'parcela',
+  agendaId:'parcela:'+x.id,title:x.fornecedor,
+  details:(x.numero?'Parcela '+x.numero+' · ':'')+x.descricao,
+  source:'Compra em boleto',vencimento:x.vencimento,observacoes:null,
+  total:x.valorCentavos,paid:0,rest:x.valorCentavos
+ }));
  const receivableItems=receivables.filter(x=>['aberto','parcial'].includes(String(x.situacao||'').toLowerCase()))
  .map(x=>{
   const total=cents(x.valor),paid=Math.max(0,cents(x.valor_recebido));
@@ -78,7 +89,7 @@ function allAgendaItems(){
    details:[x.numero_documento,x.descricao].filter(Boolean).join(' · '),source:'Contas a receber',
    total,paid,rest:Math.max(0,total-paid),vencimento:x.vencimento||null};
  });
- return [...cards,...openAccounts,...openManual,...receivableItems]
+ return [...cards,...openAccounts,...openManual,...openInstallments,...receivableItems]
   .filter(x=>Number.isSafeInteger(x.rest)&&x.rest>0)
   .sort((a,b)=>String(a.vencimento||'9999-99-99').localeCompare(String(b.vencimento||'9999-99-99'))||
    String(a.title).localeCompare(String(b.title),'pt-BR')||
@@ -138,6 +149,9 @@ function render(){
    '<button type="button" class="btn" data-ag-edit="'+esc(f.id)+'">'+
     (f.vencimento?'Editar vencimento':'Informar vencimento')+'</button>'+
    '<button type="button" class="btn btn-teal" data-ag-pay="'+esc(f.id)+'">Adicionar pagamento</button>':
+   f.origin==='parcela'?
+    '<button type="button" class="btn" data-ag-show-parcel="'+esc(f.id)+'">Ver parcela</button>'+
+    '<button type="button" class="btn btn-teal" data-pay-id="'+esc(f.id)+'">Dar baixa da parcela</button>':
    (f.origin==='avulso'?
     '<button type="button" class="btn" data-ag-bill-edit="'+esc(f.id)+'">Editar boleto</button>':'')+
    '<button type="button" class="btn btn-teal" data-ag-bill-pay="'+esc(f.agendaId)+'">Dar baixa</button>';
@@ -158,6 +172,7 @@ function render(){
  if($('ag-page-prev'))$('ag-page-prev').disabled=page===0;
  if($('ag-page-next'))$('ag-page-next').disabled=page>=pages-1;
  renderCalendar(pending);
+ renderUpcomingBills(pending,day);
 }
 function renderCalendar(pending){
  const name=new Intl.DateTimeFormat('pt-BR',{month:'long',year:'numeric'}).format(month);
@@ -197,6 +212,30 @@ function renderCalendar(pending){
  out('ag-calendar-note',due.size?
   'Boletos, faturas e contas a receber ainda pendentes. Toque em um dia para consultar.':
   'Nenhum compromisso pendente com vencimento neste mês.');
+}
+function renderUpcomingBills(pending,today){
+ const upcoming=pending.filter(x=>x.kind==='boleto'&&x.vencimento&&x.vencimento>=today)
+  .sort((a,b)=>a.vencimento.localeCompare(b.vencimento)||a.title.localeCompare(b.title,'pt-BR'))
+  .slice(0,6);
+ const target=$('ag-next-bills');
+ if(!target)return;
+ target.innerHTML=upcoming.length?upcoming.map(x=>
+  '<button type="button" class="btn ag-upcoming-item" data-ag-jump="'+esc(x.vencimento)+'" title="Ir ao vencimento no calendário">'+
+  '<strong>'+esc(date(x.vencimento))+'</strong> <span>'+esc(x.title)+' · '+brl(x.rest/100)+
+  (x.origin==='parcela'&&x.numero?' · parcela '+x.numero:'')+'</span></button>'
+ ).join(''):'<span class="info-note">Nenhum boleto com vencimento futuro registrado. Consulte os vencidos na tabela.</span>';
+}
+function jumpToDate(day){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(day))return;
+ const year=Number(day.slice(0,4)),mon=Number(day.slice(5,7));
+ if(year<2000||mon<1||mon>12)return;
+ month=new Date(year,mon-1,1);
+ selectedDay=day;page=0;filter='todos';typeFilter='todos';
+ if($('ag-filter'))$('ag-filter').value='todos';
+ if($('ag-type'))$('ag-type').value='todos';
+ if($('ag-search'))$('ag-search').value='';
+ render();
+ $('ag-calendar')?.scrollIntoView?.({behavior:'smooth',block:'center'});
 }
 function edit(id){
  const f=allActive().find(x=>x.id===id);
@@ -242,7 +281,7 @@ async function refresh(){
    out('ag-status','Carregando boletos, faturas, saldos e vencimentos...');
    const {data:authorized,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||authorized!==true)throw Error('Acesso ao financeiro não autorizado.');
-   const [inv,dec,par,full,ag,cp,av,linked,linkedBank,rec]=await Promise.all([
+   const [inv,dec,par,full,ag,cp,av,linked,linkedBank,rec,parcelas,fornecedores]=await Promise.all([
     queryAll(()=>db.from('fin_faturas_historicas')
      .select('id,cartao_nome,mes_fatura,valor_documental,quantidade_lancamentos')
      .order('mes_fatura',{ascending:true})),
@@ -267,18 +306,28 @@ async function refresh(){
      .select('boleto_avulso_id').order('criado_em',{ascending:false})),
     queryAll(()=>db.from('fin_contas_receber')
      .select('id,numero_documento,descricao,valor,valor_recebido,vencimento,situacao,fin_receber_clientes(nome)')
-     .order('vencimento',{ascending:true,nullsFirst:false}))
+     .order('vencimento',{ascending:true,nullsFirst:false})),
+    queryAll(()=>db.from('fin_parcelas')
+     .select('id,compra_id,numero,vencimento,valor_cheio,status,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento)')
+     .eq('status','aberto').eq('fin_compras.forma_pagamento','boleto')
+     .order('vencimento',{ascending:true,nullsFirst:false}).order('id',{ascending:true})),
+    queryAll(()=>db.from('fin_fornecedores')
+     .select('id,nome').order('nome',{ascending:true}))
    ]);
    invoices=inv;declarations=dec;payments=par;fullPayments=full;deadlines=ag;
-   bills=cp;manualBills=av;billLinks=linked;manualBankLinks=linkedBank;receivables=rec;
+   bills=cp;manualBills=av;installmentBills=parcelas; supplierNames=new Map(fornecedores.map(x=>[x.id,x.nome]));
+   billLinks=linked;manualBankLinks=linkedBank;receivables=rec;
    render();
    const active=allAgendaItems();
    const billCount=active.filter(x=>x.kind==='boleto').length;
    const cardCount=active.filter(x=>x.kind==='cartao').length;
    const receiveCount=active.filter(x=>x.kind==='receber').length;
-   out('ag-status',billCount+' boleto(s), '+cardCount+' fatura(s) e '+receiveCount+
+   const purchaseCount=active.filter(x=>x.origin==='parcela').length;
+   const manualCount=active.filter(x=>x.origin==='avulso').length;
+   out('ag-status',billCount+' boleto(s), incluindo '+purchaseCount+' parcela(s) de compras e '+
+    manualCount+' boleto(s) unitário(s) cadastrado(s), '+cardCount+' fatura(s) e '+receiveCount+
     ' conta(s) a receber pendentes no calendário. '+declarations.length+
-    ' faturas quitadas por confirmação histórica. Sem novas saídas financeiras.');
+    ' faturas quitadas por confirmação histórica. Nenhuma nova saída de caixa.');
   }catch(e){
    out('ag-status','Erro ao consultar agenda: '+(e.message||e));
    if($('ag-rows'))$('ag-rows').innerHTML='<tr><td colspan="8" class="empty">Não foi possível carregar a agenda.</td></tr>';
@@ -289,6 +338,17 @@ async function refresh(){
 function init(){
  if(!$('ag-rows'))return;
  $('ag-search')?.addEventListener('input',()=>{selectedDay=null;page=0;render()});
+ $('ag-next-bills')?.addEventListener('click',event=>{
+  const button=event.target.closest('[data-ag-jump]');
+  if(button)jumpToDate(button.dataset.agJump);
+ });
+ $('ag-next-bill-month')?.addEventListener('click',()=>{
+  const current=month.getFullYear()+'-'+String(month.getMonth()+1).padStart(2,'0');
+  const dates=allAgendaItems().filter(x=>x.kind==='boleto'&&x.vencimento&&x.vencimento.slice(0,7)>current)
+   .sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
+  if(dates.length)jumpToDate(dates[0].vencimento);
+  else out('ag-status','Não há boletos em meses posteriores. Use Anterior para conferir os vencidos.');
+ });
  $('ag-filter')?.addEventListener('change',x=>{filter=x.target.value;selectedDay=null;page=0;render()});
  $('ag-type')?.addEventListener('change',x=>{typeFilter=x.target.value;selectedDay=null;page=0;render()});
  $('ag-clear-day')?.addEventListener('click',()=>{selectedDay=null;page=0;render()});
@@ -323,6 +383,15 @@ function init(){
   const billPay=e.target.closest('[data-ag-bill-pay]');
   const billEdit=e.target.closest('[data-ag-bill-edit]');
   const receive=e.target.closest('[data-ag-receive]');
+  const showParcel=e.target.closest('[data-ag-show-parcel]');
+  if(showParcel){
+   const item=allAgendaItems().find(x=>x.origin==='parcela'&&x.id===showParcel.dataset.agShowParcel);
+   window.frFinanceUI?.selectView?.('payables');
+   const source=$('cp-source-filter'),query=$('cp-search');
+   if(source){source.value='parcela';source.dispatchEvent(new Event('change',{bubbles:true}));}
+   if(query){query.value=item?.title||'';query.dispatchEvent(new Event('input',{bubbles:true}));}
+   return;
+  }
   if(receive){
    const item=receivables.find(x=>String(x.id)===receive.dataset.agReceive);
    window.frFinanceUI?.selectView?.('receivables');

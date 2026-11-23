@@ -338,7 +338,9 @@ function sync(payload){
 function afterSaved(kind){
  const dlg=kind==='purchase'?'purchase':kind==='pay'?'pay':'move';
  closeModal(dlg);
- showToast(kind==='purchase'?'Compra oficial cadastrada.':kind==='pay'?'Boleto baixado no banco oficial.':'Movimentação oficial cadastrada.');
+ window.frInvoicesAgendaUI?.refresh?.();
+ window.frOperationalPayablesUI?.refresh?.();
+ showToast(kind='purchase'?'Compra oficial cadastrada.':kind==='pay'?'Boleto baixado no banco oficial.':'Movimentação oficial cadastrada.');
   window.frDeadlinesUI?.refresh?.();
   window.frForecastUI?.refresh?.();
   window.frManagerReportsUI?.refresh?.();
