@@ -142,18 +142,41 @@ async function renderItauReconciliation(){
   state.referenceCheck=validation;
   state.weakMatchCount=waiting.length;
   state.approvedMatchCount=approved.length;
-  const projected=rec.balanceCents/100;
-  label.textContent='Saldo do Excel homologado até '+dateBR(cutoff)+
-   ' + movimentos ainda não contabilizados nos extratos até '+dateBR(latestDate);
+  const projected=recWithApproved.balanceCents/100;
+  const opening=state.monthly.reduce((v,r)=>v+core.cents(r.saldo_abertura||0),0);
+  const historicalNet=state.monthly.reduce((v,r)=>v+core.cents(r.resultado_operacional||0),0);
+  const officialResult=historicalNet+approvedNet;
+  const firstMonth=String(state.monthly[0]?.mes||'').slice(0,7);
+  const lastApproved=approvedBank.map(x=>x.data_movimento).sort().pop()||cutoff;
+  const summary=approvedBank.length+' lançamento(s) de extrato aprovado(s) e '+
+    rec.pending.length+' em conferência. Saldo estimado não é saldo bancário confirmado.';
+  for(const id of ['itau-balance-overview','itau-balance-reports']){
+   const putField=(name,value)=>{const e=$(id+'-'+name);if(e)e.textContent=value;};
+   putField('result',money(officialResult/100));
+   putField('result-date','Desde '+firstMonth+' até '+dateBR(lastApproved)+
+    ' · entradas − saídas homologadas, sem saldo inicial');
+   putField('opening',money(opening/100));
+   putField('opening-date','Saldo inicial da base de '+firstMonth);
+   putField('balance',money(projected));
+   putField('balance-date','Estimativa até '+dateBR(state.latestImportedDate)+
+    ' · inclui extratos ainda em conferência');
+   putField('info',summary+(reference?' Última referência bancária: '+dateBR(reference.data_referencia)+'.':''));
+   $(id+'-result')?.classList.toggle('itau-balance-negative',officialResult<0);
+   $(id+'-balance')?.classList.toggle('itau-balance-negative',projected<0);
+  }
+  window.frItauApprovalUI?.render({pending:state.importedPending,cutoff,
+   approved:approvedBank.length,weak:waiting.length});
+  label.textContent='Histórico Excel até '+dateBR(cutoff)+
+   ' + PDFs homologados + extratos ainda em conferência até '+dateBR(latestDate);
   root.innerHTML=
    metric('Saldo histórico do Excel',money(baseline.saldo_teorico_acumulado),
     'Base homologada; sem lançar os boletos novamente')+
-   metric('Entradas adicionais',money(rec.addedIn/100),
+   metric('Entradas em conferência',money(rec.addedIn/100),
     count(rec.pending.filter(r=>r.natureza==='entrada').length)+' lançamento(s)','positive')+
-   metric('Saídas adicionais',money(rec.addedOut/100),
+   metric('Saídas em conferência',money(rec.addedOut/100),
     count(rec.pending.filter(r=>r.natureza==='saida').length)+' lançamento(s)')+
    metric('Saldo estimado até '+dateBR(state.latestImportedDate),money(projected),
-    'Prévia auditável; o caixa oficial não é modificado',
+    'Prévia estimada; '+approvedBank.length+' novo(s) movimento(s) homologado(s)',
     projected<0?'negative':'positive');
   const comparisonCents=validation.differenceCents;
   if(validation.status==='conferido'||validation.status==='divergente'){
@@ -191,7 +214,10 @@ async function renderItauReconciliation(){
    ', '+count(rec.pending.length)+' lançamento(s) adicional(is). '+
    count(audits.count||0)+' registro(s) antigo(s) marcado(s) como cancelado(s) com auditoria. '+
    'Registros anteriores ao fechamento ficam fora; os do próprio dia são adicionados somente se não houver correspondente no caixa homologado. Nenhum pagamento é criado, excluído ou duplicado. Cartões são conferidos separadamente.';
-  const pendingRows=rec.pending.map(r=>({...r,decisao:'Acrescentado ao saldo',badge:'new'}));
+  const pendingRows=rec.pending.map(r=>({...r,
+   decisao:'Somente no saldo estimado · ainda em conferência',badge:'new'}));
+  const approvedRows=approvedImported.map(r=>({...r,
+   decisao:'Homologado manualmente · entrou no caixa oficial',badge:'confirmed'}));
   const duplicateRows=repeated.map(r=>({...r,decisao:'Repetido · ignorado',badge:'duplicate'}));
   const weakRows=rec.weakMatches.map(r=>({
    ...r.bank,
@@ -200,7 +226,7 @@ async function renderItauReconciliation(){
     'Correspondência pendente por data/tipo/valor · Excel: '+String(r.official.descricao||'sem descrição'),
    badge:isApproved(r)?'confirmed':'review'
   }));
-  const entries=[...pendingRows,...duplicateRows,...weakRows]
+  const entries=[...pendingRows,...approvedRows,...duplicateRows,...weakRows]
    .sort((a,b)=>String(b.data_lancamento).localeCompare(String(a.data_lancamento))||
     String(a.descricao).localeCompare(String(b.descricao))).slice(0,100);
   table.innerHTML=entries.length?entries.map(r=>
@@ -211,7 +237,8 @@ async function renderItauReconciliation(){
    '<td><span class="hist-reconcile-flag '+r.badge+'">'+safe(r.decisao)+'</span></td></tr>'
   ).join(''):'<tr><td colspan="5" class="hist-empty">Nenhum ajuste necessário neste período.</td></tr>';
  }catch(e){
-  state.importedPending=[];state.officialCutoff='';state.latestImportedDate='';
+  state.importedPending=[];state.approvedImported=[];state.officialCutoff='';state.latestImportedDate='';
+  window.frItauApprovalUI?.render({pending:[],cutoff:'',approved:0,weak:0});
   state.referenceCheck=null;state.weakMatchCount=0;state.approvedMatchCount=0;
   label.textContent='Falha de conciliação. Saldo não calculado.';
   root.innerHTML='';headline.innerHTML='';
@@ -346,7 +373,8 @@ function open(view){
 /* O relatório mistura, apenas em memória, o lote homologado com PDFs não conciliados desde
    ao fechamento. A fonte original e os pagamentos confirmados não são alterados. */
 function reportMonths(){
- return core.buildMonthly(state.monthly,state.importedPending,state.officialCutoff);
+ return core.buildMonthly(state.monthly,
+  [...state.approvedImported,...state.importedPending],state.officialCutoff);
 }
 function period(){
  const months=reportMonths();
