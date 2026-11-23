@@ -11,7 +11,8 @@ const sql=read('sql/migrations/20261123_classificar_compras_cartoes_com_auditori
 test('a área Cartões permite classificar por mês e fonte sem lançar pagamentos',()=>{
  for(const id of ['cbcat-panel','cbcat-source','cbcat-year','cbcat-month','cbcat-card',
   'cbcat-category','cbcat-status-filter','cbcat-search','cbcat-rows','cbcat-dialog',
-  'cbcat-edit-value','cbcat-edit-save','cbcat-breakdown','cbcat-unclassified'])
+  'cbcat-edit-value','cbcat-edit-finalidade','cbcat-purpose-filter','cbcat-purpose-pending',
+  'cbcat-edit-save','cbcat-breakdown','cbcat-unclassified'])
    assert.ok(html.includes('id="'+id+'"'),id);
  assert.match(html,/option value="planilha">Histórico da planilha/);
  assert.match(html,/option value="importado">Faturas importadas/);
@@ -26,12 +27,13 @@ test('fontes não são somadas entre si, e a classificação não cria entrada d
  assert.match(ui,/if\(month!=='todos'&&x\.mes!==month\)return false/);
  assert.match(ui,/cbcat-breakdown/);
  assert.match(ui,/cbcat-status-filter/);
- assert.match(ui,/db\.rpc\('fin_cartao_categoria_definir'/);
+ assert.match(ui,/db\.rpc\('fin_cartao_classificacao_salvar'/);
  assert.doesNotMatch(ui,/db\.from\('fin_movimentos'\)/);
  assert.doesNotMatch(ui,/db\.from\('fin_documentos_despesas'\)\.update/);
 });
-test('modal salva somente categoria com compare-and-swap',()=>{
+test('modal salva categoria e finalidade com compare-and-swap',()=>{
  assert.match(ui,/p_categoria_esperada:row\.categoria/);
+ assert.match(ui,/p_finalidade_esperada:row\.finalidade/);
  assert.match(ui,/p_lancamento_id:row\.id/);
  assert.match(ui,/p_origem:row\.origem/);
  assert.match(sql,/v_antes is distinct from p_categoria_esperada/);
@@ -125,6 +127,7 @@ test('botão Categorizar abre dialog a partir da tabela e pesquisa filtra por pr
   if(name==='fin_documentos_despesas')return query(docs);
   if(name==='fin_cartoes_categorias_documentais')return query([]);
   if(name==='fin_teste_cartao_lancamentos')return query([]);
+  if(name==='fin_cartoes_finalidades')return query([]);
   throw Error('Tabela não esperada: '+name);
  }};
  const fake={frCardNames:{canonical:v=>v}};
@@ -146,6 +149,7 @@ test('botão Categorizar abre dialog a partir da tabela e pesquisa filtra por pr
  assert.equal(el('cbcat-dialog').open,true);
  assert.match(el('cbcat-edit-summary').textContent,/Ferramentas/);
  assert.equal(el('cbcat-edit-value').value,'');
+ assert.equal(el('cbcat-edit-finalidade').value,'a_classificar');
  el('cbcat-dialog').close();
  el('cbcat-search').value='150,00';
  el('cbcat-search').trigger('input',{});
