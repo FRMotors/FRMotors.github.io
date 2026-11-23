@@ -31,6 +31,7 @@ function sandbox(data){
    const filters=[],orders=[];
    const q={select(){return q},
     eq(key,value){filters.push(x=>x[key]===value);return q},
+     in(key,values){filters.push(x=>values.includes(x[key]));return q},
     order(key,{ascending=true}={}){orders.push([key,ascending]);return q},
     async range(a,b){
      calls.push({a,b});
@@ -89,7 +90,7 @@ test('a interface oferece seletores, paginação e exportação por mês',()=>{
  'hist-itau-mes-search','hist-itau-mes-rows','hist-itau-mes-page-prev','hist-itau-mes-page-next',
  'hist-itau-mes-export','hist-itau-mes-page-size'])
   assert.ok(html.includes('id="'+id+'"'),id);
- assert.ok(html.includes('financeiro-itau-mensal.js?v=20261119month1'));
+ assert.match(html,/financeiro-itau-mensal\.js\?v=202611\d+[a-z0-9]+/);
 });
 test('carrega mais de 40 registros e exibe todas as páginas',async()=>{
  const records=Array.from({length:165},(_,i)=>official(String(i+1),'2026-10-'+
