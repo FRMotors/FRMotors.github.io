@@ -126,6 +126,7 @@ function updateBank({preserve=false}={}){
   ' Apenas a saída selecionada será vinculada.':
   'Selecione um boleto para consultar os pagamentos.');
  write('op-pay-base',doc?brl(doc.valor):'—');
+ write('op-pay-base-label',doc?.tipo==='avulso'?'Valor de referência do boleto':'Valor original da planilha');
  write('op-pay-source',doc?doc.origem+' · '+doc.fornecedor+' · vencimento '+dateBR(doc.vencimento):'Selecione um compromisso.');
  if($('op-pay-adjust-wrap'))$('op-pay-adjust-wrap').hidden=doc?.tipo!=='homologado';
  if($('op-pay-reason-wrap'))$('op-pay-reason-wrap').hidden=doc?.tipo!=='homologado';
