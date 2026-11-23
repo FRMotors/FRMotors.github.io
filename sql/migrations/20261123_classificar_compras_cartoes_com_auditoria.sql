@@ -51,7 +51,7 @@ begin
  if v_user is null or not public.fluxo_caixa_autorizado() then
   raise exception 'Acesso financeiro não autorizado' using errcode='42501';
  end if;
- if p_origem not in ('planilha','importado') or p_lancamento_id is null then
+ if p_origem is null or p_origem not in ('planilha','importado') or p_lancamento_id is null then
   raise exception 'Origem de compra de cartão inválida' using errcode='22023';
  end if;
  v_categoria:=upper(btrim(coalesce(p_categoria,'')));
