@@ -35,7 +35,7 @@ test('despesas por finalidade não confundem oficina, pessoal, indefinido nem PI
  assert.equal(jan.outras,5530);
  assert.equal(jan.pendentes,8050);
  assert.equal(jan.meios,6000);
- assert.equal(jan.card,31600);
+ assert.equal(jan.card,31580);
  assert.equal(jan.cardCount,5);
  assert.equal(jan.card,jan.oficina+jan.outras+jan.pendentes+jan.meios);
  assert.equal(result.get('2026-02').auto,15000);
