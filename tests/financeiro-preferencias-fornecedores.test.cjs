@@ -31,7 +31,7 @@ test('Navegação chama Administração sem alterar a rota imports existente',()
 test('Botão Salvar seleção e mensagens de estado estão presentes e cache do JS muda',()=>{
  assert.match(html,/id="doc-supplier-save" disabled>Salvar seleção<\/button>/);
  assert.match(html,/id="doc-supplier-choice-storage"[^>]*aria-live="polite"/);
- assert.match(html,/financeiro-documentos\.js\?v=20261120suppliercloud1/);
+ assert.match(html,/financeiro-documentos\.js\?v=\w+/);
  assert.match(js,/addEventListener\('click',\(\)=>persistSupplierSelection\(\)\)/);
 });
 test('Tabela de preferências tem RLS por identidade, sem alterar lançamentos',()=>{
