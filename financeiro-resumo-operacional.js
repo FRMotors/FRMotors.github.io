@@ -243,7 +243,7 @@ async function refresh(){
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
    const [mv,cp,av,links,bLinks,fs,ds,pp,ip,agendaRows]=await Promise.all([
     allRows(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,estado,origem,valor')
-     .eq('origem','fluxo_caixa_homologado').eq('estado','confirmado')
+     .in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).eq('estado','confirmado')
      .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
     allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,descricao,situacao,vencimento,valor_referencia').is('arquivado_em',null)
      .order('id',{ascending:true})),
