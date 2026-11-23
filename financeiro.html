@@ -569,7 +569,7 @@
 <link rel="stylesheet" href="./financeiro-central-vencimentos.css?v=20261118merged2">
 <link rel="stylesheet" href="./financeiro-painel-mensal.css?v=20261118calendar1">
 <link rel="stylesheet" href="./financeiro-projecao-caixa.css?v=20261118forecast1">
-<link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261118trash1">
+<link rel="stylesheet" href="./financeiro-lixeira-boletos.css?v=20261123collapse1">
 <link rel="stylesheet" href="./financeiro-relatorios-gerenciais.css?v=20261121orders1">
 <link rel="stylesheet" href="./financeiro-classificacao.css?v=20261118classify1">
 <link rel="stylesheet" href="./financeiro-faturas-cartoes.css?v=20261118cartoes1">
@@ -1641,7 +1641,7 @@
 <section class="card" id="fin-cp-operacional" aria-labelledby="fin-cp-title">
           <div class="card-head">
             <div><h2 id="fin-cp-title">Carteira operacional de Contas a Pagar</h2>
-              <p>Compromissos da planilha e boletos cadastrados no aplicativo, com rastreabilidade e conciliações preservadas.</p></div>
+              <p>Compromissos importados, boletos avulsos e parcelas de compras em boleto em uma única carteira, com suas origens identificadas.</p></div>
             <div class="header-buttons fin-cp-actions">
               <button class="btn" type="button" data-trash-go="1"><span class="icon icon-sm" data-icon="receipt"></span> Lixeira / histórico</button>
               <button class="btn btn-primary" type="button" data-ops-new><span class="icon icon-sm" data-icon="plus"></span> Novo boleto</button>
@@ -1653,7 +1653,7 @@
           </div>
           <div class="fin-cp-grid">
             <article class="insight-card"><span>Contas pendentes</span><strong id="cp-count">—</strong><small>Sem pagamentos em duplicidade</small></article>
-            <article class="insight-card"><span>Valor base pendente</span><strong id="cp-total">—</strong><small>Contas da planilha e boletos adicionados</small></article>
+            <article class="insight-card"><span>Valor base pendente</span><strong id="cp-total">—</strong><small>Inclui parcelas de boletos, sem dupla contagem</small></article>
             <article class="insight-card"><span>Total vencido</span><strong id="cp-overdue">—</strong><small>Compromissos vencidos sem baixa</small></article>
             <article class="insight-card"><span>Vencem em 7 dias</span><strong id="cp-soon">—</strong><small>Próximos vencimentos</small></article>
             <article class="insight-card"><span>Sem vencimento</span><strong id="cp-undated">—</strong><small>Não foi inventada data</small></article>
@@ -1670,6 +1670,12 @@
               <option value="proximos7">Próximos 7 dias</option>
               <option value="sem_data">Sem vencimento</option>
               <option value="conciliado">Conciliados</option>
+            </select>
+            <select id="cp-source-filter" class="filter-select" aria-label="Filtrar contas a pagar pela origem">
+              <option value="todos">Todas as origens</option>
+              <option value="planilha">Planilha importada</option>
+              <option value="avulso">Boleto avulso</option>
+              <option value="parcela">Compra parcelada</option>
             </select>
             <select id="cp-year-filter" class="filter-select" aria-label="Filtrar contas a pagar por ano"><option value="todos">Todos os anos</option></select>
             <select id="cp-month-filter" class="filter-select" aria-label="Filtrar por mês">
@@ -1689,7 +1695,7 @@
             <div><button class="btn" type="button" id="cp-prev" disabled>Anterior</button>
                  <button class="btn" type="button" id="cp-next" disabled>Próxima</button></div>
           </div>
-          <p class="info-note fin-cp-note">O valor de referência não é automaticamente tratado como valor cheio. Boletos adicionados ao aplicativo também aparecem nesta carteira, sem alterar a planilha original. Descontos possíveis da PARQUE são apenas estimativas até o vencimento e não geram baixas. A opção <strong>Conciliar</strong> utiliza a saída bancária existente; só depois da confirmação o vínculo chega à carteira operacional.</p>
+          <p class="info-note fin-cp-note">Boletos da planilha, avulsos e parcelas de compras aparecem juntos, com a origem de cada um identificada. O valor original importado não é alterado. Para parcelas cadastradas no site, <strong>Dar baixa</strong> abre o formulário específico da parcela: se o pagamento já estiver no extrato, não registre uma nova saída bancária.</p>
         </section>
 
         <section class="card fin-op-manual-card" id="op-boletos-adicionados">
@@ -1728,21 +1734,6 @@
           </table></div>
           <div class="table-footer" id="fin-homolog-shown">Aguardando dados.</div>
           <p class="info-note fin-homolog-note">Os compromissos são os registros expressamente marcados como EM ABERTO no Fluxo de Caixa. Nem todos são boletos de autopeças. A aba de origem informa o valor previsto, mas não o valor cheio ou desconto individual: esses campos aparecem como “—”. O vínculo de conciliação é exibido separadamente e não altera a planilha nem cria pagamentos.</p>
-        </section>
-        </details>
-        <details class="fin-cp-legacy" open>
-          <summary>Boletos e parcelas cadastrados pelo site</summary>
-        <h2 class="fin-homolog-manual-title">Parcelas operacionais da FR Motors</h2>
-        <div class="section-card-list">
-          <article class="insight-card"><span>Valor cheio em aberto</span><strong id="pending-value">R$ 0,00</strong><small>Antes de descontos e encargos</small></article>
-          <article class="insight-card"><span>Valor cheio vencido</span><strong id="overdue-value">R$ 0,00</strong><small>Parcelas com vencimento anterior a hoje</small></article>
-          <article class="insight-card"><span>Vencem nos próximos sete dias</span><strong id="soon-count">0</strong><small>Contagem de parcelas</small></article>
-        </div>
-        <section class="card">
-          <div class="card-head"><div><h2>Boletos e parcelas cadastrados pelo site</h2><p>Novos boletos oficiais; carteira histórica conciliada preservada.</p></div><div class="header-buttons"><button type="button" class="btn" data-open="purchase"><span class="icon icon-sm" data-icon="plus"></span> Nova compra</button><button type="button" class="btn btn-primary" data-open="pay"><span class="icon icon-sm" data-icon="check"></span> Dar baixa</button></div></div>
-          <div class="data-toolbar"><label class="search-box"><span class="icon icon-sm" data-icon="search"></span><input id="search-dues" type="search" placeholder="Buscar fornecedor ou vencimento..." aria-label="Buscar contas a pagar"></label></div>
-          <div class="table-wrap"><table class="data-table"><thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Parcela</th><th class="money">Valor cheio</th><th>Situação</th><th></th></tr></thead><tbody id="due"><tr><td colspan="6" class="empty">Aguardando dados...</td></tr></tbody></table></div>
-          <div class="table-footer" id="dues-count">0 parcela(s)</div>
         </section>
         </details>
         <dialog id="op-new-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="op-new-title">
@@ -1893,6 +1884,11 @@
             <div class="form-actions"><button type="submit" class="btn btn-primary" id="cp-save">Salvar alterações</button></div>
           </form>
         </dialog>
+        <details class="fin-trash-collapse" id="trash-collapse">
+         <summary class="fin-trash-collapse-summary">
+           <span><strong>Lixeira de Boletos</strong><small>Boletos arquivados e restauração</small></span>
+           <span class="fin-trash-collapse-chevron" aria-hidden="true">⌄</span>
+         </summary>
         <section class="card fin-trash" id="trash-panel" aria-labelledby="trash-title">
          <div class="card-head">
           <div class="fin-trash-intro">
@@ -1924,6 +1920,7 @@
           <button id="trash-more" type="button" class="btn" hidden>Ver todos</button>
          </div>
         </section>
+        </details>
         <dialog id="trash-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="trash-dialog-title" aria-describedby="trash-dialog-summary">
          <form id="trash-dialog-form">
           <div class="dialog-head">
@@ -3374,7 +3371,6 @@ async function render(){
  updatePaymentOptions();
  const name=id=>suppliers.find(x=>x.id===id)?.nome||'—';
  $('rows').innerHTML=rows.length?rows.map(x=>'<tr><td>'+dateFmt(x.data_movimento)+'</td><td>'+safe(x.descricao)+'</td><td>'+safe(x.tipo)+'</td><td>'+safe(name(x.fornecedor_id))+'</td><td class="money">'+fmt.format(Number(x.valor))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Nenhum lançamento no período.</td></tr>';
- $('due').innerHTML=openInstallments.length?openInstallments.map(x=>'<tr><td>'+dateFmt(x.vencimento)+'</td><td>'+safe(name(x.fin_compras?.fornecedor_id))+'</td><td>'+x.numero+'</td><td class="money">'+fmt.format(Number(x.valor_cheio))+'</td><td>'+safe(x.status)+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Nenhuma parcela em aberto.</td></tr>';
  window.frFinanceUI?.sync({moves:rows,dues:openInstallments,purchases,suppliers});
 }
 function selectedPaymentParcel(){return openInstallments.find(x=>x.id===$('pay-installment').value);}
@@ -3451,7 +3447,7 @@ async function savePayment(e){
   });
   if(error)throw error;if(!data)throw Error('Servidor não confirmou a baixa.');
   delete $('pay-form').dataset.operacaoChave;
-  msg('pay-status','Pagamento oficial registrado e parcela baixada.');await render();window.frFinanceUI?.afterSaved('pay');
+  msg('pay-status','Pagamento oficial registrado e parcela baixada.');await render();await window.frOperationalPayablesUI?.refresh?.();window.frFinanceUI?.afterSaved('pay');
  }catch(err){msg('pay-status','Não foi possível registrar a baixa: '+err.message,true)}finally{btn.disabled=false}
 }
 function openCreditPurchaseFromMovement(){
@@ -3547,7 +3543,7 @@ async function savePurchase(e){
   if(!purchaseId)throw Error('O servidor não confirmou a compra.');
   delete f.dataset.operacaoChave;
   msg('purchase-status','Compra oficial e '+items.length+' parcela(s) gravadas. Baixas serão registradas separadamente.');
-  f.reset();updateInstallments();await render();window.frFinanceUI?.afterSaved('purchase');
+  f.reset();updateInstallments();await render();await window.frOperationalPayablesUI?.refresh?.();window.frFinanceUI?.afterSaved('purchase');
  }catch(err){msg('purchase-status','Não foi possível concluir: '+err.message,true)}finally{b.disabled=false}
 }
 async function init(){
@@ -3613,7 +3609,7 @@ init();
 <script src="./financeiro-itau-mensal.js?v=20261119month1" defer></script>
 <script src="./financeiro-historico.js?v=20261119review2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261123ajuste1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261123unificado1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-documentos.js?v=20261120suppliercloud1" defer></script>
@@ -3630,7 +3626,7 @@ init();
 <script src="./financeiro-detalhamento-caixa.js?v=20261116detail1" defer></script>
 <script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
-<script src="./financeiro-lixeira-boletos.js?v=20261118trash1" defer></script>
+<script src="./financeiro-lixeira-boletos.js?v=20261123collapse1" defer></script>
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>

@@ -1,5 +1,5 @@
 /* FR Motors | Carteira de Contas a Pagar operacional 2026.
-   Origem: fin_contas_pagar. Pagamentos só via conciliação bancária já existente.
+   Origens: fin_contas_pagar, fin_boletos_avulsos e fin_parcelas de compras em boleto. Ações mantêm suas rotinas próprias de baixa.
    Valor previsto e valor cheio confirmado são grandezas distintas. */
 (function(){
 'use strict';
@@ -20,6 +20,9 @@ const cents=x=>Math.round(Number(x)*100);
 let all=[],suppliers=new Map(),cashLinks=new Map(),manualLinks=new Map(),page=0,busy=false,loading=null,editing=null;
 const pageSize=25;
 function stateOf(r,now){
+ if(r.registro_tipo==='parcela')
+  return r.status==='pago'?'conciliado_fluxo':r.status==='cancelado'?'cancelado':
+   !r.vencimento?'sem_data':r.vencimento<now?'vencido':r.vencimento===now?'hoje':'a_vencer';
  if(r.registro_tipo==='avulso'){
   const manual=manualLinks.get(r.id);
   if(manual)return manual.source==='extrato'?'conciliado':'conciliado_fluxo';
@@ -32,7 +35,7 @@ function stateOf(r,now){
  return 'a_vencer';
 }
 function estimatedDiscount(r,now){
- if(r.registro_tipo==='avulso')return null;
+ if(r.registro_tipo!=='planilha')return null;
  if(r.situacao!=='aberto'||cashLinks.has(r.id)||!r.vencimento||r.vencimento<now||!r.fornecedor_id)return null;
  const s=suppliers.get(r.fornecedor_id);
  if(!s||!s.desconto_ate_vencimento)return null;
@@ -49,6 +52,7 @@ function filterRows(){
  const q=($('cp-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  const filter=$('cp-status-filter')?.value||'todos';
  const month=$('cp-month-filter')?.value||'todos';
+ const source=$('cp-source-filter')?.value||'todos';
  const year=$('cp-year-filter')?.value||'todos';
  const now=today(),next7=plusDays(now,7);
  return all.filter(r=>{
@@ -56,10 +60,12 @@ function filterRows(){
   const accepted=filter==='todos'||(filter==='aberto'&&s!=='conciliado'&&s!=='conciliado_fluxo')||
     (filter==='proximos7'&&s!=='conciliado'&&s!=='conciliado_fluxo'&&r.vencimento&&r.vencimento>=now&&r.vencimento<=next7)||
     (filter==='conciliado'&&(s==='conciliado'||s==='conciliado_fluxo'))||filter===s;
-  if(!accepted||(year!=='todos'&&r.vencimento?.slice(0,4)!==year)||
+  if(!accepted||(source!=='todos'&&r.registro_tipo!==source)||
+    (year!=='todos'&&r.vencimento?.slice(0,4)!==year)||
     (month!=='todos'&&r.vencimento?.slice(0,7)!==month))return false;
   const haystack=[r.fornecedor_nome,r.descricao,r.categoria,r.vencimento,r.linha_original,
-   r.codigo_origem,r.observacoes].join(' ').toLocaleLowerCase('pt-BR');
+   r.codigo_origem,r.observacoes,r.numero,r.registro_tipo,
+    r.registro_tipo==='parcela'?'boleto compra parcelada':''].join(' ').toLocaleLowerCase('pt-BR');
   return haystack.includes(q);
  });
 }
@@ -103,7 +109,7 @@ function draw(){
  const tbody=$('cp-rows');
  if(tbody){
   tbody.innerHTML=visible.length?visible.map(r=>{
-   const st=stateOf(r,now),possible=estimatedDiscount(r,now),cashLink=r.registro_tipo==='avulso'?manualLinks.get(r.id):cashLinks.get(r.id);
+   const st=stateOf(r,now),possible=estimatedDiscount(r,now),cashLink=r.registro_tipo==='avulso'?manualLinks.get(r.id):r.registro_tipo==='planilha'?cashLinks.get(r.id):null;
    const discount=cashLink?money(cashLink.desconto):r.desconto_efetivo!==null?money(r.desconto_efetivo):
     (possible?'<span class="cp-possible">'+money(possible.discount/100)+' <small>possível '+possible.pct+'%</small></span>':'—');
    const adjustment=cashLink?Number(cashLink.ajuste_valor||0):Number(r.ajuste_efetivo||0);
@@ -120,14 +126,17 @@ function draw(){
     '<td><span class="row-main">'+esc(dateBR(r.vencimento))+'</span></td>'+
     '<td><span class="row-main">'+esc(r.fornecedor_nome)+'</span>'+
        (r.descricao!==r.fornecedor_nome?'<span class="row-sub">'+esc(r.descricao)+'</span>':'')+
-       '<small class="cp-src">'+(r.registro_tipo==='avulso'?'Cadastrado no aplicativo':'Planilha · linha '+esc(r.linha_excel))+'</small></td>'+
+       '<small class="cp-src">'+(r.registro_tipo==='parcela'?'Compra parcelada · boleto nº '+esc(r.numero):r.registro_tipo==='avulso'?'Boleto avulso cadastrado no aplicativo':'Planilha · linha '+esc(r.linha_excel))+'</small></td>'+
     '<td>'+esc(r.categoria||'Não informada')+'</td>'+
     '<td class="money"><strong>'+money(r.valor_referencia)+'</strong></td>'+
     '<td class="money">'+(r.valor_cheio_informado===null?'—':money(r.valor_cheio_informado))+'</td>'+
     '<td class="money">'+discount+'</td>'+
     '<td class="money cp-value">'+amount+'</td>'+
     '<td><span class="state '+statusClass+'">'+esc(statusLabel(st))+'</span></td>'+
-    '<td><div class="cp-actions">'+(r.registro_tipo==='avulso'?
+    '<td><div class="cp-actions">'+(r.registro_tipo==='parcela'?
+      '<button class="row-edit-button" type="button" data-pay-id="'+esc(r.id)+'">Dar baixa da parcela</button>'+
+      '<button class="row-edit-button" type="button" data-edit-record="compra" data-edit-id="'+esc(r.compra_id)+'">Editar compra</button>':
+      r.registro_tipo==='avulso'?
       (cashLink?'—':'<button class="row-edit-button" type="button" data-cp-manual-edit="'+esc(r.id)+'">Editar</button>'+
        '<button class="row-edit-button" type="button" data-cp-manual-pay="'+esc(r.id)+'">Dar baixa</button>'+
         '<button class="row-edit-button" type="button" data-cp-archive-manual="'+esc(r.id)+'">Mover para lixeira</button>'):
@@ -149,26 +158,43 @@ async function refresh(){
    if(typeof db==='undefined'||!db)throw Error('Conexão indisponível.');
    const {data:autorizado,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||autorizado!==true)throw Error('Acesso financeiro não autorizado.');
-   const [rows,manualRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes]=await Promise.all([
+   const [rows,manualRes,parcelRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes]=await Promise.all([
     db.from('fin_contas_pagar').select(
      'id,origem_chave,linha_origem_id,linha_excel,linha_original,codigo_origem,descricao,fornecedor_nome,fornecedor_id,categoria,vencimento,valor_referencia,valor_cheio_informado,desconto_efetivo,juros_efetivos,ajuste_efetivo,justificativa_ajuste,valor_pago,data_pagamento,situacao,observacoes'
     ).is('arquivado_em',null).order('vencimento',{ascending:true,nullsFirst:false}).order('linha_excel',{ascending:true}).limit(500),
     db.from('fin_boletos_avulsos')
      .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em')
      .is('excluido_em',null).order('criado_em',{ascending:false}).limit(500),
+    db.from('fin_parcelas').select(
+     'id,compra_id,numero,vencimento,valor_cheio,status,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento)'
+    ).eq('status','aberto').eq('fin_compras.forma_pagamento','boleto')
+     .order('vencimento',{ascending:true}).order('id',{ascending:true}).limit(500),
     db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento'),
     db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,ajuste_valor,justificativa_ajuste,data_pagamento').not('conta_pagar_id','is',null),
     db.from('fin_baixas_operacionais').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
      .not('boleto_avulso_id','is',null),
     db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
    ]);
-   for(const result of [rows,manualRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes])if(result.error)throw result.error;
-   if((rows.data||[]).length>=500||(manualRes.data||[]).length>=500)
-    throw Error('Carteira maior que 500 contas por origem. Paginação do banco necessária.');
+   for(const result of [rows,manualRes,parcelRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes])if(result.error)throw result.error;
+   if((rows.data||[]).length>=500||(manualRes.data||[]).length>=500||(parcelRes.data||[]).length>=500)
+    throw Error('Carteira maior que 500 registros em uma origem. Paginação necessária: não exibir totais incompletos.');
    const originals=(rows.data||[]).map(r=>({...r,registro_tipo:'planilha'}));
    const added=(manualRes.data||[]).map(r=>({...r,registro_tipo:'avulso',situacao:'aberto',
     valor_cheio_informado:null,desconto_efetivo:null,juros_efetivos:null,valor_pago:null,data_pagamento:null}));
-   all=[...added,...originals];
+   const vendorNames=new Map((suppliersRes.data||[]).map(x=>[x.id,x.nome]));
+   const installmentRows=(parcelRes.data||[]).filter(x=>x.fin_compras?.forma_pagamento==='boleto')
+    .map(x=>({
+     id:x.id,compra_id:x.compra_id,registro_tipo:'parcela',numero:x.numero,
+     descricao:x.fin_compras.descricao||'Compra parcelada',fornecedor_id:x.fin_compras.fornecedor_id,
+     fornecedor_nome:vendorNames.get(x.fin_compras.fornecedor_id)||'Fornecedor cadastrado',
+     categoria:'Compra parcelada',vencimento:x.vencimento,
+     valor_referencia:Number(x.valor_cheio),valor_cheio_informado:null,
+     desconto_efetivo:null,juros_efetivos:null,valor_pago:null,data_pagamento:null,
+     situacao:'aberto',status:x.status,observacoes:'',codigo_origem:'',linha_original:''
+    }));
+   all=[...added,...originals,...installmentRows].sort((a,b)=>
+    String(a.vencimento||'9999-12-31').localeCompare(String(b.vencimento||'9999-12-31'))||
+    String(a.id).localeCompare(String(b.id)));
    cashLinks=new Map((linkedRes.data||[]).map(x=>[x.conta_pagar_id,x]));
    manualLinks=new Map();
    (manualFluxoRes.data||[]).forEach(x=>manualLinks.set(x.boleto_avulso_id,{...x,source:'fluxo'}));
@@ -176,7 +202,8 @@ async function refresh(){
    suppliers=new Map((suppliersRes.data||[]).map(x=>[x.id,x]));
    updateYears();updateMonths();draw();
    set('cp-load-status','Carteira operacional ativa: '+originals.length+' compromissos da planilha e '+
-    added.length+' boletos cadastrados no aplicativo. Conciliações preservadas, sem criar saídas adicionais.');
+    added.length+' boletos avulsos e '+installmentRows.length+
+    ' parcelas de compras em boleto. Cada compromisso aparece uma vez, sem criar saídas adicionais.');
   }catch(error){
    set('cp-load-status','Falha ao consultar contas a pagar: '+(error.message||error));
    if($('cp-rows'))$('cp-rows').innerHTML='<tr><td colspan="9" class="empty">Não foi possível consultar a carteira operacional.</td></tr>';
@@ -252,6 +279,7 @@ async function reconcile(id){
 function init(){
  if(!$('cp-rows'))return;
  $('cp-search')?.addEventListener('input',()=>{page=0;draw()});
+ $('cp-source-filter')?.addEventListener('change',()=>{page=0;draw()});
  $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data'){$('cp-month-filter').value='todos';$('cp-year-filter').value='todos';}draw()});
  $('cp-year-filter')?.addEventListener('change',()=>{updateMonths();page=0;draw()});
  $('cp-month-filter')?.addEventListener('change',()=>{page=0;draw()});

@@ -46,3 +46,17 @@
  .fin-trash-footer{padding:12px}
  #trash-dialog-submit{width:100%}
 }
+/* Lixeira compacta: histórico aberto somente sob demanda. */
+.fin-trash-collapse{display:block;margin:18px 0 0;border:1px solid #dfe5e8;border-radius:15px;background:#fff;overflow:hidden}
+.fin-trash-collapse-summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:17px 20px;color:#284757;user-select:none}
+.fin-trash-collapse-summary::-webkit-details-marker{display:none}
+.fin-trash-collapse-summary::marker{content:''}
+.fin-trash-collapse-summary>span:first-child{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fin-trash-collapse-summary strong{font-size:16px;font-weight:800}
+.fin-trash-collapse-summary small{font-size:12px;color:#667d88;line-height:1.4}
+.fin-trash-collapse-chevron{color:#557781;font-size:21px;transition:transform .18s ease}
+.fin-trash-collapse[open] .fin-trash-collapse-chevron{transform:rotate(180deg)}
+.fin-trash-collapse-summary:hover{background:#f7fafb}
+.fin-trash-collapse-summary:focus-visible{outline:3px solid #4ba6b2;outline-offset:-3px}
+.fin-trash-collapse .fin-trash{margin-top:0;border:0;border-top:1px solid #e6eff0;border-radius:0;box-shadow:none}
+@media(max-width:650px){.fin-trash-collapse-summary{padding:14px 12px}}
