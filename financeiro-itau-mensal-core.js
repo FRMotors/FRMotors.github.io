@@ -24,7 +24,7 @@ function officialRows(records){
   if(!row.id||seen.has(row.id))throw Error('Movimento homologado sem ID ou repetido.');
   seen.add(row.id);
   if(!validDate(row.data_movimento)||!['entrada','saida'].includes(row.tipo)||
-   row.estado!=='confirmado'||row.origem!=='fluxo_caixa_homologado')
+   row.estado!=='confirmado'||!['fluxo_caixa_homologado','extrato_itau_homologado'].includes(row.origem))
    throw Error('Histórico homologado com data, natureza ou estado inválido.');
   return {id:'oficial:'+row.id,date:row.data_movimento,type:row.tipo,
    value:cents(row.valor),description:row.descricao||'Sem descrição',
