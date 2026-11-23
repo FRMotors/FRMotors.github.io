@@ -23,6 +23,22 @@ async function all(makeQuery,max=6000){
  }
  throw Error('Mais de '+max+' compras: análise bloqueada para não mostrar totais parciais.');
 }
+// A pesquisa aceita moeda brasileira, ponto decimal e separadores de milhar.
+function priceCents(input){
+ const raw=String(input??'').trim().replace(/^R\$\s*/i,'').replace(/[\s\u00a0]/g,'').replace(/[\u2212\u2013\u2014]/g,'-');
+ if(!/^-?\d[\d.,]*$/.test(raw))return null;
+ let value=raw;
+ const comma=value.lastIndexOf(','),dot=value.lastIndexOf('.');
+ if(comma>=0&&dot>=0)value=comma>dot?value.replace(/\./g,'').replace(',','.'):value.replace(/,/g,'');
+ else if(comma>=0)value=value.replace(/\./g,'').replace(',','.');
+ else if(dot>=0){
+  const decimals=value.length-dot-1;
+  if(decimals===3&&/^\-?\d{1,3}(\.\d{3})+$/.test(value))value=value.replace(/\./g,'');
+  else if(decimals>2)return null;
+ }
+ const parsed=Number(value);
+ return Number.isFinite(parsed)&&Number.isSafeInteger(Math.round(parsed*100))?Math.round(parsed*100):null;
+}
 function values(id){return $(id)?.value||'todos'}
 function setOptions(id,items,empty,initial){
  const el=$(id);if(!el)return;
@@ -50,6 +66,7 @@ function filtered(){
  const source=values('cbcat-source'),year=values('cbcat-year'),month=values('cbcat-month'),
   card=values('cbcat-card'),cat=values('cbcat-category'),status=values('cbcat-status-filter');
  const search=String($('cbcat-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
+ const searchedAmount=priceCents(search);
  return state.items.filter(x=>{
   if(x.origem!==source)return false;
   if(year!=='todos'&&x.mes.slice(0,4)!==year)return false;
@@ -58,7 +75,12 @@ function filtered(){
   if(cat!=='todos'&&x.categoria!==cat)return false;
   if(status==='sem'&&!generic(x.categoria))return false;
   if(status==='definida'&&generic(x.categoria))return false;
-  return !search||[x.descricao,x.cartao,x.parcela,x.mes,x.data,x.categoria,x.valor]
+  if(!search)return true;
+  // Número sozinho ou em formato monetário corresponde ao valor exato.
+  if(searchedAmount!==null&&Math.round(x.valor*100)===searchedAmount)return true;
+  // Também encontra fragmentos do valor formatado: 250,50; 1.250,50; R$ 1.250,50.
+  return [x.descricao,x.cartao,x.parcela,x.mes,x.data,x.categoria,
+   String(x.valor),money(x.valor),Number(x.valor).toFixed(2).replace('.',',')]
    .join(' ').toLocaleLowerCase('pt-BR').includes(search);
  }).sort((a,b)=>b.mes.localeCompare(a.mes)||b.data.localeCompare(a.data)||
    a.descricao.localeCompare(b.descricao,'pt-BR'));
@@ -107,20 +129,30 @@ function render(){
  $('cbcat-next').disabled=state.page>=pages-1;
 }
 function openEditor(id,source){
- const row=state.items.find(x=>x.id===id&&x.origem===source);
- if(!row||state.saving)return;
- state.edit=row;
- $('cbcat-edit-summary').textContent=row.descricao+' · '+row.cartao+' · '+dateBR(row.data)+' · '+money(row.valor);
- $('cbcat-edit-current').textContent=generic(row.categoria)?
-  'Ainda não classificada'+(row.categoria?' (categoria genérica: '+row.categoria+')':''):
-  'Categoria atual: '+row.categoria;
- $('cbcat-edit-value').value=generic(row.categoria)?'':row.categoria;
- $('cbcat-edit-error').textContent='Somente a categoria será alterada. Valor, data, fatura e histórico original são preservados.';
- const current=[...new Set([...defaults,...state.items.map(x=>x.categoria).filter(x=>!generic(x.categoria))])]
-  .sort((a,b)=>a.localeCompare(b,'pt-BR'));
- $('cbcat-category-options').innerHTML=current.map(x=>'<option value="'+safe(x)+'"></option>').join('');
- $('cbcat-dialog').showModal();
- $('cbcat-edit-value').focus();
+ try{
+  if(state.saving)return;
+  const row=state.items.find(x=>x.id===id&&x.origem===source);
+  if(!row)throw Error('Compra não encontrada nesta seleção. Clique em Atualizar compras e tente novamente.');
+  const dialog=$('cbcat-dialog');
+  if(!dialog||typeof dialog.showModal!=='function')
+   throw Error('O navegador não conseguiu abrir a janela de edição. Recarregue o site ou use um navegador atualizado.');
+  state.edit=row;
+  $('cbcat-edit-summary').textContent=row.descricao+' · '+row.cartao+' · '+dateBR(row.data)+' · '+money(row.valor);
+  $('cbcat-edit-current').textContent=generic(row.categoria)?
+   'Ainda não classificada'+(row.categoria?' (categoria genérica: '+row.categoria+')':''):
+   'Categoria atual: '+row.categoria;
+  $('cbcat-edit-value').value=generic(row.categoria)?'':row.categoria;
+  $('cbcat-edit-error').textContent='Somente a categoria será alterada. Valor, data, fatura e histórico original são preservados.';
+  const current=[...new Set([...defaults,...state.items.map(x=>x.categoria).filter(x=>x&&!generic(x))])]
+   .sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  $('cbcat-category-options').innerHTML=current.map(x=>'<option value="'+safe(x)+'"></option>').join('');
+  if(!dialog.open)dialog.showModal();
+  $('cbcat-edit-value').focus();
+ }catch(err){
+  state.edit=null;
+  msg('Não foi possível abrir a classificação: '+String(err.message||err),true);
+  window.frFinanceUI?.showToast?.('Erro ao abrir categoria: '+String(err.message||err),true);
+ }
 }
 async function save(event){
  event.preventDefault();
@@ -219,9 +251,15 @@ function init(){
  });
  $('cbcat-prev').addEventListener('click',()=>{state.page--;render()});
  $('cbcat-next').addEventListener('click',()=>{state.page++;render()});
- $('cbcat-rows').addEventListener('click',e=>{
-  const b=e.target.closest('[data-cbcat-id]');if(b)openEditor(b.dataset.cbcatId,b.dataset.cbcatOrigin);
- });
+ // Captura o toque antes dos listeners gerais da tabela e da navegação.
+ // A lista pode ser redesenhada sem perder o evento do botão.
+ document.addEventListener('click',e=>{
+  const button=e.target?.closest?.('[data-cbcat-id]');
+  if(!button||!$('cbcat-rows')?.contains(button))return;
+  e.preventDefault();
+  e.stopPropagation();
+  openEditor(button.dataset.cbcatId,button.dataset.cbcatOrigin);
+ },true);
  $('cbcat-form').addEventListener('submit',save);
  for(const id of ['cbcat-cancel','cbcat-close'])$(id).addEventListener('click',()=>{
   if(!state.saving)$('cbcat-dialog').close();
@@ -232,7 +270,7 @@ function init(){
  });
  if(!document.querySelector('[data-view-panel="cardbills"]')?.hidden)refresh();
 }
-window.frCardCategoriesUI={refresh,__test:{generic}};
+window.frCardCategoriesUI={refresh,__test:{generic,priceCents}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
 else init();
 })();
