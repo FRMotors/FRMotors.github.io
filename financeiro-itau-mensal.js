@@ -127,7 +127,7 @@ async function refresh(options={}){
   if(accessError||authorized!==true)throw Error('Acesso financeiro não autorizado.');
   const official=await pages(()=>db.from('fin_movimentos')
    .select('id,data_movimento,tipo,descricao,categoria,meio_pagamento,valor,estado,origem')
-   .eq('origem','fluxo_caixa_homologado').eq('estado','confirmado')
+   .in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).eq('estado','confirmado')
    .order('data_movimento',{ascending:false}).order('id',{ascending:false}));
   const records=core.officialRows(official);
   const pending=core.pendingRows(options.pending||[],options.cutoff||'');
