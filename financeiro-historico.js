@@ -10,7 +10,7 @@ const num=n=>Number(n)||0;
 const sum=(rows,k)=>rows.reduce((a,r)=>a+Math.round(num(r[k])*100),0)/100;
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const monthBR=v=>v?new Intl.DateTimeFormat('pt-BR',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(String(v).slice(0,7)+'-01T12:00:00Z')).replace('.',''):'Sem data';
-const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[],importedPending:[],officialCutoff:'',latestImportedDate:'',referenceCheck:null,weakMatchCount:0,approvedMatchCount:0};
+const state={lote:null,monthly:[],cards:[],parts:[],open:[],categories:[],banks:[],importedPending:[],approvedImported:[],officialCutoff:'',latestImportedDate:'',referenceCheck:null,weakMatchCount:0,approvedMatchCount:0};
 let loading=null,ready=false,activeTab='cards',initialized=false,previousMaxMonth='';
 function status(id,message,error=false){
  const el=$(id);if(!el)return;el.textContent=message;el.className='status'+(error?' bad':' ok');
@@ -69,7 +69,7 @@ async function renderItauReconciliation(){
  if(!label||!root||!headline||!difference||!note||!table||!state.monthly.length)return;
  label.textContent='Comparando importações com o último movimento homologado...';
  try{
-  const [imports,latestResponse,refResponse,audits,excelTailResponse,confirmations]=await Promise.all([
+  const [imports,latestResponse,refResponse,audits,excelTailResponse,confirmations,approvedBank]=await Promise.all([
    fetchPages(()=>db.from('fin_teste_importacoes')
     .select('id,arquivo_nome,criado_em,conta_nome')
     .eq('tipo','banco').order('criado_em',{ascending:true}).order('id',{ascending:true})),
@@ -86,7 +86,11 @@ async function renderItauReconciliation(){
     .order('data_evento',{ascending:false}).limit(1).maybeSingle(),
    fetchPages(()=>db.from('fin_conciliacao_confirmacoes')
     .select('linha_id,movimento_homologado_id,situacao,confirmado_em')
-    .eq('situacao','conferido').order('linha_id',{ascending:true}))
+     .eq('situacao','conferido').order('linha_id',{ascending:true})),
+   fetchPages(()=>db.from('fin_movimentos')
+    .select('id,data_movimento,tipo,valor,descricao,dados_origem')
+    .eq('origem','extrato_itau_homologado').eq('estado','confirmado')
+    .order('data_movimento',{ascending:true}).order('id',{ascending:true}))
   ]);
   if(latestResponse.error)throw latestResponse.error;
   if(refResponse.error)throw refResponse.error;
@@ -106,19 +110,30 @@ async function renderItauReconciliation(){
    lines.push(...part);
   }
   const official=await fetchPages(()=>db.from('fin_movimentos')
-   .select('id,data_movimento,tipo,valor,descricao').eq('origem','fluxo_caixa_homologado')
+   .select('id,data_movimento,tipo,valor,descricao')
+   .in('origem',['fluxo_caixa_homologado','extrato_itau_homologado'])
    .eq('estado','confirmado').gte('data_movimento',cutoff)
    .order('data_movimento',{ascending:true}).order('id',{ascending:true}));
   const {canonical,repeated}=core.canonicalBank(bankFiles,lines);
   const baseline=state.monthly[state.monthly.length-1];
   const rec=core.reconcile(baseline.saldo_teorico_acumulado,canonical,official,cutoff);
   const latestDate=canonical.map(r=>r.data_lancamento).sort().pop()||cutoff;
-  // Visualização de extratos a partir da data de fechamento, depois de conciliar os já existentes; nenhuma gravação em fin_movimentos.
+  // Movimentos aprovados têm origem própria e são contados uma única vez.
+  // O Excel homologado nunca é sobrescrito pelos PDFs importados.
+  const approvedIds=new Set(approvedBank.map(x=>String(x.dados_origem?.linha_importada_id||'')));
+  const approvedImported=canonical.filter(x=>approvedIds.has(String(x.id)));
+  if(approvedImported.length!==approvedBank.length)
+   throw Error('Uma homologação bancária não corresponde a uma linha única de extrato.');
+  const approvedNet=approvedBank.reduce((sum,x)=>
+   sum+(x.tipo==='entrada'?1:-1)*core.cents(x.valor),0);
+  const recWithApproved={...rec,baseCents:rec.baseCents+approvedNet,
+   balanceCents:rec.balanceCents+approvedNet};
   state.importedPending=rec.pending.filter(row=>row.data_lancamento>=cutoff);
+  state.approvedImported=approvedImported;
   state.officialCutoff=cutoff;
   state.latestImportedDate=latestDate>cutoff?latestDate:cutoff;
   const reference=refResponse.data;
-  const validation=core.compareBankReference(rec,reference,cutoff,state.latestImportedDate);
+  const validation=core.compareBankReference(recWithApproved,reference,cutoff,state.latestImportedDate);
   // O OK manual do consolidado vale também na conciliação do Itaú.
   // Só suprime alertas quando as DUAS IDs do par aprovado coincidem.
   const {waiting,approved}=core.reviewWeakMatches(rec.weakMatches,confirmations);
