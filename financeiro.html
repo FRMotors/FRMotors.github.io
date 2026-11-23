@@ -887,7 +887,7 @@
   <div>
    <p class="eyebrow">Gestão documental · classificação de despesas</p>
    <h2 id="cbcat-title">Classificar compras do cartão de crédito</h2>
-   <p>Organize despesas como autopeças, combustível, ferramentas e serviços. Escolha o cartão, ano e mês para visualizar as compras; clique em <strong>Categorizar</strong> para classificar uma compra individual, sem alterar valores ou gerar outro pagamento.</p>
+   <p>Escolha o cartão, ano e mês para classificar a categoria e a finalidade de cada compra: oficina, pessoal/outras ou a definir. É possível informar somente a finalidade, sem modificar valores ou gerar pagamentos.</p>
   </div>
   <button type="button" class="btn" id="cbcat-refresh">Atualizar compras</button>
  </div>
@@ -902,6 +902,14 @@
   <label>Situação da classificação
    <select id="cbcat-status-filter"><option value="todos">Todas as compras</option><option value="sem">Somente a classificar</option><option value="definida">Somente categorizadas</option></select>
   </label>
+  <label>Finalidade da compra
+   <select id="cbcat-purpose-filter">
+    <option value="todos">Todas as finalidades</option>
+    <option value="a_classificar">A definir</option>
+    <option value="oficina">Uso na oficina</option>
+    <option value="outras">Pessoal / outras</option>
+   </select>
+  </label>
   <label class="cbcat-search">Buscar compra ou valor em R$<input id="cbcat-search" type="search" inputmode="search" placeholder="Ex.: autopeças, 150,00 ou R$ 1.250,50" autocomplete="off"></label>
   <button type="button" id="cbcat-clear" class="btn">Limpar filtros</button>
  </div>
@@ -909,12 +917,13 @@
   <article><span>Compras na seleção</span><strong id="cbcat-count">—</strong><small>Quantidade de lançamentos documentais</small></article>
   <article><span>Valor documental selecionado</span><strong id="cbcat-total">—</strong><small>Não equivale a saída de caixa no Itaú</small></article>
   <article><span>Sem categoria específica</span><strong id="cbcat-unclassified">—</strong><small id="cbcat-unclassified-total">—</small></article>
+  <article><span>Finalidade ainda não definida</span><strong id="cbcat-purpose-pending">—</strong><small>Não entra na coluna de uso na oficina</small></article>
  </div>
  <p class="cbcat-status" id="cbcat-status" role="status" aria-live="polite">Abra esta área para carregar as categorias.</p>
  <p class="cbcat-source-note" id="cbcat-source-note">Os dados históricos e as faturas PDF são fontes separadas; evite somá-los sem conferência.</p>
  <div class="table-wrap cbcat-table"><table class="data-table">
-  <thead><tr><th>Compra / origem</th><th>Cartão</th><th>Mês</th><th>Data</th><th>Categoria</th><th class="money">Valor</th><th>Ação</th></tr></thead>
-  <tbody id="cbcat-rows"><tr><td colspan="7">Aguardando consulta...</td></tr></tbody>
+  <thead><tr><th>Compra / origem</th><th>Cartão</th><th>Mês</th><th>Data</th><th>Categoria</th><th>Finalidade</th><th class="money">Valor</th><th>Ação</th></tr></thead>
+  <tbody id="cbcat-rows"><tr><td colspan="8">Aguardando consulta...</td></tr></tbody>
  </table></div>
  <div class="cbcat-footer">
   <span id="cbcat-pages">0 lançamentos</span>
@@ -930,15 +939,23 @@
 <dialog class="fin-dialog cbcat-dialog" id="cbcat-dialog" aria-labelledby="cbcat-dialog-title">
  <div class="dialog-head"><div>
   <h2 id="cbcat-dialog-title">Categorizar compra do cartão</h2>
-  <p>Edite somente a classificação desta compra.</p>
+  <p>Defina a categoria e confirme se a compra pertence à oficina.</p>
  </div><button type="button" class="dialog-close" id="cbcat-close" aria-label="Fechar">×</button></div>
  <div class="dialog-body">
   <p id="cbcat-edit-summary">Compra selecionada</p>
   <p id="cbcat-edit-current" class="info-note"></p>
   <form id="cbcat-form">
-   <label for="cbcat-edit-value">Categoria
+   <label for="cbcat-edit-finalidade">Finalidade da compra
+    <select id="cbcat-edit-finalidade" required>
+     <option value="a_classificar">Ainda não definida (não incluir como oficina)</option>
+     <option value="oficina">Despesa da oficina</option>
+     <option value="outras">Pessoal ou outra finalidade</option>
+    </select>
+   </label>
+   <p class="info-note">A finalidade é independente da categoria. Combustível, por exemplo, pode ser da oficina ou de uso pessoal. Você pode salvar apenas a finalidade e definir a categoria depois.</p>
+   <label for="cbcat-edit-value">Categoria (opcional)
     <input id="cbcat-edit-value" type="text" list="cbcat-category-options"
-     minlength="2" maxlength="100" required placeholder="Selecione ou digite uma categoria" autocomplete="off">
+     minlength="2" maxlength="100" placeholder="Pode classificar só a finalidade" autocomplete="off">
    </label>
    <datalist id="cbcat-category-options"></datalist>
    <p id="cbcat-edit-error" class="info-note" role="status" aria-live="polite"></p>
@@ -947,7 +964,7 @@
     <button type="submit" class="btn btn-primary" id="cbcat-edit-save">Salvar categoria</button>
    </div>
   </form>
-  <p class="info-note">Classificar uma compra não gera pagamento nem altera o extrato, o saldo da fatura ou o histórico original. A alteração fica auditada.</p>
+  <p class="info-note">Categoria e finalidade são registradas com auditoria. Esta ação não gera pagamentos nem altera os valores da fatura, o saldo Itaú ou o histórico original.</p>
  </div>
 </dialog>
 
@@ -2391,29 +2408,34 @@
   </div>
   <p id="doc-status" class="info-note fin-doc-status" role="status" aria-live="polite">Aguardando consulta da carteira homologada.</p>
  </section>
- <div class="fin-doc-split">
-  <section class="card">
-   <div class="card-head"><div><h2>Gastos por fornecedor de autopeças</h2><p>Valor cheio, com desconto e pago, somente quando informados no documento.</p></div></div>
-   <div class="table-wrap"><table class="data-table"><thead><tr>
-     <th>Fornecedor</th><th class="money">Registros</th><th class="money">Valor cheio</th>
-     <th class="money">Com desconto informado</th><th class="money">Pago na planilha</th>
-   </tr></thead>
-   <tbody id="doc-supplier-rows"><tr><td colspan="5" class="empty">Aguardando...</td></tr></tbody></table></div>
-  </section>
-  <section class="card">
-   <div class="card-head"><div><h2>Valores por cartão / meio</h2><p>Identificações originais preservadas; bancos com nomes diferentes não são unidos automaticamente.</p></div></div>
+ <section class="card fin-doc-card-meios">
+   <div class="card-head"><div>
+    <h2>Valores por cartão / meio</h2>
+    <p>Todos os lançamentos documentais da aba CARTÕES. Compras pessoais e de uso ainda indefinido permanecem neste total, mas não são tratadas como despesa da oficina.</p>
+   </div></div>
    <div class="table-wrap"><table class="data-table"><thead><tr>
      <th>Cartão / meio</th><th class="money">Registros</th><th class="money">Soma documental</th><th class="money">Valores negativos</th>
    </tr></thead>
    <tbody id="doc-card-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
-  </section>
- </div>
+ </section>
  <section class="card fin-doc-month-panel">
-  <div class="card-head"><div><h2>Comparativo mensal, lado a lado</h2>
-   <p>Autopeças agrupadas por vencimento e CARTÕES agrupados pelo mês da fatura. Valores históricos, sem lançamento adicional no caixa.</p></div></div>
-  <div class="table-wrap"><table class="data-table"><thead><tr><th>Mês / ano</th>
-   <th class="money">Autopeças · valor dos documentos</th><th class="money">Cartões · valor dos lançamentos</th></tr></thead>
-   <tbody id="doc-month-rows"><tr><td colspan="3" class="empty">Aguardando...</td></tr></tbody></table></div>
+  <div class="card-head"><div>
+   <h2>Comparativo mensal por finalidade</h2>
+   <p>Autopeças por vencimento e compras da aba CARTÕES por competência da fatura. O destino de cada compra é confirmado manualmente, sem presumir que todo gasto do cartão pertence à oficina.</p>
+  </div>
+   <button type="button" class="btn" data-view="cardbills">Classificar compras no cartão</button>
+  </div>
+  <p id="doc-month-classification-note" class="info-note" role="status" aria-live="polite">Aguardando as classificações das compras do cartão.</p>
+  <div class="table-wrap"><table class="data-table" style="min-width:1040px"><thead><tr>
+   <th>Mês / ano</th>
+   <th class="money">Autopeças · documentos</th>
+   <th class="money">Cartões · uso na oficina</th>
+   <th class="money">Cartões · outras finalidades</th>
+   <th class="money">Cartões · a classificar</th>
+   <th class="money">Outros meios · PIX / débito</th>
+   <th class="money">Total da aba CARTÕES</th>
+  </tr></thead>
+   <tbody id="doc-month-rows"><tr><td colspan="7" class="empty">Aguardando...</td></tr></tbody></table></div>
   <div class="table-footer fin-doc-paging">
     <span id="doc-month-paging">Aguardando dados mensais.</span>
     <div>
@@ -2421,6 +2443,7 @@
      <button type="button" class="btn" id="doc-month-next" disabled>Próxima</button>
     </div>
   </div>
+  <p class="info-note">Os valores de Autopeças e Cartões são fontes documentais diferentes e podem se referir à mesma compra. <strong>Não some as colunas</strong> como despesas únicas ou saídas bancárias. O total da aba CARTÕES apenas confere a distribuição entre as quatro colunas de cartão e outros meios. Valores sem finalidade confirmada ficam em <strong>A classificar</strong>.</p>
  </section>
  <section class="card fin-doc-records">
   <div class="card-head">
@@ -3751,7 +3774,8 @@ init();
 <script src="./financeiro-contas-operacionais.js?v=20261123unificado1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
-<script src="./financeiro-documentos.js?v=20261120suppliercloud1" defer></script>
+<script src="./financeiro-documentos-finalidade-core.js?v=20261123finalidade1" defer></script>
+<script src="./financeiro-documentos.js?v=20261123finalidade2" defer></script>
 <script src="./financeiro-cartoes-parcelados.js?v=20261118cartoes1" defer></script>
 <script src="./financeiro-conciliacao-documental.js?v=20261119layout2" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261119layout2" defer></script>
@@ -3772,7 +3796,7 @@ init();
 <script src="./financeiro-relatorios-gerenciais.js?v=20261123manual1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261120classifyadmin1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261119layout2" defer></script>
-<script src="./financeiro-cartoes-categorias.js?v=20261123cards2" defer></script>
+<script src="./financeiro-cartoes-categorias.js?v=20261123finalidade2" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-auditoria-estado-ui.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>
