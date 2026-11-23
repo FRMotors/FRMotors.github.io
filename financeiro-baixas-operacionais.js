@@ -111,33 +111,48 @@ function updateDeleteButton(){
   'Este boleto foi cadastrado no aplicativo e ainda não tem baixa. Você pode excluí-lo.':
   doc?.tipo==='homologado'?'Boletos da planilha homologada são protegidos contra exclusão.':'');
 }
-function updateBank(){
+function updateBank({preserve=false}={}){
  const doc=chosen();
  updateDeleteButton();
- const previous=$('op-pay-movement').value;
- const candidates=availableBank(doc);
+ const previous=$('op-pay-movement')?.value||'';
+ const all=availableBank(doc),limit=250,candidates=all.slice(0,limit);
  const opts=candidates.map(x=>new Option(brl(x.valor)+' · '+dateBR(x.data_movimento)+' · '+x.descricao.slice(0,45)+
-  (x.source==='extrato'?' · Extrato importado':' · Fluxo homologado'),x.id));
+  (x.source==='extrato'?' · Extrato importado':' · Fluxo homologado')+
+  (doc?.tipo==='homologado'&&dayGap(doc,x)>3?' · Data diferente: '+dayGap(doc,x)+' dias':''),x.id));
  $('op-pay-movement').replaceChildren(new Option(doc?'Selecione uma saída já paga':'Selecione primeiro o boleto',''),...opts);
  if(candidates.some(x=>x.id===previous))$('op-pay-movement').value=previous;
+ write('op-pay-movement-count',doc?
+  all.length+' saída(s) disponíveis'+(all.length>limit?' · exibindo as '+limit+' primeiras. Use a busca para localizar outra.':'')+
+  ' Apenas a saída selecionada será vinculada.':
+  'Selecione um boleto para consultar os pagamentos.');
  write('op-pay-base',doc?brl(doc.valor):'—');
  write('op-pay-source',doc?doc.origem+' · '+doc.fornecedor+' · vencimento '+dateBR(doc.vencimento):'Selecione um compromisso.');
- $('op-pay-discount').value='0.00';$('op-pay-fees').value='0.00';
- const bank=candidates.find(x=>x.id===$('op-pay-movement').value);
- if(bank){
-  const guess=supplierDiscount(doc,bank);
-  if(guess)$('op-pay-discount').value=(guess.amount/100).toFixed(2);
+ if($('op-pay-adjust-wrap'))$('op-pay-adjust-wrap').hidden=doc?.tipo!=='homologado';
+ if($('op-pay-reason-wrap'))$('op-pay-reason-wrap').hidden=doc?.tipo!=='homologado';
+ if(!preserve){
+  $('op-pay-discount').value='0.00';$('op-pay-fees').value='0.00';
+  $('op-pay-adjust').value='0.00';$('op-pay-reason').value='';
+  const bank=candidates.find(x=>x.id===$('op-pay-movement').value);
+  if(bank){
+   const guess=supplierDiscount(doc,bank);
+   if(guess)$('op-pay-discount').value=(guess.amount/100).toFixed(2);
+  }
  }
  recalc();
 }
 function movementChanged(){
  const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
  $('op-pay-discount').value='0.00';$('op-pay-fees').value='0.00';
+ $('op-pay-adjust').value='0.00';$('op-pay-reason').value='';
  if(bank){
   const rule=supplierDiscount(doc,bank);
   if(rule)$('op-pay-discount').value=(rule.amount/100).toFixed(2);
  }
  recalc();
+}
+function signedAmount(x){
+ const n=Number(x),c=Math.round(n*100);
+ return Number.isFinite(n)&&Number.isSafeInteger(c)&&Math.abs(n*100-c)<.00001?c:null;
 }
 function recalc(){
  const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
