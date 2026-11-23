@@ -9,6 +9,7 @@ const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Não informado';
 const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Cartão');
 const generic=s=>!s||['COMPRAS NO CARTÃO','COMPRAS NO CARTAO','SEM CATEGORIA','A CLASSIFICAR'].includes(String(s).toUpperCase().trim());
+const purposeLabel=p=>p==='oficina'?'Uso na oficina':p==='outras'?'Outra finalidade':'A definir';
 const defaults=['AUTOPEÇAS','COMBUSTÍVEL','DESPESAS DA OFICINA','FERRAMENTAS','FORNECEDORES','INSUMOS','MANUTENÇÃO','MATERIAL DE ESCRITÓRIO','MERCADO LIVRE','SERVIÇOS','TARIFAS E ENCARGOS','TRIBUTOS E IMPOSTOS','USO PESSOAL','VIAGENS'];
 const state={planilha:[],importado:[],items:[],loading:null,ready:false,page:0,pageSize:20,edit:null,saving:false};
 let initialized=false;
@@ -64,7 +65,7 @@ function rebuildFilters(){
 }
 function filtered(){
  const source=values('cbcat-source'),year=values('cbcat-year'),month=values('cbcat-month'),
-  card=values('cbcat-card'),cat=values('cbcat-category'),status=values('cbcat-status-filter');
+  card=values('cbcat-card'),cat=values('cbcat-category'),status=values('cbcat-status-filter'),purpose=values('cbcat-purpose-filter');
  const search=String($('cbcat-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  const searchedAmount=priceCents(search);
  return state.items.filter(x=>{
@@ -75,6 +76,7 @@ function filtered(){
   if(cat!=='todos'&&x.categoria!==cat)return false;
   if(status==='sem'&&!generic(x.categoria))return false;
   if(status==='definida'&&generic(x.categoria))return false;
+  if(purpose!=='todos'&&x.finalidade!==purpose)return false;
   if(!search)return true;
   // Número sozinho ou em formato monetário corresponde ao valor exato.
   if(searchedAmount!==null&&Math.round(x.valor*100)===searchedAmount)return true;
@@ -104,6 +106,7 @@ function render(){
  const unclassified=allRows.filter(x=>generic(x.categoria));
  const totalUnclassified=unclassified.reduce((s,x)=>s+Math.round(x.valor*100),0)/100;
  const source=values('cbcat-source');
+ $('cbcat-purpose-pending').textContent=String(allRows.filter(x=>x.finalidade==='a_classificar').length);
  $('cbcat-count').textContent=String(allRows.length);
  $('cbcat-total').textContent=money(total);
  $('cbcat-unclassified').textContent=String(unclassified.length);
@@ -120,10 +123,11 @@ function render(){
   '<td>'+safe(x.cartao)+'</td><td>'+safe(x.mes.slice(5,7)+'/'+x.mes.slice(0,4))+'</td>'+
   '<td>'+safe(dateBR(x.data))+'</td>'+
   '<td>'+ (generic(x.categoria)?'<span class="cbcat-pending">A classificar</span>':safe(x.categoria))+'</td>'+
+  '<td>'+safe(purposeLabel(x.finalidade))+'</td>'+
   '<td class="money">'+money(x.valor)+'</td>'+
   '<td><button type="button" class="btn cbcat-action" data-cbcat-id="'+safe(x.id)+'" data-cbcat-origin="'+safe(x.origem)+'">'+
    (generic(x.categoria)?'Categorizar':'Alterar')+'</button></td></tr>').join(''):
-  '<tr><td colspan="7">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>';
+  '<tr><td colspan="8">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>';
  $('cbcat-pages').textContent=allRows.length+' lançamento(s) · página '+(state.page+1)+' de '+pages;
  $('cbcat-prev').disabled=state.page===0;
  $('cbcat-next').disabled=state.page>=pages-1;
@@ -142,7 +146,8 @@ function openEditor(id,source){
    'Ainda não classificada'+(row.categoria?' (categoria genérica: '+row.categoria+')':''):
    'Categoria atual: '+row.categoria;
   $('cbcat-edit-value').value=generic(row.categoria)?'':row.categoria;
-  $('cbcat-edit-error').textContent='Somente a categoria será alterada. Valor, data, fatura e histórico original são preservados.';
+  $('cbcat-edit-finalidade').value=row.finalidade||'a_classificar';
+  $('cbcat-edit-error').textContent='Categoria opcional. Confirme a finalidade da compra; valores, datas, fatura e histórico são preservados.';
   const current=[...new Set([...defaults,...state.items.map(x=>x.categoria).filter(x=>x&&!generic(x))])]
    .sort((a,b)=>a.localeCompare(b,'pt-BR'));
   $('cbcat-category-options').innerHTML=current.map(x=>'<option value="'+safe(x)+'"></option>').join('');
@@ -158,9 +163,13 @@ async function save(event){
  event.preventDefault();
  if(state.saving||!state.edit)return;
  const text=String($('cbcat-edit-value').value||'').trim().toLocaleUpperCase('pt-BR');
- if(text.length<2||text.length>100){
+ if((text.length>0&&text.length<2)||text.length>100){
   $('cbcat-edit-error').textContent='Informe uma categoria entre 2 e 100 caracteres.';
   return;
+ }
+ const finalidade=$('cbcat-edit-finalidade').value;
+ if(!['oficina','outras','a_classificar'].includes(finalidade)){
+  $('cbcat-edit-error').textContent='Selecione a finalidade da compra.';return;
  }
  const row=state.edit;
  state.saving=true;
@@ -168,16 +177,22 @@ async function save(event){
  $('cbcat-edit-error').textContent='Salvando a classificação com auditoria...';
  try{
   if(typeof db==='undefined'||!db)throw Error('Conexão financeira indisponível.');
-  const {data,error}=await db.rpc('fin_cartao_categoria_definir',{
+  const {data,error}=await db.rpc('fin_cartao_classificacao_salvar',{
    p_origem:row.origem,p_lancamento_id:row.id,p_categoria:text,
-   p_categoria_esperada:row.categoria
+   p_categoria_esperada:row.categoria,
+   p_finalidade:finalidade,p_finalidade_esperada:row.finalidade
   });
   if(error)throw error;
-  if(!data||data.categoria_nova!==text)throw Error('A alteração não foi confirmada pelo servidor.');
+  if(!data||data.finalidade_nova!==finalidade||(text&&data.categoria_nova!==text))
+   throw Error('A alteração não foi confirmada pelo servidor.');
   $('cbcat-dialog').close();state.edit=null;
   await refresh();
-  msg((data.alterada?'Categoria salva com auditoria.':'Categoria já estava atualizada.')+
-   ' O valor da fatura e o caixa não foram modificados.');
+  if(window.frDocumentsUI?.refresh){
+   // Mantém o comparativo mensal sincronizado, sem registrar qualquer lançamento.
+   window.frDocumentsUI.refresh().catch(()=>{});
+  }
+  msg((data.alterada?'Classificação salva com auditoria.':'Classificação já estava atualizada.')+
+   ' Valor da fatura e caixa preservados.');
  }catch(err){
   $('cbcat-edit-error').textContent='Não foi possível salvar: '+(err.message||err)+
    '. Atualize a lista se outra pessoa já alterou a categoria.';
@@ -192,7 +207,7 @@ async function refresh(){
   if(typeof db==='undefined'||!db)throw Error('Sem conexão com o banco financeiro.');
   const auth=await db.rpc('fluxo_caixa_autorizado');
   if(auth.error||auth.data!==true)throw Error('Acesso financeiro não autorizado.');
-  const [docs,classes,imports]=await Promise.all([
+  const [docs,classes,imports,finalidades]=await Promise.all([
    all(()=>db.from('fin_documentos_despesas')
     .select('id,grupo,incluir,cartao_nome,mes_fatura,data_evento,descricao,parcela,valor_registrado')
     .eq('grupo','cartoes').eq('incluir',true).order('id')),
@@ -200,9 +215,12 @@ async function refresh(){
     .select('documento_id,categoria').order('documento_id')),
    all(()=>db.from('fin_teste_cartao_lancamentos')
     .select('id,cartao_nome,data_lancamento,descricao,valor,natureza,categoria')
-    .order('id'))
+    .order('id')),
+   all(()=>db.from('fin_cartoes_finalidades')
+    .select('origem,lancamento_id,finalidade').order('lancamento_id'))
   ]);
   const byId=new Map(classes.map(x=>[x.documento_id,x.categoria]));
+  const purposeById=new Map(finalidades.map(x=>[x.origem+'|'+x.lancamento_id,x.finalidade]));
   const planilha=docs.filter(x=>!['PIX','DÉBITO','DEBITO']
    .includes(String(x.cartao_nome||'').trim().toLocaleUpperCase('pt-BR')))
    .filter(x=>/\d{4}-\d{2}-\d{2}/.test(String(x.mes_fatura||x.data_evento||'')))
@@ -212,7 +230,8 @@ async function refresh(){
     data:String(x.data_evento||x.mes_fatura).slice(0,10),
     descricao:x.descricao||'Compra sem descrição',
     parcela:x.parcela||'',valor:Number(x.valor_registrado),
-    categoria:byId.get(x.id)||null
+    categoria:byId.get(x.id)||null,
+    finalidade:purposeById.get('planilha|'+x.id)||'a_classificar'
    }));
   const importado=imports.filter(x=>['compra','estorno'].includes(x.natureza))
    .map(x=>({
@@ -220,7 +239,8 @@ async function refresh(){
     mes:String(x.data_lancamento).slice(0,7),
     data:x.data_lancamento,descricao:x.descricao||'Compra sem descrição',
     parcela:'',valor:Number(x.valor)*(x.natureza==='estorno'?-1:1),
-    categoria:x.categoria||null
+    categoria:x.categoria||null,
+    finalidade:purposeById.get('importado|'+x.id)||'a_classificar'
    }));
   if([...planilha,...importado].some(x=>!Number.isFinite(x.valor)))
    throw Error('Compra de cartão com valor inválido; o total não será exibido.');
@@ -230,7 +250,7 @@ async function refresh(){
   msg('Categorias carregadas. Filtre por mês ou cartão e clique em Categorizar/Alterar na compra desejada.');
  })().catch(err=>{
   state.ready=false;state.items=[];state.planilha=[];state.importado=[];
-  $('cbcat-rows').innerHTML='<tr><td colspan="7">A lista não pôde ser carregada com segurança.</td></tr>';
+  $('cbcat-rows').innerHTML='<tr><td colspan="8">A lista não pôde ser carregada com segurança.</td></tr>';
   msg('Não foi possível carregar as compras: '+(err.message||err),true);
  }).finally(()=>{state.loading=null});
  return state.loading;
@@ -240,12 +260,13 @@ function init(){
  initialized=true;
  $('cbcat-source').addEventListener('change',()=>{state.page=0;rebuildFilters();render()});
  $('cbcat-year').addEventListener('change',()=>{state.page=0;rebuildFilters();render()});
- for(const id of ['cbcat-month','cbcat-card','cbcat-category','cbcat-status-filter'])
+ for(const id of ['cbcat-month','cbcat-card','cbcat-category','cbcat-status-filter','cbcat-purpose-filter'])
   $(id).addEventListener('change',()=>{state.page=0;render()});
  $('cbcat-search').addEventListener('input',()=>{state.page=0;render()});
  $('cbcat-refresh').addEventListener('click',()=>refresh());
  $('cbcat-clear').addEventListener('click',()=>{
   $('cbcat-year').value='todos';$('cbcat-search').value='';$('cbcat-status-filter').value='todos';
+  $('cbcat-purpose-filter').value='todos';
   rebuildFilters();$('cbcat-month').value='todos';$('cbcat-card').value='todos';
   $('cbcat-category').value='todos';state.page=0;render();
  });
