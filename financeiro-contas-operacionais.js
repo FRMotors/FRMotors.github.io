@@ -106,9 +106,14 @@ function draw(){
    const st=stateOf(r,now),possible=estimatedDiscount(r,now),cashLink=r.registro_tipo==='avulso'?manualLinks.get(r.id):cashLinks.get(r.id);
    const discount=cashLink?money(cashLink.desconto):r.desconto_efetivo!==null?money(r.desconto_efetivo):
     (possible?'<span class="cp-possible">'+money(possible.discount/100)+' <small>possível '+possible.pct+'%</small></span>':'—');
-   const amount=cashLink?'<strong>'+money(cashLink.valor_pago)+'</strong><small>Pago em '+esc(dateBR(cashLink.data_pagamento))+'</small>':
+   const adjustment=cashLink?Number(cashLink.ajuste_valor||0):Number(r.ajuste_efetivo||0);
+    const explanation=cashLink?.justificativa_ajuste||r.justificativa_ajuste||'';
+    const adjustedNote=(adjustment!==0||explanation)?
+     '<small>Ajuste da planilha: '+money(adjustment)+
+     (explanation?' · Motivo: '+esc(explanation):'')+'</small>':'';
+    const amount=cashLink?'<strong>'+money(cashLink.valor_pago)+'</strong><small>Pago em '+esc(dateBR(cashLink.data_pagamento))+'</small>'+adjustedNote:
     r.situacao==='conciliado_extrato'?
-    '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>':
+    '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>'+adjustedNote:
     (possible?'<span class="cp-possible">'+money(possible.liquido/100)+'<small>estimativa, não pago</small></span>':'—');
    const statusClass=['conciliado','conciliado_fluxo'].includes(st)?'paid':st==='vencido'?'overdue':'open';
    return '<tr>'+
@@ -146,13 +151,13 @@ async function refresh(){
    if(authError||autorizado!==true)throw Error('Acesso financeiro não autorizado.');
    const [rows,manualRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes]=await Promise.all([
     db.from('fin_contas_pagar').select(
-     'id,origem_chave,linha_origem_id,linha_excel,linha_original,codigo_origem,descricao,fornecedor_nome,fornecedor_id,categoria,vencimento,valor_referencia,valor_cheio_informado,desconto_efetivo,juros_efetivos,valor_pago,data_pagamento,situacao,observacoes'
+     'id,origem_chave,linha_origem_id,linha_excel,linha_original,codigo_origem,descricao,fornecedor_nome,fornecedor_id,categoria,vencimento,valor_referencia,valor_cheio_informado,desconto_efetivo,juros_efetivos,ajuste_efetivo,justificativa_ajuste,valor_pago,data_pagamento,situacao,observacoes'
     ).is('arquivado_em',null).order('vencimento',{ascending:true,nullsFirst:false}).order('linha_excel',{ascending:true}).limit(500),
     db.from('fin_boletos_avulsos')
      .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em')
      .is('excluido_em',null).order('criado_em',{ascending:false}).limit(500),
     db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento'),
-    db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,data_pagamento').not('conta_pagar_id','is',null),
+    db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,ajuste_valor,justificativa_ajuste,data_pagamento').not('conta_pagar_id','is',null),
     db.from('fin_baixas_operacionais').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
      .not('boleto_avulso_id','is',null),
     db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
