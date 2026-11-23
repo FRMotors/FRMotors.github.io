@@ -241,6 +241,14 @@
 .fin-agenda-calendar button.ag-day:focus-visible,.fin-agenda-calendar button.ag-day:hover{outline:2px solid var(--ink);outline-offset:0}
 .fin-agenda-calendar .ag-day.is-today{box-shadow:inset 0 0 0 2px var(--ink)}
 .fin-agenda-calendar .ag-day.ag-pad{border:none}
+.ag-upcoming{margin-top:14px;padding:12px;border:1px solid var(--stroke);border-radius:10px}
+.ag-upcoming>strong{display:block;font-size:12px}
+.ag-upcoming>.info-note{font-size:11px;margin:5px 0 10px}
+.ag-upcoming-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.ag-upcoming-items>.btn{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-width:0;gap:2px;padding:9px;white-space:normal;text-align:left;font-size:11px}
+.ag-upcoming-items>.btn strong{font-size:12px}
+.ag-upcoming-items>.btn span{display:block;overflow-wrap:anywhere;color:var(--muted)}
+@media(max-width:620px){.ag-upcoming-items{grid-template-columns:1fr}}
 .fin-agenda-calendar-note,.fin-agenda-guidance p{font-size:12px;line-height:1.5;color:var(--muted);margin:12px 0 0}
 .fin-agenda-filters{display:flex;gap:10px;flex-wrap:wrap}
 .fin-agenda-filters .search-box{flex:2 1 230px}
@@ -2066,7 +2074,7 @@
 <section class="card fin-agenda-card" aria-labelledby="ag-title">
   <div class="card-head">
    <div><h2 id="ag-title">Agenda de vencimentos · boletos, cartões e recebíveis</h2>
-    <p>Boletos, faturas e contas a receber ainda pendentes reunidos por vencimento real.</p></div>
+    <p>Boletos da planilha, boletos unitários cadastrados e parcelas de compras em boleto, além de faturas e contas a receber, reunidos pelo vencimento real.</p></div>
    <button type="button" class="btn" id="ag-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar agenda</button>
   </div>
   <div class="fin-agenda-stats">
@@ -2085,7 +2093,8 @@
      <h3 id="ag-month-label">Mês de referência</h3>
      <div><button type="button" class="btn" id="ag-prev" aria-label="Mês anterior">Anterior</button>
       <button type="button" class="btn" id="ag-today">Este mês</button>
-      <button type="button" class="btn" id="ag-next" aria-label="Próximo mês">Próximo</button></div>
+      <button type="button" class="btn" id="ag-next" aria-label="Próximo mês">Próximo</button>
+      <button type="button" class="btn" id="ag-next-bill-month">Próximo mês com boletos</button></div>
     </div>
     <div id="ag-calendar" class="fin-agenda-calendar" aria-label="Calendário de vencimentos"></div>
     <div class="fin-agenda-legend" aria-label="Legenda do calendário">
@@ -2093,11 +2102,16 @@
       <span><i class="ag-legend-dot ag-legend-card"></i> Cartões</span>
     </div>
     <p id="ag-calendar-note" class="fin-agenda-calendar-note">Informe os vencimentos reais para preencher o calendário.</p>
+    <div class="ag-upcoming">
+     <strong>Próximos boletos pendentes</strong>
+     <p class="info-note">Clique em um vencimento para ir diretamente ao mês, inclusive se for no próximo ano.</p>
+     <div id="ag-next-bills" class="ag-upcoming-items" aria-label="Próximos vencimentos de boletos">Carregando...</div>
+    </div>
    </div>
    <div class="fin-agenda-guidance">
     <h3>Como usar</h3>
-    <p>O calendário reúne boletos, faturas de cartões e contas a receber. O pagamento efetivo continua no Fluxo de Caixa.</p>
-    <p>As datas dos boletos vêm da carteira financeira. Para cartões, informe o <strong>vencimento real</strong> quando ainda não estiver cadastrado.</p>
+    <p>O calendário reúne boletos avulsos, parcelas de compras em boleto, inclusive compras de parcela única, faturas de cartões e contas a receber. O pagamento efetivo continua no Fluxo de Caixa.</p>
+    <p>Cada parcela aberta tem seu próprio vencimento. Boletos de meses futuros aparecem no mês correspondente; use <strong>Próximos boletos pendentes</strong> para encontrá-los. Para cartões, informe o vencimento real da fatura quando ainda não estiver cadastrado.</p>
     <p>Clique em um dia para ver seus compromissos. <strong>Dar baixa</strong> abre a conciliação com um pagamento existente; o calendário não gera saídas bancárias nem mostra boletos já conciliados como pendentes.</p>
    </div>
   </div>
@@ -3780,14 +3794,15 @@ init();
 <script src="./financeiro-conciliacao-documental.js?v=20261119layout2" defer></script>
 <script src="./financeiro-vinculos-faturas.js?v=20261119layout2" defer></script>
 <script src="./financeiro-faturas-estado-core.js?v=20261120unificado1" defer></script>
-<script src="./financeiro-agenda-faturas.js?v=20261118prime1" defer></script>
+<script src="./financeiro-agenda-boletos-core.js?v=20261123boletos1" defer></script>
+<script src="./financeiro-agenda-faturas.js?v=20261123boletos1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-margem-os-core.js?v=20261121orders1" defer></script>
 <script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
 <script src="./financeiro-resumo-operacional.js?v=20261123manual1" defer></script>
 <script src="./financeiro-margem-os.js?v=20261121orders1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261123manual1" defer></script>
-<script src="./financeiro-central-vencimentos.js?v=20261118calendar1" defer></script>
+<script src="./financeiro-central-vencimentos.js?v=20261123boletos1" defer></script>
 <script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261123collapse1" defer></script>
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
