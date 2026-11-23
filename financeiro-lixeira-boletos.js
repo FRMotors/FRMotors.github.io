@@ -154,6 +154,7 @@ async function commit(event){
 function init(){
  if(!$('trash-rows'))return;
  $('trash-refresh')?.addEventListener('click',()=>refresh());
+ $('trash-collapse')?.addEventListener('toggle',e=>{if(e.target.open)refresh()});
  $('trash-search')?.addEventListener('input',e=>{search=e.target.value.trim().toLocaleLowerCase('pt-BR');showAll=false;render()});
  $('trash-type')?.addEventListener('change',e=>{kind=e.target.value;showAll=false;render()});
  $('trash-more')?.addEventListener('click',()=>{showAll=!showAll;render()});
@@ -163,7 +164,8 @@ function init(){
  $('trash-dialog-cancel')?.addEventListener('click',()=>{if(!busy){pending=null;closeDialog()}});
  $('trash-dialog-form')?.querySelector('[data-trash-cancel]')?.addEventListener('click',()=>{if(!busy){pending=null;closeDialog()}});
  document.querySelector('[data-trash-go]')?.addEventListener('click',()=>{
-   $('trash-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
+   const group=$('trash-collapse');if(group)group.open=true;
+   (group||$('trash-panel'))?.scrollIntoView({behavior:'smooth',block:'start'});
    refresh();
  });
  $('trash-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault();else pending=null});
