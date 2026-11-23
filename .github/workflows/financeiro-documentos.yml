@@ -26,6 +26,9 @@ on:
       - 'financeiro-relatorios-gerenciais.css'
       - 'tests/financeiro-margem-lucro.test.cjs'
       - 'financeiro-baixas-operacionais.js'
+      - 'financeiro-contas-operacionais.js'
+      - 'tests/financeiro-baixas-valor-real.test.cjs'
+      - 'sql/migrations/20261123_baixa_boletos_importados_valor_real_ajustado.sql'
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
       - 'tests/financeiro-consolidacao.test.cjs'
@@ -63,6 +66,9 @@ on:
       - 'financeiro-relatorios-gerenciais.css'
       - 'tests/financeiro-margem-lucro.test.cjs'
       - 'financeiro-baixas-operacionais.js'
+      - 'financeiro-contas-operacionais.js'
+      - 'tests/financeiro-baixas-valor-real.test.cjs'
+      - 'sql/migrations/20261123_baixa_boletos_importados_valor_real_ajustado.sql'
       - 'financeiro.html'
       - 'tests/financeiro-documentos-status.test.cjs'
       - 'tests/financeiro-consolidacao.test.cjs'
@@ -87,6 +93,8 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar vinculações, anos e valores documentais
-        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs tests/financeiro-preferencias-fornecedores.test.cjs tests/financeiro-classificacao-administracao.test.cjs tests/financeiro-margem-lucro.test.cjs tests/financeiro-margem-os-dashboard.test.cjs
+        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs tests/financeiro-preferencias-fornecedores.test.cjs tests/financeiro-classificacao-administracao.test.cjs tests/financeiro-margem-lucro.test.cjs tests/financeiro-margem-os-dashboard.test.cjs tests/financeiro-baixas-valor-real.test.cjs
+      - name: Validar sintaxe de baixa e carteira
+        run: node --check financeiro-baixas-operacionais.js && node --check financeiro-contas-operacionais.js
       - name: Verificar sintaxe do painel de margem por O.S.
         run: node --check financeiro-margem-os-core.js && node --check financeiro-margem-os.js && node --check dashboard-data-v4481.js

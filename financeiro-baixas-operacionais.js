@@ -70,28 +70,36 @@ function supplierDiscount(doc,bank){
  const diff=Math.round(value*pct/100);
  return value-diff===cents(bank.valor)?{pct,amount:diff}:null;
 }
+function dayGap(doc,bank){
+ if(!doc?.vencimento||!bank?.data_movimento)return 0;
+ const a=Date.parse(String(doc.vencimento).slice(0,10)+'T12:00:00Z');
+ const b=Date.parse(String(bank.data_movimento).slice(0,10)+'T12:00:00Z');
+ return Number.isFinite(a)&&Number.isFinite(b)?Math.abs(Math.round((b-a)/86400000)):0;
+}
 function availableBank(doc){
- if(!doc)return[];
+ if(!doc)return [];
  const paid=paidLinks().movement;
+ const search=String($('op-pay-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
  return movements.filter(x=>{
   if((x.source==='fluxo'&&otherUsed.has(x.ref))||
     (x.source==='extrato'&&testUsed.has(x.ref))||paid.has(x.id))return false;
-  if(doc.vencimento){
-   const delta=Math.round((Date.parse(x.data_movimento+'T12:00:00Z')-
-      Date.parse(doc.vencimento+'T12:00:00Z'))/86400000);
-   if(!Number.isFinite(delta)||Math.abs(delta)>3)return false;
-  }
-  return true;
+  if(doc.tipo!=='homologado'&&dayGap(doc,x)>3)return false;
+  if(!search)return true;
+  const corpus=[x.descricao,x.data_movimento,brl(x.valor),String(x.valor),
+    Number(x.valor).toFixed(2).replace('.',','),x.source==='fluxo'?'fluxo':'extrato']
+    .join(' ').toLocaleLowerCase('pt-BR');
+  return corpus.includes(search);
  }).sort((a,b)=>{
   const score=x=>{
    const exact=cents(x.valor)===cents(doc.valor);
    const hint=supplierDiscount(doc,x);
-   const byValue=exact||Boolean(hint);
-   const supplierName=String(doc.fornecedor||'').trim().toLocaleUpperCase('pt-BR');
-   const sameName=String(x.descricao||'').trim().toLocaleUpperCase('pt-BR')===supplierName;
-   return Number(byValue)*100+Number(sameName)*30;
+   const name=String(doc.fornecedor||'').trim().toLocaleUpperCase('pt-BR');
+   const same=String(x.descricao||'').trim().toLocaleUpperCase('pt-BR')===name;
+   return Number(exact)*1000+Number(Boolean(hint))*800+Number(same)*100+
+    Math.max(0,30-dayGap(doc,x));
   };
-  return score(b)-score(a)||b.data_movimento.localeCompare(a.data_movimento)||a.descricao.localeCompare(b.descricao);
+  return score(b)-score(a)||b.data_movimento.localeCompare(a.data_movimento)||
+   a.descricao.localeCompare(b.descricao);
  });
 }
 function updateDeleteButton(){
@@ -103,52 +111,92 @@ function updateDeleteButton(){
   'Este boleto foi cadastrado no aplicativo e ainda não tem baixa. Você pode excluí-lo.':
   doc?.tipo==='homologado'?'Boletos da planilha homologada são protegidos contra exclusão.':'');
 }
-function updateBank(){
+function updateBank({preserve=false}={}){
  const doc=chosen();
  updateDeleteButton();
- const previous=$('op-pay-movement').value;
- const candidates=availableBank(doc);
+ const previous=$('op-pay-movement')?.value||'';
+ const all=availableBank(doc),limit=250,candidates=all.slice(0,limit);
  const opts=candidates.map(x=>new Option(brl(x.valor)+' · '+dateBR(x.data_movimento)+' · '+x.descricao.slice(0,45)+
-  (x.source==='extrato'?' · Extrato importado':' · Fluxo homologado'),x.id));
+  (x.source==='extrato'?' · Extrato importado':' · Fluxo homologado')+
+  (doc?.tipo==='homologado'&&dayGap(doc,x)>3?' · Data diferente: '+dayGap(doc,x)+' dias':''),x.id));
  $('op-pay-movement').replaceChildren(new Option(doc?'Selecione uma saída já paga':'Selecione primeiro o boleto',''),...opts);
  if(candidates.some(x=>x.id===previous))$('op-pay-movement').value=previous;
+ write('op-pay-movement-count',doc?
+  all.length+' saída(s) disponíveis'+(all.length>limit?' · exibindo as '+limit+' primeiras. Use a busca para localizar outra.':'')+
+  ' Apenas a saída selecionada será vinculada.':
+  'Selecione um boleto para consultar os pagamentos.');
  write('op-pay-base',doc?brl(doc.valor):'—');
+ write('op-pay-base-label',doc?.tipo==='avulso'?'Valor de referência do boleto':'Valor original da planilha');
  write('op-pay-source',doc?doc.origem+' · '+doc.fornecedor+' · vencimento '+dateBR(doc.vencimento):'Selecione um compromisso.');
- $('op-pay-discount').value='0.00';$('op-pay-fees').value='0.00';
- const bank=candidates.find(x=>x.id===$('op-pay-movement').value);
- if(bank){
-  const guess=supplierDiscount(doc,bank);
-  if(guess)$('op-pay-discount').value=(guess.amount/100).toFixed(2);
+ if($('op-pay-adjust-wrap'))$('op-pay-adjust-wrap').hidden=doc?.tipo!=='homologado';
+ if($('op-pay-reason-wrap'))$('op-pay-reason-wrap').hidden=doc?.tipo!=='homologado';
+ if(!preserve){
+  $('op-pay-discount').value='0.00';$('op-pay-fees').value='0.00';
+  $('op-pay-adjust').value='0.00';$('op-pay-reason').value='';
+  const bank=candidates.find(x=>x.id===$('op-pay-movement').value);
+  if(bank){
+   const guess=supplierDiscount(doc,bank);
+   if(guess)$('op-pay-discount').value=(guess.amount/100).toFixed(2);
+  }
  }
  recalc();
 }
 function movementChanged(){
  const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
  $('op-pay-discount').value='0.00';$('op-pay-fees').value='0.00';
+ $('op-pay-adjust').value='0.00';$('op-pay-reason').value='';
  if(bank){
   const rule=supplierDiscount(doc,bank);
   if(rule)$('op-pay-discount').value=(rule.amount/100).toFixed(2);
  }
  recalc();
 }
+function signedAmount(x){
+ const n=Number(x),c=Math.round(n*100);
+ return Number.isFinite(n)&&Number.isSafeInteger(c)&&Math.abs(n*100-c)<.00001?c:null;
+}
 function recalc(){
  const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
  const disc=validAmount($('op-pay-discount').value),fees=validAmount($('op-pay-fees').value);
+ const signed=signedAmount($('op-pay-adjust').value);
+ const adjust=doc?.tipo==='homologado'?signed:0;
  const full=doc?cents(doc.valor):null,paid=bank?cents(bank.valor):null;
- const calc=full===null||disc===null||fees===null?null:full-disc+fees;
- const correct=Boolean(doc&&bank&&disc!==null&&fees!==null&&disc<=full&&calc===paid);
- const diff=(full!==null&&paid!==null&&fees!==null)?full+fees-paid:null;
+ const gap=dayGap(doc,bank);
+ const outside=doc?.tipo==='homologado'&&bank?.source==='fluxo'&&gap>3;
+ const needsReason=Boolean(doc?.tipo==='homologado'&&(adjust!==0||outside));
+ const reason=String($('op-pay-reason')?.value||'').trim();
+ const reasonValid=reason.length>=12&&reason.length<=500;
+ const calc=full===null||disc===null||fees===null||adjust===null?
+  null:full-disc+fees+adjust;
+ const correct=Boolean(doc&&bank&&disc!==null&&fees!==null&&adjust!==null&&
+  disc<=full&&calc===paid&&(!needsReason||reasonValid));
+ const diff=full!==null&&paid!==null&&fees!==null&&adjust!==null?
+  full+fees+adjust-paid:null;
+ const neededAdjustment=full!==null&&disc!==null&&fees!==null&&paid!==null?
+  paid-(full-disc+fees):null;
  $('op-pay-use-difference').hidden=!(doc&&bank&&diff>0&&diff<=full&&disc!==diff);
+ $('op-pay-use-adjust').hidden=!(doc?.tipo==='homologado'&&bank&&
+  neededAdjustment!==null&&neededAdjustment!==0&&adjust!==neededAdjustment);
  $('op-pay-confirm').disabled=busy||!correct||!$('op-pay-ack').checked;
+ write('op-pay-real',bank?brl(bank.valor):'—');
  const rule=supplierDiscount(doc,bank);
+ const gapNote=doc&&bank&&gap>3?
+  ' Atenção: pagamento e vencimento têm '+gap+' dias de diferença.'+
+  (outside?' Informe o motivo dessa diferença.':' Confira a data antes de confirmar.'):'';
+ const valueNote=calc!==null&&paid!==null&&calc!==paid?
+  ' Os valores divergem: registre o desconto ou juros efetivos, ou use "Ajuste da planilha" quando o valor original tiver sido corrigido.':'';
+ const reasonNote=needsReason&&!reasonValid?
+  ' Justificativa obrigatória: mínimo de 12 caracteres.':'';
  const desc=doc&&bank?
-   'Valor do compromisso '+brl(doc.valor)+' − desconto '+brl((disc||0)/100)+
-   ' + juros '+brl((fees||0)/100)+' = '+(calc===null?'—':brl(calc/100))+
-   '. Saída já registrada ('+(bank.source==='extrato'?'extrato importado':'Fluxo de Caixa')+'): '+brl(bank.valor)+'. '+
-   (correct?'Valores conferem. Confirme o vínculo sem criar pagamento.':
-   'Os valores não conferem. Use desconto/juros somente com base no comprovante.')+
-   (rule?' Regra '+rule.pct+'% do fornecedor aplicável até o vencimento.':''):
-   'Escolha uma conta e uma saída já registrada no Fluxo de Caixa.';
+  'Valor da planilha '+brl(doc.valor)+' − desconto '+brl((disc||0)/100)+
+  ' + juros '+brl((fees||0)/100)+' + ajuste '+(adjust===null?'—':brl(adjust/100))+
+  ' = '+(calc===null?'—':brl(calc/100))+
+  '. Pagamento real ('+(bank.source==='extrato'?'extrato importado':'Fluxo de Caixa')+'): '+brl(bank.valor)+'. '+
+  (correct?'Valores conferem. O vínculo não cria nova saída.':
+    'A confirmação fica bloqueada até conferir valor e justificativa.')+
+  valueNote+reasonNote+gapNote+
+  (rule?' Regra de desconto do fornecedor: '+rule.pct+'% até o vencimento.':''):
+  'Escolha uma conta e uma saída já confirmada no banco.';
  write('op-pay-info',desc);
  return correct;
 }
@@ -399,24 +447,40 @@ async function confirmPay(e){
  if(busy||!recalc()||!$('op-pay-ack').checked)return;
  const doc=chosen(),payment=movements.find(x=>x.id===$('op-pay-movement').value);
  const discount=validAmount($('op-pay-discount').value),fees=validAmount($('op-pay-fees').value);
- if(!doc||!payment||discount===null||fees===null)return;
+ const adjust=signedAmount($('op-pay-adjust').value);
+ const reason=String($('op-pay-reason').value||'').trim();
+ if(!doc||!payment||discount===null||fees===null||adjust===null)return;
+ const adjusted=doc.tipo==='homologado'&&(adjust!==0||
+  (payment.source==='fluxo'&&dayGap(doc,payment)>3));
  busy=true;$('op-pay-confirm').disabled=true;
  try{
   let response;
   if(payment.source==='fluxo'){
-   response=await db.rpc('fin_baixa_operacional_vincular',{
-    p_tipo:doc.tipo,p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
-   });
+   response=adjusted?
+    await db.rpc('fin_baixa_operacional_ajustada',{
+     p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100,
+     p_ajuste:adjust/100,p_justificativa:reason
+    }):
+    await db.rpc('fin_baixa_operacional_vincular',{
+     p_tipo:doc.tipo,p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
+    });
   }else if(doc.tipo==='homologado'){
-   response=await db.rpc('fin_teste_conciliar_aberto_excel',{
-    p_aberto:doc.linha_origem_id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
-   });
+   response=adjusted?
+    await db.rpc('fin_teste_conciliar_aberto_excel_ajustado',{
+     p_aberto:doc.linha_origem_id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100,
+     p_ajuste:adjust/100,p_justificativa:reason
+    }):
+    await db.rpc('fin_teste_conciliar_aberto_excel',{
+     p_aberto:doc.linha_origem_id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
+    });
   }else{
    response=await db.rpc('fin_boleto_avulso_conciliar_extrato',{
     p_boleto:doc.id,p_movimento:payment.ref,p_desconto:discount/100,p_juros:fees/100
    });
   }
   if(response.error)throw response.error;
+  if(!response.data||!response.data.vinculo_id)
+   throw Error('O servidor não confirmou o vínculo com o pagamento real.');
   let warning='';
   if(payment.source==='extrato'&&doc.tipo==='homologado'){
    const sync=await db.rpc('fin_cp_sincronizar_conciliacoes');
@@ -453,7 +517,10 @@ function init(){
  document.querySelectorAll('[data-ops-pay]').forEach(button=>
   button.addEventListener('click',()=>openPay().catch(e=>write('op-pay-error',String(e)))));
  document.querySelectorAll('[data-ops-new]').forEach(button=>button.addEventListener('click',openAdd));
- $('op-pay-select')?.addEventListener('change',()=>{ $('op-pay-ack').checked=false;updateBank() });
+ $('op-pay-select')?.addEventListener('change',()=>{
+  $('op-pay-ack').checked=false;$('op-pay-search').value='';updateBank()
+ });
+ $('op-pay-search')?.addEventListener('input',()=>updateBank({preserve:true}));
  $('op-pay-delete')?.addEventListener('click',()=>{
   const doc=chosen();
   if(doc?.tipo==='avulso')requestDelete(doc.id);
@@ -466,15 +533,28 @@ function init(){
  $('op-delete-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault()});
  $('op-delete-dialog')?.addEventListener('close',()=>{deleteTarget=null;});
  $('op-pay-movement')?.addEventListener('change',()=>{$('op-pay-ack').checked=false;movementChanged()});
- ['op-pay-discount','op-pay-fees'].forEach(id=>$(id)?.addEventListener('input',recalc));
+ ['op-pay-discount','op-pay-fees','op-pay-adjust','op-pay-reason']
+  .forEach(id=>$(id)?.addEventListener('input',recalc));
  $('op-pay-ack')?.addEventListener('change',recalc);
  $('op-pay-use-difference')?.addEventListener('click',()=>{
   const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
   if(!doc||!bank)return;
   const fees=validAmount($('op-pay-fees').value);
   if(fees===null)return;
-  const diff=cents(doc.valor)+fees-cents(bank.valor);
+  const adjustment=signedAmount($('op-pay-adjust').value);
+  if(adjustment===null)return;
+  const diff=cents(doc.valor)+fees+adjustment-cents(bank.valor);
   if(diff>0&&diff<=cents(doc.valor)){$('op-pay-discount').value=(diff/100).toFixed(2);recalc()}
+ });
+ $('op-pay-use-adjust')?.addEventListener('click',()=>{
+  const doc=chosen(),bank=movements.find(x=>x.id===$('op-pay-movement').value);
+  const discount=validAmount($('op-pay-discount').value);
+  const fees=validAmount($('op-pay-fees').value);
+  if(doc?.tipo!=='homologado'||!bank||discount===null||fees===null)return;
+  const adjustment=cents(bank.valor)-(cents(doc.valor)-discount+fees);
+  $('op-pay-adjust').value=(adjustment/100).toFixed(2);
+  $('op-pay-reason').focus();
+  recalc();
  });
  $('op-pay-form')?.addEventListener('submit',confirmPay);
  $('op-new-form')?.addEventListener('submit',createManual);
