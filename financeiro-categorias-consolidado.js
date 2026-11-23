@@ -58,7 +58,7 @@ function uniqueImported(rows){
  }
  return {rows:kept,repeated};
 }
-function combineSources(official,imported){
+function combineSources(official,imported,options={}){
  if(!Array.isArray(official)||!Array.isArray(imported))
   throw Error('Fontes financeiras incompletas.');
  const validDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&
@@ -66,7 +66,7 @@ function combineSources(official,imported){
   new Date(v+'T00:00:00Z').toISOString().slice(0,10)===v;
  for(const row of official)if(!validDate(row.date)||!Number.isSafeInteger(row.value)||
   !['entrada','saida'].includes(row.type))throw Error('Caixa homologado contém data, tipo ou valor inválido.');
- const cutoff=official.length?official.map(r=>r.date).sort().at(-1):null;
+ const cutoff=options.cutoff|| (official.length?official.map(r=>r.date).sort().at(-1):null);
  const dedup=uniqueImported(imported),older=[],cutoffRows=[],later=[];
  for(const row of dedup.rows){
   if(!validDate(row.date))throw Error('Data de extrato inválida.');
