@@ -29,7 +29,7 @@ function officialRows(records){
   return {id:'oficial:'+row.id,date:row.data_movimento,type:row.tipo,
    value:cents(row.valor),description:row.descricao||'Sem descrição',
    category:row.categoria||'Sem categoria',method:row.meio_pagamento||'Não informado',
-   origin:'homologado',source:'Caixa homologado'};
+   origin:'homologado',source:row.origem==='extrato_itau_homologado'?'PDF Itaú homologado':'Caixa homologado'};
  });
 }
 function pendingRows(records,cutoff){
