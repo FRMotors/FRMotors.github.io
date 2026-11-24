@@ -123,7 +123,9 @@ function render(){
  out('ag-count-detail',billCount+' boleto(s), '+cardCount+' fatura(s) e '+receiveCount+' a receber');
  out('ag-total',brl(pending.filter(f=>f.kind!=='receber').reduce((s,f)=>s+f.rest,0)/100));
  out('ag-receive-total',brl(pending.filter(f=>f.kind==='receber').reduce((s,f)=>s+f.rest,0)/100));
- out('ag-no-date',String(noDate.length));
+ out('ag-no-date-bill',String(noDate.filter(f=>f.kind==='boleto').length));
+ out('ag-no-date-card',String(noDate.filter(f=>f.kind==='cartao').length));
+ out('ag-no-date-receive',String(noDate.filter(f=>f.kind==='receber').length));
  out('ag-overdue',String(overdue.length));
  out('ag-soon',String(soon.length));
  out('ag-partial',String(partial.length));
@@ -335,8 +337,19 @@ async function refresh(){
  })();
  try{await loading}finally{loading=null}
 }
+function showUndated(kind){
+ selectedDay=null;page=0;filter='sem-data';typeFilter=kind;
+ if($('ag-filter'))$('ag-filter').value=filter;
+ if($('ag-type'))$('ag-type').value=kind;
+ if($('ag-search'))$('ag-search').value='';
+ render();
+ $('ag-type')?.scrollIntoView?.({behavior:'smooth',block:'center'});
+}
 function init(){
  if(!$('ag-rows'))return;
+ $('ag-show-undated-bill')?.addEventListener('click',()=>showUndated('boleto'));
+ $('ag-show-undated-card')?.addEventListener('click',()=>showUndated('cartao'));
+ $('ag-show-undated-receive')?.addEventListener('click',()=>showUndated('receber'));
  $('ag-search')?.addEventListener('input',()=>{selectedDay=null;page=0;render()});
  $('ag-next-bills')?.addEventListener('click',event=>{
   const button=event.target.closest('[data-ag-jump]');

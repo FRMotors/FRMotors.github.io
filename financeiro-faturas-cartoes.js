@@ -238,8 +238,17 @@ function exportCSV(){
  a.href=url;a.download='FR_Motors_Faturas_Cartoes.csv';document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
+function showUndated(){
+ filter='sem-vencimento';card='todos';year='todos';search='';page=0;
+ for(const id of ['cb-card','cb-year'])if($(id))$(id).value='todos';
+ if($('cb-search'))$('cb-search').value='';
+ if($('cb-filter'))$('cb-filter').value=filter;
+ renderRows();
+ $('cb-detail-title')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+}
 function init(){
  if(!$('cb-rows'))return;
+ $('cb-show-undated')?.addEventListener('click',showUndated);
  if($('cb-show-other-cards')){
   $('cb-show-other-cards').checked=showOtherCards;
   $('cb-show-other-cards').addEventListener('change',e=>setShowOtherCards(e.target.checked));

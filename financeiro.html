@@ -799,8 +799,8 @@
          <small><span id="cb-open">—</span> fatura(s) com saldo restante</small>
         </div>
         <div class="cb-kpi cb-kpi-risk">
-         <span>Sem vencimento informado</span><strong id="cb-undated">—</strong>
-         <small>Entre faturas com saldo pendente</small>
+         <span>Faturas sem vencimento</span><strong id="cb-undated">—</strong>
+         <small>Entre faturas com saldo pendente</small><button type="button" class="btn" id="cb-show-undated">Ver faturas</button>
         </div>
         <div class="cb-kpi cb-kpi-ok">
          <span>Quitadas por confirmação histórica</span><strong id="cb-declared">—</strong>
@@ -1780,7 +1780,7 @@
             <article class="insight-card"><span>Valor base pendente</span><strong id="cp-total">—</strong><small>Inclui parcelas de boletos, sem dupla contagem</small></article>
             <article class="insight-card"><span>Total vencido</span><strong id="cp-overdue">—</strong><small>Compromissos vencidos sem baixa</small></article>
             <article class="insight-card"><span>Vencem em 7 dias</span><strong id="cp-soon">—</strong><small>Próximos vencimentos</small></article>
-            <article class="insight-card"><span>Sem vencimento</span><strong id="cp-undated">—</strong><small>Não foi inventada data</small></article>
+            <article class="insight-card"><span>Boletos sem vencimento</span><strong id="cp-undated">—</strong><small>Pendentes, de todas as origens</small><button type="button" class="btn" id="cp-show-undated">Ver boletos</button></article>
             <article class="insight-card"><span>Contas conciliadas</span><strong id="cp-reconciled">—</strong><small>Sem nova saída bancária</small></article>
           </div>
           <div class="data-toolbar fin-cp-toolbar">
@@ -2080,7 +2080,9 @@
   <div class="fin-agenda-stats">
    <article class="insight-card"><span>Compromissos a acompanhar</span><strong id="ag-count">—</strong><small id="ag-count-detail">Boletos e faturas pendentes</small></article>
    <article class="insight-card"><span>Saldo nominal a pagar</span><strong id="ag-total">—</strong><small>Referências documentais, não saída bancária</small></article>
-   <article class="insight-card"><span>Sem vencimento informado</span><strong id="ag-no-date">—</strong><small>Não são marcadas como atrasadas</small></article>
+   <article class="insight-card"><span>Boletos sem vencimento</span><strong id="ag-no-date-bill">—</strong><small>Somente boletos pendentes</small><button type="button" class="btn" id="ag-show-undated-bill">Ver boletos</button></article>
+   <article class="insight-card"><span>Faturas sem vencimento</span><strong id="ag-no-date-card">—</strong><small>Somente cartões pendentes</small><button type="button" class="btn" id="ag-show-undated-card">Ver faturas</button></article>
+   <article class="insight-card"><span>Recebíveis sem vencimento</span><strong id="ag-no-date-receive">—</strong><small>Somente contas a receber</small><button type="button" class="btn" id="ag-show-undated-receive">Ver recebíveis</button></article>
    <article class="insight-card"><span>Prazo informado já passado</span><strong id="ag-overdue">—</strong><small>Quitação não confirmada</small></article>
    <article class="insight-card"><span>Vencem em até 7 dias</span><strong id="ag-soon">—</strong><small>Conforme datas informadas</small></article>
    <article class="insight-card"><span>Saldo a receber</span><strong id="ag-receive-total">—</strong><small>Separado dos compromissos a pagar</small></article>
@@ -2119,7 +2121,7 @@
    <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
     <input id="ag-search" type="search" placeholder="Buscar boleto, fornecedor, cartão ou valor..." aria-label="Pesquisar boletos e faturas em acompanhamento"></label>
    <select id="ag-type" class="filter-select" aria-label="Filtrar tipo de compromisso">
-    <option value="todos">Boletos e cartões</option>
+    <option value="todos">Boletos, cartões e recebíveis</option>
     <option value="boleto">Somente boletos</option>
     <option value="cartao">Somente cartões</option><option value="receber">Somente a receber</option>
    </select>
@@ -3785,7 +3787,7 @@ init();
 <script src="./financeiro-historico.js?v=20261123manual1" defer></script>
 <script src="./financeiro-itau-homologacao.js?v=20261123manual1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261123unificado1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261124undated1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-documentos-finalidade-core.js?v=20261123finalidade1" defer></script>
@@ -3795,7 +3797,7 @@ init();
 <script src="./financeiro-vinculos-faturas.js?v=20261119layout2" defer></script>
 <script src="./financeiro-faturas-estado-core.js?v=20261120unificado1" defer></script>
 <script src="./financeiro-agenda-boletos-core.js?v=20261123boletos1" defer></script>
-<script src="./financeiro-agenda-faturas.js?v=20261123boletos1" defer></script>
+<script src="./financeiro-agenda-faturas.js?v=20261124undated1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-margem-os-core.js?v=20261121orders1" defer></script>
 <script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
@@ -3810,7 +3812,7 @@ init();
 <script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261123manual1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261120classifyadmin1" defer></script>
-<script src="./financeiro-faturas-cartoes.js?v=20261119layout2" defer></script>
+<script src="./financeiro-faturas-cartoes.js?v=20261124undated1" defer></script>
 <script src="./financeiro-cartoes-categorias.js?v=20261123finalidade2" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-auditoria-estado-ui.js?v=20261119supplier2" defer></script>

@@ -96,7 +96,7 @@ function draw(){
  const reconciled=scoped.filter(r=>['conciliado','conciliado_fluxo'].includes(stateOf(r,now)));
  const overdue=open.filter(r=>r.vencimento&&r.vencimento<now);
  const next=open.filter(r=>r.vencimento&&r.vencimento>=now&&r.vencimento<=next7);
- const undated=open.filter(r=>!r.vencimento);
+ const undated=all.filter(r=>stateOf(r,now)==='sem_data');
  set('cp-count',String(open.length));
  set('cp-total',money(open.reduce((a,r)=>a+cents(r.valor_referencia),0)/100));
  set('cp-overdue',money(overdue.reduce((a,r)=>a+cents(r.valor_referencia),0)/100));
@@ -276,11 +276,21 @@ async function reconcile(id){
  catch(e){set('cp-load-status','Falha ao abrir baixa: '+(e.message||e))}
 }
 
+function showUndated(){
+ for(const id of ['cp-source-filter','cp-year-filter'])if($(id))$(id).value='todos';
+ updateMonths();
+ if($('cp-month-filter'))$('cp-month-filter').value='todos';
+ if($('cp-search'))$('cp-search').value='';
+ if($('cp-status-filter'))$('cp-status-filter').value='sem_data';
+ page=0;draw();
+ $('cp-status-filter')?.scrollIntoView?.({behavior:'smooth',block:'center'});
+}
 function init(){
  if(!$('cp-rows'))return;
+ $('cp-show-undated')?.addEventListener('click',showUndated);
  $('cp-search')?.addEventListener('input',()=>{page=0;draw()});
  $('cp-source-filter')?.addEventListener('change',()=>{page=0;draw()});
- $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data'){$('cp-month-filter').value='todos';$('cp-year-filter').value='todos';}draw()});
+ $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data'){$('cp-year-filter').value='todos';updateMonths();$('cp-month-filter').value='todos';}draw()});
  $('cp-year-filter')?.addEventListener('change',()=>{updateMonths();page=0;draw()});
  $('cp-month-filter')?.addEventListener('change',()=>{page=0;draw()});
  $('cp-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
