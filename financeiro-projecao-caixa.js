@@ -17,7 +17,7 @@ const localDate=()=>{
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Sem data';
 const plusDays=(day,n)=>{const d=new Date(day+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 const put=(id,value)=>{if($(id))$(id).textContent=value};
-const sourceLabels={planilha:'Conta homologada',avulso:'Boleto do site',receber:'Boleto do cliente'};
+const sourceLabels={planilha:'Conta homologada',avulso:'Boleto do site',parcela:'Parcela de compra em boleto',receber:'Boleto do cliente'};
 let items=[],movements=[],pendingCards=[],reference=null,loaded=false,loading=null,period=30,activeCategory='todos',recordsPage=0;
 const PAGE=18;
 async function allRows(builder,max=12000){
@@ -30,7 +30,7 @@ async function allRows(builder,max=12000){
  }
  throw Error('Consulta atingiu o limite seguro; nenhum indicador parcial foi apresentado.');
 }
-function assemble(accounts,manual,links,bankLinks,receivables){
+function assemble(accounts,manual,links,bankLinks,receivables,installments=[],vendors=new Map()){
  const paidAccounts=new Set(links.filter(x=>x.conta_pagar_id).map(x=>x.conta_pagar_id));
  const paidManual=new Set([...links.map(x=>x.boleto_avulso_id),...bankLinks.map(x=>x.boleto_avulso_id)].filter(Boolean));
  const out=[];
@@ -46,6 +46,12 @@ function assemble(accounts,manual,links,bankLinks,receivables){
   out.push({id:r.id,kind:'saida',source:'avulso',due:r.vencimento||null,amount:amt,
     name:r.fornecedor_nome||'Fornecedor não informado',description:r.descricao||''});
  });
+ const core=window.frAgendaBoletosCore;
+ if(!core&&installments.length)throw Error('Motor de parcelas de boleto indisponível.');
+ for(const x of core?.openInstallments(installments,vendors)||[]){
+  out.push({id:x.id,kind:'saida',source:'parcela',due:x.vencimento,amount:x.valorCentavos,
+    name:x.fornecedor,description:(x.numero?'Parcela '+x.numero+' · ':'')+x.descricao});
+ }
  receivables.filter(r=>['aberto','parcial'].includes(r.situacao)).forEach(r=>{
   const amt=Math.max(0,cents(r.valor)-cents(r.valor_recebido));
   if(amt<=0)return;
@@ -57,16 +63,10 @@ function assemble(accounts,manual,links,bankLinks,receivables){
    a.name.localeCompare(b.name,'pt-BR')||a.id.localeCompare(b.id));
 }
 function cardPending(invoices,declarations,partials,fulls,deadlines){
- const declared=new Set(declarations.map(x=>x.fatura_id));
- const paid=new Map(),integral=new Map(),due=new Map();
- partials.forEach(p=>paid.set(p.fatura_id,(paid.get(p.fatura_id)||0)+cents(p.valor_pago)));
- fulls.forEach(p=>integral.set(p.fatura_id,(integral.get(p.fatura_id)||0)+cents(p.valor_conferido)));
- deadlines.forEach(x=>{if(x.vencimento)due.set(x.fatura_id,x.vencimento)});
- return invoices.filter(x=>!declared.has(x.id)).map(x=>{
-  const total=cents(x.valor_documental),paidCents=Math.max(paid.get(x.id)||0,integral.get(x.id)||0);
-  return {id:x.id,name:cardName(x.cartao_nome),reference:x.mes_fatura,
-   due:due.get(x.id)||null,amount:Math.max(0,total-paidCents)};
- }).filter(x=>x.amount>0);
+ const core=window.frInvoiceStateCore;
+ if(!core)throw Error('Motor de situação das faturas indisponível.');
+ return core.buildInvoiceStates(invoices,declarations,partials,fulls,deadlines,cardName)
+  .filter(x=>x.remaining>0).map(x=>({id:x.id,name:x.card,reference:x.period,due:x.due,amount:x.remaining}));
 }
 function compute(rows,now,days){
  const end=plusDays(now,days-1);
@@ -81,7 +81,7 @@ function compute(rows,now,days){
 }
 function history(rows,now,days){
  const start=plusDays(now,-days);
- const historyRows=rows.filter(r=>r.estado==='confirmado'&&r.data_movimento&&r.data_movimento>=start&&r.data_movimento<now);
+ const historyRows=rows.filter(r=>r.estado==='confirmado'&&['fluxo_caixa_homologado','extrato_itau_homologado'].includes(r.origem)&&r.data_movimento&&r.data_movimento>=start&&r.data_movimento<now);
  const sum=kind=>historyRows.filter(r=>r.tipo===kind).reduce((v,r)=>v+cents(r.valor),0);
  const inValue=sum('entrada'),outValue=sum('saida');
  return {from:start,to:plusDays(now,-1),count:historyRows.length,inValue,outValue,net:inValue-outValue};
@@ -219,18 +219,20 @@ async function refresh(){
   put('fc-status','Consultando registros oficiais e saldos de referência...');
   const {data:allowed,error:authErr}=await db.rpc('fluxo_caixa_autorizado');
   if(authErr||allowed!==true)throw Error('Usuário não autorizado a consultar o financeiro.');
-  const [pay,manual,links,bankLinks,receivables,moves,invoices,declared,partials,confirmed,cardDates]=await Promise.all([
+  const [pay,manual,links,bankLinks,receivables,moves,invoices,declared,partials,confirmed,cardDates,parts,vendors]=await Promise.all([
    allRows(()=>db.from('fin_contas_pagar').select('id,fornecedor_nome,descricao,vencimento,valor_referencia,situacao').is('arquivado_em',null).order('id')),
    allRows(()=>db.from('fin_boletos_avulsos').select('id,fornecedor_nome,descricao,vencimento,valor_referencia,excluido_em').order('id')),
    allRows(()=>db.from('fin_baixas_operacionais').select('conta_pagar_id,boleto_avulso_id').order('id')),
    allRows(()=>db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id').order('id')),
    allRows(()=>db.from('fin_contas_receber').select('id,numero_documento,descricao,vencimento,valor,valor_recebido,situacao,fin_receber_clientes(nome)').order('id')),
-   allRows(()=>db.from('fin_movimentos').select('id,tipo,data_movimento,valor,estado').order('id')),
+   allRows(()=>db.from('fin_movimentos').select('id,tipo,data_movimento,valor,estado,origem').in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).eq('estado','confirmado').order('id')),
    allRows(()=>db.from('fin_faturas_historicas').select('id,cartao_nome,mes_fatura,valor_documental').order('id')),
    allRows(()=>db.from('fin_faturas_quitacoes_declaradas').select('fatura_id').order('id')),
    allRows(()=>db.from('fin_faturas_pagamentos_parciais').select('fatura_id,valor_pago').order('id')),
    allRows(()=>db.from('fin_comprovacoes_documentais').select('id,fatura_id,valor_conferido').order('id')),
-   allRows(()=>db.from('fin_faturas_agenda').select('fatura_id,vencimento').order('id'))
+   allRows(()=>db.from('fin_faturas_agenda').select('fatura_id,vencimento').order('registrado_em',{ascending:false}).order('id')),
+   allRows(()=>db.from('fin_parcelas').select('id,compra_id,numero,vencimento,valor_cheio,status,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento)').eq('status','aberto').eq('fin_compras.forma_pagamento','boleto').order('id')),
+   allRows(()=>db.from('fin_fornecedores').select('id,nome').order('id'))
   ]);
   // O saldo bancário é uma referência auxiliar: uma falha de acesso não esconde os compromissos.
   let bank=null;
@@ -238,7 +240,7 @@ async function refresh(){
    const refs=await allRows(()=>db.from('fin_saldos_bancarios_referencia').select('conta,data_referencia,saldo,origem').order('data_referencia',{ascending:false}).order('id',{ascending:false}),1000);
    bank=refs[0]||null;
   }catch(_){bank=null}
-  items=assemble(pay,manual,links,bankLinks,receivables);
+  items=assemble(pay,manual,links,bankLinks,receivables,parts,new Map(vendors.map(x=>[x.id,x.nome])));
   movements=moves;
   pendingCards=cardPending(invoices,declared,partials,confirmed,cardDates);
   reference=bank;loaded=true;render();
@@ -255,10 +257,11 @@ function navTo(button){
  const to=button.dataset.fcNav;if(!['payables','receivables'].includes(to))return;
  window.frFinanceUI?.selectView?.(to);
  if(to==='payables'){
-  const year=$('cp-year-filter'),month=$('cp-month-filter'),status=$('cp-status-filter');
+  const year=$('cp-year-filter'),month=$('cp-month-filter'),status=$('cp-status-filter'),source=$('cp-source-filter');
+  if(source){source.value='todos';source.dispatchEvent(new Event('change',{bubbles:true}))}
   if(year){year.value='todos';year.dispatchEvent(new Event('change',{bubbles:true}))}
   if(month){month.value='todos';month.dispatchEvent(new Event('change',{bubbles:true}))}
-  if(status){status.value='todos';status.dispatchEvent(new Event('change',{bubbles:true}))}
+  if(status){status.value='aberto';status.dispatchEvent(new Event('change',{bubbles:true}))}
  }else if($('ar-filter')){
   $('ar-filter').value='todos';$('ar-filter').dispatchEvent(new Event('change',{bubbles:true}));
  }

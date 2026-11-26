@@ -18,7 +18,7 @@ const brDate=d=>d?String(d).slice(0,10).split('-').reverse().join('/'):'Sem venc
 const brMonth=d=>d?String(d).slice(0,7).split('-').reverse().join('/'):'Mês não informado';
 const put=(id,value)=>{const node=$(id);if(node)node.textContent=value};
 const sourceMax=15000;
-let moves=[],accounts=[],manualBills=[],accountLinks=[],manualCashLinks=[],manualBankLinks=[];
+let moves=[],accounts=[],manualBills=[],accountLinks=[],manualCashLinks=[],manualBankLinks=[],installmentBills=[],supplierNames=new Map();
 let invoices=[],declared=[],partials=[],integrals=[],agenda=[],fetching=null,hasData=false,cashMonthInitialized=false;
 async function allRows(build,max=sourceMax){
  const result=[],size=450;
@@ -50,19 +50,20 @@ function effectiveAccounts(){
   .map(x=>({...x,source:'planilha'}));
  const manual=manualBills.filter(x=>!x.excluido_em&&!paidManual.has(x.id))
   .map(x=>({...x,source:'avulso'}));
- return [...active,...manual];
+ const core=window.frAgendaBoletosCore;
+ if(!core)throw Error('Motor de parcelas de boleto indisponível.');
+ const installments=core.openInstallments(installmentBills,supplierNames).map(x=>({
+  id:x.id,source:'parcela',fornecedor_nome:x.fornecedor,descricao:x.descricao,
+  vencimento:x.vencimento,valor_referencia:x.valorCentavos/100,situacao:'aberto'
+ }));
+ return [...active,...manual,...installments];
 }
 function effectiveInvoices(){
- const declaration=new Set(declared.map(x=>x.fatura_id));
- const partMap=new Map();
- partials.forEach(p=>partMap.set(p.fatura_id,(partMap.get(p.fatura_id)||0)+cents(p.valor_pago)));
- const fullMap=new Map(integrals.filter(x=>x.fatura_id).map(x=>[x.fatura_id,cents(x.valor_conferido)]));
- const dueMap=new Map(agenda.map(x=>[x.fatura_id,x.vencimento]));
- return invoices.filter(x=>!declaration.has(x.id)).map(x=>{
-  const total=cents(x.valor_documental),paid=fullMap.get(x.id)??partMap.get(x.id)??0;
-  return {...x,total,paid,remaining:Math.max(0,total-paid),due:dueMap.get(x.id)||null};
- }).filter(x=>x.remaining>0).sort((a,b)=>
-  a.mes_fatura.localeCompare(b.mes_fatura)||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
+ const core=window.frInvoiceStateCore;
+ if(!core)throw Error('Motor de situação das faturas indisponível.');
+ return core.buildInvoiceStates(invoices,declared,partials,integrals,agenda,window.frCardNames?.canonical)
+  .filter(x=>x.remaining>0).map(x=>({...x,mes_fatura:x.period,cartao_nome:x.card}))
+  .sort((a,b)=>String(a.mes_fatura).localeCompare(String(b.mes_fatura))||a.cartao_nome.localeCompare(b.cartao_nome,'pt-BR'));
 }
 function monthShift(month,offset){
  if(!/^\d{4}-\d{2}$/.test(month))return '';
@@ -241,7 +242,7 @@ async function refresh(){
    put('real-status','Consultando a base financeira homologada...');
    const {data:allowed,error:authError}=await db.rpc('fluxo_caixa_autorizado');
    if(authError||allowed!==true)throw Error('Acesso financeiro não autorizado.');
-   const [mv,cp,av,links,bLinks,fs,ds,pp,ip,agendaRows]=await Promise.all([
+   const [mv,cp,av,links,bLinks,fs,ds,pp,ip,agendaRows,parts,vendors]=await Promise.all([
     allRows(()=>db.from('fin_movimentos').select('id,data_movimento,tipo,estado,origem,valor')
      .in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).eq('estado','confirmado')
      .order('data_movimento',{ascending:false}).order('id',{ascending:false})),
@@ -262,10 +263,13 @@ async function refresh(){
     allRows(()=>db.from('fin_comprovacoes_documentais').select('fatura_id,valor_conferido')
      .not('fatura_id','is',null).order('conferido_em',{ascending:false})),
     allRows(()=>db.from('fin_faturas_agenda').select('fatura_id,vencimento')
-     .order('registrado_em',{ascending:false}))
+     .order('registrado_em',{ascending:false}).order('id')),
+    allRows(()=>db.from('fin_parcelas').select('id,compra_id,numero,vencimento,valor_cheio,status,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento)').eq('status','aberto').eq('fin_compras.forma_pagamento','boleto').order('id')),
+    allRows(()=>db.from('fin_fornecedores').select('id,nome').order('id'))
    ]);
    moves=mv;accounts=cp;manualBills=av;accountLinks=links;manualBankLinks=bLinks;
    invoices=fs;declared=ds;partials=pp;integrals=ip;agenda=agendaRows;
+   installmentBills=parts;supplierNames=new Map(vendors.map(x=>[x.id,x.nome]));
    hasData=true;draw();
   }catch(e){
    hasData=false;
@@ -287,6 +291,6 @@ function setup(){
  $('real-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  if(!document.querySelector('[data-view-panel="overview"]')?.hidden)refresh().catch(()=>{});
 }
-window.frRealDashboard={refresh,__test:{monthShift,monthlyWindow,compareMonths}};
+window.frRealDashboard={refresh,__test:{monthShift,monthlyWindow,compareMonths,effectiveAccounts,effectiveInvoices}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 })();

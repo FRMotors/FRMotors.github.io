@@ -46,6 +46,7 @@ function harness(){
    const chain={
     select(columns){query.columns=columns;return this;},
     eq(...args){query.conditions.push(['eq',...args]);return this;},
+    in(...args){query.conditions.push(['in',...args]);return this;},
     is(){return this;},not(){return this;},order(){return this;},limit(){return this;},
     then(done,failed){queries.push(query);return Promise.resolve({
       data:dataset[name]||[],error:null
@@ -102,7 +103,7 @@ test('Carteira une Excel, avulso e três boletos parcelados, somados uma única 
  assert.ok(parcelQuery);
  assert.ok(parcelQuery.columns.includes('fin_compras!inner'));
  assert.ok(parcelQuery.conditions.some(x=>x[1]==='fin_compras.forma_pagamento'&&x[2]==='boleto'));
- assert.ok(parcelQuery.conditions.some(x=>x[1]==='status'&&x[2]==='aberto'));
+ assert.ok(parcelQuery.conditions.some(x=>x[0]==='in'&&x[1]==='status'&&x[2].includes('aberto')&&x[2].includes('pago')));
 });
 
 test('Filtro por origem mostra apenas os boletos parcelados e preserva total geral',async()=>{
@@ -117,12 +118,20 @@ test('Filtro por origem mostra apenas os boletos parcelados e preserva total ger
  assert.match(h.el('cp-shown').textContent,/3 de 5/);
 });
 
-test('Baixa efetivada tira a parcela paga da lista na próxima consulta',async()=>{
+test('Baixa efetivada preserva parcela paga no histórico e retira seu valor das pendências',async()=>{
  const h=harness();await h.refresh();
- h.dataset.fin_parcelas=h.dataset.fin_parcelas.filter(r=>r.id!=='p1');
+ Object.assign(h.dataset.fin_parcelas.find(r=>r.id==='p1'),{status:'pago',desconto_registrado:0,juros_registrados:7.42,
+  fin_vinculos_pagamento:[{valor_aplicado:400,fin_movimentos:{estado:'confirmado',tipo:'saida',data_movimento:'2026-12-17'}}]});
  await h.refresh();
  assert.equal(h.el('cp-count').textContent,'4');
+ assert.equal(h.el('cp-reconciled').textContent,'1');
+ assert.match(h.el('cp-total').textContent,/1\.385,14/);
  assert.ok(!h.el('cp-rows').innerHTML.includes('data-pay-id="p1"'));
+ h.el('cp-status-filter').value='conciliado';h.el('cp-status-filter').listeners.change();
+ assert.equal((h.el('cp-rows').innerHTML.match(/<tr>/g)||[]).length,1);
+ assert.match(h.el('cp-rows').innerHTML,/Pago \/ baixado/);
+ assert.match(h.el('cp-rows').innerHTML,/400,00/);
+ assert.match(h.el('cp-rows').innerHTML,/7,42/);
 });
 
 test('Salvar compra ou baixa atualiza carteira, sem alterar os procedimentos financeiros',()=>{

@@ -45,6 +45,8 @@ on:
       - 'dashboard-data-v4481.js'
       - 'tests/financeiro-margem-os-dashboard.test.cjs'
       - 'financeiro-resumo-operacional.js'
+      - 'financeiro-projecao-caixa.js'
+      - 'tests/financeiro-pendencias-consistentes.test.cjs'
       - 'financeiro-relatorios-gerenciais.css'
       - 'tests/financeiro-margem-lucro.test.cjs'
       - 'financeiro-baixas-operacionais.js'
@@ -110,6 +112,8 @@ on:
       - 'dashboard-data-v4481.js'
       - 'tests/financeiro-margem-os-dashboard.test.cjs'
       - 'financeiro-resumo-operacional.js'
+      - 'financeiro-projecao-caixa.js'
+      - 'tests/financeiro-pendencias-consistentes.test.cjs'
       - 'financeiro-relatorios-gerenciais.css'
       - 'tests/financeiro-margem-lucro.test.cjs'
       - 'financeiro-baixas-operacionais.js'
@@ -143,7 +147,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verificar vinculações, anos e valores documentais
-        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs tests/financeiro-preferencias-fornecedores.test.cjs tests/financeiro-classificacao-administracao.test.cjs tests/financeiro-margem-lucro.test.cjs tests/financeiro-margem-os-dashboard.test.cjs tests/financeiro-baixas-valor-real.test.cjs tests/financeiro-unificar-parcelas-lixeira.test.cjs tests/financeiro-itau-homologacao.test.cjs tests/financeiro-cartoes-categorias.test.cjs tests/financeiro-documentos-finalidade.test.cjs tests/financeiro-agenda-boletos.test.cjs
+        run: node --test tests/financeiro-documentos-status.test.cjs tests/financeiro-auditoria-fornecedores-layout.test.cjs tests/financeiro-consolidacao.test.cjs tests/financeiro-estabilizacao.test.cjs tests/financeiro-preferencias-fornecedores.test.cjs tests/financeiro-classificacao-administracao.test.cjs tests/financeiro-margem-lucro.test.cjs tests/financeiro-margem-os-dashboard.test.cjs tests/financeiro-baixas-valor-real.test.cjs tests/financeiro-unificar-parcelas-lixeira.test.cjs tests/financeiro-itau-homologacao.test.cjs tests/financeiro-cartoes-categorias.test.cjs tests/financeiro-documentos-finalidade.test.cjs tests/financeiro-agenda-boletos.test.cjs tests/financeiro-pendencias-consistentes.test.cjs
       - name: Validar sintaxe de baixa e carteira
         run: node --check financeiro-agenda-boletos-core.js && node --check financeiro-agenda-faturas.js && node --check financeiro-central-vencimentos.js && node --check financeiro-documentos-finalidade-core.js && node --check financeiro-documentos.js && node --check financeiro-cartoes-categorias.js && node --check financeiro-baixas-operacionais.js && node --check financeiro-contas-operacionais.js && node --check financeiro-lixeira-boletos.js && node --check financeiro-historico.js && node --check financeiro-itau-homologacao.js && node --check financeiro-categorias-relatorio.js
       - name: Verificar sintaxe do painel de margem por O.S.

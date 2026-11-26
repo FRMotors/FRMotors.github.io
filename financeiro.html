@@ -1352,7 +1352,7 @@
         <div class="fc-hero-content">
          <span class="fc-hero-icon"><span class="icon" data-icon="chart"></span></span>
          <div><h2>O que já tem vencimento registrado?</h2>
-          <p>A projeção utiliza apenas boletos pendentes e contas a receber com data confirmada. Não prevê novas vendas, receitas recorrentes, juros ou pagamentos não documentados.</p>
+          <p>A projeção utiliza boletos pendentes da planilha, avulsos e parcelas de compras em boleto, além de contas a receber com data confirmada. Não prevê novas vendas, receitas recorrentes, juros ou pagamentos não documentados.</p>
          </div>
         </div>
         <button type="button" class="btn" data-view="payables">Conferir compromissos</button>
@@ -1406,8 +1406,8 @@
          <div class="fc-past">
           <div class="fc-past-title">Fluxo de caixa efetivo</div>
           <p class="fc-past-description" id="fc-hist-period">Consultando histórico...</p>
-          <div class="fc-past-metric"><span>Entradas confirmadas</span><strong id="fc-hist-in">—</strong></div>
-          <div class="fc-past-metric"><span>Saídas confirmadas</span><strong id="fc-hist-out">—</strong></div>
+          <div class="fc-past-metric"><span>Entradas homologadas</span><strong id="fc-hist-in">—</strong></div>
+          <div class="fc-past-metric"><span>Saídas homologadas</span><strong id="fc-hist-out">—</strong></div>
           <div class="fc-past-metric"><span>Resultado registrado</span><strong id="fc-hist-net">—</strong></div>
           <p class="fc-summary-footer">Valores realizados não são extrapolados automaticamente para meses futuros.</p>
          </div>
@@ -1581,7 +1581,7 @@
               <p class="real-dashboard-fine"><a href="./dashboard.html">Consultar o Dashboard de vendas e O.S.</a></p>
             </section>
             <section class="real-dashboard-panel">
-              <div class="real-dashboard-panel-head"><div><h3>Contas a pagar</h3><p>Compromissos sem baixa. Valores de referência dos boletos.</p></div>
+              <div class="real-dashboard-panel-head"><div><h3>Contas a pagar</h3><p>Compromissos sem baixa, incluindo boletos avulsos e parcelas de compras. Valores de referência.</p></div>
                 <button type="button" class="btn" data-view="payables">Ver contas</button></div>
               <div class="real-dashboard-lead"><strong id="real-bill-value">—</strong><span id="real-bill-count">—</span><span> contas em aberto</span></div>
               <div class="real-dashboard-small-metrics">
@@ -3822,11 +3822,11 @@ init();
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-margem-os-core.js?v=20261121orders1" defer></script>
 <script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
-<script src="./financeiro-resumo-operacional.js?v=20261123manual1" defer></script>
+<script src="./financeiro-resumo-operacional.js?v=20261126consolidado1" defer></script>
 <script src="./financeiro-margem-os.js?v=20261121orders1" defer></script>
 <script src="./financeiro-detalhamento-caixa.js?v=20261123manual1" defer></script>
 <script src="./financeiro-central-vencimentos.js?v=20261123boletos1" defer></script>
-<script src="./financeiro-projecao-caixa.js?v=20261118prime1" defer></script>
+<script src="./financeiro-projecao-caixa.js?v=20261126consolidado1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261123collapse1" defer></script>
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
