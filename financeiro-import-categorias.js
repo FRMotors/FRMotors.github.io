@@ -15,6 +15,7 @@ const defaults=['PRÓ-LABORE','SALÁRIOS','FORNECEDORES','COMBUSTÍVEL','TARIFAS
  'TRANSFERÊNCIAS','RECEBIMENTOS','VENDAS','REEMBOLSOS','EXTRATO BANCÁRIO',
  'OUTRAS DESPESAS','OUTRAS RECEITAS'];
 const state={rows:[],files:[],loaded:false,loading:false,page:0,perPage:20,saving:null,version:0};
+const batch=window.frBatchClassification?.create({mode:'extrato',body:'import-categories-rows',eligible:r=>r.natureza==='saida'&&r.estado==='confirmado',name:r=>r.descricaoExibida,description:r=>[r.conta,dateBR(r.date),r.category].join(' · '),categories:()=>[...defaults,...state.rows.map(r=>r.category)],payload:r=>({id:r.id,categoria:r.currentCategory??null}),refresh});
 function status(message,failed=false){
  const element=$('import-categories-status');
  if(!element)return;
@@ -88,10 +89,11 @@ function render(){
  const pages=Math.max(1,Math.ceil(all.length/state.perPage));
  state.page=Math.min(state.page,pages-1);
  const visible=all.slice(state.page*state.perPage,(state.page+1)*state.perPage);
+ batch?.prepare(all,visible);
  body.innerHTML=visible.length?visible.map(r=>{
   const disabled=r.estado==='sem_vinculo'||state.saving===r.id||state.loading;
   const badge=r.estado==='confirmado'?'Confirmado':r.estado==='cancelado'?'Cancelado, fora do caixa':'Sem vínculo';
-  return '<tr data-old-category-row="'+escapeText(r.id)+'">'+
+  return '<tr data-old-category-row="'+escapeText(r.id)+'">'+(batch?.checkbox(r)||'<td></td>')+
    '<td>'+escapeText(dateBR(r.date))+'</td>'+
    '<td><strong>'+escapeText(r.conta)+'</strong><small class="import-oldcat-sub">'+escapeText(r.arquivo)+'</small></td>'+
    '<td><strong>'+escapeText(r.descricaoExibida)+'</strong>'+
@@ -106,7 +108,8 @@ function render(){
    '<td><span class="import-oldcat-state '+(r.estado==='confirmado'?'confirmed':'inactive')+'">'+escapeText(badge)+'</span></td>'+
    '<td><button type="button" class="btn btn-teal import-oldcat-save" data-old-category-save="'+escapeText(r.id)+'" '+
     (disabled?'disabled':'')+'>'+(state.saving===r.id?'Salvando...':'Salvar')+'</button></td></tr>';
- }).join(''):'<tr><td colspan="7" class="empty">Nenhuma movimentação encontrada. Ajuste os filtros ou atualize a lista.</td></tr>';
+ }).join(''):'<tr><td colspan="8" class="empty">Nenhuma movimentação encontrada. Ajuste os filtros ou atualize a lista.</td></tr>';
+ batch?.update();
  const back=$('import-categories-prev'),next=$('import-categories-next');
  if(back)back.disabled=state.page===0||state.loading;
  if(next)next.disabled=state.page>=pages-1||state.loading;

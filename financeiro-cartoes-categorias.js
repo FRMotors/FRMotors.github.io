@@ -13,6 +13,7 @@ const purposeLabel=p=>p==='oficina'?'Uso na oficina':p==='outras'?'Outra finalid
 const defaults=['AUTOPEÇAS','COMBUSTÍVEL','DESPESAS DA OFICINA','FERRAMENTAS','FORNECEDORES','INSUMOS','MANUTENÇÃO','MATERIAL DE ESCRITÓRIO','MERCADO LIVRE','SERVIÇOS','TARIFAS E ENCARGOS','TRIBUTOS E IMPOSTOS','USO PESSOAL','VIAGENS'];
 const state={planilha:[],importado:[],items:[],loading:null,ready:false,page:0,pageSize:20,edit:null,saving:false};
 let initialized=false;
+const batch=window.frBatchClassification?.create({mode:'cartao',body:'cbcat-rows',name:r=>r.descricao,description:r=>[r.cartao,dateBR(r.data),r.categoria||'Sem categoria',purposeLabel(r.finalidade)].join(' · '),categories:()=>[...defaults,...state.items.map(x=>x.categoria).filter(x=>x&&!generic(x))],payload:r=>({id:r.id,origem:r.origem,categoria:r.categoria??null,finalidade:r.finalidade}),refresh:async()=>{await refresh();window.frDocumentsUI?.refresh?.().catch(()=>{});}});
 function msg(text,error=false){const el=$('cbcat-status');if(el){el.textContent=text;el.classList.toggle('cbcat-error',error)}}
 async function all(makeQuery,max=6000){
  const output=[],step=400;
@@ -118,8 +119,9 @@ function render(){
  const pages=Math.max(1,Math.ceil(allRows.length/state.pageSize));
  state.page=Math.min(Math.max(state.page,0),pages-1);
  const rows=allRows.slice(state.page*state.pageSize,(state.page+1)*state.pageSize);
+ batch?.prepare(allRows,rows);
  $('cbcat-rows').innerHTML=rows.length?rows.map(x=>
-  '<tr><td><strong>'+safe(x.descricao)+'</strong><small>'+safe(x.parcela?'Parcela '+x.parcela+' · ':'')+safe(x.origem==='planilha'?'Planilha homologada':'Extrato do cartão')+'</small></td>'+
+  '<tr>'+(batch?.checkbox(x)||'<td></td>')+'<td><strong>'+safe(x.descricao)+'</strong><small>'+safe(x.parcela?'Parcela '+x.parcela+' · ':'')+safe(x.origem==='planilha'?'Planilha homologada':'Extrato do cartão')+'</small></td>'+
   '<td>'+safe(x.cartao)+'</td><td>'+safe(x.mes.slice(5,7)+'/'+x.mes.slice(0,4))+'</td>'+
   '<td>'+safe(dateBR(x.data))+'</td>'+
   '<td>'+ (generic(x.categoria)?'<span class="cbcat-pending">A classificar</span>':safe(x.categoria))+'</td>'+
@@ -127,7 +129,8 @@ function render(){
   '<td class="money">'+money(x.valor)+'</td>'+
   '<td><button type="button" class="btn cbcat-action" data-cbcat-id="'+safe(x.id)+'" data-cbcat-origin="'+safe(x.origem)+'">'+
    (generic(x.categoria)?'Categorizar':'Alterar')+'</button></td></tr>').join(''):
-  '<tr><td colspan="8">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>';
+  '<tr><td colspan="9">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>';
+ batch?.update();
  $('cbcat-pages').textContent=allRows.length+' lançamento(s) · página '+(state.page+1)+' de '+pages;
  $('cbcat-prev').disabled=state.page===0;
  $('cbcat-next').disabled=state.page>=pages-1;
@@ -250,9 +253,9 @@ async function refresh(){
   rebuildFilters();render();
   msg('Categorias carregadas. Filtre por mês ou cartão e clique em Categorizar/Alterar na compra desejada.');
  })().catch(err=>{
-  state.ready=false;state.items=[];state.planilha=[];state.importado=[];
+  state.ready=false;state.items=[];state.planilha=[];state.importado=[];batch?.prepare([],[]);
   window.frPendingUI?.publish('card',null);
-  $('cbcat-rows').innerHTML='<tr><td colspan="8">A lista não pôde ser carregada com segurança.</td></tr>';
+  $('cbcat-rows').innerHTML='<tr><td colspan="9">A lista não pôde ser carregada com segurança.</td></tr>';
   msg('Não foi possível carregar as compras: '+(err.message||err),true);
  }).finally(()=>{state.loading=null});
  return state.loading;

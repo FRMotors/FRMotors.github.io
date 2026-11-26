@@ -13,6 +13,7 @@ const put=(id,v)=>{if($(id))$(id).textContent=v;};
 const label=v=>String(v||'').trim()||'Não informado';
 let all=[],suppliers=[],history=[],ready=false,loading=null,busy=false,active=null,page=0,year='todos',status='sem-categoria',query='';
 const PAGE=25;
+const batch=window.frBatchClassification?.create({mode:'caixa',body:'cl-rows',name:r=>r.descricao,description:r=>[dateBR(r.data_movimento),r.categoria||'Sem categoria',nameOf(r.fornecedor_id)].join(' · '),categories,payload:r=>({id:r.id,fornecedor_id:r.fornecedor_id??null,versao:r.atualizado_em}),refresh:async()=>{await refresh();window.frManagerReportsUI?.refresh?.();window.frRealDashboard?.refresh?.();window.frCategoryReportUI?.refresh?.();}});
 async function rowsAll(builder,max=10000){
  const list=[],step=400;
  for(let offset=0;offset<max;offset+=step){
@@ -81,15 +82,17 @@ function renderRows(){
  const totalPages=Math.max(1,Math.ceil(entries.length/PAGE));
  page=Math.min(Math.max(0,page),totalPages-1);
  const pageRows=entries.slice(page*PAGE,(page+1)*PAGE);
+ batch?.prepare(entries,pageRows);
  const root=$('cl-rows');
  if(root)root.innerHTML=pageRows.length?pageRows.map(x=>
-  '<tr><td>'+esc(dateBR(x.data_movimento))+'</td>'+
+  '<tr>'+(batch?.checkbox(x)||'<td></td>')+'<td>'+esc(dateBR(x.data_movimento))+'</td>'+
   '<td><strong>'+esc(x.descricao||'Sem descrição')+'</strong><small class="cl-row-sub">'+esc(x.meio_pagamento||'Meio não informado')+'</small></td>'+
   '<td class="money">'+money(x.valor)+'</td>'+
   '<td><span class="cl-tag '+(assigned(x)?'cl-tag-good':'cl-tag-warn')+'">'+esc(x.categoria||'Sem categoria')+'</span></td>'+
   '<td>'+esc(nameOf(x.fornecedor_id))+'</td>'+
   '<td><button type="button" class="btn cl-edit-btn" data-cl-edit="'+esc(x.id)+'">Classificar</button></td></tr>'
- ).join(''):'<tr><td colspan="6" class="empty">Nenhuma saída encontrada. Altere os filtros para consultar outros registros.</td></tr>';
+ ).join(''):'<tr><td colspan="7" class="empty">Nenhuma saída encontrada. Altere os filtros para consultar outros registros.</td></tr>';
+ batch?.update();
  put('cl-range',entries.length+' saída(s) no filtro · página '+(page+1)+' de '+totalPages);
  if($('cl-prev'))$('cl-prev').disabled=page===0;
  if($('cl-next'))$('cl-next').disabled=page>=totalPages-1;
@@ -141,11 +144,11 @@ async function refresh(){
   if(auditResult.error)throw auditResult.error;
   all=mov;suppliers=forn;history=auditResult.data||[];ready=true;render();
  })().catch(e=>{
-  ready=false;all=[];history=[];
+  ready=false;all=[];history=[];batch?.prepare([],[]);
   window.frPendingUI?.publish('cash',null);
   put('cl-status','Não foi possível carregar a central: '+(e.message||e));
   for(const id of ['cl-total','cl-missing','cl-nolink','cl-missing-money','cl-complete'])put(id,'—');
-  if($('cl-rows'))$('cl-rows').innerHTML='<tr><td colspan="6" class="empty">Falha de consulta. Tente atualizar a página.</td></tr>';
+  if($('cl-rows'))$('cl-rows').innerHTML='<tr><td colspan="7" class="empty">Falha de consulta. Tente atualizar a página.</td></tr>';
   if($('cl-history'))$('cl-history').textContent='Histórico temporariamente indisponível.';
  }).finally(()=>{loading=null});
  return loading;
