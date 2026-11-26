@@ -246,10 +246,12 @@ async function refresh(){
    throw Error('Compra de cartão com valor inválido; o total não será exibido.');
   state.planilha=planilha;state.importado=importado;state.items=[...planilha,...importado];
   state.ready=true;
+  window.frPendingUI?.publish('card',{'card-planilha':{count:planilha.filter(x=>x.finalidade==='a_classificar').length},'card-importado':{count:importado.filter(x=>x.finalidade==='a_classificar').length}});
   rebuildFilters();render();
   msg('Categorias carregadas. Filtre por mês ou cartão e clique em Categorizar/Alterar na compra desejada.');
  })().catch(err=>{
   state.ready=false;state.items=[];state.planilha=[];state.importado=[];
+  window.frPendingUI?.publish('card',null);
   $('cbcat-rows').innerHTML='<tr><td colspan="8">A lista não pôde ser carregada com segurança.</td></tr>';
   msg('Não foi possível carregar as compras: '+(err.message||err),true);
  }).finally(()=>{state.loading=null});

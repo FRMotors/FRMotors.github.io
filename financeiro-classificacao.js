@@ -67,6 +67,7 @@ function fillSuppliers(current){
 }
 function renderStats(){
  const missing=all.filter(x=>!assigned(x));
+ window.frPendingUI?.publish('cash',{'cash-category':{count:missing.length,amount:missing.reduce((s,x)=>s+Math.round(Number(x.valor||0)*100),0)}});
  const unlinked=all.filter(x=>!x.fornecedor_id);
  put('cl-total',String(all.length));
  put('cl-missing',String(missing.length));
@@ -141,6 +142,7 @@ async function refresh(){
   all=mov;suppliers=forn;history=auditResult.data||[];ready=true;render();
  })().catch(e=>{
   ready=false;all=[];history=[];
+  window.frPendingUI?.publish('cash',null);
   put('cl-status','Não foi possível carregar a central: '+(e.message||e));
   for(const id of ['cl-total','cl-missing','cl-nolink','cl-missing-money','cl-complete'])put(id,'—');
   if($('cl-rows'))$('cl-rows').innerHTML='<tr><td colspan="6" class="empty">Falha de consulta. Tente atualizar a página.</td></tr>';

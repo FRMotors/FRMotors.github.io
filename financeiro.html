@@ -616,6 +616,24 @@
  #main-content .fin-secondary-section>.fin-collapse-panel{padding:6px}
  #main-content .fin-secondary-section .card-head{flex-wrap:wrap}
 }
+</style>
+<style>
+#cv-home-banner[hidden]{display:none!important}
+#main-content .fp-center{margin-bottom:18px}
+#main-content .fp-center .fp-group{padding:4px 16px 14px}
+#main-content .fp-group h3{font-size:13px;margin:8px 0;font-weight:750;color:var(--muted)}
+#main-content .fp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#main-content .fp-tile{appearance:none;border:1px solid var(--stroke);border-radius:10px;background:var(--card,#fff);color:inherit;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:5px;padding:12px;min-width:0;min-height:124px;cursor:pointer;font:inherit}
+#main-content .fp-tile>span:first-child{font-size:12px;font-weight:700;line-height:1.3}
+#main-content .fp-tile strong{font-size:23px;line-height:1.25;overflow-wrap:anywhere}
+#main-content .fp-tile small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+#main-content .fp-tile .fp-action{margin-top:auto;font-size:11px;color:#167984;font-weight:750}
+#main-content .fp-tile.fp-attention{border-left:3px solid #bd8331}
+#main-content .fp-tile.fp-clear{border-left:3px solid #478b6d}
+#main-content .fp-tile:focus-visible{outline:2px solid #167984;outline-offset:2px}
+#main-content .fp-tile:hover{border-color:#167984}
+@media(max-width:1000px){#main-content .fp-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){#main-content .fp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#main-content .fp-center .fp-group{padding:4px 10px 10px}#main-content .fp-tile{padding:10px;min-height:120px}}
 </style></head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -1542,7 +1560,13 @@
               <button type="button" class="btn" data-view="audit"><span class="icon icon-sm" data-icon="shield"></span> Auditoria</button>
           </div>
         </div>
-<section class="cv-home" id="cv-home-banner" aria-label="Alertas de vencimento">
+<section class="card fp-center" id="fp-center" aria-labelledby="fp-title">
+ <div class="card-head"><div><h2 id="fp-title">Central de pendências financeiras</h2><p>Resolva vencimentos, conferências e classificações em um só lugar.</p></div><button type="button" class="btn" id="fp-refresh">Atualizar pendências</button></div>
+ <p class="info-note" id="fp-status" role="status" aria-live="polite">Aguardando consulta das fontes...</p>
+ <div class="fp-group"><h3>Vencimentos e cobranças</h3><div class="fp-grid"><button type="button" class="fp-tile" data-fp-action="bills-late" id="fp-bills-late-tile"><span>Boletos vencidos</span><strong id="fp-bills-late">—</strong><small id="fp-bills-late-detail">Aguardando consulta...</small><span class="fp-action">Ver boletos <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="receive-late" id="fp-receive-late-tile"><span>Recebimentos vencidos</span><strong id="fp-receive-late">—</strong><small id="fp-receive-late-detail">Aguardando consulta...</small><span class="fp-action">Ver cobranças <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="card-late" id="fp-card-late-tile"><span>Faturas vencidas</span><strong id="fp-card-late">—</strong><small id="fp-card-late-detail">Aguardando consulta...</small><span class="fp-action">Ver faturas <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="today" id="fp-today-tile"><span>Vencem hoje</span><strong id="fp-today">—</strong><small id="fp-today-detail">Aguardando consulta...</small><span class="fp-action">Abrir agenda <span aria-hidden="true">›</span></span></button></div></div><div class="fp-group"><h3>Datas não informadas</h3><div class="fp-grid"><button type="button" class="fp-tile" data-fp-action="bill-undated" id="fp-bill-undated-tile"><span>Boletos sem vencimento</span><strong id="fp-bill-undated">—</strong><small id="fp-bill-undated-detail">Aguardando consulta...</small><span class="fp-action">Revisar boletos <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="card-undated" id="fp-card-undated-tile"><span>Faturas sem vencimento</span><strong id="fp-card-undated">—</strong><small id="fp-card-undated-detail">Aguardando consulta...</small><span class="fp-action">Revisar faturas <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="receive-undated" id="fp-receive-undated-tile"><span>Recebíveis sem vencimento</span><strong id="fp-receive-undated">—</strong><small id="fp-receive-undated-detail">Aguardando consulta...</small><span class="fp-action">Revisar recebíveis <span aria-hidden="true">›</span></span></button></div></div><div class="fp-group"><h3>Banco e conferência</h3><div class="fp-grid"><button type="button" class="fp-tile" data-fp-action="itau-new" id="fp-itau-new-tile"><span>Extrato aguardando homologação</span><strong id="fp-itau-new">—</strong><small id="fp-itau-new-detail">Aguardando consulta...</small><span class="fp-action">Conferir Itaú <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="itau-review" id="fp-itau-review-tile"><span>Correspondências incertas com Excel</span><strong id="fp-itau-review">—</strong><small id="fp-itau-review-detail">Aguardando consulta...</small><span class="fp-action">Revisar no Itaú <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="cash-category" id="fp-cash-category-tile"><span>Saídas históricas sem categoria</span><strong id="fp-cash-category">—</strong><small id="fp-cash-category-detail">Aguardando consulta...</small><span class="fp-action">Classificar saídas <span aria-hidden="true">›</span></span></button></div></div><div class="fp-group"><h3>Finalidade das compras em cartão</h3><div class="fp-grid"><button type="button" class="fp-tile" data-fp-action="card-planilha" id="fp-card-planilha-tile"><span>Planilha: finalidade a definir</span><strong id="fp-card-planilha">—</strong><small id="fp-card-planilha-detail">Aguardando consulta...</small><span class="fp-action">Classificar histórico <span aria-hidden="true">›</span></span></button><button type="button" class="fp-tile" data-fp-action="card-importado" id="fp-card-importado-tile"><span>PDFs: finalidade a definir</span><strong id="fp-card-importado">—</strong><small id="fp-card-importado-detail">Aguardando consulta...</small><span class="fp-action">Classificar importações <span aria-hidden="true">›</span></span></button></div></div>
+ <p class="info-note">As contagens são independentes: não some documentos, lançamentos e classificações. A planilha de cartões e os PDFs podem conter registros do mesmo gasto.</p>
+</section>
+<section class="cv-home" id="cv-home-banner" aria-label="Alertas de vencimento" hidden aria-hidden="true">
   <div class="cv-home-main">
    <span class="cv-home-icon"><span class="icon" data-icon="calendar"></span></span>
    <div><h2>Vencimentos que precisam de atenção</h2>
@@ -2205,7 +2229,7 @@
    <select id="ag-filter" class="filter-select" aria-label="Filtrar situação">
     <option value="todos">Todos os pendentes</option>
     <option value="sem-data">Sem data informada</option>
-    <option value="prazo-passado">Prazo passado</option>
+    <option value="prazo-passado">Prazo passado</option><option value="hoje">Vencem hoje</option>
     <option value="proximos-7">Vencem em 7 dias</option>
     <option value="programada">Programadas</option>
     <option value="parcial">Pagamento parcial</option>
@@ -3905,7 +3929,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261126simplifica1"></script>
+<script src="./financeiro-pro-ui.js?v=20261126pendencias1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
@@ -3920,8 +3944,8 @@ init();
 <script src="./financeiro-itau-core.js?v=20261119review2" defer></script>
 <script src="./financeiro-itau-mensal-core.js?v=20261123manual1" defer></script>
 <script src="./financeiro-itau-mensal.js?v=20261123manual1" defer></script>
-<script src="./financeiro-historico.js?v=20261123manual1" defer></script>
-<script src="./financeiro-itau-homologacao.js?v=20261126conciliacao2" defer></script>
+<script src="./financeiro-historico.js?v=20261126pendencias1" defer></script>
+<script src="./financeiro-itau-homologacao.js?v=20261126pendencias1" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261126usabilidade1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
@@ -3933,7 +3957,7 @@ init();
 <script src="./financeiro-vinculos-faturas.js?v=20261119layout2" defer></script>
 <script src="./financeiro-faturas-estado-core.js?v=20261120unificado1" defer></script>
 <script src="./financeiro-agenda-boletos-core.js?v=20261123boletos1" defer></script>
-<script src="./financeiro-agenda-faturas.js?v=20261126usabilidade1" defer></script>
+<script src="./financeiro-agenda-faturas.js?v=20261126pendencias1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-margem-os-core.js?v=20261121orders1" defer></script>
 <script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
@@ -3947,10 +3971,11 @@ init();
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-relatorio.js?v=20261119match1" defer></script>
 <script src="./financeiro-relatorios-gerenciais.js?v=20261123manual1" defer></script>
-<script src="./financeiro-classificacao.js?v=20261120classifyadmin1" defer></script>
+<script src="./financeiro-classificacao.js?v=20261126pendencias1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261124undated1" defer></script>
-<script src="./financeiro-cartoes-categorias.js?v=20261126simplifica1" defer></script>
+<script src="./financeiro-cartoes-categorias.js?v=20261126pendencias1" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-auditoria-estado-ui.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>
+<script src="./financeiro-pendencias.js?v=20261126pendencias1" defer></script>
 </body></html>

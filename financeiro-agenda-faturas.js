@@ -134,7 +134,8 @@ function render(){
  const rows=pending.filter(f=>{
   if(selectedDay&&f.vencimento!==selectedDay)return false;
   if(typeFilter!=='todos'&&f.kind!==typeFilter)return false;
-  if(filter!=='todos'&&condition(f,day)!==filter&&!(filter==='parcial'&&f.kind==='cartao'&&f.paid>0))return false;
+  if(filter==='hoje'&&f.vencimento!==day)return false;
+  if(filter!=='todos'&&filter!=='hoje'&&condition(f,day)!==filter&&!(filter==='parcial'&&f.kind==='cartao'&&f.paid>0))return false;
   return [f.title,f.details,f.source,f.categoria,f.mes_fatura,f.vencimento,f.observacoes,
    f.total/100,f.rest/100,f.kind].join(' ').toLocaleLowerCase('pt-BR').includes(q);
  });
@@ -321,6 +322,7 @@ async function refresh(){
    billLinks=linked;manualBankLinks=linkedBank;receivables=rec;
    render();
    const active=allAgendaItems();
+   if(window.frPendingUI)window.frPendingUI.publish('agenda',window.frPendingUI.summarizeAgenda(active,localDay()));
    const billCount=active.filter(x=>x.kind==='boleto').length;
    const cardCount=active.filter(x=>x.kind==='cartao').length;
    const receiveCount=active.filter(x=>x.kind==='receber').length;
@@ -331,12 +333,21 @@ async function refresh(){
     ' conta(s) a receber pendentes no calendário. '+declarations.length+
     ' faturas quitadas por confirmação histórica. Nenhuma nova saída de caixa.');
   }catch(e){
+   window.frPendingUI?.publish('agenda',null);
    out('ag-status','Erro ao consultar agenda: '+(e.message||e));
    if($('ag-rows'))$('ag-rows').innerHTML='<tr><td colspan="8" class="empty">Não foi possível carregar a agenda.</td></tr>';
   }
  })();
  try{await loading}finally{loading=null}
 }
+async function focusPending(kind,status){
+ selectedDay=null;page=0;filter=status;typeFilter=kind;
+ if($('ag-filter'))$('ag-filter').value=status;
+ if($('ag-type'))$('ag-type').value=kind;
+ if($('ag-search'))$('ag-search').value='';
+ await refresh();$('ag-type')?.scrollIntoView?.({behavior:'smooth',block:'center'});
+}
+window.frPendingAgendaFilter=focusPending;
 function showUndated(kind){
  selectedDay=null;page=0;filter='sem-data';typeFilter=kind;
  if($('ag-filter'))$('ag-filter').value=filter;

@@ -114,6 +114,7 @@ function selectView(next,options={}){
  if(next==='overview'||next==='reports')window.frHistoryUI?.refresh?.().catch?.(()=>{});
   
   if(next==='overview')window.frRealDashboard?.refresh?.();
+  if(next==='overview')window.frPendingUI?.refresh?.();
    if(next==='overview')window.frOrdersProfitUI?.refresh?.();
    if(next==='overview')window.frDeadlinesUI?.refresh?.();
   if(next==='overview')window.frCashDetailUI?.refresh?.();
@@ -412,7 +413,8 @@ function setup(){
  byId('search-purchases')?.addEventListener('input',updatePurchases);
  byId('export-moves')?.addEventListener('click',exportMovements);
  byId('refresh-data')?.addEventListener('click',()=>{
-  if(view==='cardbills'){
+  if(view==='overview'){window.frPendingUI?.refresh?.();window.frRealDashboard?.refresh?.();window.frOrdersProfitUI?.refresh?.();window.frCashDetailUI?.refresh?.();}
+  else if(view==='cardbills'){
     window.frCardBillsUI?.refresh?.();
     window.frCardInstallmentsUI?.refresh?.();
   }else if(view==='imports'&&byId('imports-classificacao')?.open){

@@ -355,6 +355,7 @@ async function refresh(){
    status('hist-other-status','Fontes homologadas atualizadas. Nenhum lançamento operacional foi modificado.');
   }catch(e){
    ready=false;
+   window.frPendingUI?.publish('itau',null);
    renderError('Não foi possível atualizar o Itaú: '+e.message);
    for(const id of ['hist-itau-kpis','hist-itau-monthly','hist-itau-chart']){
     const element=$(id);if(element)element.innerHTML='';

@@ -81,6 +81,8 @@ function render(args){
  cutoff=args.cutoff||'';
  approved=Number(args.approved||0);
  weak=Number(args.weak||0);
+ if(cutoff)window.frPendingUI?.publish('itau',{'itau-new':{count:pending.length},'itau-review':{count:weak}});
+ else window.frPendingUI?.publish('itau',null);
  selected.clear();decisions.clear();manualCandidates=[];revision++;
  put('hist-itau-approve-count',pending.length+' novo(s) em conferência');
  put('hist-itau-approved-count',approved+' homologado(s) manualmente');
