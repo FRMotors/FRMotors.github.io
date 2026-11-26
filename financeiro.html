@@ -2556,11 +2556,13 @@
   <h2 id="hist-itau-approve-dialog-title">Revise o extrato antes de homologar</h2>
   <p>Confira cada linha com o PDF. <strong>Nenhum lançamento vem selecionado.</strong> Somente os selecionados entrarão no caixa homologado, com a origem e o responsável registrados.</p>
   <div class="itau-approve-actions"><div>
-   <button type="button" class="btn" id="hist-itau-approve-all">Selecionar todos os novos</button>
+   <button type="button" class="btn" id="hist-itau-approve-all">Selecionar novos sem coincidência</button>
    <button type="button" class="btn" id="hist-itau-approve-none">Limpar seleção</button></div>
    <strong id="hist-itau-approve-selected">0 selecionados</strong>
   </div>
   <form id="hist-itau-approve-form">
+   <p class="info-note" id="hist-itau-manual-note" aria-live="polite"></p>
+   <p class="info-note" id="hist-itau-approve-dialog-status" role="status" aria-live="polite"></p>
    <div class="table-wrap"><table class="data-table itau-approve-table">
     <thead><tr><th>Conferido?</th><th>Data</th><th>Descrição original do PDF</th><th>Tipo</th><th class="money">Valor</th></tr></thead>
     <tbody id="hist-itau-approve-rows"><tr><td colspan="5">Aguardando...</td></tr></tbody>
@@ -2569,7 +2571,7 @@
    <textarea id="hist-itau-approve-reason" minlength="12" maxlength="500" rows="3" required
     placeholder="Ex.: Conferi as linhas selecionadas contra o PDF do Itaú e o fechamento anterior."></textarea>
    <label class="itau-approve-checkbox"><input id="hist-itau-approve-ack" type="checkbox" required>
-    <span>Confirmo que conferi os lançamentos selecionados e autorizo a inclusão no caixa homologado. A operação será auditada e não cria outro pagamento bancário.</span></label>
+    <span>Confirmo que conferi os lançamentos selecionados, as baixas manuais correspondentes e autorizo a inclusão ou conciliação no caixa homologado. A operação será auditada e não cria outro pagamento bancário.</span></label>
    <div class="itau-approve-footer">
     <button type="button" class="btn" id="hist-itau-approve-cancel">Cancelar</button>
     <button type="submit" class="btn btn-primary" id="hist-itau-approve-confirm" disabled>Homologar selecionados</button>
@@ -3804,7 +3806,7 @@ init();
 <script src="./financeiro-itau-mensal-core.js?v=20261123manual1" defer></script>
 <script src="./financeiro-itau-mensal.js?v=20261123manual1" defer></script>
 <script src="./financeiro-historico.js?v=20261123manual1" defer></script>
-<script src="./financeiro-itau-homologacao.js?v=20261123manual1" defer></script>
+<script src="./financeiro-itau-homologacao.js?v=20261126conciliacao2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
 <script src="./financeiro-contas-operacionais.js?v=20261126paid1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
