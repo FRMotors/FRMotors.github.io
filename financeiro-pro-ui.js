@@ -362,6 +362,7 @@ function scrollToExpensesSection(id){
  if(!['vl-title-section','ag-title'].includes(id))return;
  const target=byId(id)?.closest('section');
  if(!target)return;
+ for(let p=target.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;
  target.setAttribute('tabindex','-1');
  target.scrollIntoView({behavior:'smooth',block:'start'});
  try{target.focus({preventScroll:true})}catch(_){}
@@ -369,6 +370,10 @@ function scrollToExpensesSection(id){
 function setup(){
  applyIcons();
  initSidebar();
+ byId('cb-installments-jump')?.addEventListener('click',()=>{
+  const section=byId('cb-installments-collapse');if(section){section.open=true;section.scrollIntoView({behavior:'smooth',block:'start'});}
+ });
+ byId('cb-back-faturas')?.addEventListener('click',()=>byId('cb-detail-title')?.scrollIntoView({behavior:'smooth',block:'start'}));
  document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>selectView(btn.dataset.view)));
  byId('imports-classificacao')?.addEventListener('toggle',e=>{
   if(e.target.open&&view==='imports')window.frClassificationUI?.refresh?.();

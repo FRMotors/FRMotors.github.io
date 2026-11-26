@@ -593,6 +593,29 @@
 .fin-overview-analysis,.fin-extra-conciliation{margin-top:16px}.fin-overview-analysis>summary{font-weight:750}
 .ag-kind-receive{background:#e7f4ed!important;color:#24664d!important}.ag-calendar-receive{color:#247650}
 @media(max-width:620px){.fin-agenda-central-shortcut .btn{width:100%}}
+</style>
+<style>
+/* FR Motors: progressive disclosure, preserve all existing content and controls. */
+#main-content .fin-secondary-section{margin:16px 0;min-width:0}
+#main-content .fin-secondary-section>summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:15px 17px;min-height:44px;list-style:none}
+#main-content .fin-secondary-section>summary::-webkit-details-marker{display:none}
+#main-content .fin-secondary-section>summary::after{content:"+";font-size:18px;font-weight:700;margin-left:auto;line-height:1}
+#main-content .fin-secondary-section[open]>summary::after{content:"−"}
+#main-content .fin-secondary-section>summary span{font-weight:750}
+#main-content .fin-secondary-section>summary small{flex:1 1 240px;line-height:1.4;font-size:12px}
+#main-content .fin-secondary-section>summary:focus-visible{outline:2px solid #16838c;outline-offset:2px}
+#main-content .fin-secondary-section>.fin-collapse-panel{padding:10px;min-width:0}
+#main-content .fin-secondary-section>.fin-collapse-panel>.card:first-child{margin-top:0}
+#main-content .fin-secondary-section .table-wrap{max-width:100%;overflow-x:auto}
+#main-content .fin-secondary-section .header-buttons{flex-wrap:wrap}
+#main-content .cb-payment-portal{margin:10px 0;padding:10px 14px}
+#main-content .fin-doc-summary{margin-bottom:14px}
+@media(max-width:620px){
+ #main-content .fin-secondary-section>summary{padding:12px;gap:5px}
+ #main-content .fin-secondary-section>summary small{flex-basis:100%;order:2}
+ #main-content .fin-secondary-section>.fin-collapse-panel{padding:6px}
+ #main-content .fin-secondary-section .card-head{flex-wrap:wrap}
+}
 </style></head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
@@ -603,24 +626,31 @@
   </div>
   <div class="sidebar-workspace"><span class="online-dot"></span> Área Financeira <span class="env-chip">FINANCEIRO</span></div>
   <div class="sidebar-section-label">Painel de controle</div>
-  <nav class="sidebar-links" aria-label="Seções do financeiro">
+  <nav class="sidebar-links" aria-label="Painel de controle">
     <button type="button" class="active" data-view="overview"><span class="icon" data-icon="dashboard"></span> Visão geral</button>
     <button type="button" data-view="forecast"><span class="icon" data-icon="chart"></span> Projeção de caixa</button>
     <button type="button" data-view="reports"><span class="icon" data-icon="chart"></span> Relatórios gerenciais</button>
-    <button type="button" data-view="audit"><span class="icon" data-icon="shield"></span> Central de auditoria</button>
-    <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
-    <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
-<button type="button" data-view="agenda"><span class="icon" data-icon="calendar"></span> Agenda Financeira</button>
-    <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Cartões</button>
-    <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e compras</button>
-    <button type="button" data-view="imports"><span class="icon" data-icon="settings"></span> Administração</button>
-
   </nav>
   <div class="sidebar-divider"></div>
-  <div class="sidebar-section-label">Histórico homologado</div>
-  <nav class="sidebar-links" aria-label="Visões separadas do histórico financeiro">
+  <div class="sidebar-section-label">Operação financeira</div>
+  <nav class="sidebar-links" aria-label="Operação financeira">
+    <button type="button" data-view="payables"><span class="icon" data-icon="calendar"></span> Contas a pagar</button>
+    <button type="button" data-view="receivables"><span class="icon" data-icon="calendar"></span> Contas a receber</button>
+    <button type="button" data-view="agenda"><span class="icon" data-icon="calendar"></span> Agenda Financeira</button>
+    <button type="button" data-view="cardbills"><span class="icon" data-icon="credit"></span> Cartões</button>
+    <button type="button" data-view="expenses"><span class="icon" data-icon="chart"></span> Autopeças e compras</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section-label">Banco e histórico</div>
+  <nav class="sidebar-links" aria-label="Banco e histórico">
     <button type="button" data-view="itau"><span class="icon" data-icon="bank"></span> Itaú · Fluxo de Caixa</button>
     <button type="button" data-view="history"><span class="icon" data-icon="chart"></span> Outras fontes</button>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section-label">Administração e auditoria</div>
+  <nav class="sidebar-links" aria-label="Administração e auditoria">
+    <button type="button" data-view="imports"><span class="icon" data-icon="settings"></span> Administração</button>
+    <button type="button" data-view="audit"><span class="icon" data-icon="shield"></span> Central de auditoria</button>
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-section-label">Sistema FR Motors</div>
@@ -783,6 +813,7 @@
         </div>
         <div class="header-buttons">
          <button type="button" class="btn" data-view="expenses">Autopeças e compras</button>
+          <button type="button" class="btn" id="cb-installments-jump">Compras parceladas</button>
           <button type="button" class="btn btn-primary" id="cbcat-jump">Classificar compras</button>
          <button type="button" class="btn btn-primary" id="cb-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar</button>
         </div>
@@ -890,6 +921,9 @@
         <p class="cb-list-note">Use “Conferir pagamento” para acessar os vínculos bancários sem criar pagamentos duplicados. Use “Vencimento” para consultar ou informar a data real na agenda financeira.</p>
        </section>
       
+<details class="fin-collapse fin-secondary-section" id="cb-classification-collapse">
+ <summary><span>Classificar compras do cartão</span><small>Categoria e finalidade: oficina, pessoal ou a definir.</small></summary>
+ <div class="fin-collapse-panel">
 <section class="card cbcat-panel" id="cbcat-panel" aria-labelledby="cbcat-title">
  <div class="card-head">
   <div>
@@ -944,6 +978,9 @@
  </details>
  <p class="cbcat-source-note">O mês do histórico refere-se à competência da fatura; nas importações PDF, à data do lançamento. As categorias não comprovam quitação e não alteram o Fluxo de Caixa.</p>
 </section>
+
+ </div>
+</details>
 <dialog class="fin-dialog cbcat-dialog" id="cbcat-dialog" aria-labelledby="cbcat-dialog-title">
  <div class="dialog-head"><div>
   <h2 id="cbcat-dialog-title">Categorizar compra do cartão</h2>
@@ -976,6 +1013,9 @@
  </div>
 </dialog>
 
+<details class="fin-collapse fin-secondary-section" id="cb-installments-collapse">
+ <summary><span>Compras parceladas e registros do site</span><small>Parcelas históricas, compras novas e composição documental.</small></summary>
+ <div class="fin-collapse-panel">
 <section class="fin-cards-installments" id="card-installments" aria-labelledby="pc-section-title">
         <div class="section-header"><div>
           <p class="eyebrow">Histórico de cartões · planilha homologada</p>
@@ -983,7 +1023,7 @@
           <p class="page-description">Parcelas de compras no cartão, com cartão, parcela atual/total e mês da fatura. Os pagamentos são controlados pela fatura, sem duplicar saídas do caixa.</p>
         </div>
           <div class="header-buttons pc-header-actions">
-            <button type="button" class="btn" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Faturas e pagamentos</button>
+            <button type="button" class="btn" id="cb-back-faturas"><span class="icon icon-sm" data-icon="credit"></span> Voltar às faturas</button>
             <button type="button" class="btn" data-open="purchase" data-purchase-mode="cartao_credito"><span class="icon icon-sm" data-icon="credit"></span> Nova compra no crédito</button>
              <button type="button" class="btn btn-primary" id="pc-refresh"><span class="icon icon-sm" data-icon="refresh"></span> Atualizar parcelas</button>
           </div>
@@ -1037,10 +1077,10 @@
           <div class="table-footer" id="purchase-count">0 compra(s)</div>
         </section>
       
-<section class="card cb-payment-portal" id="cb-payments-entry">
- <div class="card-head"><div><h2>Pagamento de faturas</h2>
- <p>Use o botão <strong>Pagar fatura / adicionar pagamento</strong> na linha da fatura acima. Pagamentos parciais, externos e bancários serão registrados pelo mesmo formulário, sem criar baixa duplicada.</p></div></div>
-</section>
+<p class="info-note cb-payment-portal" id="cb-payments-entry">Para registrar pagamentos parciais, externos ou bancários, use a ação de pagamento na linha da fatura principal.</p>
+<details class="fin-collapse fin-secondary-section" id="cb-documents-collapse">
+ <summary><span>Conferir composição documental das faturas</span><small>Compras, ajustes negativos e lançamentos originais por mês.</small></summary>
+ <div class="fin-collapse-panel">
 <section class="card fin-doc-match-card">
   <div class="card-head"><div><h2>Faturas documentais por cartão e mês</h2>
     <p>Compras e ajustes negativos agrupados por nome exato do cartão, preservando as identificações da planilha.</p></div></div>
@@ -1072,7 +1112,13 @@
   </div>
  </section>
 
+ </div>
+</details>
+
 </section>
+
+ </div>
+</details>
 
       </section>
 
@@ -1269,7 +1315,10 @@
         <p class="rg-source-note" id="rg-months-note">A tabela separa valores pagos de documentos. Os dados de meses sem registros são exibidos sem inferências.</p>
        </section>
 
-       <div class="rg-grid">
+       <details class="fin-collapse fin-secondary-section" id="rg-secondary-collapse">
+ <summary><span>Rankings e lançamentos detalhados</span><small>Categorias do caixa, fornecedores, faturas e movimentações confirmadas.</small></summary>
+ <div class="fin-collapse-panel">
+<div class="rg-grid">
         <section class="card rg-rank" aria-labelledby="rg-category-title">
          <div class="card-head"><div><h2 id="rg-category-title">Saídas por categoria</h2>
           <p>Classificação das movimentações realmente pagas, não dos boletos em aberto.</p></div>
@@ -1297,7 +1346,7 @@
        <section class="card rg-wide rg-rank-cards" aria-labelledby="rg-cards-title">
         <div class="card-head"><div><h2 id="rg-cards-title">Faturas por cartão</h2>
          <p>Valor das faturas históricas, agrupado por cartão e competência. Não equivale a pagamentos ou limite utilizado em tempo real.</p></div>
-         <button type="button" class="card-link" data-view="expenses">Abrir carteiras de cartões</button>
+         <button type="button" class="card-link" data-view="cardbills">Abrir carteiras de cartões</button>
         </div>
         <div id="rg-cards" class="rg-rank-list"><p class="rg-empty">Consultando faturas...</p></div>
         <p id="rg-card-count" class="rg-source-note">—</p>
@@ -1323,6 +1372,9 @@
           <button type="button" class="btn" id="rg-next" disabled>Próxima</button></div>
         </div>
        </section>
+
+ </div>
+</details>
        <section class="card rg-wide" aria-labelledby="rg-export-title">
         <div class="card-head"><div><h2 id="rg-export-title">Exportar relatórios</h2>
          <p>Três arquivos separados e identificados pela fonte para evitar somar despesas mais de uma vez.</p></div></div>
@@ -1595,7 +1647,7 @@
             </section>
             <section class="real-dashboard-panel">
               <div class="real-dashboard-panel-head"><div><h3>Faturas de cartões</h3><p>Saldo documental restante, separado do total de contas a pagar.</p></div>
-                <button type="button" class="btn" data-jump-section="ag-title">Abrir faturas</button></div>
+                <button type="button" class="btn" data-view="cardbills">Abrir faturas</button></div>
               <div class="real-dashboard-lead"><strong id="real-card-value">—</strong><span id="real-card-count">—</span><span> faturas com saldo</span></div>
               <div class="real-dashboard-small-metrics">
                 <span><strong id="real-card-partial">—</strong> parcialmente pagas</span>
@@ -1841,7 +1893,10 @@
            <div class="form-actions"><button class="btn" type="button" id="cp-reverse-cancel">Cancelar</button><button class="btn btn-primary" type="submit" id="cp-reverse-confirm" disabled>Confirmar estorno / desvinculação</button></div>
           </form></div>
         </dialog>
-        <section class="card fin-op-manual-card" id="op-boletos-adicionados">
+        <details class="fin-collapse fin-secondary-section" id="cp-manual-aux">
+ <summary><span>Consulta auxiliar: boletos avulsos</span><small>Os mesmos boletos da carteira principal, separados por origem.</small></summary>
+ <div class="fin-collapse-panel">
+<section class="card fin-op-manual-card" id="op-boletos-adicionados">
           <div class="card-head"><div>
            <h2>Boletos adicionados após a migração</h2>
            <p>Registros novos do Financeiro, separados do Excel original. É possível editar os boletos antes da baixa e vincular pagamentos existentes sem duplicação.</p>
@@ -1852,8 +1907,11 @@
           </table></div>
           <div class="table-footer" id="op-manual-count">Carregando...</div>
         </section>
+
+ </div>
+</details>
         <details class="fin-cp-legacy">
-          <summary>Consultar os 59 registros originais da planilha homologada (histórico)</summary>
+          <summary>Consultar a planilha homologada original (histórico)</summary>
         <section class="card" id="fin-homolog-payables" aria-labelledby="fin-homolog-title">
           <div class="card-head">
             <div><h2 id="fin-homolog-title">Contas em aberto da planilha homologada</h2><p id="fin-homolog-source">Consultando a planilha conferida mais recente...</p></div>
@@ -2204,6 +2262,19 @@
  <div class="fin-expenses-direct-access"><div><strong>Consultas relacionadas</strong><span>Faturas e pagamentos ficam em Cartões; vencimentos na Agenda Financeira.</span></div>
 <div class="fin-agenda-shortcuts"><button type="button" class="btn" data-view="agenda"><span class="icon icon-sm" data-icon="calendar"></span> Agenda Financeira</button>
 <button type="button" class="btn btn-primary" data-view="cardbills"><span class="icon icon-sm" data-icon="credit"></span> Cartões e pagamentos</button></div></div>
+<div class="fin-doc-summary">
+  <section class="card fin-doc-summary-card">
+   <div class="card-head"><div><h2>Autopeças</h2><p>Valor dos documentos incluídos, não pagamentos novos</p></div></div>
+   <div class="fin-doc-main-value" id="doc-auto-total">—</div>
+   <p><strong id="doc-auto-count">—</strong> compras e parcelas incluídas</p>
+  </section>
+  <section class="card fin-doc-summary-card">
+   <div class="card-head"><div><h2>Cartões e outros meios</h2><p>Valores líquidos da aba CARTÕES, incluindo ajustes negativos</p></div></div>
+   <div class="fin-doc-main-value" id="doc-card-total">—</div>
+   <p><strong id="doc-card-count">—</strong> lançamentos incluídos</p>
+  </section>
+ </div>
+
 <section class="card fin-doc-supplier-years" id="doc-annual-suppliers">
   <div class="card-head">
    <div><h2>Autopeças por fornecedor, mês e ano</h2>
@@ -2214,7 +2285,7 @@
    <label>Selecione o ano <select id="doc-by-supplier-year"><option value="">Carregando...</option></select></label>
    <label>Buscar fornecedor <input type="search" id="doc-by-supplier-search" autocomplete="off" placeholder="Nome da autopeças"></label>
   </div>
-  <details id="doc-supplier-chooser" class="fin-doc-supplier-chooser" open>
+  <details id="doc-supplier-chooser" class="fin-doc-supplier-chooser">
    <summary>Conferir fornecedores incluídos no resumo <strong id="doc-supplier-selected-count">Aguardando fornecedores...</strong></summary>
    <p>O catálogo reúne nomes encontrados em <strong>Autopeças</strong>, em <strong>Cartões</strong> e no cadastro de fornecedores. Você escolhe o que entra na análise mensal. Compras de Cartões não são, por si só, pagamentos comprovados nem compras de autopeças confirmadas.</p>
    <div class="fin-doc-supplier-chooser-tools">
@@ -2253,19 +2324,7 @@
    </table>
   </div>
  </section>
- <div class="fin-doc-summary">
-  <section class="card fin-doc-summary-card">
-   <div class="card-head"><div><h2>Autopeças</h2><p>Valor dos documentos incluídos, não pagamentos novos</p></div></div>
-   <div class="fin-doc-main-value" id="doc-auto-total">—</div>
-   <p><strong id="doc-auto-count">—</strong> compras e parcelas incluídas</p>
-  </section>
-  <section class="card fin-doc-summary-card">
-   <div class="card-head"><div><h2>Cartões e outros meios</h2><p>Valores líquidos da aba CARTÕES, incluindo ajustes negativos</p></div></div>
-   <div class="fin-doc-main-value" id="doc-card-total">—</div>
-   <p><strong id="doc-card-count">—</strong> lançamentos incluídos</p>
-  </section>
- </div>
- <details class="fin-collapse fin-extra-conciliation"><summary>Indicadores detalhados de conciliação (opcional)</summary>
+  <details class="fin-collapse fin-extra-conciliation"><summary>Indicadores detalhados de conciliação (opcional)</summary>
 <section class="card vl-card" aria-labelledby="vl-title-section">
   <div class="card-head"><div><h2 id="vl-title-section">Vincular faturas e revisar exceções</h2>
    <p>Confirmação manual de pagamentos existentes. Sem criar saídas financeiras ou alterar o Fluxo de Caixa.</p></div>
@@ -2387,7 +2446,10 @@
    </div>
   </form>
  </dialog>
- <section class="card fin-doc-match-card" aria-labelledby="dc-title">
+ <details class="fin-collapse fin-secondary-section" id="doc-match-collapse">
+ <summary><span>Conciliação documental de autopeças</span><small>Correspondências, compras pagas e comprovantes para revisão.</small></summary>
+ <div class="fin-collapse-panel">
+<section class="card fin-doc-match-card" aria-labelledby="dc-title">
   <div class="card-head"><div>
     <h2 id="dc-title">Conciliação documental de autopeças</h2>
     <p>Relações auditáveis entre autopeças e saídas confirmadas. Faturas detalhadas ficam em Cartões.</p>
@@ -2431,6 +2493,9 @@
  </section>
  
  
+
+ </div>
+</details>
  <section class="card">
   <div class="card-head">
    <div><h2>Conferência de documentos</h2><p>Os registros marcados como “não incluir” são mantidos apenas para auditoria.</p></div>
@@ -2443,7 +2508,10 @@
   </div>
   <p id="doc-status" class="info-note fin-doc-status" role="status" aria-live="polite">Aguardando consulta da carteira homologada.</p>
  </section>
- <section class="card fin-doc-card-meios">
+ <details class="fin-collapse fin-secondary-section" id="doc-card-meios-collapse">
+ <summary><span>Detalhamento por cartão e meio</span><small>Totais documentais, incluindo ajustes e outras finalidades.</small></summary>
+ <div class="fin-collapse-panel">
+<section class="card fin-doc-card-meios">
    <div class="card-head"><div>
     <h2>Valores por cartão / meio</h2>
     <p>Todos os lançamentos documentais da aba CARTÕES. Compras pessoais e de uso ainda indefinido permanecem neste total, mas não são tratadas como despesa da oficina.</p>
@@ -2453,6 +2521,9 @@
    </tr></thead>
    <tbody id="doc-card-rows"><tr><td colspan="4" class="empty">Aguardando...</td></tr></tbody></table></div>
  </section>
+
+ </div>
+</details>
  <section class="card fin-doc-month-panel">
   <div class="card-head"><div>
    <h2>Comparativo mensal por finalidade</h2>
@@ -3834,7 +3905,7 @@ async function init(){
 }
 init();
 </script>
-<script src="./financeiro-pro-ui.js?v=20261121orders1"></script>
+<script src="./financeiro-pro-ui.js?v=20261126simplifica1"></script>
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
@@ -3878,7 +3949,7 @@ init();
 <script src="./financeiro-relatorios-gerenciais.js?v=20261123manual1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261120classifyadmin1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261124undated1" defer></script>
-<script src="./financeiro-cartoes-categorias.js?v=20261123finalidade2" defer></script>
+<script src="./financeiro-cartoes-categorias.js?v=20261126simplifica1" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-auditoria-estado-ui.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>

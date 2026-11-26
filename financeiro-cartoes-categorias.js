@@ -287,6 +287,7 @@ function init(){
  });
  $('cbcat-dialog').addEventListener('cancel',e=>{if(state.saving)e.preventDefault()});
  $('cbcat-jump')?.addEventListener('click',()=>{
+  const panel=$('cb-classification-collapse');if(panel)panel.open=true;
   $('cbcat-panel').scrollIntoView({behavior:'smooth',block:'start'});
  });
  if(!document.querySelector('[data-view-panel="cardbills"]')?.hidden)refresh();
