@@ -398,21 +398,13 @@ function init(){
   const receive=e.target.closest('[data-ag-receive]');
   const showParcel=e.target.closest('[data-ag-show-parcel]');
   if(showParcel){
-   const item=allAgendaItems().find(x=>x.origin==='parcela'&&x.id===showParcel.dataset.agShowParcel);
    window.frFinanceUI?.selectView?.('payables');
-   const source=$('cp-source-filter'),query=$('cp-search');
-   if(source){source.value='parcela';source.dispatchEvent(new Event('change',{bubbles:true}));}
-   if(query){query.value=item?.title||'';query.dispatchEvent(new Event('input',{bubbles:true}));}
+   window.frOperationalPayablesUI?.focusRecord?.(showParcel.dataset.agShowParcel);
    return;
   }
   if(receive){
-   const item=receivables.find(x=>String(x.id)===receive.dataset.agReceive);
    window.frFinanceUI?.selectView?.('receivables');
-   const search=$('ar-search');
-   if(search){
-    search.value=item?.numero_documento||item?.fin_receber_clientes?.nome||item?.descricao||'';
-    search.dispatchEvent(new Event('input',{bubbles:true}));
-   }
+   window.frReceberUI?.focusRecord?.(receive.dataset.agReceive);
   }else if(billEdit){
    if(typeof window.frBoletoUI?.openEdit==='function')window.frBoletoUI.openEdit(billEdit.dataset.agBillEdit);
    else out('ag-status','Não foi possível abrir a edição do boleto. Atualize a página.');

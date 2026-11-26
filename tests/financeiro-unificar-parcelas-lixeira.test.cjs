@@ -17,7 +17,7 @@ function harness(){
   if(!fields.has(id))fields.set(id,{
    value:id==='cp-status-filter'||id==='cp-year-filter'||id==='cp-month-filter'||id==='cp-source-filter'?'todos':'',
    innerHTML:'',textContent:'',disabled:false,listeners:{},
-   replaceChildren(){},
+   replaceChildren(){},scrollIntoView(){this.scrolled=true},focus(){this.focused=true},
    addEventListener(type,fn){this.listeners[type]=fn}
   });
   return fields.get(id);
@@ -61,7 +61,7 @@ function harness(){
  },Option:function(label,value){this.label=label;this.value=value;},
   Intl,Date,Promise,Map,Set,Math,Number,String,Array};
  vm.runInNewContext(wallet,context);
- return {fields,el,dataset,queries,refresh:()=>context.window.frOperationalPayablesUI.refresh()};
+ return {fields,el,dataset,queries,refresh:()=>context.window.frOperationalPayablesUI.refresh(),focusRecord:id=>context.window.frOperationalPayablesUI.focusRecord(id)};
 }
 
 test('Lixeira usa details nativo, inicia recolhida e mantém todos os controles',()=>{
@@ -151,4 +151,23 @@ test('Nenhum id duplicado nem novo registro financeiro criado pela mudança',()=
  assert.equal(ids.length,new Set(ids).size);
  assert.ok(html.indexOf('id="cp-rows"')<html.indexOf('id="trash-collapse"'));
  assert.match(html,/data-view-panel="payables"/);
+});
+
+test('Ver pagamentos redefine os filtros, mostra os pagos e desloca a tela até os resultados',async()=>{
+ const h=harness();Object.assign(h.dataset.fin_parcelas[0],{status:'pago',juros_registrados:7.42,fin_vinculos_pagamento:[{id:'paid',valor_aplicado:400,fin_movimentos:{estado:'confirmado',tipo:'saida',data_movimento:'2026-12-17',origem:'app'}}]});
+ h.el('cp-year-filter').value='2027';h.el('cp-source-filter').value='avulso';h.el('cp-search').value='inexistente';
+ await h.el('cp-show-paid').listeners.click();
+ assert.equal(h.el('cp-status-filter').value,'conciliado');assert.equal(h.el('cp-search').value,'');
+ assert.equal(h.el('cp-status-filter').scrolled,true);assert.match(h.el('cp-rows').innerHTML,/Pago \/ baixado/);
+ assert.match(h.el('cp-filter-feedback').textContent,/Exibindo 1 pagamento/);
+});
+test('Atalho por ID abre apenas a parcela solicitada, inclusive se fornecedor e descrição forem iguais',async()=>{
+ const h=harness();await h.refresh();h.el('cp-year-filter').value='2026';h.el('cp-search').value='outro fornecedor';
+ await h.focusRecord('p3');assert.match(h.el('cp-rows').innerHTML,/data-pay-id="p3"/);
+ assert.doesNotMatch(h.el('cp-rows').innerHTML,/data-pay-id="p1"/);
+ await h.el('cp-clear-filters').listeners.click();
+ assert.match(h.el('cp-rows').innerHTML,/data-pay-id="p1"/);
+ h.el('cp-search').value='392,58';h.el('cp-search').listeners.input();
+ assert.match(h.el('cp-rows').innerHTML,/data-pay-id="p1"/);
+ assert.doesNotMatch(h.el('cp-rows').innerHTML,/data-pay-id="p2"/);
 });

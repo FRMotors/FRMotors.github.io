@@ -1648,7 +1648,7 @@
      <select id="cashx-sort" aria-label="Ordenação dos lançamentos">
       <option value="valor">Maior valor</option><option value="data">Data recente</option><option value="antiga">Data antiga</option></select></label>
     <label>Buscar descrição, meio ou valor
-     <input id="cashx-search" type="search" maxlength="120" placeholder="Buscar lançamento..." aria-label="Busca de movimentos"></label>
+     <input id="cashx-search" type="search" maxlength="120" placeholder="Buscar descrição, data ou valor..." aria-label="Busca de movimentos"></label>
    </div>
    <div class="table-wrap"><table class="data-table cashx-table">
     <thead><tr><th>Data</th><th>Descrição original</th><th>Categoria</th>
@@ -1785,7 +1785,7 @@
           </div>
           <div class="data-toolbar fin-cp-toolbar">
             <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
-              <input id="cp-search" type="search" placeholder="Pesquisar fornecedor, categoria, data ou código" aria-label="Buscar contas a pagar operacionais"></label>
+              <input id="cp-search" type="search" placeholder="Fornecedor, categoria, data, código ou valor" aria-label="Buscar contas a pagar operacionais"></label>
             <select id="cp-status-filter" class="filter-select" aria-label="Filtrar situação da conta">
               <option value="todos">Todas as contas</option>
               <option value="aberto">Pendentes</option>
@@ -1806,6 +1806,8 @@
               <option value="todos">Todos os meses</option>
             </select>
           </div>
+          <div class="header-buttons" style="padding:0 16px 8px"><button type="button" class="btn" id="cp-clear-filters">Limpar filtros</button></div>
+          <p id="cp-filter-feedback" class="info-note fin-cp-status" role="status" aria-live="polite"></p>
           <p id="cp-load-status" class="info-note fin-cp-status" role="status" aria-live="polite">Carregando carteira operacional...</p>
           <div class="table-wrap fin-cp-table"><table class="data-table">
             <thead><tr><th>Vencimento</th><th>Fornecedor / descrição</th><th>Categoria</th>
@@ -3836,7 +3838,7 @@ init();
 <script src="./financeiro-edit.js?v=20261113edit3"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="./financeiro-nomes-cartoes.js?v=20261118activecards2" defer></script>
-<script src="./financeiro-recebiveis.js?v=20261117ar1" defer></script>
+<script src="./financeiro-recebiveis.js?v=20261126usabilidade1" defer></script>
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import-visibilidade.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-import.js?v=20261119classe1" defer></script>
@@ -3850,7 +3852,7 @@ init();
 <script src="./financeiro-historico.js?v=20261123manual1" defer></script>
 <script src="./financeiro-itau-homologacao.js?v=20261126conciliacao2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261126estorno1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261126usabilidade1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-documentos-finalidade-core.js?v=20261123finalidade1" defer></script>
@@ -3860,15 +3862,15 @@ init();
 <script src="./financeiro-vinculos-faturas.js?v=20261119layout2" defer></script>
 <script src="./financeiro-faturas-estado-core.js?v=20261120unificado1" defer></script>
 <script src="./financeiro-agenda-boletos-core.js?v=20261123boletos1" defer></script>
-<script src="./financeiro-agenda-faturas.js?v=20261124undated1" defer></script>
+<script src="./financeiro-agenda-faturas.js?v=20261126usabilidade1" defer></script>
 <script src="./financeiro-operacional.js?v=20261118trash1" defer></script>
 <script src="./financeiro-margem-os-core.js?v=20261121orders1" defer></script>
 <script src="./financeiro-margem-core.js?v=20261121profit1" defer></script>
 <script src="./financeiro-resumo-operacional.js?v=20261126consolidado1" defer></script>
 <script src="./financeiro-margem-os.js?v=20261121orders1" defer></script>
-<script src="./financeiro-detalhamento-caixa.js?v=20261123manual1" defer></script>
-<script src="./financeiro-central-vencimentos.js?v=20261123boletos1" defer></script>
-<script src="./financeiro-projecao-caixa.js?v=20261126consolidado1" defer></script>
+<script src="./financeiro-detalhamento-caixa.js?v=20261126usabilidade1" defer></script>
+<script src="./financeiro-central-vencimentos.js?v=20261126usabilidade1" defer></script>
+<script src="./financeiro-projecao-caixa.js?v=20261126usabilidade1" defer></script>
 <script src="./financeiro-lixeira-boletos.js?v=20261123collapse1" defer></script>
 <script src="./financeiro-categorias-core.js?v=20261119cat2" defer></script>
 <script src="./financeiro-categorias-consolidado.js?v=20261119cat2" defer></script>

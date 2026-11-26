@@ -144,7 +144,7 @@ function recordRow(x,now){
   '<div class="fc-record-main"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.description||sourceLabels[x.source])+'</small>'+
    '<span class="fc-record-date">'+esc(dateBR(x.due))+' · '+esc(sourceLabels[x.source])+'</span></div>'+
   '<div class="fc-record-right"><b>'+brlCents(x.amount)+'</b>'+
-    '<button type="button" class="btn fc-detail-button" data-fc-nav="'+(x.kind==='saida'?'payables':'receivables')+'" data-fc-search="'+esc(x.name)+'">Ver detalhes</button>'+
+    '<button type="button" class="btn fc-detail-button" data-fc-nav="'+(x.kind==='saida'?'payables':'receivables')+'" data-fc-search="'+esc(x.name)+'" data-fc-id="'+esc(x.id)+'">Ver detalhes</button>'+
   '</div></div></div>';
 }
 function renderDetailList(now,forecast){
@@ -256,17 +256,8 @@ async function refresh(){
 function navTo(button){
  const to=button.dataset.fcNav;if(!['payables','receivables'].includes(to))return;
  window.frFinanceUI?.selectView?.(to);
- if(to==='payables'){
-  const year=$('cp-year-filter'),month=$('cp-month-filter'),status=$('cp-status-filter'),source=$('cp-source-filter');
-  if(source){source.value='todos';source.dispatchEvent(new Event('change',{bubbles:true}))}
-  if(year){year.value='todos';year.dispatchEvent(new Event('change',{bubbles:true}))}
-  if(month){month.value='todos';month.dispatchEvent(new Event('change',{bubbles:true}))}
-  if(status){status.value='aberto';status.dispatchEvent(new Event('change',{bubbles:true}))}
- }else if($('ar-filter')){
-  $('ar-filter').value='todos';$('ar-filter').dispatchEvent(new Event('change',{bubbles:true}));
- }
- const input=$(to==='payables'?'cp-search':'ar-search');
- if(input){input.value=button.dataset.fcSearch||'';input.dispatchEvent(new Event('input',{bubbles:true}))}
+ if(to==='payables')window.frOperationalPayablesUI?.focusRecord?.(button.dataset.fcId);
+ else window.frReceberUI?.focusRecord?.(button.dataset.fcId);
 }
 function init(){
  if(!$('fc-bars'))return;

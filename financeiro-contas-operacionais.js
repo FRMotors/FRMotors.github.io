@@ -4,6 +4,8 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const normalizeSearch=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLocaleLowerCase('pt-BR');
+const priceSearch=v=>{if(v===null||v===undefined||v==='')return '';const n=Number(v);return Number.isFinite(n)?[n.toFixed(2),n.toFixed(2).replace('.',','),n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})].join(' '):'';};
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value)||0);
 const dateBR=date=>date?String(date).slice(0,10).split('-').reverse().join('/'):'Sem vencimento';
@@ -17,7 +19,7 @@ const plusDays=(ymd,amount)=>{
 };
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text;};
 const cents=x=>Math.round(Number(x)*100);
-let all=[],suppliers=new Map(),cashLinks=new Map(),manualLinks=new Map(),page=0,busy=false,loading=null,editing=null,reverseTarget=null;
+let all=[],suppliers=new Map(),cashLinks=new Map(),manualLinks=new Map(),page=0,busy=false,loading=null,editing=null,reverseTarget=null,loaded=false,focusedId=null;
 const pageSize=25;
 function stateOf(r,now){
  if(r.registro_tipo==='parcela')
@@ -49,13 +51,14 @@ function statusLabel(s){
   hoje:'Vence hoje',a_vencer:'A vencer'}[s]||s;
 }
 function filterRows(){
- const q=($('cp-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
+ const q=normalizeSearch($('cp-search')?.value);
  const filter=$('cp-status-filter')?.value||'todos';
  const month=$('cp-month-filter')?.value||'todos';
  const source=$('cp-source-filter')?.value||'todos';
  const year=$('cp-year-filter')?.value||'todos';
  const now=today(),next7=plusDays(now,7);
- return all.filter(r=>{
+ const matches=all.filter(r=>{
+  if(focusedId&&r.id!==focusedId)return false;
   const s=stateOf(r,now);
   const accepted=filter==='todos'||(filter==='aberto'&&s!=='conciliado'&&s!=='conciliado_fluxo')||
     (filter==='proximos7'&&s!=='conciliado'&&s!=='conciliado_fluxo'&&r.vencimento&&r.vencimento>=now&&r.vencimento<=next7)||
@@ -63,12 +66,15 @@ function filterRows(){
   if(!accepted||(source!=='todos'&&r.registro_tipo!==source)||
     (year!=='todos'&&r.vencimento?.slice(0,4)!==year)||
     (month!=='todos'&&r.vencimento?.slice(0,7)!==month))return false;
-  const haystack=[r.fornecedor_nome,r.descricao,r.categoria,r.vencimento,r.linha_original,
-   r.codigo_origem,r.observacoes,r.numero,r.registro_tipo,
-    r.registro_tipo==='parcela'?'boleto compra parcelada':''].join(' ').toLocaleLowerCase('pt-BR');
+  const link=r.registro_tipo==='avulso'?manualLinks.get(r.id):r.registro_tipo==='planilha'?cashLinks.get(r.id):null;
+  const haystack=normalizeSearch([r.fornecedor_nome,r.descricao,r.categoria,r.vencimento,dateBR(r.vencimento),r.linha_original,r.codigo_origem,r.observacoes,r.numero,r.registro_tipo,
+   priceSearch(r.valor_referencia),priceSearch(link?.valor_pago??r.valor_pago),r.registro_tipo==='parcela'?'boleto compra parcelada':''].join(' '));
   return haystack.includes(q);
  });
+ if(filter==='conciliado')matches.sort((a,b)=>paymentDate(b).localeCompare(paymentDate(a))||String(a.id).localeCompare(String(b.id)));
+ return matches;
 }
+function paymentDate(r){return String((r.registro_tipo==='avulso'?manualLinks.get(r.id)?.data_pagamento:r.registro_tipo==='planilha'?cashLinks.get(r.id)?.data_pagamento:null)||r.data_pagamento||'');}
 function updateYears(){
  const control=$('cp-year-filter');if(!control)return;
  const prev=control.value||'todos';
@@ -173,6 +179,7 @@ function draw(){
    '<tr><td colspan="9" class="empty">Nenhum compromisso corresponde aos filtros.</td></tr>';
  }
  set('cp-shown',rows.length+' de '+all.length+' compromisso(s) · página '+(page+1)+' de '+pageCount);
+ set('cp-filter-feedback',focusedId?(rows.length?'Exibindo o compromisso selecionado na outra página.':'Compromisso selecionado não encontrado. Limpe os filtros ou atualize.'):$('cp-status-filter')?.value==='conciliado'?'Exibindo '+rows.length+' pagamento(s) / conciliação(ões), mais recentes primeiro.':'');
  if($('cp-prev'))$('cp-prev').disabled=page===0;
  if($('cp-next'))$('cp-next').disabled=page>=pageCount-1;
 }
@@ -225,11 +232,12 @@ async function refresh(){
    (manualFluxoRes.data||[]).forEach(x=>manualLinks.set(x.boleto_avulso_id,{...x,source:'fluxo'}));
    (manualExtratoRes.data||[]).forEach(x=>manualLinks.set(x.boleto_avulso_id,{...x,source:'extrato'}));
    suppliers=new Map((suppliersRes.data||[]).map(x=>[x.id,x]));
-   updateYears();updateMonths();draw();
+   loaded=true;updateYears();updateMonths();draw();
    set('cp-load-status','Carteira operacional ativa: '+originals.length+' compromissos da planilha e '+
     added.length+' boletos avulsos e '+installmentRows.length+
     ' parcelas de compras em boleto (abertas e pagas). Cada compromisso aparece uma vez, sem criar saídas adicionais.');
   }catch(error){
+   loaded=false;
    set('cp-load-status','Falha ao consultar contas a pagar: '+(error.message||error));
    if($('cp-rows'))$('cp-rows').innerHTML='<tr><td colspan="9" class="empty">Não foi possível consultar a carteira operacional.</td></tr>';
   }
@@ -348,6 +356,7 @@ async function refreshReversals(){
  }catch(e){body.innerHTML='<tr><td colspan="6" class="empty">Não foi possível consultar o histórico.</td></tr>';set('cp-reverse-history-status',e.message||String(e));}
 }
 function showUndated(){
+ focusedId=null;
  for(const id of ['cp-source-filter','cp-year-filter'])if($(id))$(id).value='todos';
  updateMonths();
  if($('cp-month-filter'))$('cp-month-filter').value='todos';
@@ -356,15 +365,28 @@ function showUndated(){
  page=0;draw();
  $('cp-status-filter')?.scrollIntoView?.({behavior:'smooth',block:'center'});
 }
+async function showSelection(status='todos',recordId=null){
+ focusedId=recordId;
+ for(const id of ['cp-source-filter','cp-year-filter'])if($(id))$(id).value='todos';
+ updateMonths();if($('cp-month-filter'))$('cp-month-filter').value='todos';
+ if($('cp-search'))$('cp-search').value='';
+ if($('cp-status-filter'))$('cp-status-filter').value=status;
+ page=0;
+ if(loading||!loaded)await refresh();
+ if(loaded)draw();else set('cp-filter-feedback','Não foi possível carregar os compromissos. Use Atualizar.');
+ $('cp-status-filter')?.scrollIntoView?.({behavior:'smooth',block:'center'});
+ $('cp-status-filter')?.focus?.({preventScroll:true});
+}
 function init(){
  if(!$('cp-rows'))return;
  $('cp-show-undated')?.addEventListener('click',showUndated);
- $('cp-show-paid')?.addEventListener('click',()=>{for(const id of ['cp-source-filter','cp-year-filter'])if($(id))$(id).value='todos';updateMonths();$('cp-month-filter').value='todos';$('cp-search').value='';$('cp-status-filter').value='conciliado';page=0;draw();});
- $('cp-search')?.addEventListener('input',()=>{page=0;draw()});
- $('cp-source-filter')?.addEventListener('change',()=>{page=0;draw()});
- $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data'){$('cp-year-filter').value='todos';updateMonths();$('cp-month-filter').value='todos';}draw()});
- $('cp-year-filter')?.addEventListener('change',()=>{updateMonths();page=0;draw()});
- $('cp-month-filter')?.addEventListener('change',()=>{page=0;draw()});
+ $('cp-show-paid')?.addEventListener('click',()=>showSelection('conciliado'));
+ $('cp-clear-filters')?.addEventListener('click',()=>showSelection());
+ $('cp-search')?.addEventListener('input',()=>{focusedId=null;page=0;draw()});
+ $('cp-source-filter')?.addEventListener('change',()=>{focusedId=null;page=0;draw()});
+ $('cp-status-filter')?.addEventListener('change',()=>{focusedId=null;page=0;if($('cp-status-filter').value==='sem_data'){$('cp-year-filter').value='todos';updateMonths();$('cp-month-filter').value='todos';}draw()});
+ $('cp-year-filter')?.addEventListener('change',()=>{focusedId=null;updateMonths();page=0;draw()});
+ $('cp-month-filter')?.addEventListener('change',()=>{focusedId=null;page=0;draw()});
  $('cp-refresh')?.addEventListener('click',()=>refresh().catch(()=>{}));
  $('cp-sync')?.addEventListener('click',()=>sync().catch(()=>{}));
  $('cp-prev')?.addEventListener('click',()=>{page--;draw()});
@@ -392,6 +414,6 @@ function init(){
  $('cp-edit-form')?.addEventListener('submit',saveEdit);
  $('cp-edit-cancel')?.addEventListener('click',()=>$('cp-edit-dialog')?.close?.());
 }
-window.frOperationalPayablesUI={refresh,sync};
+window.frOperationalPayablesUI={refresh,sync,focusRecord:id=>showSelection('todos',id)};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

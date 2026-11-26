@@ -73,7 +73,7 @@ function recordMarkup(r,now,compact=false){
    '<span class="cv-record-meta"><span class="cv-state cv-state-'+esc(st)+'">'+label+'</span> '+
     '<span>'+esc(dateBR(r.due))+'</span> '+(!compact?'<span>· '+esc(typeText(r))+'</span>':'')+'</span>'+
   '</div><div class="cv-record-right"><b>'+money(r.amount)+'</b>'+
-  '<button type="button" class="btn cv-record-action" data-cv-open="'+nav+'" data-cv-query="'+esc(r.lookup)+'">Ver detalhes</button>'+
+  '<button type="button" class="btn cv-record-action" data-cv-open="'+nav+'" data-cv-query="'+esc(r.lookup)+'" data-cv-id="'+esc(r.id)+'">Ver detalhes</button>'+
   '</div></div>';
 }
 function renderOverview(now){
@@ -197,18 +197,8 @@ function openSection(button){
  const nav=window.frFinanceUI?.selectView;
  if(typeof nav!=='function')return;
  nav(destination);
- if(destination==='payables'){
-  const year=$('cp-year-filter'),mon=$('cp-month-filter'),status=$('cp-status-filter');
-  if(year){year.value='todos';year.dispatchEvent(new Event('change',{bubbles:true}))}
-  if(mon){mon.value='todos';mon.dispatchEvent(new Event('change',{bubbles:true}))}
-  if(status){status.value='todos';status.dispatchEvent(new Event('change',{bubbles:true}))}
- }
- if(destination==='receivables'&&$('ar-filter')){
-  $('ar-filter').value='todos';$('ar-filter').dispatchEvent(new Event('change',{bubbles:true}));
- }
- const input=$(destination==='payables'?'cp-search':'ar-search');
- if(input){input.value=button.dataset.cvQuery||'';input.dispatchEvent(new Event('input',{bubbles:true}))}
- if(destination==='payables')$('fin-cp-operacional')?.scrollIntoView({behavior:'smooth',block:'start'});
+ if(destination==='payables')window.frOperationalPayablesUI?.focusRecord?.(button.dataset.cvId);
+ else window.frReceberUI?.focusRecord?.(button.dataset.cvId);
 }
 function init(){
  if(!$('cv-home-banner'))return; // só o alerta da Visão Geral permanece; o calendário fica na Agenda Financeira

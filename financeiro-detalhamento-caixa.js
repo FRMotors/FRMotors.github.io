@@ -4,6 +4,8 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+const normalizeSearch=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLocaleLowerCase('pt-BR');
+const priceSearch=v=>{if(v===null||v===undefined||v==='')return '';const n=Number(v);return Number.isFinite(n)?[n.toFixed(2),n.toFixed(2).replace('.',','),n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})].join(' '):'';};
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
 const percent=n=>new Intl.NumberFormat('pt-BR',{style:'percent',minimumFractionDigits:1,maximumFractionDigits:1}).format(n);
@@ -89,11 +91,11 @@ function renderCategories(){
 }
 function matchesQuery(x,q){
  if(!q)return true;
- const value=[x.descricao,x.categoria,x.meio_pagamento,x.data_movimento,x.valor].join(' ').toLocaleLowerCase('pt-BR');
+ const value=normalizeSearch([x.descricao,x.categoria,x.meio_pagamento,x.data_movimento,date(x.data_movimento),priceSearch(x.valor)].join(' '));
  return value.includes(q);
 }
 function filteredRows(){
- const type=$('cashx-type')?.value||'saida',q=($('cashx-search')?.value||'').trim().toLocaleLowerCase('pt-BR');
+ const type=$('cashx-type')?.value||'saida',q=normalizeSearch($('cashx-search')?.value);
  const sort=$('cashx-sort')?.value||'valor';
  const list=periodRows().filter(r=>(type==='todos'||r.tipo===type)&&
   (selectedCategory==='todos'||category(r)===selectedCategory)&&matchesQuery(r,q));
@@ -203,6 +205,6 @@ function init(){
   observer.observe(app,{attributes:true,attributeFilter:['class']});
  }else begin();
 }
-window.frCashDetailUI={refresh};
+window.frCashDetailUI={refresh,__test:{matchesQuery:(row,q)=>matchesQuery(row,normalizeSearch(q))}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
