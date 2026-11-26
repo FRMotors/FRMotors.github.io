@@ -13,7 +13,9 @@ test('Cada pendência possui destino e fonte e a consulta não altera registros'
  const html=read('financeiro.html'),src=read('financeiro-pendencias.js');
  for(const key of ['bills-late','receive-late','card-late','today','bill-undated','card-undated','receive-undated','itau-new','itau-review','cash-category','card-planilha','card-importado'])assert.match(html,new RegExp('data-fp-action="'+key+'"'));
  assert.match(src,/state==='error'\?'Indisp\.'/);
- assert.doesNotMatch(src,/\.insert\(|\.update\(|\.delete\(|\.rpc\(/);
+ // Map.delete removes only local UI state; it is not a database write.
+ assert.doesNotMatch(src.replaceAll('values.delete(id)',''),/\.insert\(|\.update\(|\.delete\(|\.rpc\(/);
+ assert.doesNotMatch(src,/\bdb\s*\./);
  assert.match(read('financeiro-agenda-faturas.js'),/filter==='hoje'&&f.vencimento!==day/);
  assert.match(read('financeiro-historico.js'),/publish\('itau',null\)/);
 });
