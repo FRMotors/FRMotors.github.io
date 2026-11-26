@@ -17,7 +17,7 @@ const plusDays=(ymd,amount)=>{
 };
 const set=(id,text)=>{const e=$(id);if(e)e.textContent=text;};
 const cents=x=>Math.round(Number(x)*100);
-let all=[],suppliers=new Map(),cashLinks=new Map(),manualLinks=new Map(),page=0,busy=false,loading=null,editing=null;
+let all=[],suppliers=new Map(),cashLinks=new Map(),manualLinks=new Map(),page=0,busy=false,loading=null,editing=null,reverseTarget=null;
 const pageSize=25;
 function stateOf(r,now){
  if(r.registro_tipo==='parcela')
@@ -94,7 +94,20 @@ function installmentPayment(x){
  const dates=links.map(v=>v.fin_movimentos.data_movimento).filter(Boolean).sort();
  return {valor_pago:links.length?links.reduce((s,v)=>s+cents(v.valor_aplicado),0)/100:null,
   data_pagamento:dates.at(-1)||null,juros_efetivos:x.juros_registrados??null,
-  desconto_efetivo:x.desconto_registrado??null,pagamentos_confirmados:links.length};
+  desconto_efetivo:x.desconto_registrado??null,pagamentos_confirmados:links.length,
+  vinculo_estorno:links.length===1?links[0].id:null,
+  origem_pagamento:links.length===1?links[0].fin_movimentos.origem:null};
+}
+function reversalTarget(r){
+ if(r.registro_tipo==='parcela'&&r.status==='pago'&&r.vinculo_estorno&&['app','fluxo_caixa_homologado','extrato_itau_homologado'].includes(r.origem_pagamento))
+  return {tipo:'parcela',id:r.id,vinculo:r.vinculo_estorno,manual:r.origem_pagamento==='app',valor:r.valor_pago};
+ const link=r.registro_tipo==='avulso'?manualLinks.get(r.id):r.registro_tipo==='planilha'?cashLinks.get(r.id):null;
+ if(link?.id)return {tipo:link.source==='extrato'?'avulso_extrato':'operacional',id:r.id,vinculo:link.id,manual:false,valor:link.valor_pago};
+ return null;
+}
+function reversalAction(r){
+ const target=reversalTarget(r);
+ return target?'<button class="row-edit-button" type="button" data-cp-reverse="'+esc(r.id)+'">'+(target.manual?'Estornar baixa':'Desfazer vínculo')+'</button>':'';
 }
 function draw(){
  const now=today(),next7=plusDays(now,7);
@@ -155,7 +168,7 @@ function draw(){
         '<button class="row-edit-button" type="button" data-cp-archive-manual="'+esc(r.id)+'">Mover para lixeira</button>'):
       '<button class="row-edit-button" type="button" data-cp-edit="'+esc(r.id)+'">Editar</button>'+
       (r.situacao==='aberto'&&!cashLink?'<button class="row-edit-button" type="button" data-cp-reconcile="'+esc(r.id)+'">Dar baixa</button>'+ '<button class="row-edit-button" type="button" data-cp-archive="'+esc(r.id)+'">Mover para lixeira</button>':''))+
-    '</div></td></tr>';
+    reversalAction(r)+'</div></td></tr>';
   }).join(''):
    '<tr><td colspan="9" class="empty">Nenhum compromisso corresponde aos filtros.</td></tr>';
  }
@@ -179,14 +192,14 @@ async function refresh(){
      .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em')
      .is('excluido_em',null).order('criado_em',{ascending:false}).limit(500),
     db.from('fin_parcelas').select(
-     'id,compra_id,numero,vencimento,valor_cheio,status,desconto_registrado,juros_registrados,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento),fin_vinculos_pagamento!fin_vinculos_pagamento_parcela_id_fkey(valor_aplicado,fin_movimentos!fin_vinculos_pagamento_movimento_id_fkey(data_movimento,estado,tipo))'
+     'id,compra_id,numero,vencimento,valor_cheio,status,desconto_registrado,juros_registrados,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento),fin_vinculos_pagamento!fin_vinculos_pagamento_parcela_id_fkey(id,valor_aplicado,fin_movimentos!fin_vinculos_pagamento_movimento_id_fkey(data_movimento,estado,tipo,origem))'
     ).in('status',['aberto','pago']).eq('fin_compras.forma_pagamento','boleto')
      .order('vencimento',{ascending:true}).order('id',{ascending:true}).limit(500),
     db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento'),
-    db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,ajuste_valor,justificativa_ajuste,data_pagamento').not('conta_pagar_id','is',null),
-    db.from('fin_baixas_operacionais').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
+    db.from('fin_baixas_operacionais').select('id,conta_pagar_id,valor_pago,desconto,juros,ajuste_valor,justificativa_ajuste,data_pagamento').not('conta_pagar_id','is',null),
+    db.from('fin_baixas_operacionais').select('id,boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
      .not('boleto_avulso_id','is',null),
-    db.from('fin_baixas_extrato_avulsos').select('boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
+    db.from('fin_baixas_extrato_avulsos').select('id,boleto_avulso_id,valor_pago,desconto,juros,data_pagamento')
    ]);
    for(const result of [rows,manualRes,parcelRes,suppliersRes,linkedRes,manualFluxoRes,manualExtratoRes])if(result.error)throw result.error;
    if((rows.data||[]).length>=500||(manualRes.data||[]).length>=500||(parcelRes.data||[]).length>=500)
@@ -288,6 +301,52 @@ async function reconcile(id){
  catch(e){set('cp-load-status','Falha ao abrir baixa: '+(e.message||e))}
 }
 
+function openReversal(id){
+ if(busy)return;
+ const r=all.find(x=>x.id===id),target=r&&reversalTarget(r);
+ if(!target)return;
+ reverseTarget=target;
+ set('cp-reverse-title',target.manual?'Estornar baixa manual':'Desfazer vínculo bancário');
+ set('cp-reverse-summary',r.fornecedor_nome+' · '+r.descricao+' · '+money(target.valor));
+ set('cp-reverse-effect',target.manual?'O boleto voltará a ficar pendente. A saída manual será cancelada no caixa, preservando o registro original.':'O boleto voltará a ficar pendente. A saída bancária continuará confirmada e disponível para a conciliação correta.');
+ $('cp-reverse-reason').value='';$('cp-reverse-ack').checked=false;
+ $('cp-reverse-confirm').disabled=true;set('cp-reverse-message','');
+ $('cp-reverse-dialog')?.showModal?.();
+}
+function reverseValidation(){
+ if($('cp-reverse-confirm'))$('cp-reverse-confirm').disabled=busy||!reverseTarget||
+  !$('cp-reverse-ack')?.checked||String($('cp-reverse-reason')?.value||'').trim().length<12;
+}
+async function reversePayment(ev){
+ ev.preventDefault();if(busy||!reverseTarget)return;
+ const target=reverseTarget,reason=$('cp-reverse-reason').value.trim();
+ if(reason.length<12||reason.length>500||!$('cp-reverse-ack').checked){set('cp-reverse-message','Informe uma justificativa válida e confirme o efeito do estorno.');return;}
+ busy=true;reverseValidation();set('cp-reverse-message','Conferindo vínculos no servidor...');
+ try{
+  const {data,error}=await db.rpc('fin_cp_estornar_baixa',{p_tipo:target.tipo,p_documento:target.id,p_vinculo:target.vinculo,p_motivo:reason});
+  if(error)throw error;
+  if(data?.resultado!=='estornado'||!data.evento_id)throw Error('Servidor não confirmou a operação.');
+  reverseTarget=null;$('cp-reverse-dialog')?.close?.();
+  if($('cp-status-filter'))$('cp-status-filter').value='aberto';
+  page=0;
+  await Promise.allSettled([refresh(),refreshReversals(),window.frRealDashboard?.refresh?.(),window.frForecastUI?.refresh?.(),window.frInvoicesAgendaUI?.refresh?.(),window.frDeadlinesUI?.refresh?.(),window.frBoletoUI?.refresh?.(),typeof render==='function'?render():Promise.resolve()]);
+  set('cp-load-status',data.modo==='cancelamento_manual'?'Baixa estornada. Boleto reaberto e saída manual cancelada.':'Vínculo desfeito. Boleto reaberto e saída bancária preservada.');
+  window.frFinanceUI?.showToast?.('Estorno registrado com auditoria.');
+ }catch(e){set('cp-reverse-message','Não foi possível confirmar o estorno: '+(e.message||e)+'. Atualize antes de repetir.');}
+ finally{busy=false;reverseValidation();}
+}
+async function refreshReversals(){
+ const body=$('cp-reverse-history-rows');if(!body)return;
+ try{
+  const {data,error}=await db.from('fin_cp_estornos').select('id,documento_id,documento_tipo,modo,valor_pago,data_pagamento,motivo,registrado_em,snapshot').order('registrado_em',{ascending:false}).limit(100);
+  if(error)throw error;
+  body.innerHTML=(data||[]).length?data.map(x=>{
+   const r=all.find(z=>z.id===x.documento_id),desc=r? r.fornecedor_nome+' · '+r.descricao:x.snapshot?.movimento?.descricao||x.documento_tipo;
+   return '<tr><td>'+esc(dateBR(x.registrado_em))+'</td><td>'+esc(desc)+'</td><td>'+esc(dateBR(x.data_pagamento))+'</td><td class="money">'+money(x.valor_pago)+'</td><td>'+esc(x.modo==='cancelamento_manual'?'Saída manual cancelada':'Vínculo bancário desfeito')+'</td><td>'+esc(x.motivo)+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">Nenhum estorno registrado.</td></tr>';
+  set('cp-reverse-history-status',(data||[]).length+' registro(s) mais recentes, até 100.');
+ }catch(e){body.innerHTML='<tr><td colspan="6" class="empty">Não foi possível consultar o histórico.</td></tr>';set('cp-reverse-history-status',e.message||String(e));}
+}
 function showUndated(){
  for(const id of ['cp-source-filter','cp-year-filter'])if($(id))$(id).value='todos';
  updateMonths();
@@ -300,6 +359,7 @@ function showUndated(){
 function init(){
  if(!$('cp-rows'))return;
  $('cp-show-undated')?.addEventListener('click',showUndated);
+ $('cp-show-paid')?.addEventListener('click',()=>{for(const id of ['cp-source-filter','cp-year-filter'])if($(id))$(id).value='todos';updateMonths();$('cp-month-filter').value='todos';$('cp-search').value='';$('cp-status-filter').value='conciliado';page=0;draw();});
  $('cp-search')?.addEventListener('input',()=>{page=0;draw()});
  $('cp-source-filter')?.addEventListener('change',()=>{page=0;draw()});
  $('cp-status-filter')?.addEventListener('change',()=>{page=0;if($('cp-status-filter').value==='sem_data'){$('cp-year-filter').value='todos';updateMonths();$('cp-month-filter').value='todos';}draw()});
@@ -314,12 +374,21 @@ function init(){
   const m=ev.target.closest('[data-cp-manual-pay]');
   const editManual=ev.target.closest('[data-cp-manual-edit]');
    const archiveManual=ev.target.closest('[data-cp-archive-manual]');
-  if(e)openEdit(e.dataset.cpEdit);
+  const reverse=ev.target.closest('[data-cp-reverse]');
+  if(reverse)openReversal(reverse.dataset.cpReverse);
+  else if(e)openEdit(e.dataset.cpEdit);
   else if(editManual)window.frBoletoUI?.openEdit?.(editManual.dataset.cpManualEdit);
    else if(archiveManual)window.frBoletoUI?.requestDelete?.(archiveManual.dataset.cpArchiveManual);
   else if(r)reconcile(r.dataset.cpReconcile).catch(()=>{});
   else if(m)reconcile(m.dataset.cpManualPay).catch(()=>{});
  });
+ $('cp-reverse-form')?.addEventListener('submit',reversePayment);
+ $('cp-reverse-reason')?.addEventListener('input',reverseValidation);
+ $('cp-reverse-ack')?.addEventListener('change',reverseValidation);
+ $('cp-reverse-cancel')?.addEventListener('click',()=>{if(!busy){reverseTarget=null;$('cp-reverse-dialog')?.close?.()}});
+ $('cp-reverse-dialog')?.addEventListener('cancel',e=>{if(busy)e.preventDefault();else reverseTarget=null});
+ $('cp-reverse-history')?.addEventListener('toggle',()=>{if($('cp-reverse-history').open)refreshReversals()});
+ $('cp-reverse-history-refresh')?.addEventListener('click',refreshReversals);
  $('cp-edit-form')?.addEventListener('submit',saveEdit);
  $('cp-edit-cancel')?.addEventListener('click',()=>$('cp-edit-dialog')?.close?.());
 }

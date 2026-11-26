@@ -1781,7 +1781,7 @@
             <article class="insight-card"><span>Total vencido</span><strong id="cp-overdue">—</strong><small>Compromissos vencidos sem baixa</small></article>
             <article class="insight-card"><span>Vencem em 7 dias</span><strong id="cp-soon">—</strong><small>Próximos vencimentos</small></article>
             <article class="insight-card"><span>Boletos sem vencimento</span><strong id="cp-undated">—</strong><small>Pendentes, de todas as origens</small><button type="button" class="btn" id="cp-show-undated">Ver boletos</button></article>
-            <article class="insight-card"><span>Contas pagas / conciliadas</span><strong id="cp-reconciled">—</strong><small>Sem nova saída bancária</small></article>
+            <article class="insight-card"><span>Contas pagas / conciliadas</span><strong id="cp-reconciled">—</strong><small>Consulte as baixas e seus vínculos</small><button type="button" class="btn" id="cp-show-paid">Ver pagamentos</button></article>
           </div>
           <div class="data-toolbar fin-cp-toolbar">
             <label class="search-box"><span class="icon icon-sm" data-icon="search"></span>
@@ -1822,6 +1822,23 @@
           <p class="info-note fin-cp-note">Boletos da planilha, avulsos e parcelas de compras aparecem juntos, com a origem de cada um identificada. O valor original importado não é alterado. Para parcelas cadastradas no site, <strong>Dar baixa</strong> abre o formulário específico da parcela: se o pagamento já estiver no extrato, não registre uma nova saída bancária.</p>
         </section>
 
+        <details class="card" id="cp-reverse-history">
+          <summary>Histórico de estornos e desvinculações</summary>
+          <div class="card-head"><div><h3>Baixas revertidas</h3><p>Trilha permanente de auditoria. Nenhuma movimentação bancária real é apagada.</p></div><button class="btn" type="button" id="cp-reverse-history-refresh">Atualizar histórico</button></div>
+          <p id="cp-reverse-history-status" class="info-note" role="status">Abra para consultar.</p>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Estorno em</th><th>Documento</th><th>Pagamento original</th><th>Valor</th><th>Tipo</th><th>Justificativa</th></tr></thead><tbody id="cp-reverse-history-rows"><tr><td colspan="6">Aguardando consulta.</td></tr></tbody></table></div>
+        </details>
+        <dialog id="cp-reverse-dialog" class="fin-dialog fin-cp-dialog" aria-labelledby="cp-reverse-title">
+          <div class="dialog-body"><h2 id="cp-reverse-title">Estornar baixa</h2>
+          <p id="cp-reverse-summary"></p><p class="info-note" id="cp-reverse-effect"></p>
+          <form id="cp-reverse-form">
+           <label for="cp-reverse-reason">Justificativa obrigatória (12 a 500 caracteres)</label>
+           <textarea id="cp-reverse-reason" rows="3" minlength="12" maxlength="500" required placeholder="Ex.: Baixa registrada no boleto errado."></textarea>
+           <label><input id="cp-reverse-ack" type="checkbox" required> Confirmo que revisei o pagamento e autorizo reabrir o compromisso.</label>
+           <p id="cp-reverse-message" class="info-note" role="status" aria-live="polite"></p>
+           <div class="form-actions"><button class="btn" type="button" id="cp-reverse-cancel">Cancelar</button><button class="btn btn-primary" type="submit" id="cp-reverse-confirm" disabled>Confirmar estorno / desvinculação</button></div>
+          </form></div>
+        </dialog>
         <section class="card fin-op-manual-card" id="op-boletos-adicionados">
           <div class="card-head"><div>
            <h2>Boletos adicionados após a migração</h2>
@@ -3419,6 +3436,7 @@
             <label>Desconto aplicado (R$)<input id="pay-discount" type="number" min="0" step="0.01" value="0" required></label>
             <label>Juros e multas (R$)<input id="pay-fees" type="number" min="0" step="0.01" value="0" required></label>
             <label>Valor efetivamente pago (R$)<input id="pay-amount" type="number" min="0.01" step="0.01" required aria-describedby="pay-hint"><small>Se o valor for maior, a diferença será preenchida em juros e multas. Confira antes de confirmar.</small></label>
+            <div style="grid-column:1/-1"><label>Pagamento já homologado no banco (opcional)<select id="pay-bank"><option value="">Baixa manual (sem vínculo bancário)</option></select></label><button type="button" class="btn" id="pay-bank-search">Buscar saída bancária pela data e valor</button><p id="pay-bank-status" class="form-note" role="status">Se já consta no banco, selecione a saída em vez de criar outra.</p></div>
             <label>Meio<select id="pay-method" required><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
             <div style="grid-column:1/-1"><p class="form-note" id="pay-hint">Confira o valor efetivamente pago. Descontos sugeridos não são aplicados ao histórico automaticamente.</p><p class="form-note" style="margin-top:9px">Se você já importou esse pagamento pelo extrato, não crie outra saída. Acesse <strong>Importações → Conciliar boleto com saída bancária</strong>.</p>
               <div class="form-actions"><button type="button" class="btn" data-close-modal="pay">Cancelar</button><button id="save-payment" type="submit" class="btn btn-primary">Confirmar baixa</button></div><div id="pay-status" class="status" role="status"></div>
@@ -3563,7 +3581,27 @@ function updatePaymentOptions(){
  if(openInstallments.some(x=>x.id===selected))field.value=selected;
  refreshPaymentSuggestion();
 }
+let bankLookupVersion=0;
+function resetPaymentBank(){
+ bankLookupVersion++;
+ if($('pay-bank'))$('pay-bank').innerHTML='<option value="">Baixa manual (sem vínculo bancário)</option>';
+ if($('pay-bank-status'))$('pay-bank-status').textContent='Se já consta no banco, busque a saída pela data e valor.';
+}
+async function searchPaymentBank(){
+ const x=selectedPaymentParcel(),date=$('pay-date').value,amount=Number($('pay-amount').value);
+ if(!x||!date||!Number.isFinite(amount)||amount<=0){msg('pay-bank-status','Informe parcela, data e valor pago.');return;}
+ resetPaymentBank();const version=bankLookupVersion,btn=$('pay-bank-search');btn.disabled=true;
+ try{
+  const {data,error}=await db.from('fin_movimentos').select('id,descricao,valor,origem').eq('estado','confirmado').eq('tipo','saida').in('origem',['fluxo_caixa_homologado','extrato_itau_homologado']).eq('data_movimento',date).eq('valor',amount).order('id').limit(100);
+  if(error)throw error;if(version!==bankLookupVersion)return;
+  $('pay-bank').innerHTML='<option value="">Baixa manual (sem vínculo bancário)</option>'+
+   (data||[]).map(m=>'<option value="'+safe(m.id)+'">'+safe(m.descricao)+' · '+fmt.format(Number(m.valor))+'</option>').join('');
+  msg('pay-bank-status',(data||[]).length?(data||[]).length+' saída(s) com mesma data e valor. Confira e selecione o pagamento correto; o servidor valida se está livre.':'Nenhuma saída homologada encontrada com essa data e valor.');
+ }catch(e){msg('pay-bank-status','Busca indisponível: '+(e.message||e),true);}
+ finally{btn.disabled=false;}
+}
 function refreshPaymentSuggestion(){
+ resetPaymentBank();
  const x=selectedPaymentParcel();
  if(!x){$('pay-full').value='';$('pay-hint').textContent='Selecione uma parcela para conferir valor e desconto.';return;}
  const full=Math.round(Number(x.valor_cheio)*100);
@@ -3578,6 +3616,7 @@ function refreshPaymentSuggestion(){
  $('pay-hint').textContent=rate?'Sugestão de '+rate+'% para pagamento até o vencimento. Confirme pelo boleto atual.':'Sem desconto automático. Em atraso, informe encargos reais antes de baixar.';
 }
 function inferPaymentFees(){
+ resetPaymentBank();
  const x=selectedPaymentParcel();if(!x)return;
  const raw=$('pay-amount').value;
  if(raw.trim()==='')return;
@@ -3596,6 +3635,7 @@ function inferPaymentFees(){
   'Valor pago confere com o valor cheio menos desconto, sem encargos.';
 }
 function calculatePaymentTotal(){
+ resetPaymentBank();
  const x=selectedPaymentParcel();if(!x)return;
  const cents=Math.round(Number(x.valor_cheio)*100),discount=Math.round(Number($('pay-discount').value)*100),fees=Math.round(Number($('pay-fees').value)*100);
  if(!Number.isSafeInteger(discount)||!Number.isSafeInteger(fees)||discount<0||fees<0||discount>cents)return;
@@ -3638,7 +3678,8 @@ async function savePayment(e){
   if(![amount,discount,fees].every(Number.isSafeInteger)||amount<=0||discount<0||fees<0||discount>full||amount!==full-discount+fees)throw Error('Valor pago deve ser igual ao valor cheio menos desconto mais juros.');
   const form=$('pay-form');
   const ref=form.dataset.operacaoChave||(form.dataset.operacaoChave='site-financeiro-baixa-'+crypto.randomUUID());
-  const {data,error}=await db.rpc('fin_site_baixar_boleto',{
+  const bank=$('pay-bank').value;
+  const {data,error}=bank?await db.rpc('fin_cp_vincular_parcela_banco',{p_parcela:x.id,p_movimento:bank,p_desconto:discount/100,p_juros:fees/100}):await db.rpc('fin_site_baixar_boleto',{
    p_parcela_id:x.id,p_pago_em:$('pay-date').value,p_valor_pago:amount/100,
    p_desconto:discount/100,p_juros:fees/100,p_meio:$('pay-method').value,p_referencia_client:ref
   });
@@ -3765,6 +3806,7 @@ async function init(){
   $('pay-fees').addEventListener('input',calculatePaymentTotal);
   $('pay-amount').addEventListener('input',inferPaymentFees);
   $('pay-form').addEventListener('submit',savePayment);
+  $('pay-bank-search').addEventListener('click',searchPaymentBank);
   $('installment-count').addEventListener('change',()=>{$('installments').innerHTML='';updateInstallments()});
   $('purchase-due').addEventListener('change',()=>{$('installments').innerHTML='';updateInstallments()});
   $('purchase-form').elements.valor_total.addEventListener('input',()=>{$('installments').innerHTML='';updateInstallments()});
@@ -3808,7 +3850,7 @@ init();
 <script src="./financeiro-historico.js?v=20261123manual1" defer></script>
 <script src="./financeiro-itau-homologacao.js?v=20261126conciliacao2" defer></script>
  <script src="./financeiro-contas-homologadas.js?v=20261116abertos2" defer></script>
-<script src="./financeiro-contas-operacionais.js?v=20261126paid1" defer></script>
+<script src="./financeiro-contas-operacionais.js?v=20261126estorno1" defer></script>
 <script src="./financeiro-baixas-operacionais.js?v=20261123ajuste1" defer></script>
 <script src="./financeiro-documentos-status-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-documentos-finalidade-core.js?v=20261123finalidade1" defer></script>

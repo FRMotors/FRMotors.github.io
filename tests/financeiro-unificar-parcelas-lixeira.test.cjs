@@ -121,7 +121,7 @@ test('Filtro por origem mostra apenas os boletos parcelados e preserva total ger
 test('Baixa efetivada preserva parcela paga no histórico e retira seu valor das pendências',async()=>{
  const h=harness();await h.refresh();
  Object.assign(h.dataset.fin_parcelas.find(r=>r.id==='p1'),{status:'pago',desconto_registrado:0,juros_registrados:7.42,
-  fin_vinculos_pagamento:[{valor_aplicado:400,fin_movimentos:{estado:'confirmado',tipo:'saida',data_movimento:'2026-12-17'}}]});
+  fin_vinculos_pagamento:[{id:'link-paid',valor_aplicado:400,fin_movimentos:{estado:'confirmado',tipo:'saida',data_movimento:'2026-12-17',origem:'extrato_itau_homologado'}}]});
  await h.refresh();
  assert.equal(h.el('cp-count').textContent,'4');
  assert.equal(h.el('cp-reconciled').textContent,'1');
@@ -132,6 +132,10 @@ test('Baixa efetivada preserva parcela paga no histórico e retira seu valor das
  assert.match(h.el('cp-rows').innerHTML,/Pago \/ baixado/);
  assert.match(h.el('cp-rows').innerHTML,/400,00/);
  assert.match(h.el('cp-rows').innerHTML,/7,42/);
+ assert.match(h.el('cp-rows').innerHTML,/Desfazer vínculo/);
+ assert.match(h.el('cp-rows').innerHTML,/data-cp-reverse="p1"/);
+ h.dataset.fin_parcelas[0].fin_vinculos_pagamento[0].fin_movimentos.origem='app';await h.refresh();
+ assert.match(h.el('cp-rows').innerHTML,/Estornar baixa/);
 });
 
 test('Salvar compra ou baixa atualiza carteira, sem alterar os procedimentos financeiros',()=>{
