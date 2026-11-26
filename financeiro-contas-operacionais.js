@@ -88,6 +88,14 @@ function updateMonths(){
  }));
  if(months.includes(existing))control.value=existing;
 }
+function installmentPayment(x){
+ if(x.status!=='pago')return {valor_pago:null,data_pagamento:null,juros_efetivos:null,desconto_efetivo:null,pagamentos_confirmados:0};
+ const links=(x.fin_vinculos_pagamento||[]).filter(v=>v.fin_movimentos?.estado==='confirmado'&&v.fin_movimentos?.tipo==='saida');
+ const dates=links.map(v=>v.fin_movimentos.data_movimento).filter(Boolean).sort();
+ return {valor_pago:links.length?links.reduce((s,v)=>s+cents(v.valor_aplicado),0)/100:null,
+  data_pagamento:dates.at(-1)||null,juros_efetivos:x.juros_registrados??null,
+  desconto_efetivo:x.desconto_registrado??null,pagamentos_confirmados:links.length};
+}
 function draw(){
  const now=today(),next7=plusDays(now,7);
  const year=$('cp-year-filter')?.value||'todos';
@@ -118,8 +126,13 @@ function draw(){
      '<small>Ajuste da planilha: '+money(adjustment)+
      (explanation?' · Motivo: '+esc(explanation):'')+'</small>':'';
     const amount=cashLink?'<strong>'+money(cashLink.valor_pago)+'</strong><small>Pago em '+esc(dateBR(cashLink.data_pagamento))+'</small>'+adjustedNote:
-    r.situacao==='conciliado_extrato'?
-    '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>'+adjustedNote:
+    r.registro_tipo==='parcela'&&r.status==='pago'?
+     (r.valor_pago===null?'<small>Baixado; vínculo de pagamento não disponível</small>':
+      '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>'+
+      (r.pagamentos_confirmados>1?'<small>'+r.pagamentos_confirmados+' pagamentos vinculados</small>':'')+
+      (Number(r.juros_efetivos)>0?'<small>Juros e multas: '+money(r.juros_efetivos)+'</small>':'')):
+     r.situacao==='conciliado_extrato'?
+     '<strong>'+money(r.valor_pago)+'</strong><small>Pago em '+esc(dateBR(r.data_pagamento))+'</small>'+adjustedNote:
     (possible?'<span class="cp-possible">'+money(possible.liquido/100)+'<small>estimativa, não pago</small></span>':'—');
    const statusClass=['conciliado','conciliado_fluxo'].includes(st)?'paid':st==='vencido'?'overdue':'open';
    return '<tr>'+
@@ -132,10 +145,10 @@ function draw(){
     '<td class="money">'+(r.valor_cheio_informado===null?'—':money(r.valor_cheio_informado))+'</td>'+
     '<td class="money">'+discount+'</td>'+
     '<td class="money cp-value">'+amount+'</td>'+
-    '<td><span class="state '+statusClass+'">'+esc(statusLabel(st))+'</span></td>'+
+    '<td><span class="state '+statusClass+'">'+esc(r.registro_tipo==='parcela'&&r.status==='pago'?'Pago / baixado':statusLabel(st))+'</span></td>'+
     '<td><div class="cp-actions">'+(r.registro_tipo==='parcela'?
-      '<button class="row-edit-button" type="button" data-pay-id="'+esc(r.id)+'">Dar baixa da parcela</button>'+
-      '<button class="row-edit-button" type="button" data-edit-record="compra" data-edit-id="'+esc(r.compra_id)+'">Editar compra</button>':
+      (r.status==='pago'?'<small>Baixa registrada</small>':'<button class="row-edit-button" type="button" data-pay-id="'+esc(r.id)+'">Dar baixa da parcela</button>'+
+      '<button class="row-edit-button" type="button" data-edit-record="compra" data-edit-id="'+esc(r.compra_id)+'">Editar compra</button>'):
       r.registro_tipo==='avulso'?
       (cashLink?'—':'<button class="row-edit-button" type="button" data-cp-manual-edit="'+esc(r.id)+'">Editar</button>'+
        '<button class="row-edit-button" type="button" data-cp-manual-pay="'+esc(r.id)+'">Dar baixa</button>'+
@@ -166,8 +179,8 @@ async function refresh(){
      .select('id,fornecedor_nome,descricao,categoria,vencimento,valor_referencia,criado_em')
      .is('excluido_em',null).order('criado_em',{ascending:false}).limit(500),
     db.from('fin_parcelas').select(
-     'id,compra_id,numero,vencimento,valor_cheio,status,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento)'
-    ).eq('status','aberto').eq('fin_compras.forma_pagamento','boleto')
+     'id,compra_id,numero,vencimento,valor_cheio,status,desconto_registrado,juros_registrados,fin_compras!inner(id,fornecedor_id,descricao,forma_pagamento),fin_vinculos_pagamento!fin_vinculos_pagamento_parcela_id_fkey(valor_aplicado,fin_movimentos!fin_vinculos_pagamento_movimento_id_fkey(data_movimento,estado,tipo))'
+    ).in('status',['aberto','pago']).eq('fin_compras.forma_pagamento','boleto')
      .order('vencimento',{ascending:true}).order('id',{ascending:true}).limit(500),
     db.from('fin_fornecedores').select('id,nome,desconto_atual_pct,desconto_ate_vencimento'),
     db.from('fin_baixas_operacionais').select('conta_pagar_id,valor_pago,desconto,juros,ajuste_valor,justificativa_ajuste,data_pagamento').not('conta_pagar_id','is',null),
@@ -188,9 +201,8 @@ async function refresh(){
      descricao:x.fin_compras.descricao||'Compra parcelada',fornecedor_id:x.fin_compras.fornecedor_id,
      fornecedor_nome:vendorNames.get(x.fin_compras.fornecedor_id)||'Fornecedor cadastrado',
      categoria:'Compra parcelada',vencimento:x.vencimento,
-     valor_referencia:Number(x.valor_cheio),valor_cheio_informado:null,
-     desconto_efetivo:null,juros_efetivos:null,valor_pago:null,data_pagamento:null,
-     situacao:'aberto',status:x.status,observacoes:'',codigo_origem:'',linha_original:''
+     valor_referencia:Number(x.valor_cheio),valor_cheio_informado:Number(x.valor_cheio),
+     ...installmentPayment(x),situacao:x.status==='pago'?'pago':'aberto',status:x.status,observacoes:'',codigo_origem:'',linha_original:''
     }));
    all=[...added,...originals,...installmentRows].sort((a,b)=>
     String(a.vencimento||'9999-12-31').localeCompare(String(b.vencimento||'9999-12-31'))||
@@ -203,7 +215,7 @@ async function refresh(){
    updateYears();updateMonths();draw();
    set('cp-load-status','Carteira operacional ativa: '+originals.length+' compromissos da planilha e '+
     added.length+' boletos avulsos e '+installmentRows.length+
-    ' parcelas de compras em boleto. Cada compromisso aparece uma vez, sem criar saídas adicionais.');
+    ' parcelas de compras em boleto (abertas e pagas). Cada compromisso aparece uma vez, sem criar saídas adicionais.');
   }catch(error){
    set('cp-load-status','Falha ao consultar contas a pagar: '+(error.message||error));
    if($('cp-rows'))$('cp-rows').innerHTML='<tr><td colspan="9" class="empty">Não foi possível consultar a carteira operacional.</td></tr>';
