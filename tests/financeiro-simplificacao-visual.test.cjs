@@ -23,3 +23,12 @@ test('Todos os IDs únicos e cada rota principal mantida no menu',()=>{
  const menu=html.slice(html.indexOf('<aside class="sidebar"'),html.indexOf('</aside>'));
  for(const view of ['overview','forecast','reports','audit','payables','receivables','agenda','cardbills','expenses','imports','itau','history'])assert.equal((menu.match(new RegExp('data-view="'+view+'"','g'))||[]).length,1,view);
 });
+test('Cabeçalho recolhível não herda flex-basis vertical e painel fechado não ocupa espaço',()=>{
+ const header=html.match(/#main-content \.fin-secondary-section>summary\{([^}]+)\}/)[1];
+ const desc=html.match(/#main-content \.fin-secondary-section>summary small\{([^}]+)\}/)[1];
+ assert.match(header,/display:grid/);
+ assert.match(header,/grid-auto-rows:auto/);
+ assert.doesNotMatch(desc,/flex:|flex-basis:/);
+ assert.doesNotMatch(html,/#main-content \.fin-secondary-section>summary small\{[^}]*flex-basis/);
+ assert.match(html,/\.fin-secondary-section:not\(\[open\]\)>\.fin-collapse-panel\{display:none!important\}/);
+});
