@@ -16,16 +16,18 @@ function create(config){
  const prefix='batch-'+config.mode,el=id=>$(prefix+'-'+id),eligible=r=>!config.eligible||config.eligible(r);
  const total=rows=>money(rows.reduce((s,r)=>s+Math.round(Number(r.valor||0)*100),0)/100);
  function status(t){if(el('status'))el('status').textContent=t;}
+ const pending=()=>config.isPending?filtered.filter(config.isPending):[];
  function update(){
   const n=sel.selected.size;if(el('count'))el('count').textContent=n+' selecionado(s) · '+total([...sel.selected.values()]);
-  for(const [id,disabled] of [['page',!visible.length],['all',!filtered.length],['clear',!n],['open',!n]])if(el(id))el(id).disabled=saving||disabled;
+  const p=pending();if(el('next-pending'))el('next-pending').textContent='Selecionar '+Math.min(LIMIT,p.length)+' pendente(s)';
+  for(const [id,disabled] of [['page',!visible.length],['all',!filtered.length],['next-pending',!p.length],['clear',!n],['open',!n]])if(el(id))el(id).disabled=saving||disabled;
   $(config.body)?.querySelectorAll?.('[data-batch-id]').forEach(e=>{e.checked=sel.selected.has(e.dataset.batchId);e.disabled=saving});
  }
  function mount(){
   if(initialized)return;
   const body=$(config.body),wrap=body?.closest?.('.table-wrap');if(!wrap)return;
   const bar=document.createElement('div');bar.className='fin-batch-toolbar';bar.id=prefix+'-toolbar';
-  bar.innerHTML='<div class="fin-batch-actions"><strong id="'+prefix+'-count">0 selecionado(s)</strong>'+[['page','Selecionar página'],['all','Selecionar todos os filtrados'],['clear','Limpar seleção'],['open','Classificar selecionados']].map(([id,label])=>'<button type="button" class="btn'+(id==='open'?' btn-primary':'')+'" id="'+prefix+'-'+id+'">'+label+'</button>').join('')+'</div><p class="info-note" id="'+prefix+'-status" role="status">Pesquise a loja e selecione até 100 registros, inclusive em outras páginas.</p>';
+  bar.innerHTML='<div class="fin-batch-actions"><strong id="'+prefix+'-count">0 selecionado(s)</strong>'+[['page','Selecionar página'],['all','Selecionar todos os filtrados'],...(config.isPending?[['next-pending','Selecionar até 100 pendentes']]:[]),['clear','Limpar seleção'],['open','Classificar selecionados']].map(([id,label])=>'<button type="button" class="btn'+(id==='open'?' btn-primary':'')+'" id="'+prefix+'-'+id+'">'+label+'</button>').join('')+'</div><p class="info-note" id="'+prefix+'-status" role="status">Pesquise a loja e selecione até 100 registros, inclusive em outras páginas.</p>';
   wrap.before(bar);
   const dlg=document.createElement('dialog');dlg.id=prefix+'-dialog';dlg.className='fin-dialog fin-batch-dialog';dlg.setAttribute('aria-labelledby',prefix+'-title');
   dlg.innerHTML='<div class="dialog-head"><div><h2 id="'+prefix+'-title">Classificar despesas em lote</h2><p id="'+prefix+'-summary"></p></div></div><div class="dialog-body"><form id="'+prefix+'-form"><label>Categoria '+(config.mode==='cartao'?'(opcional, em branco mantém a atual)':'')+'<input id="'+prefix+'-category" maxlength="'+(config.mode==='caixa'?120:100)+'" list="'+prefix+'-options" placeholder="Escolha ou digite uma categoria"></label><datalist id="'+prefix+'-options"></datalist>'+
@@ -34,6 +36,7 @@ function create(config){
   document.body.appendChild(dlg);initialized=true;
   const choose=rows=>{status(sel.add(rows)?'Seleção atualizada. Confira antes de classificar.':'Mais de 100 registros. Reduza os filtros ou selecione menos registros.');update()};
   el('page').addEventListener('click',()=>choose(visible));el('all').addEventListener('click',()=>choose(filtered));
+  el('next-pending')?.addEventListener('click',()=>{if(saving)return;const rows=pending();sel.clear();sel.add(rows.slice(0,LIMIT));update();status(sel.selected.size+' pendente(s) selecionado(s) de '+rows.length+' encontrado(s). Confira categoria e finalidade antes de confirmar.');});
   el('clear').addEventListener('click',()=>{sel.clear();update();status('Seleção limpa.')});
   body.addEventListener('change',e=>{const x=e.target.closest('[data-batch-id]');if(!x||saving)return;const r=filtered.find(v=>v.id===x.dataset.batchId);if(!r)return;if(x.checked)choose([r]);else{sel.remove(r.id);update()}});
   el('open').addEventListener('click',open);el('cancel').addEventListener('click',()=>{if(!saving)dlg.close()});
@@ -58,7 +61,7 @@ function create(config){
    const {data,error}=await db.rpc('fin_classificar_despesas_lote',{p_modo:config.mode,p_registros:preview.map(config.payload),p_categoria:cat,p_finalidade:purpose});
    if(error)throw error;if(data?.resultado!=='concluido'||data.quantidade!==preview.length)throw Error('Servidor não confirmou o lote.');
    sel.clear();preview=null;el('dialog').close();await config.refresh();
-   const message=data.alterados+' registro(s) alterado(s) de '+data.quantidade+' selecionado(s), com auditoria individual.';
+   const message=data.alterados===0?'Nenhum registro foi alterado: as classificações selecionadas já estavam iguais. Revise o filtro de pendências.':data.alterados+' registro(s) alterado(s) de '+data.quantidade+' selecionado(s), com auditoria individual.'+(config.isPending?' '+pending().length+' pendente(s) na seleção atual.':'');
    status(message);window.frFinanceUI?.showToast?.(message);
   }catch(err){feedback.textContent='Lote não confirmado: '+(err.message||err)+'. Atualize a lista antes de tentar novamente.';}
   finally{saving=false;el('save').disabled=false;el('cancel').disabled=false;update();}

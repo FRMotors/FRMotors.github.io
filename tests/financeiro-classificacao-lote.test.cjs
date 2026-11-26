@@ -13,3 +13,6 @@ test('Três telas reutilizam o controlador e um RPC de lote',()=>{
  assert.match(read('financeiro-classificacao-lote.js'),/db\.rpc\('fin_classificar_despesas_lote'/);
  assert.match(read('financeiro-classificacao-lote.js'),/preview\.map\(config\.payload\)/);
 });
+test('Atalho seleciona no máximo 100 pendentes e exclui compras completas',()=>{
+ const s=read('financeiro-classificacao-lote.js');assert.match(s,/filtered\.filter\(config\.isPending\)/);assert.match(s,/sel\.add\(rows\.slice\(0,LIMIT\)\)/);assert.match(s,/data\.alterados===0/);
+});

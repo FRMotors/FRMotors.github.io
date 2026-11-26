@@ -9,11 +9,12 @@ const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).
 const dateBR=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'Não informado';
 const cardName=name=>window.frCardNames?.canonical?.(name)||String(name||'Cartão');
 const generic=s=>!s||['COMPRAS NO CARTÃO','COMPRAS NO CARTAO','SEM CATEGORIA','A CLASSIFICAR'].includes(String(s).toUpperCase().trim());
+const pendingClassification=x=>generic(x.categoria)||!['oficina','outras'].includes(x.finalidade);
 const purposeLabel=p=>p==='oficina'?'Uso na oficina':p==='outras'?'Outra finalidade':'A definir';
 const defaults=['AUTOPEÇAS','COMBUSTÍVEL','DESPESAS DA OFICINA','FERRAMENTAS','FORNECEDORES','INSUMOS','MANUTENÇÃO','MATERIAL DE ESCRITÓRIO','MERCADO LIVRE','SERVIÇOS','TARIFAS E ENCARGOS','TRIBUTOS E IMPOSTOS','USO PESSOAL','VIAGENS'];
 const state={planilha:[],importado:[],items:[],loading:null,ready:false,page:0,pageSize:20,edit:null,saving:false};
 let initialized=false;
-const batch=window.frBatchClassification?.create({mode:'cartao',body:'cbcat-rows',name:r=>r.descricao,description:r=>[r.cartao,dateBR(r.data),r.categoria||'Sem categoria',purposeLabel(r.finalidade)].join(' · '),categories:()=>[...defaults,...state.items.map(x=>x.categoria).filter(x=>x&&!generic(x))],payload:r=>({id:r.id,origem:r.origem,categoria:r.categoria??null,finalidade:r.finalidade}),refresh:async()=>{await refresh();window.frDocumentsUI?.refresh?.().catch(()=>{});}});
+const batch=window.frBatchClassification?.create({mode:'cartao',body:'cbcat-rows',isPending:pendingClassification,name:r=>r.descricao,description:r=>[r.cartao,dateBR(r.data),r.categoria||'Sem categoria',purposeLabel(r.finalidade)].join(' · '),categories:()=>[...defaults,...state.items.map(x=>x.categoria).filter(x=>x&&!generic(x))],payload:r=>({id:r.id,origem:r.origem,categoria:r.categoria??null,finalidade:r.finalidade}),refresh:async()=>{await refresh();window.frDocumentsUI?.refresh?.().catch(()=>{});}});
 function msg(text,error=false){const el=$('cbcat-status');if(el){el.textContent=text;el.classList.toggle('cbcat-error',error)}}
 async function all(makeQuery,max=6000){
  const output=[],step=400;
@@ -75,6 +76,8 @@ function filtered(){
   if(month!=='todos'&&x.mes!==month)return false;
   if(card!=='todos'&&x.cartao!==card)return false;
   if(cat!=='todos'&&x.categoria!==cat)return false;
+  if(status==='pendentes'&&!pendingClassification(x))return false;
+  if(status==='completa'&&pendingClassification(x))return false;
   if(status==='sem'&&!generic(x.categoria))return false;
   if(status==='definida'&&generic(x.categoria))return false;
   if(purpose!=='todos'&&x.finalidade!==purpose)return false;
@@ -85,7 +88,7 @@ function filtered(){
   return [x.descricao,x.cartao,x.parcela,x.mes,x.data,x.categoria,
    String(x.valor),money(x.valor),Number(x.valor).toFixed(2).replace('.',',')]
    .join(' ').toLocaleLowerCase('pt-BR').includes(search);
- }).sort((a,b)=>b.mes.localeCompare(a.mes)||b.data.localeCompare(a.data)||
+ }).sort((a,b)=>Number(pendingClassification(b))-Number(pendingClassification(a))||b.mes.localeCompare(a.mes)||b.data.localeCompare(a.data)||
    a.descricao.localeCompare(b.descricao,'pt-BR'));
 }
 function breakdown(rows){
@@ -109,6 +112,7 @@ function render(){
  const source=values('cbcat-source');
  $('cbcat-purpose-pending').textContent=String(allRows.filter(x=>x.finalidade==='a_classificar').length);
  $('cbcat-count').textContent=String(allRows.length);
+ if($('cbcat-pending-count'))$('cbcat-pending-count').textContent=String(allRows.filter(pendingClassification).length);
  $('cbcat-total').textContent=money(total);
  $('cbcat-unclassified').textContent=String(unclassified.length);
  $('cbcat-unclassified-total').textContent=money(totalUnclassified);
@@ -251,11 +255,12 @@ async function refresh(){
   state.ready=true;
   window.frPendingUI?.publish('card',{'card-planilha':{count:planilha.filter(x=>x.finalidade==='a_classificar').length},'card-importado':{count:importado.filter(x=>x.finalidade==='a_classificar').length}});
   rebuildFilters();render();
-  msg('Categorias carregadas. Filtre por mês ou cartão e clique em Categorizar/Alterar na compra desejada.');
+  msg('Categorias carregadas. A opção Pendentes de classificação mostra compras sem categoria específica ou sem finalidade definida. Use Todas as compras para consultar as já classificadas.');
  })().catch(err=>{
   state.ready=false;state.items=[];state.planilha=[];state.importado=[];batch?.prepare([],[]);
   window.frPendingUI?.publish('card',null);
   $('cbcat-rows').innerHTML='<tr><td colspan="9">A lista não pôde ser carregada com segurança.</td></tr>';
+  for(const id of ['cbcat-count','cbcat-pending-count','cbcat-unclassified','cbcat-purpose-pending','cbcat-total','cbcat-unclassified-total'])if($(id))$(id).textContent='—';
   msg('Não foi possível carregar as compras: '+(err.message||err),true);
  }).finally(()=>{state.loading=null});
  return state.loading;
@@ -270,7 +275,7 @@ function init(){
  $('cbcat-search').addEventListener('input',()=>{state.page=0;render()});
  $('cbcat-refresh').addEventListener('click',()=>refresh());
  $('cbcat-clear').addEventListener('click',()=>{
-  $('cbcat-year').value='todos';$('cbcat-search').value='';$('cbcat-status-filter').value='todos';
+  $('cbcat-year').value='todos';$('cbcat-search').value='';$('cbcat-status-filter').value='pendentes';
   $('cbcat-purpose-filter').value='todos';
   rebuildFilters();$('cbcat-month').value='todos';$('cbcat-card').value='todos';
   $('cbcat-category').value='todos';state.page=0;render();
@@ -297,7 +302,7 @@ function init(){
  });
  if(!document.querySelector('[data-view-panel="cardbills"]')?.hidden)refresh();
 }
-window.frCardCategoriesUI={refresh,__test:{generic,priceCents}};
+window.frCardCategoriesUI={refresh,__test:{generic,priceCents,pendingClassification}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
 else init();
 })();

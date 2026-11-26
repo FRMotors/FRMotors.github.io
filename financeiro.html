@@ -978,7 +978,7 @@
   <label>Cartão<select id="cbcat-card"><option value="todos">Todos os cartões</option></select></label>
   <label>Categoria<select id="cbcat-category"><option value="todos">Todas as categorias</option></select></label>
   <label>Situação da classificação
-   <select id="cbcat-status-filter"><option value="todos">Todas as compras</option><option value="sem">Somente a classificar</option><option value="definida">Somente categorizadas</option></select>
+   <select id="cbcat-status-filter"><option value="pendentes" selected>Pendentes de classificação</option><option value="todos">Todas as compras</option><option value="sem">Somente sem categoria</option><option value="definida">Com categoria definida</option><option value="completa">Classificação completa</option></select>
   </label>
   <label>Finalidade da compra
    <select id="cbcat-purpose-filter">
@@ -992,7 +992,7 @@
   <button type="button" id="cbcat-clear" class="btn">Limpar filtros</button>
  </div>
  <div class="cbcat-kpis">
-  <article><span>Compras na seleção</span><strong id="cbcat-count">—</strong><small>Quantidade de lançamentos documentais</small></article>
+  <article><span>Compras exibidas</span><strong id="cbcat-count">—</strong><small><b id="cbcat-pending-count">—</b> pendentes de categoria ou finalidade nesta seleção</small></article>
   <article><span>Valor documental selecionado</span><strong id="cbcat-total">—</strong><small>Não equivale a saída de caixa no Itaú</small></article>
   <article><span>Sem categoria específica</span><strong id="cbcat-unclassified">—</strong><small id="cbcat-unclassified-total">—</small></article>
   <article><span>Finalidade ainda não definida</span><strong id="cbcat-purpose-pending">—</strong><small>Não entra na coluna de uso na oficina</small></article>
@@ -3955,7 +3955,7 @@ init();
 <script src="./financeiro-sicoob.js?v=20261113paid3" defer></script>
 <script src="./financeiro-import-visibilidade.js?v=20261118visibilidade1" defer></script>
 <script src="./financeiro-import.js?v=20261119classe1" defer></script>
-<script src="./financeiro-classificacao-lote.js?v=20261126lote1" defer></script>
+<script src="./financeiro-classificacao-lote.js?v=20261126pendentes2" defer></script>
 <script src="./financeiro-import-categorias.js?v=20261126lote1" defer></script>
 <script src="./financeiro-regras-pix.js?v=20261116pixrules1" defer></script>
 
@@ -3992,7 +3992,7 @@ init();
 <script src="./financeiro-relatorios-gerenciais.js?v=20261123manual1" defer></script>
 <script src="./financeiro-classificacao.js?v=20261126lote1" defer></script>
 <script src="./financeiro-faturas-cartoes.js?v=20261124undated1" defer></script>
-<script src="./financeiro-cartoes-categorias.js?v=20261126lote1" defer></script>
+<script src="./financeiro-cartoes-categorias.js?v=20261126pendentes2" defer></script>
 <script src="./financeiro-auditoria-estado-core.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-auditoria-estado-ui.js?v=20261119supplier2" defer></script>
 <script src="./financeiro-central-auditoria.js?v=20261119supplier2" defer></script>

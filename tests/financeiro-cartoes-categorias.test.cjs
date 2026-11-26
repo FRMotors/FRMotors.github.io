@@ -156,3 +156,15 @@ test('botão Categorizar abre dialog a partir da tabela e pesquisa filtra por pr
  assert.equal(el('cbcat-count').textContent,'1');
  assert.match(el('cbcat-rows').innerHTML,/data-cbcat-id="b"/);
 });
+
+test('Pendência exige categoria específica e finalidade definida',()=>{
+ const window={};vm.runInNewContext(ui,{window,document:{readyState:'loading',addEventListener(){}},Intl,Map,Set});
+ const pending=window.frCardCategoriesUI.__test.pendingClassification;
+ assert.equal(pending({categoria:'FORNECEDORES',finalidade:'oficina'}),false);
+ assert.equal(pending({categoria:'FORNECEDORES',finalidade:'outras'}),false);
+ assert.equal(pending({categoria:'FORNECEDORES',finalidade:'a_classificar'}),true);
+ assert.equal(pending({categoria:null,finalidade:'oficina'}),true);
+ assert.equal(pending({categoria:'SEM CATEGORIA',finalidade:'a_classificar'}),true);
+ assert.match(html,/option value="pendentes" selected/);
+ assert.match(ui,/status==='pendentes'&&!pendingClassification\(x\)/);
+});
