@@ -3416,7 +3416,7 @@
             <label>Valor cheio (R$)<input id="pay-full" type="text" readonly></label>
             <label>Desconto aplicado (R$)<input id="pay-discount" type="number" min="0" step="0.01" value="0" required></label>
             <label>Juros e multas (R$)<input id="pay-fees" type="number" min="0" step="0.01" value="0" required></label>
-            <label>Valor efetivamente pago (R$)<input id="pay-amount" type="number" min="0.01" step="0.01" required></label>
+            <label>Valor efetivamente pago (R$)<input id="pay-amount" type="number" min="0.01" step="0.01" required aria-describedby="pay-hint"><small>Se o valor for maior, a diferença será preenchida em juros e multas. Confira antes de confirmar.</small></label>
             <label>Meio<select id="pay-method" required><option value="boleto">Boleto</option><option value="pix">PIX</option><option value="debito">Débito</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="outro">Outro</option></select></label>
             <div style="grid-column:1/-1"><p class="form-note" id="pay-hint">Confira o valor efetivamente pago. Descontos sugeridos não são aplicados ao histórico automaticamente.</p><p class="form-note" style="margin-top:9px">Se você já importou esse pagamento pelo extrato, não crie outra saída. Acesse <strong>Importações → Conciliar boleto com saída bancária</strong>.</p>
               <div class="form-actions"><button type="button" class="btn" data-close-modal="pay">Cancelar</button><button id="save-payment" type="submit" class="btn btn-primary">Confirmar baixa</button></div><div id="pay-status" class="status" role="status"></div>
@@ -3574,6 +3574,24 @@ function refreshPaymentSuggestion(){
  $('pay-fees').value='0.00';
  calculatePaymentTotal();
  $('pay-hint').textContent=rate?'Sugestão de '+rate+'% para pagamento até o vencimento. Confirme pelo boleto atual.':'Sem desconto automático. Em atraso, informe encargos reais antes de baixar.';
+}
+function inferPaymentFees(){
+ const x=selectedPaymentParcel();if(!x)return;
+ const raw=$('pay-amount').value;
+ if(raw.trim()==='')return;
+ const paid=Number(raw),full=Math.round(Number(x.valor_cheio)*100);
+ const discount=Math.round(Number($('pay-discount').value)*100),amount=Math.round(paid*100);
+ if(!Number.isFinite(paid)||![full,discount,amount].every(Number.isSafeInteger)||
+   Math.abs(paid*100-amount)>0.00001||amount<=0||discount<0||discount>full)return;
+ const fees=amount-(full-discount);
+ if(fees<0){
+  $('pay-hint').textContent='O valor pago está abaixo do valor cheio menos desconto. Informe o desconto efetivo para conferir a baixa.';
+  return;
+ }
+ $('pay-fees').value=(fees/100).toFixed(2);
+ $('pay-hint').textContent=fees>0?
+  'Encargos calculados pela diferença: '+fmt.format(fees/100)+'. Confira os juros e multas reais antes de confirmar.':
+  'Valor pago confere com o valor cheio menos desconto, sem encargos.';
 }
 function calculatePaymentTotal(){
  const x=selectedPaymentParcel();if(!x)return;
@@ -3743,6 +3761,7 @@ async function init(){
   $('pay-date').addEventListener('change',refreshPaymentSuggestion);
   $('pay-discount').addEventListener('input',calculatePaymentTotal);
   $('pay-fees').addEventListener('input',calculatePaymentTotal);
+  $('pay-amount').addEventListener('input',inferPaymentFees);
   $('pay-form').addEventListener('submit',savePayment);
   $('installment-count').addEventListener('change',()=>{$('installments').innerHTML='';updateInstallments()});
   $('purchase-due').addEventListener('change',()=>{$('installments').innerHTML='';updateInstallments()});
